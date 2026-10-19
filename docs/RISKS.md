@@ -18,4 +18,10 @@
 | 14 | Haiku 5.5 cache-read price not confirmed | Very low | — | Marked "estimated" in cost table; editable override | Open |
 | 15 | Network POST retries could double-bill on ambiguous failures | Very low | Low | Max 3 attempts; only on network/408/429/5xx | Accepted |
 | 16 | Checkpoints referencing moved keys | Low | Med | Restore checks key times and aborts with KEY_MOVED instead of writing the wrong key | Mitigated |
+| 18 | Effect parameter names/indices differ from our map (locale, AE version) | Med (compositing writes) | Med | Name-first resolution; fallbacks only with exact parameter count; unresolved → host op removes what it added and lists the parameters; method shown in checks | Mitigated, **verify in host** |
+| 19 | `sampleImage` via `valueAtTime` slow on heavy precomps | Med (blocking) | Med | Quality presets (9–36 cells), one probe expression, 180 s timeout for sampling calls | Open |
+| 20 | Probe layer left behind if AE errors mid-call | Low | Low | `finally` removal + layer-count check reported in verification | Mitigated |
+| 21 | Measuring keyed / graded layers | Med (wrong match) | — | Keyed layers sampled post-effect with MOE Grade/Match bypassed (re-enabled in `finally`); unkeyed screens refused for Match | Mitigated |
+| 22 | Analysis leaves one no-op undo entry | Very low | Certain | Documented; real change is always a separate single undo step | Accepted |
+| 23 | Channel Mixer is a single affine grade (no curves/split toning) | Low (creative range) | — | Look from Words reports limitations; Lumetri mapping planned after host verification | Accepted |
 | 17 | Bundle ID `tv.madtomato.moe.motionai` | — | — | Change before signing/distribution if a different ID is preferred | Note |

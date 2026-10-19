@@ -28,14 +28,15 @@ function createHostBridge({ evalScript, rootPath, timeoutMs = 30000, logger }) {
   let busy = false;
   const log = logger || { info() {}, warn() {}, error() {} };
 
-  function rawEval(script, label) {
+  function rawEval(script, label, callTimeout) {
+    const limit = callTimeout || timeoutMs;
     return new Promise((resolve, reject) => {
       let done = false;
       const timer = setTimeout(() => {
         if (done) return;
         done = true;
-        reject(new HostError('HOST_TIMEOUT', `After Effects did not answer "${label}" within ${Math.round(timeoutMs / 1000)}s. It may be busy (rendering or a modal dialog).`));
-      }, timeoutMs);
+        reject(new HostError('HOST_TIMEOUT', `After Effects did not answer "${label}" within ${Math.round(limit / 1000)}s. It may be busy (rendering or a modal dialog).`));
+      }, limit);
       try {
         evalScript(script, (res) => {
           if (done) return;
@@ -76,13 +77,14 @@ function createHostBridge({ evalScript, rootPath, timeoutMs = 30000, logger }) {
     return res;
   }
 
-  async function dispatch(op, args) {
+  async function dispatch(op, args, opts) {
+    const t = opts && opts.timeoutMs;
     const script = `(typeof MOE_dispatch==="function")?MOE_dispatch(${literal(op)},${literal(JSON.stringify(args || {}))}):"MOE_NOT_LOADED"`;
-    let res = await rawEval(script, op);
+    let res = await rawEval(script, op, t);
     if (res === 'MOE_NOT_LOADED') {
       log.warn('host', 'Host module not loaded; reloading', { op });
       await loadHost();
-      res = await rawEval(script, op);
+      res = await rawEval(script, op, t);
     }
     if (res === 'EvalScript error.' || res === undefined || res === null || res === '') {
       throw new HostError('HOST_EVAL_ERROR', `After Effects could not run "${op}" (ExtendScript evaluation error).`);
@@ -100,7 +102,7 @@ function createHostBridge({ evalScript, rootPath, timeoutMs = 30000, logger }) {
 
   return {
     init: () => enqueue(loadHost),
-    call: (op, args) => enqueue(() => dispatch(op, args)),
+    call: (op, args, opts) => enqueue(() => dispatch(op, args, opts)),
     get ready() { return ready; },
     get busy() { return busy; }
   };

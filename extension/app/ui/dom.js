@@ -24,6 +24,8 @@ const ICONS = {
   plus: '<path d="M8 3v10M3 8h10"/>',
   copy: '<rect x="5" y="5" width="8" height="8" rx="1"/><path d="M3 11V3h8"/>',
   save: '<path d="M3 3h8l2 2v8H3z"/><path d="M5 3v3h5V3M5 13V9h6v4"/>',
+  grade: '<circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11" /><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor" stroke="none" opacity=".55"/>',
+  key: '<path d="M8 2s4 4.3 4 7.2A4 4 0 0 1 4 9.2C4 6.3 8 2 8 2z"/><path d="M6.3 9.8a1.8 1.8 0 0 0 1.7 1.6"/>',
   layers: '<path d="M8 2l6 3-6 3-6-3z"/><path d="M2 8l6 3 6-3M2 11l6 3 6-3" opacity=".6"/>'
 };
 

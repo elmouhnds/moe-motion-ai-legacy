@@ -13,6 +13,9 @@ module.exports = {
     if (/Expression Engineer/.test(body.system[0].text)) {
       return reply({ code: '// Scale overshoot after the last keyframe\nvar amp = 0.05, freq = 3, decay = 7;\nvar n = numKeys ? nearestKey(time).index : 0;\nif (n && key(n).time > time) n--;\nif (n > 0) {\n  var t = time - key(n).time;\n  var v = velocityAtTime(key(n).time - thisComp.frameDuration / 10);\n  value + v * amp * Math.sin(freq * t * 2 * Math.PI) / Math.exp(decay * t);\n} else value;', explanation: 'Adds a decaying overshoot after each keyframe, driven by the incoming velocity, so faster moves bounce more.', notes: ['Works on Scale and Position.', 'Tweak decay for a quicker settle.'], controls: [] });
     }
+    if (/colourist/.test(body.system[0].text)) {
+      return reply({ settings: { exposure: -0.2, contrast: 25, saturation: 70, temperature: -35, tint: -5, autoBalance: 60, autoLevels: 30 }, explanation: 'Neutralises the warm cast first, then pulls the shot cold and desaturated with firmer contrast for a tense, clinical feel.', limitations: 'Teal-only shadows need split toning, which a single grade cannot do.' });
+    }
     if (/Tool Factory/.test(body.system[0].text)) {
       return reply({ name: 'Soft cascade', description: 'Stagger the selected layers by N frames, then give their keys a smooth ease.', limitations: '', params: [{ key: 'step', type: 'integer', label: 'Frames apart', default_json: '3', min: 1, max: 30, options: [] }], steps: [{ tool: 'motion.stagger', args_json: '{"frames":{"$param":"step"},"order":"index","mode":"offset","seed":1}', note: 'Cascade top to bottom' }, { tool: 'motion.smartEase', args_json: '{"influenceIn":70,"influenceOut":70,"sides":"both","scope":"all"}', note: 'Smooth every key' }] });
     }

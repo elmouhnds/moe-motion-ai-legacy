@@ -25,6 +25,126 @@ class KeyframeEase {
   }
 }
 
+function clone(v) { return Array.isArray(v) ? v.slice() : v; }
+
+/**
+ * Minimal expression evaluator for the probe: runs the expression as JavaScript
+ * with thisComp / time / value bound. Layers expose sampleImage() computed from
+ * the fixture's procedural pixel function (spec.pixels(u, v, t) -> [r,g,b,a]).
+ */
+function evalExpression(prop, t) {
+  const layer = prop._layer();
+  const comp = layer._comp;
+  const thisComp = { layer: (i) => sampleable(comp.layer(i)), frameDuration: comp.frameDuration, width: comp.width, height: comp.height };
+  // eslint-disable-next-line no-new-func
+  const fn = new Function('thisComp', 'time', 'value', '__code', 'return eval(__code);');
+  return fn(thisComp, t, prop.value, prop._expression);
+}
+
+function sampleable(layer) {
+  if (!layer) throw new Error('Expression error: layer index out of range');
+  return {
+    width: layer.width, height: layer.height, name: layer.name,
+    sampleImage(point, radius, postEffect, t) {
+      layer._comp._sampleCalls = (layer._comp._sampleCalls || 0) + 1;
+      const px = layer._pixels;
+      const acc = [0, 0, 0, 0];
+      const N = 5;
+      for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+          const x = point[0] - radius[0] + (2 * radius[0] * (i + 0.5)) / N;
+          const y = point[1] - radius[1] + (2 * radius[1] * (j + 0.5)) / N;
+          const c = postEffect ? renderEffects(layer, px(x / layer.width, y / layer.height, t)) : px(x / layer.width, y / layer.height, t);
+          for (let k = 0; k < 3; k++) acc[k] += (c[k] * c[3]) / (N * N);
+          acc[3] += c[3] / (N * N);
+        }
+      }
+      // Unpremultiplied result, like sampleImage.
+      return acc[3] > 0 ? [acc[0] / acc[3], acc[1] / acc[3], acc[2] / acc[3], acc[3]] : [0, 0, 0, 0];
+    }
+  };
+}
+
+/** Post-effect pixel simulation for the effects MOE adds (enabled ones only, in stack order). */
+function renderEffects(layer, rgba) {
+  let c = rgba.slice();
+  for (const fx of (layer._parade ? layer._parade._children : [])) {
+    if (!fx.enabled) continue;
+    if (fx.matchName === 'ADBE CHANNEL MIXER') {
+      const v = fx._children.map((p) => p.value / 100);
+      c = [0, 1, 2].map((r) => v[r * 4] * c[0] + v[r * 4 + 1] * c[1] + v[r * 4 + 2] * c[2] + v[r * 4 + 3]).concat([c[3]]);
+    } else if (fx.matchName === 'Keylight 906') {
+      const sc = fx._children[2].value;
+      const d = Math.hypot(c[0] - sc[0], c[1] - sc[1], c[2] - sc[2]);
+      if (d < 0.3) c = [c[0], c[1], c[2], 0];
+    }
+  }
+  return c;
+}
+
+/* Effect catalog: param specs in UI order. Param matchNames follow "<effect>-NNNN". */
+const MIXER_NAMES = ['Red-Red', 'Red-Green', 'Red-Blue', 'Red-Const', 'Green-Red', 'Green-Green', 'Green-Blue', 'Green-Const', 'Blue-Red', 'Blue-Green', 'Blue-Blue', 'Blue-Const'];
+const EFFECTS = {
+  'ADBE Color Control': [{ name: 'Color', valueType: 'COLOR', value: [1, 0, 0, 1] }],
+  'ADBE CHANNEL MIXER': [...MIXER_NAMES.map((n) => ({ name: n, valueType: 'OneD', value: ['Red-Red', 'Green-Green', 'Blue-Blue'].includes(n) ? 100 : 0 })), { name: 'Monochrome', valueType: 'OneD', value: 0 }],
+  'Keylight 906': [{ name: 'View', valueType: 'OneD', value: 1 }, { name: 'Unpremultiply Result', valueType: 'OneD', value: 1 }, { name: 'Screen Colour', valueType: 'COLOR', value: [0, 0, 0, 1] }, { name: 'Screen Gain', valueType: 'OneD', value: 100 }],
+  'ADBE KeyCleaner': [{ name: 'Additional Edge Radius', valueType: 'OneD', value: 1 }],
+  'ADBE Spill2': [{ name: 'Method', valueType: 'OneD', value: 1 }],
+  'ADBE Simple Choker': [{ name: 'View', valueType: 'OneD', value: 1 }, { name: 'Choke Matte', valueType: 'OneD', value: 0 }],
+  'ADBE Gaussian Blur 2': [{ name: 'Blurriness', valueType: 'OneD', value: 0 }]
+};
+
+class MockEffect {
+  constructor(matchName, parade, opts) {
+    this.matchName = matchName;
+    this.name = (opts.displayNames && opts.displayNames[matchName]) || matchName;
+    this.propertyType = PropertyType.NAMED_GROUP;
+    this.parentProperty = parade;
+    this.propertyDepth = 2;
+    this.enabled = true;
+    const specs = (EFFECTS[matchName] || []).filter((p) => !(opts.dropParams || []).includes(p.name));
+    this._children = specs.map((p, i) => new MockProperty({
+      name: opts.locale ? `${opts.locale}:${p.name}` : p.name,
+      matchName: `${matchName}-${String(i + 1).padStart(4, '0')}`,
+      valueType: p.valueType, value: p.value, canSetExpression: true
+    }, this, i + 1));
+  }
+  get propertyIndex() { return this.parentProperty._children.indexOf(this) + 1; }
+  get numProperties() { return this._children.length; }
+  property(key) { return MockGroup.prototype.property.call(this, key); }
+  propertyGroup(countUp) { return MockProperty.prototype.propertyGroup.call(this, countUp); }
+  remove() { this.parentProperty._children.splice(this.propertyIndex - 1, 1); }
+  moveTo(i) {
+    const list = this.parentProperty._children;
+    if (i < 1 || i > list.length) throw new Error('After Effects error: invalid index');
+    list.splice(this.propertyIndex - 1, 1);
+    list.splice(i - 1, 0, this);
+  }
+}
+
+class MockParade {
+  constructor(layer, opts) {
+    this.name = 'Effects';
+    this.matchName = 'ADBE Effect Parade';
+    this.propertyType = PropertyType.INDEXED_GROUP;
+    this.parentProperty = layer;
+    this.propertyDepth = 1;
+    this.propertyIndex = 2;
+    this._opts = opts;
+    this._children = [];
+  }
+  get numProperties() { return this._children.length; }
+  property(key) { return MockGroup.prototype.property.call(this, key); }
+  propertyGroup(countUp) { return MockProperty.prototype.propertyGroup.call(this, countUp); }
+  canAddProperty(matchName) { return Object.prototype.hasOwnProperty.call(EFFECTS, matchName) && !(this._opts.unavailable || []).includes(matchName); }
+  addProperty(matchName) {
+    if (!this.canAddProperty(matchName)) throw new Error('After Effects error: cannot add ' + matchName);
+    const fx = new MockEffect(matchName, this, this._opts);
+    this._children.push(fx);
+    return fx;
+  }
+}
+
 function dimsFor(valueType) {
   if (valueType === PropertyValueType.TwoD) return 2;
   if (valueType === PropertyValueType.ThreeD) return 3;
@@ -43,6 +163,7 @@ class MockProperty {
     this.parentProperty = parent;
     this.propertyIndex = index;
     this.propertyDepth = parent.propertyDepth + 1;
+    this._value = spec.value !== undefined ? clone(spec.value) : 0;
     this._expression = spec.expression || '';
     this.expressionEnabled = !!spec.expression;
     this.expressionError = '';
@@ -91,6 +212,15 @@ class MockProperty {
     const k = this._key(i);
     k.easeIn = inEase.map((e) => ({ speed: e.speed, influence: e.influence }));
     k.easeOut = out.map((e) => ({ speed: e.speed, influence: e.influence }));
+  }
+  get value() { return clone(this._value); }
+  setValue(v) {
+    if (this.propertyValueType === PropertyValueType.COLOR && (!Array.isArray(v) || v.length !== 4)) throw new Error('After Effects error: color value must have 4 components');
+    this._value = clone(v);
+  }
+  valueAtTime(t, preExpression) {
+    if (preExpression || !this._expression || !this.expressionEnabled) return this.value;
+    return evalExpression(this, t);
   }
   get expression() { return this._expression; }
   set expression(code) {
@@ -153,19 +283,34 @@ class MockLayer {
     this.enabled = true;
     this.threeDLayer = !!spec.threeD;
     this.nullLayer = !!spec.nullLayer;
-    this.adjustmentLayer = false;
     this.parent = null;
     this.selected = !!spec.selected;
     this.propertyDepth = 0;
     this.propertyType = PropertyType.INDEXED_GROUP;
     this.matchName = 'ADBE AV Layer';
+    this.adjustmentLayer = !!spec.adjustment;
+    this.width = spec.camera ? undefined : (spec.width || (this.nullLayer ? 100 : comp.width));
+    this.height = spec.camera ? undefined : (spec.height || (this.nullLayer ? 100 : comp.height));
+    this._pixels = spec.pixels || (() => [0.5, 0.5, 0.5, 1]);
+    this._parade = spec.camera ? null : new MockParade(this, comp._fxOpts || {});
+    (spec.effects || []).forEach((e) => { const fx = this._parade.addProperty(e.matchName); if (e.name) fx.name = e.name; });
     const tf = (spec.transform || []).map((p) => Object.assign({}, p));
     this._group = new MockGroup({ name: 'root', children: [{ name: 'Transform', matchName: 'ADBE Transform Group', children: tf }] }, { propertyDepth: -1 }, 0);
     this._group._children.forEach((c) => { c.parentProperty = this; c.propertyDepth = 1; fixDepth(c); });
   }
   get index() { return this._comp._layers.indexOf(this) + 1; }
-  property(key) { return this._group.property(key); }
+  property(key) {
+    if (key === 'ADBE Effect Parade' || key === 'Effects') return this._parade;
+    return this._group.property(key);
+  }
+  remove() {
+    const i = this._comp._layers.indexOf(this);
+    if (i < 0) throw new Error('After Effects error: layer already removed');
+    this._comp._layers.splice(i, 1);
+  }
 }
+
+class MockCameraLayer extends MockLayer {}
 
 function fixDepth(node) {
   (node._children || []).forEach((c) => { c.propertyDepth = node.propertyDepth + 1; fixDepth(c); });
@@ -185,7 +330,16 @@ class CompItem {
     this.workAreaStart = 0;
     this.workAreaDuration = this.duration;
     this.displayStartTime = 0;
-    this._layers = (spec.layers || []).map((l) => new MockLayer(l, this));
+    this._fxOpts = spec.effectsOptions || {};
+    this._layers = (spec.layers || []).map((l) => (l.camera ? new MockCameraLayer(l, this) : new MockLayer(l, this)));
+    const comp = this;
+    this.layers = {
+      addNull(duration) {
+        const n = new MockLayer({ name: 'Null 1', nullLayer: true, outPoint: duration }, comp);
+        comp._layers.unshift(n);
+        return n;
+      }
+    };
     this._selectionOrder = spec.selectionOrder || null;
   }
   get numLayers() { return this._layers.length; }
@@ -226,7 +380,7 @@ function markSelected(comp, fixture) {
  */
 function installAE(target, fixture, { readFile, evalCode }) {
   const undo = { depth: 0, groups: [] };
-  const project = fixture ? { file: null, dirty: true, activeItem: null } : null;
+  const project = fixture ? { file: null, dirty: true, activeItem: null, bitsPerChannel: fixture.bitsPerChannel || 16, expressionEngine: 'javascript-1.0' } : null;
   if (fixture && fixture.comp) {
     const comp = new CompItem(fixture.comp);
     markSelected(comp, fixture.comp);
@@ -239,7 +393,7 @@ function installAE(target, fixture, { readFile, evalCode }) {
   Object.assign(target, {
     PropertyValueType, KeyframeInterpolationType, PropertyType, KeyframeEase, CompItem, File,
     TextLayer: function TextLayer() {}, ShapeLayer: function ShapeLayer() {},
-    CameraLayer: function CameraLayer() {}, LightLayer: function LightLayer() {},
+    CameraLayer: MockCameraLayer, LightLayer: function LightLayer() {},
     SolidSource: function SolidSource() {},
     app: {
       version: '25.0.0x00 (mock)', buildNumber: 0, buildName: 'mock', isoLanguage: 'en_US',

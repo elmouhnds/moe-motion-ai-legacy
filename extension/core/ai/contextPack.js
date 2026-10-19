@@ -28,6 +28,7 @@ function packContext(ctx, { maxLayers = 30, maxProps = 30, maxExpr = 1500 } = {}
       expression: p.expression ? String(p.expression).slice(0, maxExpr) : undefined,
       expressionError: p.expressionError || undefined
     })),
+    compLayers: (ctx.compLayers || []).slice(0, 60).map((l) => ({ index: l.index, name: l.name, type: l.type })),
     truncated: ctx.truncated || (ctx.layers || []).length > maxLayers || (ctx.properties || []).length > maxProps || undefined
   };
 }

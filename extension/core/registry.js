@@ -5,7 +5,7 @@
  * {
  *   id: 'motion.smartEase',            unique, "<module>.<name>"
  *   version: '1.0.0',
- *   category: 'motion' | 'expressions' | 'tools',
+ *   category: 'motion' | 'expressions' | 'compositing' | 'tools',
  *   group: 'Easing',                   sub-heading inside a workspace
  *   name, description, keywords: [],
  *   icon: 'ease',
@@ -31,7 +31,7 @@
 const { checkSchema } = require('./schema');
 const { SCOPES } = require('./permissions');
 
-const CATEGORIES = ['motion', 'expressions', 'tools'];
+const CATEGORIES = ['motion', 'expressions', 'compositing', 'tools'];
 
 class Registry {
   constructor() {

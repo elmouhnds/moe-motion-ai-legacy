@@ -7,6 +7,7 @@
  *   modify.keyframes     change keyframe timing/ease/values
  *   modify.layers        change layer timing/properties
  *   modify.expressions   set or clear expressions
+ *   modify.effects       add effects or change effect parameters
  *   network.ai           send project context to the Claude API
  *
  * Origins: 'user' (a direct click in the panel), 'agent' (a step in an AI plan),
@@ -18,13 +19,14 @@
  *   - a scope set to 'deny' blocks every origin.
  */
 
-const SCOPES = ['read', 'modify.keyframes', 'modify.layers', 'modify.expressions', 'network.ai'];
+const SCOPES = ['read', 'modify.keyframes', 'modify.layers', 'modify.expressions', 'modify.effects', 'network.ai'];
 
 const DEFAULT_POLICY = {
   read: 'allow',
   'modify.keyframes': 'allow',
   'modify.layers': 'allow',
   'modify.expressions': 'allow',
+  'modify.effects': 'allow',
   'network.ai': 'allow'
 };
 

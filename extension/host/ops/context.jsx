@@ -54,6 +54,17 @@
         return info;
     }
 
+    function listEffects(layer) {
+        var out = [], parade = null, i, fx;
+        try { parade = layer.property('ADBE Effect Parade'); } catch (e) { parade = null; }
+        if (!parade) { return out; }
+        for (i = 1; i <= parade.numProperties && i <= 40; i++) {
+            fx = parade.property(i);
+            out.push({ index: i, name: fx.name, matchName: fx.matchName, enabled: fx.enabled });
+        }
+        return out;
+    }
+
     ops['context.get'] = {
         mutates: false,
         run: function (args) {
@@ -61,7 +72,8 @@
                 maxLayers: (args && args.maxLayers) || 200,
                 maxProps: (args && args.maxProps) || 200,
                 maxKeys: (args && args.maxKeys) || 500,
-                maxExpressionChars: (args && args.maxExpressionChars) || 4000
+                maxExpressionChars: (args && args.maxExpressionChars) || 4000,
+                maxCompLayers: (args && args.maxCompLayers) || 300
             };
             var result = { project: null, comp: null, layers: [], properties: [], truncated: false };
             if (!app.project) { return result; }
@@ -70,6 +82,7 @@
                 saved: !app.project.dirty
             };
             try { result.expressionEngine = app.project.expressionEngine; } catch (eEngine) { result.expressionEngine = 'unknown'; }
+            try { result.project.bitsPerChannel = app.project.bitsPerChannel; } catch (eBpc) { result.project.bitsPerChannel = null; }
             var comp = app.project.activeItem;
             if (!comp || !(comp instanceof CompItem)) { return result; }
 
@@ -106,8 +119,18 @@
                     locked: L.locked,
                     enabled: L.enabled,
                     threeD: !!L.threeDLayer,
-                    selectionOrder: i
+                    selectionOrder: i,
+                    width: L.width || 0,
+                    height: L.height || 0,
+                    effects: listEffects(L)
                 });
+            }
+
+            /* Lightweight list of every layer in the active comp (names only, capped). */
+            result.compLayers = [];
+            for (i = 1; i <= comp.numLayers && i <= limits.maxCompLayers; i++) {
+                L = comp.layer(i);
+                result.compLayers.push({ index: L.index, id: L.id, name: L.name, type: U.layerType(L), inPoint: L.inPoint, outPoint: L.outPoint });
             }
 
             var props = comp.selectedProperties, p, owner;

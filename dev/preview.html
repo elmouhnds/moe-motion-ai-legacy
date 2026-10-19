@@ -23,7 +23,7 @@
       if (q.get('w')) document.querySelector('.frame').style.setProperty('--w', q.get('w') + 'px');
       if (q.get('theme')) document.documentElement.setAttribute('data-theme', q.get('theme'));
       var mock = require('/tests/mock/ae-mock.js');
-      var fixture = require('/dev/preview-fixture.js');
+      var fixture = require(q.get('fixture') === 'comp' ? '/dev/preview-fixture-comp.js' : '/dev/preview-fixture.js');
       var mem = require('/dev/platform-mem.js');
       mock.installAE(window, fixture, { readFile: window.__fetchText, evalCode: function (c) { return (0, eval)(c); } });
       var cs = {

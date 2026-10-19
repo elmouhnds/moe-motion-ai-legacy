@@ -52,6 +52,16 @@ One senior motion graphics / CGI / VFX artist. Works fast, knows AE deeply, hate
 | Test on disposable project data (scratch comp) | Planned M3 |
 | Export/import recipes | Planned M3 |
 
+### D. Compositing (v0.2.0)
+| Capability | Status |
+|---|---|
+| Analyze shot (colour stats, cast, clipping, screen colour) | **Built** |
+| Recolor / grade (manual + auto balance / levels) as one editable effect | **Built** |
+| Look from words (Claude → Grade settings) | **Built** |
+| Match colour to plate / reference layer | **Built** |
+| Green/blue screen key setup with auto screen colour + cleanup chain | **Built** |
+| Reference image file (vision), curves/split toning, light wrap, grain match | Planned |
+
 ### Platform
 Context inspection, registry, executor, permissions, presets, history, checkpoints, AI client, cost monitor, diagnostics, command search, favorites, compact/expanded layouts — **built (M1)**.
 

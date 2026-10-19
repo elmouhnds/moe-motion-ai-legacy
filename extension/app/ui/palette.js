@@ -4,7 +4,7 @@ const { h, icon, clear } = require('./dom');
 
 function commands(app) {
   const nav = [
-    ['motion', 'Motion', 'Go to Motion workspace', 'motion'], ['expressions', 'Expressions', 'Go to Expression workspace', 'expr'], ['tools', 'Tools', 'Tool Factory and saved tools', 'tools'],
+    ['motion', 'Motion', 'Go to Motion workspace', 'motion'], ['expressions', 'Expressions', 'Go to Expression workspace', 'expr'], ['compositing', 'Comp', 'Grade, match colour, screen key', 'layers'], ['tools', 'Tools', 'Tool Factory and saved tools', 'tools'],
     ['favorites', 'Favorites', 'Pinned tools', 'star'], ['history', 'History', 'Recent changes and restore', 'history'],
     ['settings', 'Settings', 'API key, permissions, budget', 'gear'], ['diagnostics', 'Diagnostics', 'Host connection and logs', 'pulse']
   ].map(([id, name, desc, ic]) => ({ kind: 'nav', id, name, desc, icon: ic, ws: 'go', run: () => app.go(id) }));

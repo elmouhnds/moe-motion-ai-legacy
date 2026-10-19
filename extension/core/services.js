@@ -16,7 +16,7 @@ const planner = require('./ai/planner');
 const { registerAll } = require('../features/index');
 const recipes = require('../features/toolfactory/recipes');
 
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 
 function createServices({ platform, evalScript, rootPath, hostTimeoutMs }) {
   const store = createStore(platform.fs);

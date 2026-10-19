@@ -2,7 +2,13 @@
 /** Renders a tool's param schema as compact controls. */
 const { h, icon } = require('./dom');
 
-function control(key, p, value, set) {
+function control(key, p, value, set, ctx) {
+  if (p.type === 'layer') {
+    const layers = (ctx && ctx.compLayers) || [];
+    return h('select', { onchange: (e) => set(e.target.value ? Number(e.target.value) : undefined), 'aria-label': p.label },
+      h('option', { value: '', selected: !value }, layers.length ? 'Choose layer…' : 'No layers in comp'),
+      layers.map((l) => h('option', { value: l.index, selected: l.index === value }, `${l.index}  ${l.name}`)));
+  }
   if (p.type === 'boolean') {
     return h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(!!value), 'aria-label': p.label, onclick: () => set(!value) });
   }
@@ -20,7 +26,7 @@ function control(key, p, value, set) {
       class: 'num', type: 'number', value: value, step, min: p.min, max: p.max, 'aria-label': p.label,
       onchange: (e) => { const n = Number(e.target.value); if (Number.isFinite(n)) set(p.type === 'integer' ? Math.round(n) : n); }
     });
-    const ranged = p.min !== undefined && p.max !== undefined && p.max - p.min <= 100;
+    const ranged = p.min !== undefined && p.max !== undefined && p.max - p.min <= 400;
     if (!ranged) return h('div', { class: 'slider-row' }, num, p.unit ? h('span', { class: 'unit' }, p.unit) : null);
     const pct = ((value - p.min) / (p.max - p.min)) * 100;
     const range = h('input', { type: 'range', min: p.min, max: p.max, step, value, style: { '--pct': `${pct}%` }, 'aria-label': p.label });
@@ -40,13 +46,13 @@ function control(key, p, value, set) {
   return h('input', { class: 'txt', value: value || '', placeholder: p.description || '', onchange: (e) => set(e.target.value), 'aria-label': p.label });
 }
 
-function renderForm(params, args, onChange, { advancedOpen, onToggleAdvanced } = {}) {
+function renderForm(params, args, onChange, { advancedOpen, onToggleAdvanced, ctx } = {}) {
   const entries = Object.entries(params || {});
   const main = entries.filter(([, p]) => !p.advanced);
   const adv = entries.filter(([, p]) => p.advanced);
   const field = ([key, p]) => h('div', { class: `field ${p.type === 'text' ? 'stack' : ''}`, title: p.description || '' },
     h('label', {}, p.label),
-    control(key, p, args[key], (v) => onChange(Object.assign({}, args, { [key]: v }))));
+    control(key, p, args[key], (v) => onChange(Object.assign({}, args, { [key]: v })), ctx));
   return h('div', { class: 'form' },
     main.map(field),
     adv.length ? h('button', { class: 'adv-toggle', 'aria-expanded': String(!!advancedOpen), onclick: onToggleAdvanced }, icon('chev', 'sm'), 'Advanced') : null,

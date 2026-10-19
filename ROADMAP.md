@@ -13,6 +13,11 @@
 - [x] Tool Factory foundation: data-only recipes, parameters, dry run, offline reruns
 - [ ] **Host verification on Windows 11 + AE 2025** ← next action (TEST_REPORT.md checklist)
 
+## M1.5 — Compositing ✅ (v0.2.0)
+- [x] Analyze Shot, Grade, Look from Words, Match Color, Screen Key (docs/features/COMPOSITING.md)
+- [ ] Host verification (TEST_REPORT.md → Compositing checklist), confirm parameter mappings on AE 2025
+- Next in this module: reference **image file** analysis (vision), split-toning / curves via Lumetri once its parameter map is verified in host, light wrap, edge blur, grain match, despill colour from plate
+
 ## M2 — Motion Director depth
 - Visual ease graph editor (bezier handles → speed/influence), read current ease from selection
 - Keyframe timing tools: retime, scale around playhead, snap keys to whole frames, reverse

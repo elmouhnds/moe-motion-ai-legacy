@@ -27,6 +27,9 @@ Permanent rules for anyone (human or AI) working in this repository.
 - AI output is untrusted input: plans/recipes may only reference registered `ai.callable` tools, and all args are re-validated locally. AI-originated changes always require user approval (hard rule in `permissions.js`).
 - **No generated scripts are executed.** Tool Factory produces data-only recipes made of existing tools.
 - Do not silently unlock layers, delete data, or scan the whole project. Read only the active comp + selection, with limits.
+- Effects MOE adds are named `MOE …`, updated in place (never duplicated), and restorable. Never touch effects MOE did not create, except to *temporarily* bypass MOE's own colour effects during measurement (always re-enabled in `finally`).
+- Effect parameters: resolve by English name first; match-name/order fallbacks only when the effect has the exact expected parameter count (`expectParams`). A host op that cannot resolve everything must remove what it added and fail with the parameter list.
+- Pixel measurement uses the documented probe pattern (temporary null + expression `sampleImage` + `valueAtTime`); the probe is removed in `finally` and the layer count is verified.
 
 ## AI / cost rules
 - The API key lives only in the secret store (Windows DPAPI, `%APPDATA%\MOE Motion AI\secrets.dat`). Never in source, settings, logs, or history. The logger scrubs `sk-ant-…` patterns.

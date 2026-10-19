@@ -5,7 +5,7 @@ const { SCOPES } = require('../../../core/permissions');
 
 const SCOPE_LABEL = {
   read: 'Read project', 'modify.keyframes': 'Change keyframes', 'modify.layers': 'Change layers',
-  'modify.expressions': 'Change expressions', 'network.ai': 'Send context to Claude'
+  'modify.expressions': 'Change expressions', 'modify.effects': 'Change effects', 'network.ai': 'Send context to Claude'
 };
 
 function seg(options, value, onPick) {
@@ -47,6 +47,7 @@ function render(app) {
       h('div', { class: 'field' }, h('label', {}, 'Layout'), seg([['auto', 'Auto'], ['compact', 'Compact'], ['expanded', 'Expanded']], st.ui.density, (v) => { upd({ ui: { density: v } }); app.applyDensity(); }))),
 
     h('div', { class: 'section-h' }, 'Data'),
-    h('dl', { class: 'kv' }, h('dt', {}, 'Folder'), h('dd', {}, app.services.store.dataDir)));
+    h('dl', { class: 'kv' }, h('dt', {}, 'Folder'), h('dd', {}, app.services.store.dataDir)),
+    h('div', { class: 'actions pad' }, h('button', { class: 'btn', onclick: () => app.go('diagnostics') }, 'Diagnostics')));
 }
 module.exports = { render };

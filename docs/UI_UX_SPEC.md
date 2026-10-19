@@ -5,7 +5,7 @@ Premium, quiet, technical. Feels native next to AE's own panels: flat surfaces, 
 
 ## Layout
 ```
-┌ Header 36px ─ [M] Motion · Expressions · Tools ········ [⌕] [☆] [⏱] [⚙] [∿]
+┌ Header 36px ─ [M] Motion · Expressions · Comp · Tools ···· [⌕] [☆] [⏱] [⚙]
 ├ Context 26px ─ ● HERO_Title_v03  25 fps · 4 lyr  3 prop  7 keys        [↻]
 ├ Content (scroll)
 │   SECTION LABEL (purpose group, e.g. EASING / TIMING)
@@ -17,14 +17,15 @@ Premium, quiet, technical. Feels native next to AE's own panels: flat surfaces, 
 │     └ preview list → result report (status, verification checks, Restore)
 └ Copilot bar 38px ─ ✦ Describe a change…                         Ctrl+Space
 ```
-- **Main workspaces**: Motion, Expressions, Tools. **Secondary** (icons): Favorites, History, Settings, Diagnostics.
+- **Main workspaces**: Motion, Expressions, Comp, Tools. **Secondary** (icons): Favorites, History, Settings. Diagnostics opens from Settings and the command palette.
+- **Comp** groups: Analyze (Analyze Shot) · Color (Grade, Look from Words, Match Color) · Key (Screen Key). Analysis results show a swatch grid and one-click follow-ups that *prefill* other tools; AI suggestions also prefill — nothing runs without the user's click.
 - **Context-aware**: each tool row's hint is computed from the live selection ("Ease 7 keyframes (in 33% / out 33%)" or "Select keyframes"). Unavailable tools stay visible but explain why.
 - **Copilot** is collapsed into a single bar; expands to a sheet over the bottom of the panel only when used. Never occupies the timeline.
 - **Command search**: Ctrl+K or `/` — tools, saved tools, commands, navigation.
 - **Pinning**: ☆ on hover → Favorites.
 
 ## Responsive
-- `compact` (< 320 px or forced): tab labels → icons, fields stack label over control.
+- `compact` (< 340 px, or whenever the header overflows, or forced): tab labels → icons, fields stack label over control.
 - default (320–499 px): labels on tabs, icon-only search.
 - `wide` (≥ 500 px or "Expanded"): full search field with shortcut hint.
 

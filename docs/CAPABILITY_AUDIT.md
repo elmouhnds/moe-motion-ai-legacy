@@ -32,8 +32,18 @@ Date: 2026-10-19. Environment of this audit: a Linux cloud sandbox **without Aft
 | `keyIn/OutInterpolationType()`, `setInterpolationTypeAtKey()` | Ease needs Bezier sides; HOLD preserved |
 | `Property.expression`, `expressionEnabled`, `expressionError`, `canSetExpression` | Expression apply / validate with the real engine |
 | `app.beginUndoGroup / endUndoGroup` | One undo step per tool run |
+| `LayerCollection.addNull()`, `Layer.remove()` | Temporary probe layer (compositing analysis) |
+| `PropertyGroup.addProperty()` / `canAddProperty()` on `ADBE Effect Parade` (indexed group is rebuilt on add — references re-fetched by `propertyIndex`) | Add effects |
+| `PropertyBase.name` (settable on effects — children of an indexed group), `moveTo()`, `remove()`, `enabled` | Name, order, restore and bypass MOE effects |
+| `Property.valueAtTime(t, false)` — waits for `sampleImage` (AE 13.6+) | Read probe colours |
+| `Property.setValue()`, `Property.value` | Effect parameters |
+| `Project.bitsPerChannel` | 8-bpc warnings |
+| Expression `sampleImage(point, radius, postEffect, t)` (expression language, not scripting) | Pixel sampling |
+| Effect match names (Scripting Guide › Match Names › Effects): `ADBE CHANNEL MIXER`, `Keylight 906`, `ADBE KeyCleaner`, `ADBE Spill2`, `ADBE Simple Choker`, `ADBE Color Control` (param `ADBE Color Control-0001` as in the guide's own example) | Compositing effects |
 
-*Verify in host*: (1) `expressionError` is populated synchronously right after assigning `expression` (used by Validate/Apply). (2) `CompItem.selectedLayers` order reflects selection order (used by Stagger "Selection" order). (3) `propertyIndex` is valid on named groups (we fall back to matchName lookup either way).
+Effect *parameter* match names are not documented per effect (except the Slider Control example). MOE resolves them at runtime and reports the method; see docs/features/COMPOSITING.md §3.
+
+*Verify in host*: (1) `expressionError` is populated synchronously right after assigning `expression` (used by Validate/Apply). (2) `CompItem.selectedLayers` order reflects selection order (used by Stagger "Selection" order). (3) `propertyIndex` is valid on named groups (we fall back to matchName lookup either way). (4) Channel Mixer English parameter names are `Red-Red … Blue-Const` + `Monochrome` (13 params) and values are percent. (5) Keylight's first COLOR parameter is *Screen Colour*. (6) Simple Choker parameter 2 is *Choke Matte*. (7) Speed of `valueAtTime` + `sampleImage` on heavy layers.
 
 ## Claude API facts used
 - `POST https://api.anthropic.com/v1/messages`, headers `x-api-key`, `anthropic-version: 2023-06-01`.

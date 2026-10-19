@@ -3,12 +3,12 @@
  * Parameter schema: a small, explicit format shared by tools, recipes, the UI
  * form renderer and the Claude planner.
  *
- *   { key: { type: 'number'|'integer'|'string'|'text'|'boolean'|'enum',
+ *   { key: { type: 'number'|'integer'|'string'|'text'|'boolean'|'enum'|'layer',
  *            label, description, default, min, max, step, unit,
  *            options: [{ value, label }], maxLength, required, advanced } }
  */
 
-const TYPES = new Set(['number', 'integer', 'string', 'text', 'boolean', 'enum']);
+const TYPES = new Set(['number', 'integer', 'string', 'text', 'boolean', 'enum', 'layer']);
 
 function checkSchema(schema, where) {
   const errors = [];
@@ -38,6 +38,12 @@ function validateValue(key, p, raw) {
       if (p.type === 'integer' && !Number.isInteger(n)) return { error: `${p.label} must be a whole number` };
       if (p.min !== undefined && n < p.min) return { error: `${p.label} must be ≥ ${p.min}` };
       if (p.max !== undefined && n > p.max) return { error: `${p.label} must be ≤ ${p.max}` };
+      return { value: n };
+    }
+    case 'layer': {
+      // A layer number (index) in the active comp; the UI renders a layer picker.
+      const n = typeof raw === 'number' ? raw : Number(raw);
+      if (!Number.isInteger(n) || n < 1) return { error: `${p.label} must be a layer number` };
       return { value: n };
     }
     case 'boolean':
@@ -96,11 +102,13 @@ function toJsonSchema(schema) {
     if (p.max !== undefined) limits.push(`max ${p.max}`);
     if (p.unit) limits.push(`unit: ${p.unit}`);
     if (p.default !== undefined) limits.push(`default ${JSON.stringify(p.default)}`);
+    if (p.type === 'layer') limits.push('layer number (index) in the active comp');
     const description = [p.description || p.label, limits.length ? `(${limits.join(', ')})` : '']
       .filter(Boolean).join(' ');
     let js;
     if (p.type === 'enum') js = { type: 'string', enum: p.options.map((o) => o.value) };
     else if (p.type === 'text') js = { type: 'string' };
+    else if (p.type === 'layer') js = { type: 'integer' };
     else js = { type: p.type };
     properties[key] = Object.assign(js, { description });
   }

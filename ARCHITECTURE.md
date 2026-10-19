@@ -10,6 +10,7 @@
 | Claude access | Raw HTTPS from the panel's Node context | `@anthropic-ai/sdk` needs a newer Node than CEP 12 ships; no global `fetch` in Node 17. |
 | Secret storage | Windows DPAPI (CurrentUser) via built-in PowerShell 5.1 | No native modules to compile; key never in frontend source or settings. |
 | UI | Vanilla JS + small DOM helpers, CommonJS modules | Fast in CEP, no build step, every module testable in Node. |
+| Pixel analysis | Expression `sampleImage` on a temporary probe, read via `Property.valueAtTime()` | Scripting has no pixel API; `valueAtTime` officially waits for `sampleImage` (AE 13.6+). Local, no AI. |
 
 ## 2. Layers
 
@@ -30,7 +31,7 @@
 │   ├─ ai/contextPack.js  compact selection-only context                                           │
 │   ├─ ai/planner.js   Copilot: plan → local validation → run → rollback                           │
 │   └─ host/bridge.js  serialized evalScript, MOE_dispatch only, ASCII-escaped JSON args           │
-│  features/           motion/*, expressions/*, toolfactory/recipes.js                             │
+│  features/           motion/*, expressions/*, compositing/*, toolfactory/recipes.js              │
 │  core/platform/node.js  fs, https, DPAPI secrets                                                 │
 └───────────────────────────────────────────┬──────────────────────────────────────────────────────┘
                                             │ CSInterface.evalScript("MOE_dispatch(op, json)")
@@ -43,6 +44,7 @@
 │   ops/keyframes.jsx keyframes.applyEase, keyframes.restoreEase    (undo group, read-back)        │
 │   ops/layers.jsx  layers.setStartTimes                            (undo group, read-back)        │
 │   ops/expressions.jsx expressions.set, expressions.validate       (real engine errors)           │
+│   ops/compositing.jsx pixels.sample, effects.ensure, effects.restore (probe, named MOE effects)  │
 └──────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -50,14 +52,14 @@
 
 Every capability is one object registered in `core/registry.js` (full contract in its header comment):
 
-- **Identity**: `id` (`module.name`), `version` (semver), `category` (`motion|expressions|tools`), `group`, `name`, `description`, `keywords`, `icon`.
-- **Inputs**: `params` (schema.js: number/integer/string/text/boolean/enum, min/max, defaults, `advanced`).
+- **Identity**: `id` (`module.name`), `version` (semver), `category` (`motion|expressions|compositing|tools`), `group`, `name`, `description`, `keywords`, `icon`.
+- **Inputs**: `params` (schema.js: number/integer/string/text/boolean/enum/layer, min/max, defaults, `advanced`).
 - **Context**: `requires` (comp, minLayers, keyframedProperties, selectedKeys, expressionCapable…).
 - **Permissions**: `permissions` (scopes) + `destructive`.
 - **Recovery**: `recovery` (`undo+checkpoint` | `undo` | `none`), `checkpoint()`, `restore()`.
 - **Execution**: `prepare()` (pure, builds preview + host args), `execute()` (async, host/AI), `verify()` (pure, read-back), `summarize()`.
 - **AI**: `ai: { callable, hint }` — only callable tools appear in Copilot plans and recipes.
-- **UI**: `ui.primaryLabel`, `ui.presets`.
+- **UI**: `ui.primaryLabel`, `ui.presets`, optional `ui.renderResult(result, { h, app })` for custom result views (e.g. swatches); `app.prefillTool(id, args)` fills another tool's form without running it.
 - **Compatibility**: `compatibility.minAE`, `uses.hostOps`, `uses.network`.
 
 The registry rejects definitions that mutate without verify/recovery, use unknown permissions, or duplicate ids.
@@ -87,6 +89,13 @@ The UI, palette search, favorites, presets, history, Copilot catalog and recipes
 - User reviews and approves → saved to `recipes.json` → rerun offline through the executor.
 - "Dry run" = validation + check of step 1 against the live selection (no changes).
 - Testing on disposable project data (scratch comp) is planned (ROADMAP M3); it needs a new, explicitly permissioned host op.
+
+## 5b. Compositing module (v0.2.0)
+See `docs/features/COMPOSITING.md`. Key patterns reusable by future modules:
+- **Probe sampling**: temporary null + Color Control expression that maps `time` → (cell, sample time), read with `valueAtTime`; removed in `finally`; layer count verified.
+- **Named effects**: MOE effects are identified by name + matchName, updated in place, ordered with `before: [keys]`, and rolled back by the host op itself on failure.
+- **Parameter resolution**: English name → `<effect>-NNNN` convention → order; fallbacks only when the parameter count matches `expectParams`; method reported in checks.
+- **Effect checkpoints**: created → removed on restore; updated → previous values by parameter index.
 
 ## 6. Data locations
 
