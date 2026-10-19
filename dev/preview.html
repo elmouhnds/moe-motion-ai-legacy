@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>MOE Motion AI — Preview</title>
+  <link rel="icon" href="data:,">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/extension/css/tokens.css">
+  <link rel="stylesheet" href="/extension/css/app.css">
+  <style>
+    html, body { background: #111; }
+    .frame { position: absolute; top: 28px; left: 16px; bottom: 16px; width: var(--w, 360px); border: 1px solid #333; overflow: hidden; background: var(--bg); }
+    .dev-banner { position: absolute; top: 0; left: 0; right: 0; height: 22px; padding: 4px 16px; font: 11px system-ui; color: #999; background: #111; }
+  </style>
+</head>
+<body>
+  <div class="dev-banner">PREVIEW · mock AE host · real host/*.jsx</div>
+  <div class="frame"><div id="app" style="height:100%"></div></div>
+  <script src="/dev/cjs-loader.js"></script>
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search);
+      if (q.get('w')) document.querySelector('.frame').style.setProperty('--w', q.get('w') + 'px');
+      if (q.get('theme')) document.documentElement.setAttribute('data-theme', q.get('theme'));
+      var mock = require('/tests/mock/ae-mock.js');
+      var fixture = require('/dev/preview-fixture.js');
+      var mem = require('/dev/platform-mem.js');
+      mock.installAE(window, fixture, { readFile: window.__fetchText, evalCode: function (c) { return (0, eval)(c); } });
+      var cs = {
+        evalScript: function (script, cb) {
+          setTimeout(function () {
+            var r;
+            try { r = (0, eval)(script); } catch (e) { r = 'EvalScript error.'; }
+            cb(r === undefined ? 'undefined' : String(r));
+          }, 8);
+        }
+      };
+      var platform = mem.createMemPlatform(q.get('demoAI') ? { apiKey: 'sk-ant-preview-demo', http: require('/dev/demo-ai.js') } : {});
+      require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform }).then(function (app) {
+        window.__app = app;
+        if (q.get('view')) app.go(q.get('view'));
+      });
+    }());
+  </script>
+</body>
+</html>

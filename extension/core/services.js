@@ -13,7 +13,7 @@ const { createExecutor } = require('./executor');
 const { createCostMonitor } = require('./ai/cost');
 const { createClaudeClient } = require('./ai/client');
 const planner = require('./ai/planner');
-const { registerAll } = require('../features');
+const { registerAll } = require('../features/index');
 const recipes = require('../features/toolfactory/recipes');
 
 const VERSION = '0.1.0';

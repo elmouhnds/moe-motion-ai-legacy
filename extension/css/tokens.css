@@ -1,0 +1,75 @@
+/*
+ * MOE Motion AI — design tokens.
+ * Dark is the default and matches After Effects' panel workspace. The panel
+ * reads AE's panel colour at startup and switches to the light set when the
+ * user has raised AE's interface brightness. Contrast ratios are checked by
+ * tools/check-contrast.js (WCAG AA for text).
+ */
+:root {
+  --bg: #232323;
+  --bg-raised: #2a2a2a;
+  --bg-sunken: #1b1b1b;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-active: rgba(255, 255, 255, 0.09);
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+
+  --text: #e6e6e6;
+  --text-2: #b0b0b0;
+  --text-3: #8f8f8f;
+
+  --accent: #ff7a59;
+  --accent-hover: #ff8f73;
+  --accent-ink: #1c0d08;
+  --accent-soft: rgba(255, 122, 89, 0.14);
+
+  --ok: #4fc58f;
+  --warn: #e8bd55;
+  --err: #ff6b6b;
+  --ok-soft: rgba(79, 197, 143, 0.12);
+  --err-soft: rgba(255, 107, 107, 0.12);
+  --warn-soft: rgba(232, 189, 85, 0.12);
+
+  --focus: 0 0 0 2px rgba(255, 122, 89, 0.55);
+
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+  --fs-xs: 10.5px;
+  --fs-sm: 11px;
+  --fs: 12px;
+  --fs-lg: 13px;
+
+  --r: 4px;
+  --r-lg: 6px;
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --row: 28px;
+  --ctl: 24px;
+  --t: 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+:root[data-theme="light"] {
+  --bg: #e8e8e8;
+  --bg-raised: #f2f2f2;
+  --bg-sunken: #dcdcdc;
+  --bg-hover: rgba(0, 0, 0, 0.05);
+  --bg-active: rgba(0, 0, 0, 0.09);
+  --line: rgba(0, 0, 0, 0.1);
+  --line-strong: rgba(0, 0, 0, 0.2);
+  --text: #1d1d1d;
+  --text-2: #444444;
+  --text-3: #5e5e5e;
+  --accent: #c2410c;
+  --accent-hover: #ad3a0b;
+  --accent-ink: #ffffff;
+  --accent-soft: rgba(194, 65, 12, 0.12);
+  --ok: #157f4f;
+  --warn: #8a6100;
+  --err: #c42b2b;
+  --ok-soft: rgba(21, 127, 79, 0.1);
+  --err-soft: rgba(196, 43, 43, 0.1);
+  --warn-soft: rgba(138, 97, 0, 0.1);
+  --focus: 0 0 0 2px rgba(194, 65, 12, 0.45);
+}
