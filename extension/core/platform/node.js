@@ -1,0 +1,128 @@
+'use strict';
+/**
+ * Node platform adapter (runs inside the CEP panel's Node.js context).
+ * Provides: filesystem, HTTPS, and secret storage.
+ *
+ * Secret storage on Windows uses DPAPI (CurrentUser scope) through the
+ * built-in Windows PowerShell 5.1 — no native modules, nothing to compile.
+ * The key is passed via stdin, never on the command line.
+ */
+
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const https = require('https');
+const { spawn } = require('child_process');
+
+const APP_DIR_NAME = 'MOE Motion AI';
+
+function resolveDataDir() {
+  if (process.env.MOE_DATA_DIR) return process.env.MOE_DATA_DIR;
+  if (process.platform === 'win32' && process.env.APPDATA) return path.join(process.env.APPDATA, APP_DIR_NAME);
+  if (process.platform === 'darwin') return path.join(os.homedir(), 'Library', 'Application Support', APP_DIR_NAME);
+  return path.join(os.homedir(), '.moe-motion-ai');
+}
+
+function createFs(dataDir) {
+  fs.mkdirSync(dataDir, { recursive: true });
+  return {
+    dataDir,
+    join: (...p) => path.join(...p),
+    exists: (p) => fs.existsSync(p),
+    readText: (p) => fs.readFileSync(p, 'utf8'),
+    writeText: (p, s) => fs.writeFileSync(p, s, 'utf8'),
+    writeTextAtomic: (p, s) => {
+      const tmp = `${p}.tmp-${process.pid}`;
+      fs.writeFileSync(tmp, s, 'utf8');
+      fs.renameSync(tmp, p);
+    },
+    appendText: (p, s) => fs.appendFileSync(p, s, 'utf8')
+  };
+}
+
+function request({ method = 'POST', url, headers = {}, body, timeoutMs = 120000 }) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const req = https.request({
+      method, hostname: u.hostname, path: u.pathname + u.search, port: u.port || 443,
+      headers: Object.assign({}, headers, body ? { 'content-length': Buffer.byteLength(body) } : {})
+    }, (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks).toString('utf8') }));
+    });
+    req.setTimeout(timeoutMs, () => req.destroy(Object.assign(new Error('Request timed out'), { code: 'ETIMEDOUT' })));
+    req.on('error', reject);
+    if (body) req.write(body);
+    req.end();
+  });
+}
+
+function runPowerShell(script, stdinText) {
+  return new Promise((resolve, reject) => {
+    const ps = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', script], { windowsHide: true });
+    let out = '';
+    let err = '';
+    ps.stdout.on('data', (d) => { out += d; });
+    ps.stderr.on('data', (d) => { err += d; });
+    ps.on('error', reject);
+    ps.on('close', (code) => (code === 0 ? resolve(out.trim()) : reject(new Error(`PowerShell exited ${code}: ${err.trim()}`))));
+    ps.stdin.end(stdinText || '');
+  });
+}
+
+const PS_PROTECT = "Add-Type -AssemblyName System.Security; $t=[Console]::In.ReadToEnd(); $b=[Text.Encoding]::UTF8.GetBytes($t); " +
+  "[Convert]::ToBase64String([Security.Cryptography.ProtectedData]::Protect($b,$null,'CurrentUser'))";
+const PS_UNPROTECT = "Add-Type -AssemblyName System.Security; $t=[Console]::In.ReadToEnd(); $b=[Convert]::FromBase64String($t.Trim()); " +
+  "[Text.Encoding]::UTF8.GetString([Security.Cryptography.ProtectedData]::Unprotect($b,$null,'CurrentUser'))";
+
+function createSecrets(dataDir) {
+  const file = path.join(dataDir, 'secrets.dat');
+  const isWin = process.platform === 'win32';
+  let memo = null;
+
+  async function read() {
+    if (memo !== null) return memo;
+    if (!fs.existsSync(file)) return null;
+    const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (doc.protection === 'dpapi') memo = await runPowerShell(PS_UNPROTECT, doc.data);
+    else memo = Buffer.from(doc.data, 'base64').toString('utf8');
+    return memo;
+  }
+
+  return {
+    async status() {
+      if (!fs.existsSync(file)) return { stored: false, protection: isWin ? 'dpapi' : 'file' };
+      try {
+        const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
+        return { stored: true, protection: doc.protection, savedAt: doc.savedAt };
+      } catch (e) { return { stored: false, protection: 'corrupt' }; }
+    },
+    async getApiKey() { return read(); },
+    async setApiKey(key) {
+      let doc;
+      if (isWin) doc = { protection: 'dpapi', data: await runPowerShell(PS_PROTECT, key) };
+      else doc = { protection: 'file', data: Buffer.from(key, 'utf8').toString('base64') };
+      doc.savedAt = new Date().toISOString();
+      fs.writeFileSync(file, JSON.stringify(doc), { encoding: 'utf8', mode: 0o600 });
+      memo = key;
+    },
+    async clear() {
+      memo = null;
+      if (fs.existsSync(file)) fs.unlinkSync(file);
+    }
+  };
+}
+
+function createNodePlatform() {
+  const dataDir = resolveDataDir();
+  return {
+    kind: 'cep-node',
+    fs: createFs(dataDir),
+    http: { request },
+    secrets: createSecrets(dataDir),
+    info: { platform: process.platform, node: process.version, dataDir }
+  };
+}
+
+module.exports = { createNodePlatform, resolveDataDir, createFs, createSecrets };

@@ -1,0 +1,6 @@
+node_modules/
+*.zxp
+dist/
+.DS_Store
+*.log
+/dev/screens/
