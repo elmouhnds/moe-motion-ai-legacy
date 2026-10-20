@@ -1,18 +1,19 @@
 # Test Report
 
-Last run: 2026-10-20 (v0.6.1), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-20 (v0.6.2), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
 | Layer | How it was tested | Result |
 |---|---|---|
-| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 200/200 automated tests pass (166 behaviour + 34 UI module loads) |
+| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 205/205 automated tests pass (171 behaviour + 34 UI module loads) |
 | ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (14 files) |
 | Core (registry, schema, permissions, executor, storage, logger, bridge) | Unit + integration tests | Pass |
 | Claude integration | Mocked HTTPS responder: request shape, retries, refusal, truncation, 401, offline, budget | Pass — **no real API call was made** |
 | Panel UI | Browser preview (`dev/preview.html`) with the real UI code + real host .jsx on the mock; Playwright clicks through 49 scenarios (wide 900 px and narrow 380/280 px), incl. 19 v0.6 Premium screens; zero page/console errors | Pass — **not the CEP runtime** |
 | Colour contrast | `tools/check-contrast.js`, WCAG — 3 themes (dark, midnight, light) × 8 accents, 93 pairs | Pass |
 | Windows installer (`dist/MOE-Motion-AI-Setup-0.6.1.exe`) | Run under **Wine 9.0 (64-bit) on Linux**, not real Windows: silent install, legacy cleanup, in-place update 0.6.0 → 0.6.1, `/WAITAE` with a fake `AfterFX.exe`, silent uninstall; welcome page rendered under Xvfb | Pass — **real Windows 11 not run yet** |
+| UI stability under AE-like load | `npm run stress`: Chromium, host answers in 250 ms, selection changes on every read, mouse resting on tiles, slow 120 ms clicks, pointer 1 px inside a tile edge — Animate, Shapes, Home, Backgrounds | Pass after v0.6.2 (before: swaps in every view, 12–14/20 clicks, 22–24 hover flips). **Not yet confirmed inside AE** — checklist 63–66 |
 | Updater over HTTPS | Real Node HTTPS download from a local self-signed server (redirect, progress, SHA-256, oversize cut-off) | Pass |
 | **Inside After Effects 2025** | — | **Not run yet** |
 
@@ -229,6 +230,12 @@ Record results here with AE version/build from the Diagnostics view.
 12. Disconnect network → local tools still work; AI shows "Cannot reach the Claude API".
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
+
+### UI stability checklist (v0.6.2) — inside After Effects 2025
+63. Rest the mouse on icons / tiles / sidebar buttons for 10 s: nothing blinks or shakes; the pointer is steady.
+64. Click 20 different buttons and tiles at normal speed: every click responds the first time.
+65. Diagnostics › Panel performance after 2 minutes of hovering: renders/min low (< 10 when nothing changes in AE), selection read time noted (ms).
+66. Scrub the timeline / change selection in AE while the pointer is over the panel: the context strip updates, AE stays responsive.
 
 ### Install checklist (v0.6.1) — Windows 11 + AE 2025
 55. Run Setup.exe as a normal user: no UAC prompt; SmartScreen "More info › Run anyway" appears (unsigned) — record the wording.

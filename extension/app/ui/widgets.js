@@ -13,20 +13,31 @@ const AT = require('../../features/adapt/tools');
 /* ---------- shared canvas loop (stops when canvases unmount) ---------- */
 const live = new Set();
 let raf = null;
-/* Off-screen canvases are skipped (≈ every 6th frame check); "Reduced motion" draws once and holds. */
-let frame = 0;
+/*
+ * Motion (Settings › Appearance): "calm" (default) animates only the tile under the mouse and the
+ * Inspector preview; "full" animates every visible tile; "reduced" draws once and holds.
+ * At most 30 fps, off-screen canvases skipped, nothing drawn while the panel is hidden.
+ */
+let frame = 0, lastFrame = 0;
 function loop(now) {
+  raf = null;
+  if (!live.size) return;
+  raf = requestAnimationFrame(loop);
+  if (now - lastFrame < 32 || (typeof document !== 'undefined' && document.hidden)) return;
+  lastFrame = now;
   frame++;
-  const still = typeof document !== 'undefined' && document.documentElement.getAttribute('data-motion') === 'reduced';
+  const mode = (typeof document !== 'undefined' && document.documentElement.getAttribute('data-motion')) || 'calm';
   const vh = typeof window !== 'undefined' ? window.innerHeight : 1e9;
   for (const e of live) {
     if (!e.canvas.isConnected) { live.delete(e); continue; }
-    if (still && e.drawn) continue;
     if (frame % 6 === 0 || e.visible === undefined) { const r = e.canvas.getBoundingClientRect(); e.visible = r.bottom > -40 && r.top < vh + 40 && r.width > 0; }
     if (!e.visible) continue;
-    e.draw(still ? 1200 : now); e.drawn = true;
+    let animate = mode === 'full';
+    if (mode === 'calm') { const host = e.canvas.closest('.st-tile, .st-inspector, .tool'); animate = !!host && (host.classList.contains('st-tile') ? host.matches(':hover') : true); }
+    if (!animate && e.drawn) continue;
+    e.draw(animate ? now : null); e.drawn = true; // null = still frame (each drawer picks its rest pose)
   }
-  raf = live.size ? requestAnimationFrame(loop) : null;
+  if (!live.size && raf) { cancelAnimationFrame(raf); raf = null; }
 }
 function animated(canvas, draw) {
   const entry = { canvas, draw };
@@ -80,7 +91,7 @@ function gridPreview(args, setArgs, { h, ctx }) {
       c.stroke();
     }
     const cycle = (args.buildDuration || 1.5) + 1.2;
-    const build = args.animateIn ? Math.min(100, Math.max(0, (((now / 1000) % cycle) - 0.3) / (args.buildDuration || 1.5) * 100)) : 100;
+    const build = args.animateIn && now !== null ? Math.min(100, Math.max(0, (((now / 1000) % cycle) - 0.3) / (args.buildDuration || 1.5) * 100)) : 100;
     const pp = Object.assign({}, p, { build, path });
     const pts = L.place(pp, n).map((it) => Object.assign(it, { m: L.modifiers(pp, it, n) }));
     if (args.mode === 'sphere') pts.sort((a, b) => a.z - b.z);

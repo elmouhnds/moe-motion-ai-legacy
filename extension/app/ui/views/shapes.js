@@ -113,7 +113,7 @@ function render(app) {
     const names = S.cat === 'starred' ? stars.filter((n) => !S.q || n.includes(S.q.toLowerCase())) : LIB.search(S.q, S.cat);
     const shown = names.slice(0, S.limit);
     grid = shown.length ? h('div', { class: 'sh-grid' }, shown.map((name) => h('button', {
-      class: `sh-tile ${args.source === 'icon' && args.icon === name ? 'on' : ''}`, title: `${LIB.pretty(name)} — double-click to insert`,
+      class: `sh-tile ${args.source === 'icon' && args.icon === name ? 'on' : ''}`, 'data-key': name, title: `${LIB.pretty(name)} — double-click to insert`,
       'aria-pressed': String(args.icon === name),
       onclick: () => setArgs(app, { source: 'icon', icon: name }),
       ondblclick: () => { setArgs(app, { source: 'icon', icon: name }); app.runTool(TOOL, Object.assign(toolArgs(app), { source: 'icon', icon: name })).then((r) => r && app.toast(r.summary || r.status)); }
@@ -127,7 +127,7 @@ function render(app) {
     grid = h('div', {}, groups.map((g) => h('div', {},
       h('div', { class: 'sh-group' }, g),
       h('div', { class: 'sh-grid prim' }, LIB.PRIMITIVES.filter((p) => p.tags[0] === g).map((p) => h('button', {
-        class: `sh-tile prim ${args.source === 'primitive' && args.primitive === p.id ? 'on' : ''}`, title: `${p.label} — native AE shape (stays editable). Double-click to insert`,
+        class: `sh-tile prim ${args.source === 'primitive' && args.primitive === p.id ? 'on' : ''}`, 'data-key': p.id, title: `${p.label} — native AE shape (stays editable). Double-click to insert`,
         onclick: () => setArgs(app, { source: 'primitive', primitive: p.id }),
         ondblclick: () => { setArgs(app, { source: 'primitive', primitive: p.id }); app.runTool(TOOL, Object.assign(toolArgs(app), { source: 'primitive', primitive: p.id })).then((r) => r && app.toast(r.summary || r.status)); }
       }, h('span', { class: 'sh-ic', html: primSvg(p, { fill: look.fill === 'none' ? 'none' : 'currentColor', stroke: 'currentColor', sw: look.fill === 'none' ? 4 : 0 }) }), h('span', { class: 'sh-name' }, p.label)))))));

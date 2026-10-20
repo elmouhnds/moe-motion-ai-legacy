@@ -25,18 +25,20 @@
       var fixture = require({ comp: '/dev/preview-fixture-comp.js', studio: '/dev/preview-fixture-studio.js', layout: '/dev/preview-fixture-layout.js' }[q.get('fixture')] || '/dev/preview-fixture.js');
       var mem = require('/dev/platform-mem.js');
       mock.installAE(window, fixture, { readFile: window.__fetchText, evalCode: function (c) { return (0, eval)(c); } });
+      var hostDelay = Number(q.get('hostDelay') || 8), churn = q.get('ctxChurn');
       var cs = {
         evalScript: function (script, cb) {
+          if (churn && /context\.get/.test(script) && window.app && window.app.project && window.app.project.activeItem) window.app.project.activeItem.time += 1 / 25;
           setTimeout(function () {
             var r;
             try { r = (0, eval)(script); } catch (e) { r = 'EvalScript error.'; }
             cb(r === undefined ? 'undefined' : String(r));
-          }, 8);
+          }, hostDelay);
         }
       };
       var demoUp = q.get('demoUpdate') ? require('/dev/demo-update.js') : null;
       var platform = mem.createMemPlatform(q.get('demoAI') ? { apiKey: 'sk-ant-preview-demo', http: require('/dev/demo-ai.js') } : (demoUp ? { http: demoUp.http, system: demoUp.system } : {}));
-      require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform, ui: { theme: q.get('theme') || 'auto', accent: q.get('accent') || 'tomato', splash: q.get('splash') === '1', banners: q.get('banners') !== '0', motion: q.get('motion') || 'full', seenVersion: q.get('fresh') ? '' : '0.6.1' } }).then(function (app) {
+      require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform, ui: { theme: q.get('theme') || 'auto', accent: q.get('accent') || 'tomato', splash: q.get('splash') === '1', banners: q.get('banners') !== '0', motion: q.get('motion') || 'calm', motionV: 2, seenVersion: q.get('fresh') ? '' : '0.6.2' } }).then(function (app) {
         window.__app = app;
         if (demoUp) { app.services.settings.update({ updates: { feedUrl: 'https://updates.example.com/moe/latest.json' } }); app.render(); }
         if (q.get('seedBrand')) {

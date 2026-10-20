@@ -35,10 +35,12 @@ function apply(ui = {}) {
   if ((ui.theme || 'auto') === 'auto' && theme === 'dark' && aeColor) root.style.setProperty('--bg', `rgb(${Math.round(aeColor.red)}, ${Math.round(aeColor.green)}, ${Math.round(aeColor.blue)})`);
   else root.style.removeProperty('--bg');
   root.setAttribute('data-accent', ui.accent || 'tomato');
-  root.setAttribute('data-motion', ui.motion || 'full');
+  root.setAttribute('data-motion', ui.motion || 'calm');
   root.setAttribute('data-headings', ui.headings || 'display');
 }
 
 const reducedMotion = () => typeof document !== 'undefined' && document.documentElement.getAttribute('data-motion') === 'reduced';
+/** Artwork (SVG illustrations) only moves in Full motion. */
+const stillArt = () => typeof document !== 'undefined' && document.documentElement.getAttribute('data-motion') !== 'full';
 
-module.exports = { ACCENTS, THEMES, apply, readHost, resolveTheme, reducedMotion };
+module.exports = { ACCENTS, THEMES, apply, readHost, resolveTheme, reducedMotion, stillArt };

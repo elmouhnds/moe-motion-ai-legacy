@@ -31,7 +31,7 @@ function render(app) {
       h('div', { class: 'field' }, h('label', {}, 'Theme'), seg(theme.THEMES, st.ui.theme || 'auto', (v) => updUi({ theme: v }))),
       h('div', { class: 'field' }, h('label', {}, 'Accent'), h('div', { class: 'accent-row', role: 'radiogroup', 'aria-label': 'Accent colour' },
         theme.ACCENTS.map(([id, label, hex]) => h('button', { class: `accent-sw ${(st.ui.accent || 'tomato') === id ? 'on' : ''}`, role: 'radio', 'aria-checked': String((st.ui.accent || 'tomato') === id), title: label, 'aria-label': label, style: { background: hex }, onclick: () => updUi({ accent: id }) })))),
-      h('div', { class: 'field' }, h('label', {}, 'Motion'), seg([['full', 'Full'], ['reduced', 'Reduced']], st.ui.motion || 'full', (v) => updUi({ motion: v }))),
+      h('div', { class: 'field' }, h('label', {}, 'Motion'), seg([['calm', 'Calm'], ['full', 'Full'], ['reduced', 'Off']], st.ui.motion || 'calm', (v) => updUi({ motion: v }))),
       h('div', { class: 'field' }, h('label', {}, 'Headings'), seg([['display', 'Sora'], ['system', 'System']], st.ui.headings || 'display', (v) => updUi({ headings: v }))),
       h('div', { class: 'field' }, h('label', {}, 'Section banners'), h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(st.ui.banners !== false), onclick: () => updUi({ banners: st.ui.banners === false }) }),
         hiddenBanners.length ? h('button', { class: 'btn ghost', onclick: () => { app.services.store.set('banners-hidden', []); app.render(); } }, `Show ${hiddenBanners.length} hidden`) : null),

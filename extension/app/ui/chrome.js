@@ -53,7 +53,6 @@ function banner(app, sectionId) {
       c.stats ? h('div', { class: 'hero-stats' }, c.stats.map(([v, l]) => h('span', { class: 'hero-stat' }, h('b', {}, v), ` ${l}`))) : null),
     h('div', { class: 'hero-art', html: art.art(sectionId) }),
     h('button', { class: 'icon-btn hero-x', title: 'Hide this banner (Settings › Appearance brings it back)', 'aria-label': 'Hide banner', onclick: () => { app.services.store.set('banners-hidden', hidden.concat(sectionId)); app.render(); } }, icon('x', 'sm')));
-  if (theme.reducedMotion()) setTimeout(() => el.querySelectorAll('svg').forEach((s) => s.pauseAnimations && s.pauseAnimations()), 0);
   return el;
 }
 

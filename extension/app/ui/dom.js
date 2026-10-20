@@ -53,13 +53,52 @@ function h(tag, attrs, ...children) {
     if (v === undefined || v === null || v === false) continue;
     if (k === 'class') el.className = v;
     else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
-    else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k.startsWith('on') && typeof v === 'function') on(el, k.slice(2).toLowerCase(), v);
     else if (k === 'value') el.value = v;
     else if (k === 'html') el.innerHTML = v;
     else el.setAttribute(k, v === true ? '' : v);
   }
   append(el, children);
   return el;
+}
+
+/*
+ * Event handlers live on the element as __on<type>; one shared dispatcher calls the current one.
+ * morph() can then move fresh handlers onto the elements already on screen.
+ */
+function dispatch(e) { const f = this[`__on${e.type}`]; return f ? f.call(this, e) : undefined; }
+function on(el, type, fn) { el[`__on${type}`] = fn; el.addEventListener(type, dispatch); }
+
+/**
+ * Update the live DOM `a` to match a freshly built tree `b`, keeping the elements that are
+ * already on screen (so the button under the mouse is never swapped mid-hover or mid-click,
+ * animations keep running and scroll positions stay).
+ * Replaced instead of updated: different tag, data-key mismatch, data-fresh, form fields
+ * (input / textarea / select keep their own listeners and are restored by the shell's
+ * focus keeper), and canvases without an equal data-key (their drawing closures change).
+ */
+function morph(a, b) {
+  if (!a || !b) return b;
+  if (a.nodeType !== b.nodeType || a.nodeName !== b.nodeName) { a.replaceWith(b); return b; }
+  if (a.nodeType === 3 || a.nodeType === 8) { if (a.nodeValue !== b.nodeValue) a.nodeValue = b.nodeValue; return a; }
+  if (a.nodeType !== 1) { a.replaceWith(b); return b; }
+  const ka = a.getAttribute('data-key'), kb = b.getAttribute('data-key');
+  const tag = a.nodeName;
+  if (ka !== kb || b.hasAttribute('data-fresh') || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (tag === 'CANVAS' && !kb)) { a.replaceWith(b); return b; }
+  // attributes
+  for (const at of Array.from(a.attributes)) if (!b.hasAttribute(at.name)) a.removeAttribute(at.name);
+  for (const at of Array.from(b.attributes)) if (a.getAttribute(at.name) !== at.value) a.setAttribute(at.name, at.value);
+  // handlers
+  for (const k of Object.keys(a)) if (k.startsWith('__on') && !(k in b)) delete a[k];
+  for (const k of Object.keys(b)) if (k.startsWith('__on')) { if (!(k in a)) a.addEventListener(k.slice(4), dispatch); a[k] = b[k]; }
+  // children (by position; keyed children are replaced when their key changes)
+  const ac = Array.from(a.childNodes), bc = Array.from(b.childNodes);
+  for (let i = 0; i < bc.length; i++) {
+    if (i < ac.length) morph(ac[i], bc[i]);
+    else a.appendChild(bc[i]);
+  }
+  for (let i = bc.length; i < ac.length; i++) ac[i].remove();
+  return a;
 }
 
 function append(el, children) {
@@ -80,4 +119,4 @@ function relTime(iso) {
   return new Date(iso).toLocaleDateString();
 }
 
-module.exports = { h, icon, clear, append, relTime, ICONS };
+module.exports = { h, icon, clear, append, relTime, ICONS, morph, on };

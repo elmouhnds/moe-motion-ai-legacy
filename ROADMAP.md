@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.10b — Stability fix ✅ (v0.6.2)
+- [x] In-place rendering, click guard, adaptive polling, no moving hover styles, Calm motion, stress test
+- [ ] Confirm inside AE 2025 (TEST_REPORT.md → UI stability checklist 63–66)
+
 ## M1.10 — Distribution ✅ (v0.6.1)
 - [x] Windows installer with in-place updates, legacy cleanup and uninstall; Settings › Updates (verified download, install on AE close); `npm run release`
 - [ ] Verify on Windows 11 + AE 2025 (TEST_REPORT.md → Install checklist 55–62)

@@ -2,6 +2,20 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.6.2] — 2026-10-20 — Fix: flicker, trembling icons and ignored clicks
+Reported by the product owner inside After Effects: moving the mouse over icons made them blink and tremble, the pointer shook, and buttons did not respond.
+### Fixed
+- **Clicks ignored**: every state change rebuilt the whole panel, so a background refresh between mouse-down and mouse-up replaced the button and the click was lost. The panel now **updates the DOM in place** (`dom.morph`): elements on screen are kept, only what changed is touched; handlers are swapped onto the kept elements. Renders are coalesced per tick and **never run while a button is pressed** (they run right after the click).
+- **Trembling icon under the mouse**: hover styles moved tiles up 1–2 px, so at an edge the tile left the pointer, lost hover, came back, and so on. No hover or press style moves or resizes anything any more (border / shadow / brightness only).
+- **Blinking**: full rebuilds restarted every thumbnail and illustration. Kept elements keep animating; thumbnails are keyed by recipe.
+- **Load on After Effects**: selection polling ran every 1.5 s on AE's main thread while the pointer was over the panel; now ≥ 2.5 s, adaptive to AE's answer time (×12, up to 10 s), paused during and right after clicks/typing and when the panel is hidden; focus refreshes throttled; unchanged state no longer renders; repeated host errors render once.
+- **Motion "Calm" (new default)**: only the tile under the mouse and the Inspector preview animate, at most 30 fps; illustrations hold a finished frame. "Full" and "Off" remain in Settings › Appearance. Existing installs move from "Full" to "Calm" once.
+- Removed `backdrop-filter` and the logo's `drop-shadow` filter (costly in CEP).
+### Added
+- `npm run stress` (`tools/stress-ui.js`): AE-like stress in Chromium (slow host 250 ms + a selection that changes on every read). Before the fix: the element under the mouse was replaced in all views, 12–14 of 20 slow clicks registered, 22–24 hover flips at a tile edge, 5–18 % idle load. After: 0 swaps, 20/20 clicks, 0 flips, 1–4 % idle.
+- `tests/ui-stability.test.js` (jsdom): in-place updates keep the hovered element and run current handlers; keyed/form/canvas replacement rules; no-op state changes don't render; CSS guard against moving hover styles and `backdrop-filter`.
+- Diagnostics › Panel performance: renders, deferred renders, selection reads and read time (included in Copy report).
+
 ## [0.6.1] — 2026-10-20 — Easy install & in-place updates
 ### Added
 - **Windows installer** (`installer/moe-motion-ai.nsi`, NSIS 3, 64-bit, per-user, no admin): installs to one fixed folder named after the bundle id (`%APPDATA%\Adobe\CEP\extensions\tv.madtomato.moe.motionai`), wiped and rewritten on every install; removes older manual MOE copies (same bundle id only; developer junctions are unlinked, never followed); sets `PlayerDebugMode` for CSXS 12; one *Settings › Apps* entry with version, icon and uninstaller; asks to close After Effects; asks before a downgrade; English + Arabic; `/S` silent and `/WAITAE` (wait for AE to quit, then install silently). Uninstall keeps your data unless you say otherwise.

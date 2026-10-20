@@ -46,9 +46,10 @@ async function applyNow(app, tile) {
 
 function thumbEl(tile, cls) {
   if (tile.thumb.k === 'icon') return h('div', { class: `st-thumb icon ${cls || ''}` }, icon(tile.thumb.icon));
-  const canvas = h('canvas', { class: `st-thumb ${cls || ''}`, 'aria-hidden': 'true' });
+  const canvas = h('canvas', { class: `st-thumb ${cls || ''}`, 'aria-hidden': 'true', 'data-key': `${tile.id}|${cls || ''}|${JSON.stringify(tile.thumb)}` });
   const t0 = Math.random() * 3;
-  return widgets.animated(canvas, (now) => { const { c, W, H } = widgets.prep(canvas); thumbs.draw(c, W, H, tile.thumb, now / 1000 + t0); });
+  // Still frames use 1.6 s: every recipe has finished its move by then (phase() completes at 1.45 s).
+  return widgets.animated(canvas, (now) => { const { c, W, H } = widgets.prep(canvas); thumbs.draw(c, W, H, tile.thumb, now === null ? 1.6 : now / 1000 + t0); });
 }
 
 async function saveAsPreset(app, section, tile) {
@@ -131,7 +132,7 @@ function render(app, section) {
   const pinned = app.services.favorites.list().includes(tool.id);
 
   const grid = h('div', { class: 'st-grid' }, tiles.length ? tiles.map((t) => h('button', {
-    class: `st-tile ${t.id === tile.id ? 'on' : ''} ${t.user ? 'mine' : ''}`, title: `${t.label} — double-click to apply now${t.user ? ' · right-click to delete' : ''}`, 'aria-pressed': String(t.id === tile.id),
+    class: `st-tile ${t.id === tile.id ? 'on' : ''} ${t.user ? 'mine' : ''}`, 'data-key': t.id, title: `${t.label} — double-click to apply now${t.user ? ' · right-click to delete' : ''}`, 'aria-pressed': String(t.id === tile.id),
     onclick: () => { setSt(app, section, { tile: t.id, filled: null }); },
     ondblclick: () => applyNow(app, t),
     oncontextmenu: t.user ? (e) => { e.preventDefault(); removePreset(app, section, t); } : undefined

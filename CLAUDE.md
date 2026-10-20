@@ -46,6 +46,13 @@ Permanent rules for anyone (human or AI) working in this repository.
 - Default model `claude-opus-5-5`, effort `medium`, structured outputs (`output_config.format`). Forced `tool_choice` returns 400 on Opus 5.5 — do not use it.
 - Respect the monthly budget gate in `core/ai/cost.js`.
 
+## UI rules (v0.6.2 — learned from the flicker / dead-click report)
+- Render through `app.scheduleRender()` / state changes; the shell **morphs** the DOM in place (`dom.morph`). Never clear and rebuild the root. Give list items and canvases a stable `data-key`.
+- Event handlers go through `h(..., { onclick })` so morph can swap them; direct `addEventListener` only on inputs / textareas / selects (those are rebuilt) or elements marked `data-fresh`.
+- No hover / active style may move or resize an element (no transform, margin, padding, size, flex changes) — it makes elements tremble under a resting pointer. Use colour, border, shadow, brightness.
+- Anything that calls the host in the background must be throttled, adaptive to the host's answer time, and paused during pointer presses; AE runs ExtendScript on its main thread.
+- `npm run stress` must pass before a release.
+
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).
 - Tests run the **real host .jsx** against `tests/mock/ae-mock.js`. That proves logic, not host behaviour. Never describe mock results as After Effects results.

@@ -49,3 +49,4 @@
 | 45 | Update feed or host compromised | High | Low | HTTPS only, SHA-256 + size from the feed, user click required; next: Ed25519-signed feed with the public key bundled | Mitigated (partly) |
 | 46 | PlayerDebugMode=1 is required for unsigned CEP panels | Low | Certain | Per-user key only, left in place on uninstall (other panels may need it); a signed ZXP removes the need | Accepted |
 | 47 | Installer verified under Wine 9, not real Windows 11 | Med | Med | Install checklist 55–62 on a real machine | Verify on Windows |
+| 48 | UI behaviour inside AE's CEF (focus, events, repaint) differs from desktop Chromium | High | Med | In-place rendering, press guard, adaptive polling, no moving hover styles, Calm motion; `npm run stress`; Diagnostics counters | Verify in host (63–66) |

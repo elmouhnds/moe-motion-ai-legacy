@@ -7,7 +7,7 @@ const B = require('../../../features/brand/brands');
 function fontLabel(f) { return f ? `${f.family || f.ps}${f.style ? ' ' + f.style : ''}` : 'Not set'; }
 
 function fontPicker(app, current, onPick, arabicFirst) {
-  const box = h('div', { class: 'font-pick' });
+  const box = h('div', { class: 'font-pick', 'data-fresh': '' }); // draw() writes into list: rebuild as a unit
   const input = h('input', { class: 'txt', placeholder: current ? fontLabel(current) : 'Search installed fonts…', spellcheck: 'false' });
   const list = h('div', { class: 'font-list' });
   let fonts = null;

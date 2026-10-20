@@ -124,6 +124,10 @@ See `docs/features/STUDIO_v0.4.md`.
 - UI: `app/ui/theme.js` (theme/accent/motion/headings → `<html data-*>`), `art.js` (logo + section illustrations as token-coloured SVG), `chrome.js` (section banners, splash, What's New / About / Shortcuts sheets), `views/home.js`, `views/shapes.js`; `studio/library.js` gains Mine tiles, Save as preset, palette panel, NEW badges; `form.js` colour field.
 - Assets: `assets/icons/` (Lucide data + licence, built by `tools/build-icons.js`), `assets/fonts/` (Sora + OFL), `icons/` (panel icons for the manifest, built by `tools/build-panel-icons.js`).
 
+## 5h. Rendering (v0.6.2)
+- State → `scheduleRender()` (coalesced per microtask, deferred while a pointer is pressed) → views build a fresh tree with `h()` → `morph(live, fresh)` updates the live DOM in place. Handlers live on elements as `__on<type>` behind one dispatcher, so morph moves the newest closures onto kept elements. Inputs / textareas / selects and unkeyed canvases are replaced; `data-key` decides identity for tiles and thumbnails.
+- Background work: selection polling ≥ 2.5 s, adaptive to host latency, paused during interaction / hidden panel; thumbnails animate per Motion mode (Calm = hovered tile + Inspector, ≤ 30 fps).
+
 ## 5g. Distribution (v0.6.1)
 - `installer/moe-motion-ai.nsi` → per-user Setup.exe; install folder = bundle id, so every version lands in the same place. `install.json` in that folder records the installer and version.
 - `core/updater.js` (pure, injected `http` / `system`) + `platform.system` (Node: HTTPS-only download, SHA-256, detached launch, `extensionInfo`). The panel never replaces its own files: it hands a verified installer to Windows, which runs after After Effects quits (`/WAITAE`).

@@ -3,7 +3,7 @@
  * Panel shell + UI controller. Owns UI state and translates user actions into
  * service calls. All project changes go through services.executor.
  */
-const { h, icon, clear } = require('./dom');
+const { h, icon, clear, morph } = require('./dom');
 const { createState } = require('./state');
 const palette = require('./palette');
 const copilot = require('./copilot');
@@ -41,6 +41,12 @@ const resolveView = (v) => studio.ALIAS[v] || v;
 const TOAST_ICON = { ok: 'check', err: 'x', warn: 'pulse', info: 'info' };
 
 function createApp(root, services, env = {}) {
+  if (services.settings.get().ui.motionV !== 2) {
+    // v0.6.2: "Calm" becomes the default (v0.6.0/0.6.1 saved "full" for everyone).
+    const m = services.settings.get().ui.motion;
+    services.settings.update({ ui: { motion: !m || m === 'full' ? 'calm' : m, motionV: 2 } });
+    theme.apply(services.settings.get().ui);
+  }
   const ui = services.settings.get().ui;
   const app = {
     services,
@@ -60,7 +66,9 @@ function createApp(root, services, env = {}) {
   let toastTimer = null;
 
   /* ---------- rendering ---------- */
+  app.stats = { renders: 0, ctxReads: 0, ctxMs: 0, deferred: 0 };
   app.render = function render() {
+    app.stats.renders++;
     const s = app.state.get();
     const content = root.querySelector('.content');
     if (content) scrollTop = content.scrollTop;
@@ -68,7 +76,6 @@ function createApp(root, services, env = {}) {
     const active = document.activeElement;
     const fk = active && active.getAttribute && active.getAttribute('data-fk');
     const kept = fk ? { fk, value: active.value, a: active.selectionStart, b: active.selectionEnd } : null;
-    clear(root);
     const isSection = (id) => s.view === id || (id === 'settings' && s.view === 'diagnostics');
     const navBtn = ([id, label, ic]) => h('button', { class: 'nav-btn', role: 'tab', 'aria-selected': String(isSection(id)), title: label, 'aria-label': label, onclick: () => app.go(id) }, icon(ic), h('span', { class: 'nav-label' }, label));
     const current = [...MAIN, ...SECONDARY, ['diagnostics', 'Diagnostics']].find(([id]) => id === s.view) || MAIN[0];
@@ -100,7 +107,12 @@ function createApp(root, services, env = {}) {
       quickbar.popover(app),
       s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, s.toastKind ? h('span', { class: 'toast-ic' }, icon(TOAST_ICON[s.toastKind] || 'info', 'sm')) : null, h('span', {}, s.toast)) : null,
       s.modal ? chrome.sheet(app, s.modal) : null);
-    root.appendChild(appEl);
+    // Update in place: what is on screen stays the same element (no flicker, clicks never lost).
+    if (root.firstChild && root.firstChild.classList && root.firstChild.classList.contains('app')) morph(root.firstChild, appEl);
+    else { clear(root); root.appendChild(appEl); }
+    // Calm / reduced motion: illustrations hold still (SMIL paused) — fewer repaints inside AE.
+    if (theme.stillArt()) root.querySelectorAll('svg.moe-art').forEach((s) => { if (s.pauseAnimations && !s.__paused) { s.pauseAnimations(); try { s.setCurrentTime(2.2); } catch (e) { /* older engines */ } s.__paused = true; } });
+    else root.querySelectorAll('svg.moe-art').forEach((s) => { if (s.__paused) { s.unpauseAnimations(); s.__paused = false; } });
     const c2 = root.querySelector('.content');
     if (c2) c2.scrollTop = scrollTop;
     if (!app._densityPending) { app._densityPending = true; setTimeout(() => { app._densityPending = false; app.applyDensity(); }, 0); }
@@ -150,7 +162,24 @@ function createApp(root, services, env = {}) {
       h('button', { class: 'icon-btn', title: 'Refresh selection', onclick: () => app.refreshContext(true) }, icon('refresh', 'sm')));
   }
 
-  app.state.sub(() => app.render());
+  /*
+   * Render scheduling: state changes in one tick are coalesced into one render, and nothing
+   * re-renders between pointer-down and pointer-up (the press finishes on the same element,
+   * so the click always registers). The deferred render runs right after the click.
+   */
+  let renderQueued = false, pressing = false, pendingAfterPress = false;
+  app.scheduleRender = () => {
+    if (pressing) { pendingAfterPress = true; app.stats.deferred++; return; }
+    if (renderQueued) return;
+    renderQueued = true;
+    Promise.resolve().then(() => { renderQueued = false; if (pressing) { pendingAfterPress = true; return; } app.render(); });
+  };
+  app.state.sub(() => app.scheduleRender());
+  document.addEventListener('pointerdown', () => { pressing = true; }, true);
+  const release = () => { if (!pressing) return; setTimeout(() => { pressing = false; if (pendingAfterPress) { pendingAfterPress = false; app.scheduleRender(); } }, 0); };
+  document.addEventListener('pointerup', release, true);
+  document.addEventListener('pointercancel', release, true);
+  window.addEventListener('blur', release);
 
   /** kind: 'ok' | 'err' | 'warn' | 'info' (optional; adds an icon and colour). */
   app.toast = (msg, ms = 2600, kind = null) => {
@@ -211,13 +240,15 @@ function createApp(root, services, env = {}) {
     if (services.executor.running) return null;
     ctxInFlight = (async () => {
       try {
+        const t0 = Date.now();
         const ctx = await services.executor.readContext();
+        app.stats.ctxReads++; app.stats.ctxMs = Date.now() - t0;
         lastCtxAt = Date.now();
         const prev = JSON.stringify(app.state.get().ctx);
         if (JSON.stringify(ctx) !== prev || app.state.get().hostError) app.state.set({ ctx, hostError: null });
       } catch (e) {
         services.logger.warn('ui', 'context read failed', { code: e.code, message: e.message });
-        app.state.set({ hostError: e.message });
+        if (app.state.get().hostError !== e.message) app.state.set({ hostError: e.message });
       } finally { ctxInFlight = null; }
     })();
     return ctxInFlight;
@@ -488,13 +519,23 @@ function createApp(root, services, env = {}) {
   // AE sends no selection-change events to panels: re-read on focus / hover,
   // and poll lightly only while the pointer is over the panel.
   let poll = null;
-  window.addEventListener('focus', () => app.refreshContext());
-  document.addEventListener('mouseenter', () => {
-    app.refreshContext();
-    clearInterval(poll);
-    poll = setInterval(() => { if (!document.hidden) app.refreshContext(); }, 1500);
-  });
-  document.addEventListener('mouseleave', () => clearInterval(poll));
+  // Selection polling is light and adaptive: only while the pointer has been over the panel in
+  // the last 20 s, never while a button is pressed or right after an interaction, and slower
+  // when After Effects answers slowly (each read runs on AE's main thread).
+  let lastPointer = 0, lastInput = 0;
+  document.addEventListener('pointermove', () => { lastPointer = Date.now(); }, { passive: true, capture: true });
+  document.addEventListener('pointerdown', () => { lastPointer = lastInput = Date.now(); }, true);
+  document.addEventListener('keydown', () => { lastInput = Date.now(); }, true);
+  let lastFocusRead = 0;
+  window.addEventListener('focus', () => { if (Date.now() - lastFocusRead > 1500) { lastFocusRead = Date.now(); app.refreshContext(); } });
+  const pollTick = () => {
+    const now = Date.now();
+    const active = now - lastPointer < 20000 && !document.hidden;
+    if (active && !pressing && now - lastInput > 800) app.refreshContext();
+    const ms = app.stats.ctxMs || 0;
+    poll = setTimeout(pollTick, Math.min(10000, Math.max(2500, ms * 12)));
+  };
+  poll = setTimeout(pollTick, 2500);
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => app.applyDensity()).observe(root);
 
   return app;
