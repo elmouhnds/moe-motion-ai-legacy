@@ -47,7 +47,8 @@ function control(key, p, value, set, ctx) {
 }
 
 function renderForm(params, args, onChange, { advancedOpen, onToggleAdvanced, ctx } = {}) {
-  const entries = Object.entries(params || {});
+  // `hidden` params are set by custom UI (e.g. a picker); `showIf(args)` makes a field conditional.
+  const entries = Object.entries(params || {}).filter(([, p]) => !p.hidden && (!p.showIf || p.showIf(args)));
   const main = entries.filter(([, p]) => !p.advanced);
   const adv = entries.filter(([, p]) => p.advanced);
   const field = ([key, p]) => h('div', { class: `field ${p.type === 'text' ? 'stack' : ''}`, title: p.description || '' },

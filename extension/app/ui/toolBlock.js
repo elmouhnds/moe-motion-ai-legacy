@@ -5,6 +5,7 @@ const { renderForm } = require('./form');
 const { renderReport } = require('./report');
 const contextReq = require('../../core/context');
 const { defaults } = require('../../core/schema');
+const widgets = require('./widgets');
 
 function availability(tool, ctx, args) {
   const r = contextReq.evaluate(tool.requires, ctx);
@@ -48,6 +49,7 @@ function renderTool(app, tool, { openByDefault = false } = {}) {
         onclick: () => setArgs(Object.assign({}, args, p.args)),
         oncontextmenu: p.user ? (e) => { e.preventDefault(); app.services.presets.remove(p.id); app.render(); } : undefined
       }, p.label))) : null,
+      (tool.ui && tool.ui.renderBody) || widgets.body[tool.id] ? ((tool.ui && tool.ui.renderBody) || widgets.body[tool.id])(args, setArgs, { h, app, ctx: s.ctx }) : null,
       renderForm(tool.params, args, setArgs, { ctx: s.ctx, advancedOpen: s.advanced[tool.id], onToggleAdvanced: () => app.state.set((st) => ({ advanced: Object.assign({}, st.advanced, { [tool.id]: !st.advanced[tool.id] }) })) }),
       h('div', { class: 'actions' },
         h('button', { class: 'btn primary', disabled: !av.ok || !!s.running, onclick: () => app.runTool(tool.id, args) },
@@ -57,7 +59,8 @@ function renderTool(app, tool, { openByDefault = false } = {}) {
         !av.ok ? h('span', { class: 'why' }, av.hint) : null),
       av.ok && av.preview && av.preview.items.length && !result ? h('ul', { class: 'preview-list' }, av.preview.items.slice(0, 6).map((i) => h('li', {}, i)), av.preview.items.length > 6 ? h('li', {}, `+${av.preview.items.length - 6} more`) : null) : null,
       renderReport(result, { onRestore: () => app.restore(result.checkpointId, tool.id), onDismiss: () => app.clearResult(tool.id) }),
-      result && tool.ui && tool.ui.renderResult ? tool.ui.renderResult(result, { h, app }) : null) : null);
+      result && tool.ui && tool.ui.renderResult ? tool.ui.renderResult(result, { h, app }) : null,
+      result && widgets.result[tool.id] ? widgets.result[tool.id](result, { h, app }) : null) : null);
 }
 
 module.exports = { renderTool, availability };

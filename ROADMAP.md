@@ -23,6 +23,11 @@
 - [ ] Host verification (TEST_REPORT.md → Studio checklist)
 - Next: Proximity time-remap (play forward/reverse), glow/drop-shadow/exposure reactions, Look At 3D; per-character 3D text presets; preset favourites and render-accurate previews (rendered thumbnails); brand colour sets for gradients; AI "palette from brief"; installed AI keyer (e.g. CorridorKey) as Screen Key engine via `effects.find`
 
+## M1.7 — Layout & Speed ✅ (v0.4.0)
+- [x] Grid Builder (+ guides, place in cells), Resize & Adapt (smart, keyframes kept, Claude layout), Zoom & Focus, Glass, Quick Bar (RKBar set), one-click expressions, Generate on Green (prompt + import & key)
+- [ ] Host verification (TEST_REPORT.md → Layout & Speed checklist 29–40)
+- Next: ClickZoom Match Cut + 3D camera depth; zoom from markers; click sounds; Glass dispersion (RGB split) and Essential Graphics controls; Grid: per-item time offset (stagger keyframes), hex packing, image-grid from a folder; Adapt: text box reflow (paragraph width / line breaks), batch export of several formats in one click, render-queue hand-off; Quick Bar: Split Text into layers, keyframe nudge/retime; generation provider connectors (Firefly Services, Runway, a local ComfyUI bridge) once you choose one and its API docs are verified; CorridorKey as the keyer when installed
+
 ## M2 — Motion Director depth
 - Visual ease graph editor (bezier handles → speed/influence), read current ease from selection
 - Keyframe timing tools: retime, scale around playhead, snap keys to whole frames, reverse

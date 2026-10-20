@@ -13,14 +13,28 @@ const brand = require('./brand/tools');
 const text = require('./text/tools');
 const proximity = require('./proximity/tools');
 const select = require('./select/tools');
+const adapt = require('./adapt/tools');
+const grid = require('./grid/tools');
+const zoom = require('./zoom/tools');
+const glass = require('./glass/tools');
+const quick = require('./quick/tools');
+const exprQuick = require('./expressions/quick');
+const green = require('./generate/green');
 
 const TOOLS = [
   smartEase, stagger, proximity.apply, proximity.centerAnchor, proximity.remove,
+  zoom.focus, zoom.follow, zoom.cursor,
   text.animate, text.removeAnimation,
   brand.applyColor, brand.applyFont, brand.extractPalette,
   select.selectLayers,
-  expr.apply, expr.validate, expr.inspect, expr.remove, assist,
-  ...compositing
+  grid.build, grid.update, grid.remove, grid.guides, grid.placeInCells,
+  adapt.resize, adapt.suggest,
+  exprQuick.quick, expr.apply, expr.validate, expr.inspect, expr.remove, assist,
+  quick.reveal, quick.purge, quick.duplicate, quick.flip, quick.parentNull, quick.precompose, quick.separate,
+  quick.selectSame, quick.reverseKeys, quick.mirrorKeys, quick.animate, quick.trim, quick.typewriter, quick.counter,
+  ...compositing,
+  glass.apply, glass.look,
+  green.greenPrompt, green.importKey
 ];
 
 function registerAll(registry) {

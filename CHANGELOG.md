@@ -2,6 +2,25 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.4.0] — 2026-10-20 — Layout & Speed: Grid, Resize & Adapt, Zoom, Glass, Quick Bar
+Design: `docs/features/STUDIO_v0.4.md`.
+### Added
+- **Layout** section. **Grid Builder** (Grid Builder-style, extended): one `MOE Grid N` null with Expression Controls and Dropdown menus; modes Grid, Radial, Spiral, Sunflower, Path, Sphere; order rows / columns / snake / seeded random; row offset (honeycomb); twist, scale step, random position/rotation/scale; **Build** animation (Pop, Fade, Rise, Pop + Fade, Drop, Spin In × Index, Reverse, Center Out, Edges In, Random; stagger) with optional keys; built-in **Effector**; auto spacing / columns / radius from measured layer sizes; live canvas preview using the same maths as the expressions; **Grid Controls** (live), **Release / Freeze**. **Layout Guides** (columns, rows, gutters, margins → composition guides) and **Place in Cells** (keeps keyframes).
+- **Resize & Adapt** (CompResizer-style + responsive): Fit / Fill / Keep / **Smart** layout (background cover, pinned corners, bands, content re-stacked when the orientation flips, safe margins, nested layout pre-comps adapted inside a copy). Every keyframe kept (values, spatial tangents, ease speeds re-mapped) or `MOE Adapt` rig nulls. New comp by default; measured read-back; plan preview with per-layer role/zone overrides; **Ask Claude** layout suggestion (names, text and boxes only).
+- **Zoom & Focus** (ClickZoom-style): **Focus Zoom** on a point (map picker) or the selected layer (auto level), zoom in / hold / out, 4 eases, chained zooms pan, end at playhead, motion blur, spotlight dim — all on one `MOE Zoom` rig; **Follow Zoom** (smoothed, edge-clamped expression); **Cursor Animator** (arrow / hand, travel + hold, click pulse, ripple ring, fade-out) from a keyed null.
+- **Glass** (Glasser-style): liquid / frosted glass from native effects on shapes, text, footage or pre-comps; 7 looks; tint from the Brand Kit; rim light, tint and shadow layers linked to the source; every amount on `MOE Glass N`; **Glass Look**.
+- **Quick Bar** (RKBar-style) in every section + **Quick** section (pin to bar, right-click for options): Reveal in Project / Folder / Open pre-comp, Purge cache, Duplicate comp (deep), Flip H/V, Parent to Null, Pre-compose, Center Anchor, Separate X/Y keeping easing, Select Same Property, Reverse keyframes, Mirror / Clone keys at the playhead, Smart Ease, Slide in/out (4 directions, off-screen or by distance, overshoot, stagger), Fade in/out, Scale up/down, Spin in, Trim Paths (draw / erase / travel / draw + erase), Typewriter (Arabic → words), Number Counter.
+- **One-click expressions** with icons: Wiggle, Wiggle X, Wiggle Y, Step Wiggle, Blinker, Flicker, Auto Fade, Loop Cycle, Ping-Pong, Loop Offset, Loop In + Out, Time Rotation, Pendulum, Pulse, Float, Inertia Bounce, Stop Motion — natural target property per preset, optional live Slider controls.
+- **Generate on Green**: Claude writes a production prompt for your image / video / 3D generator; the chroma-green (#00B140) rules and negative prompt are enforced locally whatever the AI writes; **Import & Key** imports the result at the playhead, fits it and runs the Screen Key chain.
+- Host ops (`layout.jsx`, `fx.jsx`, `quick.jsx`): `layers.bounds`, `layers.describe`, `transform.remap/restore`, `layers.setParent`, `adapt.apply`, `adapt.restoreInPlace`, `comps.remove`, `guides.set`, `paths.find`, `props.values`, `props.bake/unbake`, `layers.createAdjustment`, `layers.createSolid`, `layers.duplicateLinked`, `layers.setAttrs`, `layers.setMatte`, `layers.move`, `masks.ellipse`, `keys.write/list/remove`, `shapes.cursor`, `effects.setMenu`, `footage.importToComp/remove`, `project.reveal`, `app.purge`, `comps.deepDuplicate`, `layers.flip`, `layers.parentToNull/unparentFromNull`, `layers.precompose`, `position.separate`, `props.select`, `keys.reverse/rebuild/mirror`, `shapes.trim/untrim`.
+- UI: tool widgets (`app/ui/widgets.js`), `renderBody` hook, `hidden` / `showIf` params, 50 new icons.
+- Mock: expression runtime (`tests/mock/ae-expr.js`) that evaluates MOE's generated expressions (toComp/fromComp, effects, paths, vector maths); masks, shapes, solids, parenting, track mattes, 3D toggle, comp duplicate, guides, import, pre-compose, separated dimensions; linear key interpolation.
+- Tests: 156 (132 behaviour + 24 UI module loads); 41 preview scenarios.
+### Changed
+- `layers.createNull` accepts `anchor`, `threeD`, `undoLabel` (backward compatible).
+- Tool search ranks word-start matches higher.
+- Rail: Quick · Motion · Text · Brand · Layout · Select · Expressions · Comp · Tools.
+
 ## [0.3.0] — 2026-10-20 — Studio: Text, Brand, Proximity, Select
 Design: `docs/features/STUDIO_v0.3.md`.
 ### Added

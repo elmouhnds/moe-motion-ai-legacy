@@ -1,16 +1,16 @@
 # Test Report
 
-Last run: 2026-10-20 (v0.3.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-20 (v0.4.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
 | Layer | How it was tested | Result |
 |---|---|---|
-| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 116/116 automated tests pass (all suites) |
-| ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (10 files) |
+| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 156/156 automated tests pass (132 behaviour + 24 UI module loads) |
+| ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (13 files) |
 | Core (registry, schema, permissions, executor, storage, logger, bridge) | Unit + integration tests | Pass |
 | Claude integration | Mocked HTTPS responder: request shape, retries, refusal, truncation, 401, offline, budget | Pass — **no real API call was made** |
-| Panel UI | Browser preview (`dev/preview.html`) with the real UI code + real host .jsx on the mock; Playwright clicks through 29 scenarios; zero page/console errors | Pass — **not the CEP runtime** |
+| Panel UI | Browser preview (`dev/preview.html`) with the real UI code + real host .jsx on the mock; Playwright clicks through 41 scenarios; zero page/console errors | Pass — **not the CEP runtime** |
 | Colour contrast | `tools/check-contrast.js`, WCAG, both themes | Pass |
 | **Inside After Effects 2025** | — | **Not run yet** |
 
@@ -64,6 +64,21 @@ What it does not prove: real AE behaviour (timing of `expressionError`, selectio
 - ✅ Validate: reports syntax errors and leaves the property unchanged
 - ✅ Inspect and Remove
 - ✅ Expression Assistant works offline-safely: clear error, no host change
+- ✅ Green prompt rules are enforced even when the AI text forgets them or asks for another background
+- ✅ Green prompt via Claude (mocked HTTP): enforced and returned with keying advice
+- ✅ Import & Key: generated file imported at the playhead, fitted and keyed (Keylight chain); restore removes it
+- ✅ Glass: adjustment matted to the source + linked tint/rim/shadow; controls drive the effects; restore
+- ✅ Glass Look: switches controls on an existing glass
+- ✅ Layouts: rectangular, snake, columns order, honeycomb offset (pure)
+- ✅ Layouts: radial ring / sphere radius / phyllotaxis are geometric
+- ✅ Layout guides: columns, gutters, margins and cells
+- ✅ Grid build (rect): null + controls + live expressions; mock-evaluated positions equal the JS preview; restore is exact
+- ✅ Grid build: radial with face-center, random order, animate-in keys on Build (Rise style)
+- ✅ Grid build: sphere makes items 3D and restores them to 2D
+- ✅ Grid build: path mode follows a shape path (points evaluated on the path)
+- ✅ Grid build: refuses to overwrite your expressions unless "Replace existing", and leaves no null behind
+- ✅ Grid remove + freeze
+- ✅ Layout guides + Place in Cells (keyframes kept, measured centres)
 - ✅ host loads and answers ping
 - ✅ context.get reads only the selection, with stable addresses
 - ✅ context.get with no project / no comp returns empty context, not an error
@@ -71,6 +86,15 @@ What it does not prove: real AE behaviour (timing of `expressionError`, selectio
 - ✅ arguments cannot inject ExtendScript
 - ✅ stale address is detected by matchName verification
 - ✅ comp switch between read and write is refused
+- ✅ Planner: roles — background, band, pinned, content, skip
+- ✅ Planner: Fit / Fill / Keep are one uniform map for every layer
+- ✅ Planner: smart 16:9 → 9:16 keeps the logo top-left, CTA bottom-right, stacks headline above product, BG covers
+- ✅ Planner: overrides and Claude layout are applied and clamped
+- ✅ Adapt: 16:9 → 9:16 as a new comp keeps every keyframe, original untouched, verified by measurement; restore removes the copy
+- ✅ Adapt: in place with rig nulls — layers parented to MOE Adapt rigs, values untouched; restore is exact
+- ✅ Adapt: in place direct — restore puts values, keys and eases back
+- ✅ Adapt: a full-frame layout pre-comp is adapted inside a copy and swapped in
+- ✅ Adapt: same size is refused; custom size validated
 - ✅ Smart Ease: correct dimension count per value type, verified by read-back
 - ✅ Smart Ease: HOLD sides are preserved, not converted
 - ✅ Smart Ease: checkpoint restores exact previous ease and interpolation
@@ -93,6 +117,14 @@ What it does not prove: real AE behaviour (timing of `expressionError`, selectio
 - ✅ History records verified runs
 - ✅ store: atomic JSON docs, jsonl logs, corrupt file recovery
 - ✅ secrets (non-Windows fallback): stored outside source, mode 0600, clearable
+- ✅ Reverse keyframes: times mirrored inside the span, values swapped; restore rebuilds
+- ✅ Clone & Mirror keys at the playhead (out animation)
+- ✅ Flip horizontal negates scale on value/keys; restore flips back
+- ✅ Quick Animate: slide in right→left off-screen ends at the current pose; fade out; restore
+- ✅ Trim Paths travel: MOE Trim added, End and Start keyed with lag; restore removes it
+- ✅ Typewriter on Arabic text uses Words; Counter writes a live Source Text expression
+- ✅ Parent to Null, Select Same Property, Pre-compose, Separate X/Y, Duplicate deep, Reveal, Purge
+- ✅ Quick expressions: wiggle on natural target, wiggle X keeps Y, blink, loops need keys, live controls
 - ✅ recipe validation: binds params, rejects unknown tools/params/non-callable tools
 - ✅ recipe save → preflight → run (no AI needed) → history
 - ✅ Tool Factory draft conversion keeps Claude output untrusted
@@ -114,41 +146,14 @@ What it does not prove: real AE behaviour (timing of `expressionError`, selectio
 - ✅ Select: types, filters, modes, search, same-as, labels, invert, history
 - ✅ Select tool (Copilot) and layer switches with restore
 - ✅ Copilot catalog includes the new tools and context carries brands + preset ids
-- ✅ UI module loads: main.js
-- ✅ UI module loads: ui/copilot.js
-- ✅ UI module loads: ui/diff.js
-- ✅ UI module loads: ui/dom.js
-- ✅ UI module loads: ui/form.js
-- ✅ UI module loads: ui/palette.js
-- ✅ UI module loads: ui/report.js
-- ✅ UI module loads: ui/shell.js
-- ✅ UI module loads: ui/state.js
-- ✅ UI module loads: ui/textPreview.js
-- ✅ UI module loads: ui/toolBlock.js
-- ✅ UI module loads: ui/views/brand.js
-- ✅ UI module loads: ui/views/diagnostics.js
-- ✅ UI module loads: ui/views/expressions.js
-- ✅ UI module loads: ui/views/favorites.js
-- ✅ UI module loads: ui/views/history.js
-- ✅ UI module loads: ui/views/motion.js
-- ✅ UI module loads: ui/views/select.js
-- ✅ UI module loads: ui/views/settings.js
-- ✅ UI module loads: ui/views/text.js
-- ✅ UI module loads: ui/views/tools.js
+- ✅ Zoom maths: centre mode clamps so the frame stays covered; in-place keeps the point
+- ✅ Focus Zoom on the selected layer: rig + Transform effect + keys; read-back at zoom-in; restore removes the rig
+- ✅ Focus Zoom chains: a second zoom starts from the rig state (pan), restore removes only its keys
+- ✅ Follow Zoom: anchor expression follows the target and is clamped
+- ✅ Cursor Animator: cursor layer with travel/hold, pulse and ripple from a keyed null
+- ✅ 24 × "UI module loads" (every panel UI file parses and loads)
 
-Coverage against the requested test areas:
-
-| Area | Covered by |
-|---|---|
-| Keyframes | Smart Ease dims per type (OneD / ThreeD / ThreeD_SPATIAL), HOLD preservation, restore exactness |
-| Expressions | apply / engine error revert / validate / inspect / remove / restore |
-| Parenting | Context reports `parentIndex`; no tool changes parenting yet — **no dedicated test** |
-| Different FPS | Stagger frame-exact at 23.976, 24, 25, 29.97, 30, 50, 59.94, 60 |
-| Property types | OneD, ThreeD, ThreeD_SPATIAL; mock rejects wrong ease array sizes like AE does |
-| Existing animations | Keys move with layer on stagger and return on restore; existing ease/interp restored exactly |
-| Undo behaviour | Undo-group open/close balance and labels asserted; **real Edit › Undo not testable without AE** |
-| API failures / offline | 401, 429 retry, refusal, max_tokens, network down, disabled, no key, budget |
-| Large selections | 300-layer stagger in one host call / one undo group; 250-layer context truncation |
+Expression maths: the mock now *evaluates* generated expressions (`tests/mock/ae-expr.js`) — Grid positions, Zoom follow, Glass links and Quick expressions are checked numerically, not only for syntax. This is still not the AE expression engine.
 
 ### Compositing module (v0.2.0) — acceptance tests from docs/features/COMPOSITING.md §7
 | AT | Result (mock host) |
@@ -175,7 +180,7 @@ Coverage against the requested test areas:
 Mock limitations specific to this module: the mock's `sampleImage` averages a procedural image; its Keylight is a colour-distance threshold and its Channel Mixer applies the documented affine maths. Real Keylight quality, real Channel Mixer units, and real parameter names are **not** proven here.
 
 ## UI preview scenarios (node tools/screenshot.js)
-motion, motion-compact (260 px), motion-wide (560 px), expressions, copilot plan, copilot executed, expression assistant diff, tool factory draft, history after a run, settings, diagnostics, command palette, light theme — screenshots in `dev/screens/` (git-ignored). The AI scenarios use canned responses (`dev/demo-ai.js`, preview only).
+motion, motion-compact (260 px), motion-wide (560 px), expressions, copilot plan, copilot executed, expression assistant diff, tool factory draft, history after a run, settings, diagnostics, command palette, light theme, Text/Brand/Select/Proximity (v0.3), and v0.4: Quick section, Quick options popover, Quick Bar run, Grid preview, Ring preset, Grid built + verification, Adapt plan preview, Adapt run, Layout Guides, Focus Zoom map picker, Glass applied, one-click expressions — screenshots in `dev/screens/` (git-ignored). The AI scenarios use canned responses (`dev/demo-ai.js`, preview only).
 
 ## Host checklist (run on Windows 11 + After Effects 2025)
 Record results here with AE version/build from the Diagnostics view.
@@ -194,6 +199,20 @@ Record results here with AE version/build from the Diagnostics view.
 12. Disconnect network → local tools still work; AI shows "Cannot reach the Claude API".
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
+
+### Layout & Speed checklist (v0.4.0)
+29. Grid Builder: select 12 layers → Wall / Ring / Galaxy / Globe; preview in the panel matches the comp; change Spacing, Twist, Build in Effect Controls; scrub the Build keys; JavaScript and Legacy expression engines; time per frame with 100+ items.
+30. Grid Path mode on a pen-drawn shape layer and on a masked solid; Path Offset animates items along it.
+31. Grid Release (layers return exactly) and Freeze (static values, no expressions); History › Restore.
+32. Layout Guides: guides appear at the right pixels; View › Snap to Guides; Restore removes exactly the added guides (records the `comp.guides` index base).
+33. Resize & Adapt on a real 16:9 key visual with animation: 9:16, 1:1, 4:5 copies; compare motion timing and easing; check backgrounds cover, logo corner, CTA, re-stacked content; Ask Claude with an API key; in-place + Restore.
+34. Adapt on a project whose layout lives in one full-frame pre-comp → nested copy is created and swapped in; original pre-comp untouched.
+35. Focus Zoom on a screen recording: point and layer, chained zooms pan, end at playhead, motion blur on render; record the Transform effect parameter mapping in the report ("mapping unverified" or not).
+36. Follow Zoom on a tracked null; Cursor Animator from a null keyed at click points (arrow and hand).
+37. Glass on a rounded rectangle, a text layer and a PNG with alpha; all 7 looks over footage; animate the source (move/scale/rotate) → glass follows; Optics Compensation direction looks like a lens; Restore.
+38. Quick Bar: each button once (Reveal folder opens Explorer; Purge; Flip; Parent to Null with keyframed children stays in place; Separate X/Y keeps the graph shape; Reverse / Mirror; Slide in/out; Trim Paths; Typewriter on Arabic; Counter).
+39. One-click expressions on Position/Scale/Rotation/Opacity and on keyed properties (loops), with Live controls; JavaScript and Legacy engines.
+40. Generate on Green: with an API key, write a prompt for image / video / 3D; generate in your tool; Import & Key a PNG and an MP4 → Keylight chain verified.
 
 ### Studio checklist (v0.3.0)
 23. Text: apply IN Down to an English and an Arabic text layer at the CTI; compare with your own `Animation_IN_Down.ffx` applied manually (same timing, ease, look). Apply OUT Down → ends at the layer out point.

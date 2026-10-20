@@ -31,7 +31,9 @@ Permanent rules for anyone (human or AI) working in this repository.
 - Effect parameters: resolve by English name first; match-name/order fallbacks only when the effect has the exact expected parameter count (`expectParams`). A host op that cannot resolve everything must remove what it added and fail with the parameter list.
 - Arabic text: never animate per character by default (letters disconnect) — use Words/Lines; set RTL + universal composer when applying Arabic fonts.
 - Never modify shared sources (e.g. `SolidSource.color`) as a side effect; use per-layer effects.
-- Text animators and effects MOE creates are named (`MOE In`, `MOE Out`, `MOE Brand Fill`, `MOE Prox …`, `MOE Effector N`) so they can be found, replaced and removed safely.
+- Text animators, layers and effects MOE creates are named (`MOE In`, `MOE Out`, `MOE Brand Fill`, `MOE Prox …`, `MOE Effector N`, `MOE Grid N`, `MOE Adapt • …`, `MOE Zoom`, `MOE Spotlight N`, `MOE Cursor N`, `MOE Glass N [Tint|Rim|Shadow]`, `MOE Trim`, `MOE Counter`, `MOE Typewriter`) and expressions are tagged (`// MOE Proximity`, `// MOE Grid`, `// MOE Glass`, `// MOE Expr`, `// MOE Zoom Follow`, `// MOE Counter`) so they can be found, replaced and removed safely.
+- Layout maths lives in pure modules (`features/grid/layouts.js`, `features/adapt/planner.js`); generated expressions must mirror it, and tests compare mock-evaluated expressions with the pure maths.
+- Never claim AI generates images or video: Claude writes prompts; generation is a separate provider.
 - Pixel measurement uses the documented probe pattern (temporary null + expression `sampleImage` + `valueAtTime`); the probe is removed in `finally` and the layer count is verified.
 
 ## AI / cost rules

@@ -7,6 +7,7 @@ const { h, icon, clear } = require('./dom');
 const { createState } = require('./state');
 const palette = require('./palette');
 const copilot = require('./copilot');
+const quickbar = require('./quickbar');
 const views = {
   motion: require('./views/motion'),
   expressions: require('./views/expressions'),
@@ -18,11 +19,13 @@ const views = {
   compositing: { render: (app) => require('./views/motion').renderCategory(app, 'compositing') },
   text: require('./views/text'),
   brand: require('./views/brand'),
-  select: require('./views/select')
+  select: require('./views/select'),
+  layout: { render: (app) => require('./views/motion').renderCategory(app, 'layout') },
+  quick: { render: (app) => quickbar.view(app) }
 };
 
 // Sections by creative purpose (left rail). Diagnostics opens from Settings and the palette.
-const MAIN = [['motion', 'Motion', 'motion'], ['text', 'Text', 'type'], ['brand', 'Brand', 'brand'], ['select', 'Select', 'cursor'], ['expressions', 'Expressions', 'expr'], ['compositing', 'Comp', 'layers'], ['tools', 'Tools', 'tools']];
+const MAIN = [['quick', 'Quick', 'bolt'], ['motion', 'Motion', 'motion'], ['text', 'Text', 'type'], ['brand', 'Brand', 'brand'], ['layout', 'Layout', 'grid'], ['select', 'Select', 'cursor'], ['expressions', 'Expressions', 'expr'], ['compositing', 'Comp', 'layers'], ['tools', 'Tools', 'tools']];
 // Diagnostics is reached from Settings and the command palette (keeps the header within 340 px).
 const SECONDARY = [['favorites', 'Favorites', 'star'], ['history', 'History', 'history'], ['settings', 'Settings', 'gear']];
 
@@ -70,8 +73,10 @@ function createApp(root, services, env = {}) {
           h('span', { class: 'spacer' }),
           h('button', { class: 'search-btn', title: 'Search tools (Ctrl+K)', onclick: () => palette.open(app) }, icon('search', 'sm'), h('span', { class: 'label' }, 'Search'), h('span', { class: 'kbd' }, 'Ctrl K'))),
         contextStrip(s),
+        quickbar.strip(app),
         h('div', { class: 'content' }, (views[s.view] || views.motion).render(app)),
         copilot.render(app)),
+      quickbar.popover(app),
       s.toast ? h('div', { class: 'toast', role: 'status' }, s.toast) : null);
     root.appendChild(appEl);
     const c2 = root.querySelector('.content');

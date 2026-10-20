@@ -105,9 +105,18 @@ See `docs/features/STUDIO_v0.3.md`.
 - **Proximity**: pure expression generator (`features/proximity/expressions.js`) + effector controls via `effects.ensure` + `expressions.set`; restore removes what was created.
 - **Select**: pure matcher over `layers.list` snapshots; selection changes go through `layers.setSelection`; history lives in the panel because AE does not undo selections.
 
+## 5d. Layout & Speed modules (v0.4.0)
+See `docs/features/STUDIO_v0.4.md`.
+- **Measurement**: `layers.bounds` extends the probe pattern (temporary null + Point Controls running `sourceRectAtTime` + `toComp`) to give comp-space boxes at any time; `layers.describe` gives structure (parents, expressions, pre-comps).
+- **Adapt**: pure planner (`features/adapt/planner.js`) → per-layer affine `p' = s·p + d` → `adapt.apply` (duplicate / resize / remap keys or rig nulls / nested copies) in one undo group → measured again for verification.
+- **Grid**: `features/grid/layouts.js` is the single source of layout maths; `expressions.js` emits the same maths as AE expressions; the panel preview and the read-back check use `layouts.js`, so preview = result.
+- **Zoom / Glass / Quick**: small host primitives (`fx.jsx`, `quick.jsx`) composed by tools; every created layer carries a `MOE …` name so restore and removal are guarded by name.
+- **UI**: `app/ui/widgets.js` holds tool-specific widgets (canvas previews, plan diagram, pickers) keyed by tool id; `quickbar.js` renders the strip, the Quick section and the options popover from `features/quick/bar.js` data.
+- **Mock**: `tests/mock/ae-expr.js` evaluates MOE expressions so tests check expression maths, not only syntax.
+
 ## 6. Data locations
 
-`%APPDATA%\MOE Motion AI\` — `brands.json`, `text-presets.json` + `presets/*.ffx`, `settings.json`, `favorites.json`, `presets.json`, `snippets.json`, `recipes.json`, `checkpoints.json` (last 50), `usage.json`, `history.jsonl`, `diagnostics.jsonl`, `secrets.dat` (DPAPI). Override with env `MOE_DATA_DIR`.
+`%APPDATA%\MOE Motion AI\` — `quick-bar.json`, `brands.json`, `text-presets.json` + `presets/*.ffx`, `settings.json`, `favorites.json`, `presets.json`, `snippets.json`, `recipes.json`, `checkpoints.json` (last 50), `usage.json`, `history.jsonl`, `diagnostics.jsonl`, `secrets.dat` (DPAPI). Override with env `MOE_DATA_DIR`.
 
 ## 7. Repository structure
 
@@ -121,7 +130,7 @@ moe-motion-ai/
 │  ├─ lib/CSInterface.js      (Adobe, CEP 12)
 │  ├─ app/main.js  app/ui/…   (panel UI)
 │  ├─ core/…                  (services, executor, registry, AI, platform)
-│  ├─ features/…              (motion, expressions, toolfactory)
+│  ├─ features/…              (motion, text, brand, proximity, select, adapt, grid, zoom, glass, quick, generate, compositing, expressions, toolfactory)
 │  └─ host/…                  (ExtendScript)
 ├─ tests/                     (node:test, AE mock, fixtures)
 ├─ dev/                       (browser preview harness — not shipped)

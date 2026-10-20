@@ -74,16 +74,19 @@
         }
     };
 
-    /* args: { compId, name, position: [x, y], label } */
+    /* args: { compId, name, position: [x, y], label, anchor: [x, y], threeD, guide } */
     ops['layers.createNull'] = {
         mutates: true,
         run: function (args) {
             var comp = U.compById(args.compId);
-            return U.withUndo('MOE: New Effector', function () {
-                var n = comp.layers.addNull(comp.duration);
+            return U.withUndo(args.undoLabel || 'MOE: New Null', function () {
+                var n = comp.layers.addNull(comp.duration), tg;
                 n.name = args.name;
                 if (args.label !== undefined) { n.label = args.label; }
-                if (args.position) { n.property('ADBE Transform Group').property('ADBE Position').setValue([num(args.position[0]), num(args.position[1])]); }
+                if (args.threeD) { n.threeDLayer = true; }
+                tg = n.property('ADBE Transform Group');
+                if (args.anchor) { tg.property('ADBE Anchor Point').setValue(args.threeD ? [num(args.anchor[0]), num(args.anchor[1]), 0] : [num(args.anchor[0]), num(args.anchor[1])]); }
+                if (args.position) { tg.property('ADBE Position').setValue(args.threeD ? [num(args.position[0]), num(args.position[1]), num(args.position[2])] : [num(args.position[0]), num(args.position[1])]); }
                 return { layerId: n.id, index: n.index, name: n.name };
             });
         }

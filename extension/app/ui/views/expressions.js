@@ -4,6 +4,7 @@ const { h, icon } = require('../dom');
 const { renderReport } = require('../report');
 const { diffLines } = require('../diff');
 const SNIPPETS = require('../../../features/expressions/snippets');
+const quickbar = require('../quickbar');
 
 function target(ctx) {
   return ctx && (ctx.properties || []).find((p) => p.canSetExpression);
@@ -46,6 +47,13 @@ function render(app) {
       t.expression ? h('button', { class: 'btn ghost', title: 'Load the current expression into the editor', onclick: () => setEx({ code: t.expression }) }, 'Load') : null)
       : h('div', { class: 'notice' }, s.ctx && s.ctx.comp ? 'Select a property (e.g. press P, S, R or T on a layer) to target expressions.' : 'Open a composition and select a property.'),
     t && t.expressionError ? h('div', { class: 'pad' }, h('div', { class: 'engine-err' }, t.expressionError)) : null,
+
+    h('div', { class: 'section-h' }, icon('bolt', 'sm'), 'One-click'),
+    h('div', { class: 'qt-grid pad xq' }, quickbar.ACTIONS.filter((a) => a.group === 'Expressions').map((a) => h('button', {
+      class: 'qt-tile', title: `${a.label} — on selected properties, or the natural property of selected layers.\nRight-click: options (amounts, live controls)`, disabled: !!s.running,
+      onclick: (e) => (e.altKey ? quickbar.openOptions(app, a) : quickbar.run(app, a)),
+      oncontextmenu: (e) => { e.preventDefault(); quickbar.openOptions(app, a); }
+    }, icon(a.icon), h('span', { class: 'qt-label' }, a.label)))),
 
     h('div', { class: 'section-h' }, 'Editor'),
     h('div', { class: 'pad' }, editor,

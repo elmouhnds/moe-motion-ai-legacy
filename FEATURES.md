@@ -1,9 +1,20 @@
-# Features (v0.3.0)
+# Features (v0.4.0)
 
 Legend: **Local** = no network. **AI** = uses Claude (optional). Host = verified in AE? (see TEST_REPORT.md)
 
 | Workspace | Tool (id) | Type | What it does | Undo / recovery | Host verified |
 |---|---|---|---|---|---|
+| Quick | Quick Bar (`quick.*`, 14 tools) | Local | Reveal (project / folder / pre-comp), Purge cache, Duplicate comp (deep), Flip H/V, Parent to Null, Pre-compose, Separate X/Y (keeps easing), Select Same Property, Reverse keys, Mirror/Clone keys, Quick Animate (slide 4 directions in/out, fade, scale, spin; overshoot; stagger), Trim Paths (draw/erase/travel/draw+erase), Typewriter, Number Counter. Bar in every section; right-click = options. | undo + checkpoint (Pre-compose, Separate: Edit › Undo) | ⏳ |
+| Expressions | Quick Expression (`expressions.quick`) | Local | 17 one-click presets with icons; natural target per preset; live Slider controls option; user expressions protected. | undo + checkpoint | ⏳ |
+| Layout | Grid Builder (`grid.build`) | Local | 6 modes on one MOE Grid null with controls; order, honeycomb, twist, scale step, random, Build animation (styles × orders, stagger), Effector, auto spacing; live preview = same maths as the expressions. | undo + checkpoint (exact) | ⏳ |
+| Layout | Grid Controls / Release Grid (`grid.update`, `grid.remove`) | Local | Live control changes; remove (layers return) or freeze (bake). | undo + checkpoint | ⏳ |
+| Layout | Layout Guides / Place in Cells (`grid.guides`, `grid.placeInCells`) | Local | Columns/rows/gutters/margins as comp guides; tile layers into cells keeping keyframes. | undo + checkpoint | ⏳ |
+| Layout | Resize & Adapt (`adapt.resize`) | Local (+ optional AI) | Fit/Fill/Keep/Smart re-frame to any size; keeps every keyframe; new comp by default; nested layout pre-comps; preview with overrides; measured read-back. | remove copy / exact in-place restore | ⏳ |
+| Layout | Layout from Claude (`adapt.suggestLayout`, via Ask Claude) | AI | Claude places elements for the new format (no pixels sent); shown in the preview before Adapt. | no project change | ⏳ |
+| Motion | Focus Zoom / Follow Zoom / Cursor Animator (`zoom.*`) | Local | ClickZoom-style zooms on a MOE Zoom rig (point or layer, in/hold/out, eases, pans, motion blur, spotlight); follow a layer; animated cursor with click pulse + ripple. | rig / keys / layers removed | ⏳ |
+| Comp | Glass / Glass Look (`glass.*`) | Local | Liquid/frosted glass from native effects (matte, frost, lens, brightness, tint, rim, shadow), 7 looks, Brand tints. | created layers removed, source re-enabled | ⏳ |
+| Comp | Green-Screen Prompt (`generate.greenPrompt`) | AI | Claude prompt for your generator; chroma-green rules enforced locally. Claude does not generate images. | no project change | ⏳ |
+| Comp | Import & Key (`generate.importKey`) | Local | Import generated file at the playhead, fit, Screen Key chain. | imported layer + item removed | ⏳ |
 | Motion | Smart Ease (`motion.smartEase`) | Local | Sets temporal ease influence (speed 0) on selected keys or all keys of selected properties. Presets Easy/Smooth/Strong/Snappy/Launch. Correct ease array size per value type; HOLD sides preserved; sides set to Bezier. | 1 undo step + checkpoint restore | ⏳ |
 | Motion | Stagger Layers (`motion.stagger`) | Local | Offsets selected layers' start times by N frames (any fps), order Top→Bottom / Bottom→Top / Selection / Random(seed); mode add-to-current or align. Locked layers skipped. | 1 undo step + checkpoint restore | ⏳ |
 | Text | Animate Text (`text.animate`) | Local | 27 presets (owner's 4 + 23 new), live previews, In/Out, duration/distance/direction/based-on/timing; `MOE In`/`MOE Out` animators; Arabic-safe auto switch. Imported `.ffx` applied via `applyPreset`. | 1 undo step + checkpoint (animator removed) | ⏳ |

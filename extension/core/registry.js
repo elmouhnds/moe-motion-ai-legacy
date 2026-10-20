@@ -5,7 +5,7 @@
  * {
  *   id: 'motion.smartEase',            unique, "<module>.<name>"
  *   version: '1.0.0',
- *   category: 'motion' | 'text' | 'brand' | 'select' | 'expressions' | 'compositing' | 'tools',
+ *   category: 'motion' | 'text' | 'brand' | 'select' | 'layout' | 'expressions' | 'compositing' | 'tools',
  *   group: 'Easing',                   sub-heading inside a workspace
  *   name, description, keywords: [],
  *   icon: 'ease',
@@ -31,7 +31,7 @@
 const { checkSchema } = require('./schema');
 const { SCOPES } = require('./permissions');
 
-const CATEGORIES = ['motion', 'text', 'brand', 'select', 'expressions', 'compositing', 'tools'];
+const CATEGORIES = ['motion', 'text', 'brand', 'select', 'layout', 'expressions', 'compositing', 'tools'];
 
 class Registry {
   constructor() {
@@ -87,6 +87,7 @@ class Registry {
       let score = 0;
       for (const term of terms) {
         if (name.startsWith(term)) score += 6;
+        else if (name.split(/[\s/&-]+/).some((w) => w.startsWith(term))) score += 5;
         else if (name.includes(term)) score += 4;
         else if ((t.keywords || []).some((k) => k.toLowerCase().startsWith(term))) score += 3;
         else if (hay.includes(term)) score += 1;

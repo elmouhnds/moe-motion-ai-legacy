@@ -55,12 +55,7 @@ function clone(v) { return Array.isArray(v) ? v.slice() : (v && v.clone ? v.clon
  * the fixture's procedural pixel function (spec.pixels(u, v, t) -> [r,g,b,a]).
  */
 function evalExpression(prop, t) {
-  const layer = prop._layer();
-  const comp = layer._comp;
-  const thisComp = { layer: (i) => sampleable(comp.layer(i)), frameDuration: comp.frameDuration, width: comp.width, height: comp.height };
-  // eslint-disable-next-line no-new-func
-  const fn = new Function('thisComp', 'time', 'value', '__code', 'return eval(__code);');
-  return fn(thisComp, t, prop.value, prop._expression);
+  return require('./ae-expr').evaluate(prop, t, { layerExtras: (L) => (L && L.width ? { sampleImage: sampleable(L).sampleImage } : {}) });
 }
 
 function sampleable(layer) {
@@ -113,7 +108,18 @@ const EFFECTS = {
   'ADBE KeyCleaner': [{ name: 'Additional Edge Radius', valueType: 'OneD', value: 1 }],
   'ADBE Spill2': [{ name: 'Method', valueType: 'OneD', value: 1 }],
   'ADBE Simple Choker': [{ name: 'View', valueType: 'OneD', value: 1 }, { name: 'Choke Matte', valueType: 'OneD', value: 0 }],
-  'ADBE Gaussian Blur 2': [{ name: 'Blurriness', valueType: 'OneD', value: 0 }],
+  'ADBE Gaussian Blur 2': [{ name: 'Blurriness', valueType: 'OneD', value: 0 }, { name: 'Blur Dimensions', valueType: 'OneD', value: 1 }, { name: 'Repeat Edge Pixels', valueType: 'OneD', value: 0 }],
+  'ADBE Geometry2': [{ name: 'Anchor Point', valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Position', valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Uniform Scale', valueType: 'OneD', value: 1 },
+    { name: 'Scale Height', valueType: 'OneD', value: 100 }, { name: 'Scale Width', valueType: 'OneD', value: 100 }, { name: 'Skew', valueType: 'OneD', value: 0 }, { name: 'Skew Axis', valueType: 'OneD', value: 0 },
+    { name: 'Rotation', valueType: 'OneD', value: 0 }, { name: 'Opacity', valueType: 'OneD', value: 100 }, { name: "Use Composition's Shutter Angle", valueType: 'OneD', value: 1 }, { name: 'Shutter Angle', valueType: 'OneD', value: 0 }, { name: 'Sampling', valueType: 'OneD', value: 1 }],
+  'ADBE Optics Compensation': [{ name: 'Field Of View (FOV)', valueType: 'OneD', value: 0 }, { name: 'Reverse Lens Distortion', valueType: 'OneD', value: 0 }, { name: 'FOV Orientation', valueType: 'OneD', value: 1 },
+    { name: 'View Center', valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Optimal Pixels (Invalidates Reversal)', valueType: 'OneD', value: 0 }, { name: 'Resize', valueType: 'OneD', value: 1 }],
+  'ADBE Brightness & Contrast 2': [{ name: 'Brightness', valueType: 'OneD', value: 0 }, { name: 'Contrast', valueType: 'OneD', value: 0 }, { name: 'Use Legacy', valueType: 'OneD', value: 0 }],
+  'ADBE Bevel Alpha': [{ name: 'Edge Thickness', valueType: 'OneD', value: 2 }, { name: 'Light Angle', valueType: 'OneD', value: -60 }, { name: 'Light Color', valueType: 'COLOR', value: [1, 1, 1, 1] }, { name: 'Light Intensity', valueType: 'OneD', value: 0.4 }],
+  'ADBE Point Control': [{ name: 'Point', valueType: 'TwoD_SPATIAL', value: [0, 0] }],
+  'ADBE Angle Control': [{ name: 'Angle', valueType: 'OneD', value: 0 }],
+  'ADBE Layer Control': [{ name: 'Layer', valueType: 'LAYER_INDEX', value: 0 }],
+  'ADBE Dropdown Control': [{ name: 'Menu', valueType: 'OneD', value: 1 }],
   'ADBE Tint': [{ name: 'Map Black To', valueType: 'COLOR', value: [0, 0, 0, 1] }, { name: 'Map White To', valueType: 'COLOR', value: [1, 1, 1, 1] }, { name: 'Amount to Tint', valueType: 'OneD', value: 100 }],
   'ADBE Fill': [{ name: 'Fill Mask', valueType: 'OneD', value: 0 }, { name: 'All Masks', valueType: 'OneD', value: 0 }, { name: 'Color', valueType: 'COLOR', value: [1, 0, 0, 1] }, { name: 'Invert', valueType: 'OneD', value: 0 }, { name: 'Horizontal Feather', valueType: 'OneD', value: 0 }, { name: 'Vertical Feather', valueType: 'OneD', value: 0 }, { name: 'Opacity', valueType: 'OneD', value: 1 }],
   'ADBE Slider Control': [{ name: 'Slider', valueType: 'OneD', value: 0 }],
@@ -271,14 +277,58 @@ class MockProperty {
     k.value = clone(v);
   }
   valueAtTime(t, preExpression) {
-    if (this._keys.length && (preExpression || !this._expression)) {
+    if (this._keys.length && (preExpression || !this._expression || !this.expressionEnabled)) {
       const lt = t - this._layer().startTime;
-      let best = this._keys[0];
-      for (const k of this._keys) if (k.t <= lt + 1e-9) best = k;
-      return clone(best.value);
+      const ks = this._keys;
+      if (lt <= ks[0].t + 1e-9) return clone(ks[0].value);
+      if (lt >= ks[ks.length - 1].t - 1e-9) return clone(ks[ks.length - 1].value);
+      let i = 0;
+      while (i < ks.length - 1 && ks[i + 1].t <= lt + 1e-9) i++;
+      const a = ks[i], b = ks[i + 1];
+      if (Math.abs(b.t - lt) < 1e-9) return clone(b.value);
+      if (a.outInterp === KeyframeInterpolationType.HOLD || typeof a.value !== 'number' && !Array.isArray(a.value)) return clone(a.value);
+      const u = (lt - a.t) / (b.t - a.t);
+      return Array.isArray(a.value) ? a.value.map((v, j) => v + (b.value[j] - v) * u) : a.value + (b.value - a.value) * u;
     }
     if (preExpression || !this._expression || !this.expressionEnabled) return this.value;
     return evalExpression(this, t);
+  }
+  setValueAtKey(i, v) { this._key(i).value = clone(v); }
+  removeKey(i) { this._key(i); this._keys.splice(i - 1, 1); }
+  keyInSpatialTangent(i) { return (this._key(i).inTan || this._zeroTan()).slice(); }
+  keyOutSpatialTangent(i) { return (this._key(i).outTan || this._zeroTan()).slice(); }
+  _zeroTan() { return Array.isArray(this._value) ? this._value.map(() => 0) : [0, 0]; }
+  setSpatialTangentsAtKey(i, inT, outT) {
+    if (!this.isSpatial) throw new Error('After Effects error: property is not spatial');
+    const k = this._key(i); k.inTan = inT.slice(); k.outTan = (outT || inT).slice();
+  }
+  setSpatialAutoBezierAtKey(i, b) { this._key(i).autoBezier = !!b; }
+  setSpatialContinuousAtKey(i, b) { this._key(i).continuous = !!b; }
+  get dimensionsSeparated() { return !!this._separated; }
+  set dimensionsSeparated(v) {
+    v = !!v;
+    if (v === !!this._separated) return;
+    this._separated = v;
+    if (this.matchName !== 'ADBE Position') return;
+    const g = this.parentProperty;
+    const dims = Array.isArray(this._value) ? this._value.length : 2;
+    if (v) {
+      for (let d = 0; d < dims; d++) {
+        const pr = new MockProperty({ name: ['X Position', 'Y Position', 'Z Position'][d], matchName: `ADBE Position_${d}`, valueType: 'OneD', value: this._value[d] }, g, 0);
+        pr._keys = this._keys.map((k) => ({ t: k.t, value: k.value[d], inInterp: k.inInterp, outInterp: k.outInterp, easeIn: [Object.assign({}, k.easeIn[0])], easeOut: [Object.assign({}, k.easeOut[0])], selected: k.selected }));
+        g._children.push(pr);
+      }
+    } else {
+      const parts = g._children.filter((c) => /^ADBE Position_\d$/.test(c.matchName));
+      this._value = parts.map((pr) => pr._value);
+      g._children = g._children.filter((c) => !parts.includes(c));
+    }
+    g._children.forEach((c, i) => { c.propertyIndex = i + 1; });
+  }
+  setPropertyParameters(items) {
+    if (!/Dropdown Control/.test(this.matchName)) throw new Error('After Effects error: setPropertyParameters needs a Dropdown Menu Control');
+    this._menuItems = items.slice();
+    return this;
   }
   get expression() { return this._expression; }
   set expression(code) {
@@ -379,8 +429,9 @@ function makeAnimator(parent) {
 
 /** Shape contents: spec.shapes = [{ name, fill: [r,g,b], stroke: [r,g,b] }] */
 function makeShapeContents(layer, shapes) {
-  const root = new MockNode('Contents', 'ADBE Root Vectors Group', layer);
+  const root = new MockNode('Contents', 'ADBE Root Vectors Group', layer, PropertyType.INDEXED_GROUP);
   root.propertyDepth = 1;
+  root._factory = { 'ADBE Vector Group': makeVectorGroup, 'ADBE Vector Filter - Trim': makeTrim };
   (shapes || []).forEach((sh) => {
     const g = new MockNode(sh.name, 'ADBE Vector Group', root);
     root._children.push(g);
@@ -388,6 +439,7 @@ function makeShapeContents(layer, shapes) {
     g._children.push(c);
     if (sh.fill) { const f = new MockNode('Fill 1', 'ADBE Vector Graphic - Fill', c); c._children.push(f); f._prop('Color', 'ADBE Vector Fill Color', 'COLOR', sh.fill.concat([1])); }
     if (sh.stroke) { const k = new MockNode('Stroke 1', 'ADBE Vector Graphic - Stroke', c); c._children.push(k); k._prop('Color', 'ADBE Vector Stroke Color', 'COLOR', sh.stroke.concat([1])); }
+    if (sh.path) { const pg = new MockNode('Path 1', 'ADBE Vector Shape - Group', c); c._children.unshift(pg); const sp = new Shape(); sp.vertices = sh.path.map((v) => v.slice()); sp.inTangents = sh.path.map(() => [0, 0]); sp.outTangents = sh.path.map(() => [0, 0]); sp.closed = !!sh.closed; pg._prop('Path', 'ADBE Vector Shape', 'SHAPE', sp); }
   });
   return root;
 }
@@ -401,6 +453,90 @@ function build(spec, parent, index) {
 
 let nextId = 100;
 
+class Shape {
+  constructor() { this.vertices = []; this.inTangents = []; this.outTangents = []; this.closed = true; }
+  clone() { const c = new Shape(); c.vertices = this.vertices.map((v) => v.slice()); c.inTangents = this.inTangents.map((v) => v.slice()); c.outTangents = this.outTangents.map((v) => v.slice()); c.closed = this.closed; return c; }
+}
+const MaskMode = { NONE: 6812 + 100, ADD: 6913, SUBTRACT: 6914, INTERSECT: 6915, LIGHTEN: 6916, DARKEN: 6917, DIFFERENCE: 6918 };
+const BlendingMode = { NORMAL: 5212, ADD: 5220, SCREEN: 5222, OVERLAY: 5224, SOFT_LIGHT: 5225, MULTIPLY: 5216 };
+const TrackMatteType = { ALPHA: 5013, ALPHA_INVERTED: 5014, LUMA: 5015, LUMA_INVERTED: 5016, NO_TRACK_MATTE: 5012 };
+
+function deepClone(v) {
+  if (Array.isArray(v)) return v.map(deepClone);
+  if (v && typeof v === 'object' && typeof v.clone === 'function') return v.clone();
+  return v;
+}
+/** Deep copy of a property tree with parent pointers rewired (layer.duplicate / comp.duplicate). */
+function cloneNode(node, parent) {
+  const c = Object.create(Object.getPrototypeOf(node));
+  for (const k of Object.keys(node)) c[k] = node[k];
+  c.parentProperty = parent;
+  if ('_value' in node) c._value = deepClone(node._value);
+  if (node._keys) c._keys = node._keys.map((k) => Object.assign({}, k, { value: deepClone(k.value), easeIn: k.easeIn.map((e) => Object.assign({}, e)), easeOut: k.easeOut.map((e) => Object.assign({}, e)) }));
+  if (node._children) c._children = node._children.map((ch) => cloneNode(ch, c));
+  return c;
+}
+function cloneLayer(L, comp) {
+  const d = Object.create(Object.getPrototypeOf(L));
+  for (const k of Object.keys(L)) d[k] = L[k];
+  d.id = nextId++;
+  d._comp = comp;
+  d.selected = false;
+  d._rect = Object.assign({}, L._rect);
+  d._group = cloneNode(L._group, L._group.parentProperty);
+  d._group._children.forEach((c) => { c.parentProperty = d; });
+  if (L._parade) { d._parade = cloneNode(L._parade, d); }
+  if (L._masks) { d._masks = cloneNode(L._masks, d); }
+  return d;
+}
+
+function makeMaskParade(layer) {
+  const masks = new MockNode('Masks', 'ADBE Mask Parade', layer, PropertyType.INDEXED_GROUP);
+  masks.propertyDepth = 1;
+  masks._factory = {
+    'ADBE Mask Atom': (g) => {
+      const m = new MockNode('Mask ' + (g._children.length + 1), 'ADBE Mask Atom', g);
+      m.maskMode = MaskMode.ADD; m.inverted = false;
+      m._prop('Mask Path', 'ADBE Mask Shape', 'SHAPE', new Shape());
+      m._prop('Mask Feather', 'ADBE Mask Feather', 'TwoD', [0, 0]);
+      m._prop('Mask Opacity', 'ADBE Mask Opacity', 'OneD', 100);
+      m._prop('Mask Expansion', 'ADBE Mask Offset', 'OneD', 0);
+      return m;
+    }
+  };
+  return masks;
+}
+
+function makeVectorGroup(parent) {
+  const g = new MockNode('Group ' + (parent._children.length + 1), 'ADBE Vector Group', parent);
+  const c = new MockNode('Contents', 'ADBE Vectors Group', g, PropertyType.INDEXED_GROUP);
+  c._factory = VECTOR_ITEMS;
+  g._children.push(c);
+  const t = new MockNode('Transform', 'ADBE Vector Transform Group', g);
+  g._children.push(t);
+  t._prop('Anchor Point', 'ADBE Vector Anchor', 'TwoD_SPATIAL', [0, 0]);
+  t._prop('Position', 'ADBE Vector Position', 'TwoD_SPATIAL', [0, 0]);
+  t._prop('Scale', 'ADBE Vector Scale', 'TwoD', [100, 100]);
+  t._prop('Rotation', 'ADBE Vector Rotation', 'OneD', 0);
+  t._prop('Opacity', 'ADBE Vector Group Opacity', 'OneD', 100);
+  return g;
+}
+function makeTrim(g) {
+  const n = new MockNode('Trim Paths 1', 'ADBE Vector Filter - Trim', g);
+  n._prop('Start', 'ADBE Vector Trim Start', 'OneD', 0);
+  n._prop('End', 'ADBE Vector Trim End', 'OneD', 100);
+  n._prop('Offset', 'ADBE Vector Trim Offset', 'OneD', 0);
+  return n;
+}
+const VECTOR_ITEMS = {
+  'ADBE Vector Group': makeVectorGroup,
+  'ADBE Vector Filter - Trim': makeTrim,
+  'ADBE Vector Shape - Group': (g) => { const n = new MockNode('Path ' + (g._children.length + 1), 'ADBE Vector Shape - Group', g); n._prop('Path', 'ADBE Vector Shape', 'SHAPE', new Shape()); return n; },
+  'ADBE Vector Shape - Ellipse': (g) => { const n = new MockNode('Ellipse Path 1', 'ADBE Vector Shape - Ellipse', g); n._prop('Size', 'ADBE Vector Ellipse Size', 'TwoD', [100, 100]); n._prop('Position', 'ADBE Vector Ellipse Position', 'TwoD_SPATIAL', [0, 0]); return n; },
+  'ADBE Vector Graphic - Fill': (g) => { const n = new MockNode('Fill 1', 'ADBE Vector Graphic - Fill', g); n._prop('Color', 'ADBE Vector Fill Color', 'COLOR', [1, 0, 0, 1]); n._prop('Opacity', 'ADBE Vector Fill Opacity', 'OneD', 100); return n; },
+  'ADBE Vector Graphic - Stroke': (g) => { const n = new MockNode('Stroke 1', 'ADBE Vector Graphic - Stroke', g); n._prop('Color', 'ADBE Vector Stroke Color', 'COLOR', [1, 1, 1, 1]); n._prop('Opacity', 'ADBE Vector Stroke Opacity', 'OneD', 100); n._prop('Stroke Width', 'ADBE Vector Stroke Width', 'OneD', 2); return n; }
+};
+
 class MockLayer {
   constructor(spec, comp) {
     this._comp = comp;
@@ -412,9 +548,12 @@ class MockLayer {
     this.stretch = 100;
     this.locked = !!spec.locked;
     this.enabled = true;
-    this.threeDLayer = !!spec.threeD;
+    this._threeD = !!spec.threeD;
+    this.blendingMode = 5212; // BlendingMode.NORMAL
+    this._matte = null; this._matteType = 0;
     this.nullLayer = !!spec.nullLayer;
-    this.parent = null;
+    this._parent = null;
+    this._spec = spec;
     this.selected = !!spec.selected;
     this.propertyDepth = 0;
     this.propertyType = PropertyType.INDEXED_GROUP;
@@ -427,11 +566,12 @@ class MockLayer {
     (spec.effects || []).forEach((e) => { const fx = this._parade.addProperty(e.matchName); if (e.name) fx.name = e.name; });
     this.label = spec.label || 0; this.comment = spec.comment || ''; this.shy = !!spec.shy; this.solo = false;
     this.guideLayer = !!spec.guide; this.motionBlur = !!spec.motionBlur; this.enabled = spec.enabled !== false;
-    this._rect = spec.rect || { left: -100, top: -30, width: 200, height: 60 };
+    this._rect = spec.rect || (this.nullLayer ? { left: 0, top: 0, width: 100, height: 100 } : { left: -100, top: -30, width: 200, height: 60 });
+    this._masks = null;
     if (spec.source) {
       const src = spec.source;
       const id = nextId++;
-      if (src.kind === 'precomp') this.source = Object.assign(new CompItem({ name: src.name || 'Pre-comp', layers: [] }), { hasVideo: true, hasAudio: false });
+      if (src.kind === 'precomp') this.source = Object.assign(new CompItem(Object.assign({ name: src.name || 'Pre-comp', layers: [] }, src.comp || {})), { hasVideo: true, hasAudio: false });
       else this.source = { id, name: src.name || 'Footage', hasVideo: src.kind !== 'audio', hasAudio: src.kind === 'video' || src.kind === 'audio',
         mainSource: src.kind === 'solid' ? new SolidSource(src.color) : new FileSource(src.kind === 'image'), file: src.file ? { name: src.file } : null };
       if (spec.sourceId) this.source.id = spec.sourceId;
@@ -457,10 +597,48 @@ class MockLayer {
   get numProperties() { return this._group._children.length + (this._parade ? 1 : 0); }
   property(key) {
     if (key === 'ADBE Effect Parade' || key === 'Effects') return this._parade;
+    if (key === 'ADBE Mask Parade' || key === 'Masks') { if (!this._masks) this._masks = makeMaskParade(this); return this._masks; }
     if (typeof key === 'number' && key === this._group._children.length + 1) return this._parade;
     return this._group.property(key);
   }
   sourceRectAtTime() { return Object.assign({}, this._rect); }
+  get parent() { return this._parent; }
+  set parent(p) { if (p === this) throw new Error('After Effects error: a layer cannot be its own parent'); this._parent = p || null; this._comp._parentSetCalls = (this._comp._parentSetCalls || 0) + 1; }
+  setParentWithJump(p) { if (p === this) throw new Error('After Effects error: a layer cannot be its own parent'); this._parent = p || null; }
+  get threeDLayer() { return this._threeD; }
+  set threeDLayer(v) {
+    v = !!v;
+    if (v === this._threeD) return;
+    const g = this.property('ADBE Transform Group');
+    const conv = (mn, vt, z) => { const pr = g.property(mn); if (!pr) return; pr.propertyValueType = PropertyValueType[vt]; const f = (x) => (v ? x.concat([z]) : x.slice(0, 2)); pr._value = f(pr._value); pr._keys.forEach((k) => { k.value = f(k.value); }); };
+    conv('ADBE Anchor Point', v ? 'ThreeD_SPATIAL' : 'TwoD_SPATIAL', 0);
+    conv('ADBE Position', v ? 'ThreeD_SPATIAL' : 'TwoD_SPATIAL', 0);
+    conv('ADBE Scale', v ? 'ThreeD' : 'TwoD', 100);
+    if (v && !g.property('ADBE Rotate X')) {
+      ['ADBE Rotate X', 'ADBE Rotate Y'].forEach((mn, i) => { const pr = new MockProperty({ name: i ? 'Y Rotation' : 'X Rotation', matchName: mn, valueType: 'OneD', value: 0 }, g, 0); g._children.splice(3 + i, 0, pr); });
+      g._children.forEach((c, i) => { c.propertyIndex = i + 1; });
+    }
+    this._threeD = v;
+  }
+  get trackMatteLayer() { return this._matte; }
+  get trackMatteType() { return this._matte ? this._matteType : 5012; }
+  get hasTrackMatte() { return !!this._matte; }
+  setTrackMatte(layer, type) {
+    if (!layer || layer === this) throw new Error('After Effects error: invalid track matte layer');
+    if (layer._comp !== this._comp) throw new Error('After Effects error: track matte must be in the same composition');
+    this._matte = layer; this._matteType = type;
+  }
+  removeTrackMatte() { this._matte = null; this._matteType = 0; }
+  moveBefore(L) { const a = this._comp._layers; a.splice(a.indexOf(this), 1); a.splice(a.indexOf(L), 0, this); }
+  moveAfter(L) { const a = this._comp._layers; a.splice(a.indexOf(this), 1); a.splice(a.indexOf(L) + 1, 0, this); }
+  moveToBeginning() { const a = this._comp._layers; a.splice(a.indexOf(this), 1); a.unshift(this); }
+  replaceSource(item) { this.source = item; if (item.width) { this.width = item.width; this.height = item.height; } }
+  duplicate() {
+    const d = cloneLayer(this, this._comp);
+    const a = this._comp._layers;
+    a.splice(a.indexOf(this), 0, d);
+    return d;
+  }
   applyPreset(file) {
     const comp = this._comp;
     comp._appliedPresets = comp._appliedPresets || [];
@@ -498,17 +676,71 @@ class CompItem {
     this._fxOpts = spec.effectsOptions || {};
     this._layers = (spec.layers || []).map((l) => (l.camera ? new MockCameraLayer(l, this) : l.text !== undefined ? new MockTextLayer(l, this) : l.shapes ? new MockShapeLayer(l, this) : new MockLayer(l, this)));
     const comp = this;
+    this.guides = [];
     this.layers = {
       addNull(duration) {
         const n = new MockLayer({ name: 'Null 1', nullLayer: true, outPoint: duration }, comp);
         comp._layers.unshift(n);
         return n;
+      },
+      addSolid(color, name, w, h, pa, duration) {
+        const L = new MockLayer({ name, width: w, height: h, outPoint: duration, rect: { left: 0, top: 0, width: w, height: h }, source: { kind: 'solid', color } }, comp);
+        const tg = L.property('ADBE Transform Group');
+        tg.property('ADBE Anchor Point').setValue([w / 2, h / 2]);
+        tg.property('ADBE Position').setValue([comp.width / 2, comp.height / 2]);
+        comp._layers.unshift(L);
+        return L;
+      },
+      precompose(indices, name, moveAll) {
+        const sorted = indices.slice().sort((a, b) => a - b);
+        const moving = sorted.map((i) => comp._layers[i - 1]);
+        const pc = new CompItem({ name, width: comp.width, height: comp.height, frameRate: comp.frameRate, duration: comp.duration, layers: [] });
+        pc._project = comp._project;
+        if (comp._project) comp._project._items.push(pc);
+        moving.forEach((L) => { comp._layers.splice(comp._layers.indexOf(L), 1); L._comp = pc; pc._layers.push(L); });
+        const holder = new MockLayer({ name, source: { kind: 'solid' }, rect: { left: 0, top: 0, width: comp.width, height: comp.height } }, comp);
+        holder.source = pc;
+        comp._layers.splice(sorted[0] - 1, 0, holder);
+        comp._precomposeMoveAll = moveAll;
+        return pc;
+      },
+      add(item) {
+        const L = new MockLayer({ name: item.name, width: item.width, height: item.height, rect: { left: 0, top: 0, width: item.width, height: item.height }, source: { kind: 'video' }, pixels: item._pixels }, comp);
+        L.source = item;
+        const tg = L.property('ADBE Transform Group');
+        tg.property('ADBE Anchor Point').setValue([item.width / 2, item.height / 2]);
+        tg.property('ADBE Position').setValue([comp.width / 2, comp.height / 2]);
+        comp._layers.unshift(L);
+        return L;
+      },
+      addShape() {
+        const L = new MockShapeLayer({ name: 'Shape Layer 1', shapes: [], rect: { left: -50, top: -50, width: 100, height: 100 } }, comp);
+        comp._layers.unshift(L);
+        return L;
       }
     };
     this._selectionOrder = spec.selectionOrder || null;
   }
   get numLayers() { return this._layers.length; }
   layer(i) { return this._layers[i - 1]; }
+  duplicate() {
+    const c = new CompItem({ name: this.name + ' 2', width: this.width, height: this.height, frameRate: this.frameRate, duration: this.duration, time: this.time, layers: [] });
+    c._project = this._project;
+    c._fxOpts = this._fxOpts;
+    c._layers = this._layers.map((L) => cloneLayer(L, c));
+    c._layers.forEach((L, i) => { const op = this._layers[i]._parent; L._parent = op ? c._layers[this._layers.indexOf(op)] : null; const om = this._layers[i]._matte; L._matte = om ? c._layers[this._layers.indexOf(om)] : null; });
+    c.guides = this.guides.map((g) => Object.assign({}, g));
+    if (this._project) this._project._items.push(c);
+    return c;
+  }
+  addGuide(orientationType, position) {
+    if (orientationType !== 0 && orientationType !== 1) throw new Error('After Effects error: orientationType must be 0 or 1');
+    this.guides.push({ orientationType, position, positionType: 0 });
+    return this.guides.length - 1;
+  }
+  removeGuide(i) { if (i < 0 || i >= this.guides.length) throw new Error('After Effects error: guide index out of range'); this.guides.splice(i, 1); }
+  openInViewer() { if (this._project) this._project.activeItem = this; return {}; }
+  remove() { if (this._project) { const k = this._project._items.indexOf(this); if (k >= 0) this._project._items.splice(k, 1); if (this._project.activeItem === this) this._project.activeItem = null; } }
   get selectedLayers() {
     const sel = this._layers.filter((l) => l.selected);
     if (this._selectionOrder) {
@@ -549,25 +781,44 @@ function installAE(target, fixture, { readFile, evalCode }) {
   if (project) {
     Object.defineProperty(project, 'numItems', { get() { return project._items.length; } });
     project.item = (i) => project._items[i - 1];
+    project.itemByID = (id) => { const it = project._items.find((x) => x.id === id); if (!it) throw new Error('After Effects error: no item with id ' + id); return it; };
   }
   if (fixture && fixture.comp) {
     const comp = new CompItem(fixture.comp);
+    comp._project = project;
     markSelected(comp, fixture.comp);
+    const registerNested = (c) => c._layers.forEach((L) => { if (L.source instanceof CompItem && !project._items.includes(L.source)) { L.source._project = project; project._items.push(L.source); registerNested(L.source); } });
+    registerNested(comp);
     project.activeItem = comp;
     project._items.push(comp);
-    (fixture.otherComps || []).forEach((oc) => { const c = new CompItem(oc); project._items.push(c); if (oc.projectSelected) project.selection.push(c); });
+    (fixture.otherComps || []).forEach((oc) => { const c = new CompItem(oc); c._project = project; project._items.push(c); if (oc.projectSelected) project.selection.push(c); });
     if (fixture.comp.projectSelected) project.selection.push(comp);
   }
   class File {
     constructor(p) { this.fsName = p; this.name = String(p).split('/').pop(); }
     get exists() { try { readFile(this.fsName); return true; } catch (e) { return false; } }
   }
+  const app0 = {};
+  class Folder { constructor(p) { this.fsName = p; } get exists() { return true; } execute() { (app0.opened = app0.opened || []).push(this.fsName); return true; } }
+  class ImportOptions { constructor(file) { this.file = file; this.importAs = 1; } canImportAs() { return /\.(png|jpg|jpeg|mov|mp4|exr|tif|tiff|webm)$/i.test(this.file.fsName); } }
+  if (project) {
+    project.importFile = (io) => {
+      const green = /green/i.test(io.file.fsName);
+      const item = { id: nextId++, name: io.file.name, width: 1920, height: 1080, duration: /\.(mov|mp4|webm)$/i.test(io.file.fsName) ? 5 : 0, file: io.file,
+        remove() { const k = project._items.indexOf(item); if (k >= 0) project._items.splice(k, 1); },
+        _pixels: green ? (u, v) => (Math.abs(u - 0.5) < 0.2 && Math.abs(v - 0.5) < 0.25 ? [0.8, 0.6, 0.5, 1] : [0.0, 0.69, 0.25, 1]) : undefined };
+      project._items.push(item);
+      return item;
+    };
+  }
   Object.assign(target, {
+    ImportOptions, ImportAsType: { FOOTAGE: 1, COMP: 2, PROJECT: 3 },
+    Folder, PurgeTarget: { ALL_CACHES: 1, UNDO_CACHES: 2, SNAPSHOT_CACHES: 3, IMAGE_CACHES: 4 },
     PropertyValueType, KeyframeInterpolationType, PropertyType, KeyframeEase, CompItem, File,
     TextLayer: MockTextLayer, ShapeLayer: MockShapeLayer, AVLayer: MockLayer, FileSource,
     ParagraphDirection, ComposerEngine, CTScript, PREFType: { PREF_Type_MACHINE_INDEPENDENT: 0 },
     CameraLayer: MockCameraLayer, LightLayer: function LightLayer() {},
-    SolidSource,
+    SolidSource, Shape, MaskMode, BlendingMode, TrackMatteType,
     app: {
       version: '25.0.0x00 (mock)', buildNumber: 0, buildName: 'mock', isoLanguage: 'en_US',
       project,
@@ -578,6 +829,9 @@ function installAE(target, fixture, { readFile, evalCode }) {
       effects: Object.keys(EFFECTS).map((mn) => ({ displayName: mn.replace(/^ADBE /, ''), matchName: mn, category: 'Mock' })).concat((fixture && fixture.extraEffects) || []),
       preferences: { getPrefAsString() { throw new Error('After Effects error: preference not found'); } },
       beginUndoGroup(label) { undo.depth++; undo.groups.push(label); },
+      purge(target) { (app0.purged = app0.purged || []).push(target); },
+      findMenuCommandId(name) { return name === 'Reveal Layer Source in Project' ? 2517 : 0; },
+      executeCommand(id) { (app0.commands = app0.commands || []).push(id); },
       endUndoGroup() { undo.depth--; }
     },
     $: {
@@ -585,7 +839,8 @@ function installAE(target, fixture, { readFile, evalCode }) {
       evalFile(f) { return evalCode(readFile(typeof f === 'string' ? f : f.fsName)); }
     }
   });
+  target.app._log = app0;
   return { undo, project };
 }
 
-module.exports = { installAE, PropertyValueType, KeyframeInterpolationType, KeyframeEase, TextDocument, ParagraphDirection };
+module.exports = { Shape, installAE, PropertyValueType, KeyframeInterpolationType, KeyframeEase, TextDocument, ParagraphDirection };

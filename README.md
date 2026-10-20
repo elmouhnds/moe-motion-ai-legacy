@@ -4,7 +4,7 @@ Independent motion-design workbench panel for **Adobe After Effects 2025** (Wind
 Real tools that change real project data — easing, timing, expressions, reusable tool recipes —
 with an optional, approval-based Claude Copilot.
 
-> Status: **v0.3.0** — foundation, Compositing, and Studio (Text library, Brand Kit, Proximity, Select). All logic is tested against an AE mock; **in-host verification on AE 2025 is the next step** (see TEST_REPORT.md).
+> Status: **v0.4.0** — foundation, Compositing, Studio (Text library, Brand Kit, Proximity, Select) and Layout & Speed (Grid Builder, Resize & Adapt, Zoom & Focus, Glass, Quick Bar, one-click expressions, Generate on Green). All logic is tested against an AE mock; **in-host verification on AE 2025 is the next step** (see TEST_REPORT.md).
 
 ## Install (developer mode, Windows)
 1. Install Node.js 18+ (only needed for tests).

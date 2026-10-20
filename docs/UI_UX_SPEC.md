@@ -50,3 +50,11 @@ On start and on `ThemeColorChanged`, the panel reads `appSkinInfo.panelBackgroun
 
 ## States every view handles
 Not connected (host error + Reconnect) · no project · no comp · empty selection · truncated large selection · running · success/partial/failed with checks · AI offline / no key / budget reached / refused.
+
+## v0.4 additions
+- **Quick Bar**: 26 px icon buttons under the context line, horizontally scrollable, ⚡ opens the Quick section. Click = run with the action preset; right-click / Alt-click = options popover (the tool's own form). Pins persist (`quick-bar`).
+- **Quick section**: tiles grouped Project · Layer · Keys · Animate · Text · Expressions, ★ pin toggle.
+- **Layout section**: Grid Builder (live canvas preview; animated when "Animate in" is on), Grid Controls, Release, Layout Guides (guide preview), Place in Cells, Resize & Adapt (Preview layout: before/after frames, colour = role, per-layer role/zone overrides, Ask Claude).
+- **Zoom**: focus map picker shows the visible window for the chosen zoom.
+- **Glass**: Brand Kit tint swatches.
+- **Expressions**: one-click tiles above the editor.

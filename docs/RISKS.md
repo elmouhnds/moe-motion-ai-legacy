@@ -32,3 +32,11 @@
 | 29 | Neural keying (CorridorKey) cannot run in CEP | — | Certain | Integrate installed keyers via `app.effects` (planned) instead of re-implementing | Accepted |
 | 30 | Large projects: `layers.list` over the whole project | Med | Med | Capped at 5 000 layers, `deep` (expression scan) only when the Expressions filter is used | Mitigated |
 | 17 | Bundle ID `tv.madtomato.moe.motionai` | — | — | Change before signing/distribution if a different ID is preferred | Note |
+| 31 | Adapt smart layout is a heuristic | Med (creative) | Med | Preview + per-layer role/zone overrides + Claude suggestion; output is a new comp; measured read-back | Mitigated |
+| 32 | Transform effect / Optics Compensation / Bevel Alpha parameter names on non-English AE | Med | Med | English names first, match-name / structure fallbacks reported as "mapping unverified" | Verify in host |
+| 33 | Glass: matte from a hidden source layer (AE 23 track matte by layer) | Med | Low | Documented API; source re-enabled on restore | Verify in host |
+| 34 | Grid expressions per item read ~25 controls (performance with 300+ items) | Med | Med | Freeze (bake) option; mode-specific controls only | Verify in host |
+| 35 | `Layer.parent =` compensation with keyframed children (Parent to Null) | Med | Low | Documented pick-whip behaviour; restore uses the same API in reverse | Verify in host |
+| 36 | Reveal Layer Source uses the English menu name | Low | Med | Falls back to selecting the item in the Project panel | Accepted |
+| 37 | Claude cannot generate images / video | — | Certain | Prompt + your generator + Import & Key; provider connectors on the roadmap | Accepted |
+| 38 | "Purge All" clears the Undo history | Med | Low | Default is image cache; All is marked destructive | Mitigated |
