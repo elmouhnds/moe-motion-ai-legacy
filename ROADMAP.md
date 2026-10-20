@@ -18,6 +18,11 @@
 - [ ] Host verification (TEST_REPORT.md → Compositing checklist), confirm parameter mappings on AE 2025
 - Next in this module: reference **image file** analysis (vision), split-toning / curves via Lumetri once its parameter map is verified in host, light wrap, edge blur, grain match, despill colour from plate
 
+## M1.6 — Studio ✅ (v0.3.0)
+- [x] Navigation rail; Text Animation Library (+ `.ffx` import); Brand Kit; Proximity; Select (Moe Selector)
+- [ ] Host verification (TEST_REPORT.md → Studio checklist)
+- Next: Proximity time-remap (play forward/reverse), glow/drop-shadow/exposure reactions, Look At 3D; per-character 3D text presets; preset favourites and render-accurate previews (rendered thumbnails); brand colour sets for gradients; AI "palette from brief"; installed AI keyer (e.g. CorridorKey) as Screen Key engine via `effects.find`
+
 ## M2 — Motion Director depth
 - Visual ease graph editor (bezier handles → speed/influence), read current ease from selection
 - Keyframe timing tools: retime, scale around playhead, snap keys to whole frames, reverse

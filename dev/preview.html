@@ -23,7 +23,7 @@
       if (q.get('w')) document.querySelector('.frame').style.setProperty('--w', q.get('w') + 'px');
       if (q.get('theme')) document.documentElement.setAttribute('data-theme', q.get('theme'));
       var mock = require('/tests/mock/ae-mock.js');
-      var fixture = require(q.get('fixture') === 'comp' ? '/dev/preview-fixture-comp.js' : '/dev/preview-fixture.js');
+      var fixture = require({ comp: '/dev/preview-fixture-comp.js', studio: '/dev/preview-fixture-studio.js' }[q.get('fixture')] || '/dev/preview-fixture.js');
       var mem = require('/dev/platform-mem.js');
       mock.installAE(window, fixture, { readFile: window.__fetchText, evalCode: function (c) { return (0, eval)(c); } });
       var cs = {
@@ -38,6 +38,12 @@
       var platform = mem.createMemPlatform(q.get('demoAI') ? { apiKey: 'sk-ant-preview-demo', http: require('/dev/demo-ai.js') } : {});
       require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform }).then(function (app) {
         window.__app = app;
+        if (q.get('seedBrand')) {
+          app.services.brands.save({ name: 'Nile Bank', notes: 'Gold only on dark backgrounds. Arabic headlines in Cairo Bold.', colors: [
+            { name: 'Nile Blue', hex: '#0A4D8C' }, { name: 'Deep Navy', hex: '#0B1F3A' }, { name: 'Gold', hex: '#D4A017' }, { name: 'Sand', hex: '#EBDCC0' }, { name: 'White', hex: '#FFFFFF' }, { name: 'Coral', hex: '#FF6F59' }],
+            fonts: { arabic: { ps: 'Cairo-Bold', family: 'Cairo', style: 'Bold' }, english: { ps: 'Montserrat-Bold', family: 'Montserrat', style: 'Bold' }, extra: [] } });
+          app.services.brands.save({ name: 'Tomato Studio', colors: [{ name: 'Tomato', hex: '#FF6347' }, { name: 'Ink', hex: '#1A1A1A' }], fonts: { arabic: null, english: { ps: 'ArialMT', family: 'Arial', style: 'Regular' }, extra: [] } });
+        }
         if (q.get('view')) app.go(q.get('view'));
       });
     }());

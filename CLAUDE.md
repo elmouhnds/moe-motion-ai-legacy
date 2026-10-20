@@ -29,6 +29,9 @@ Permanent rules for anyone (human or AI) working in this repository.
 - Do not silently unlock layers, delete data, or scan the whole project. Read only the active comp + selection, with limits.
 - Effects MOE adds are named `MOE …`, updated in place (never duplicated), and restorable. Never touch effects MOE did not create, except to *temporarily* bypass MOE's own colour effects during measurement (always re-enabled in `finally`).
 - Effect parameters: resolve by English name first; match-name/order fallbacks only when the effect has the exact expected parameter count (`expectParams`). A host op that cannot resolve everything must remove what it added and fail with the parameter list.
+- Arabic text: never animate per character by default (letters disconnect) — use Words/Lines; set RTL + universal composer when applying Arabic fonts.
+- Never modify shared sources (e.g. `SolidSource.color`) as a side effect; use per-layer effects.
+- Text animators and effects MOE creates are named (`MOE In`, `MOE Out`, `MOE Brand Fill`, `MOE Prox …`, `MOE Effector N`) so they can be found, replaced and removed safely.
 - Pixel measurement uses the documented probe pattern (temporary null + expression `sampleImage` + `valueAtTime`); the probe is removed in `finally` and the layer count is verified.
 
 ## AI / cost rules

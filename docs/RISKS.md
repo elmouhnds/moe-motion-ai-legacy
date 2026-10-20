@@ -24,4 +24,11 @@
 | 21 | Measuring keyed / graded layers | Med (wrong match) | — | Keyed layers sampled post-effect with MOE Grade/Match bypassed (re-enabled in `finally`); unkeyed screens refused for Match | Mitigated |
 | 22 | Analysis leaves one no-op undo entry | Very low | Certain | Documented; real change is always a separate single undo step | Accepted |
 | 23 | Channel Mixer is a single affine grade (no curves/split toning) | Low (creative range) | — | Look from Words reports limitations; Lumetri mapping planned after host verification | Accepted |
+| 24 | Proximity expressions reference the effector by name | Med | Med | Unique `MOE Effector N` names; Remove scans tags; renaming the effector breaks links (documented) | Accepted |
+| 25 | Proximity uses post-expression position for scale/rotation/opacity weights | Low | — | Avoids expression cycles; tiny interaction when Push is also on | Accepted |
+| 26 | Replacing a MOE In/Out animator cannot be restored by checkpoint | Low | Low | Edit › Undo still works; documented in report ("replaced previous") | Accepted |
+| 27 | `applyPreset` acts on the selection | Med | — | Host op sets the selection to exactly the targets and restores it in `finally` | Mitigated, verify in host |
+| 28 | Arabic per-character animation breaks letter joining | Med | — | Character presets auto-switch to Words for Arabic text; Arabic-safe badge | Mitigated |
+| 29 | Neural keying (CorridorKey) cannot run in CEP | — | Certain | Integrate installed keyers via `app.effects` (planned) instead of re-implementing | Accepted |
+| 30 | Large projects: `layers.list` over the whole project | Med | Med | Capped at 5 000 layers, `deep` (expression scan) only when the Expressions filter is used | Mitigated |
 | 17 | Bundle ID `tv.madtomato.moe.motionai` | — | — | Change before signing/distribution if a different ID is preferred | Note |

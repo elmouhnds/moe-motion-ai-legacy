@@ -1,16 +1,16 @@
 # Test Report
 
-Last run: 2026-10-19 (v0.2.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-20 (v0.3.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
 | Layer | How it was tested | Result |
 |---|---|---|
-| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 78/78 automated tests pass (all suites) |
-| ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (8 files) |
+| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 116/116 automated tests pass (all suites) |
+| ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (10 files) |
 | Core (registry, schema, permissions, executor, storage, logger, bridge) | Unit + integration tests | Pass |
 | Claude integration | Mocked HTTPS responder: request shape, retries, refusal, truncation, 401, offline, budget | Pass — **no real API call was made** |
-| Panel UI | Browser preview (`dev/preview.html`) with the real UI code + real host .jsx on the mock; Playwright clicks through 19 scenarios; zero page/console errors | Pass — **not the CEP runtime** |
+| Panel UI | Browser preview (`dev/preview.html`) with the real UI code + real host .jsx on the mock; Playwright clicks through 29 scenarios; zero page/console errors | Pass — **not the CEP runtime** |
 | Colour contrast | `tools/check-contrast.js`, WCAG, both themes | Pass |
 | **Inside After Effects 2025** | — | **Not run yet** |
 
@@ -97,6 +97,44 @@ What it does not prove: real AE behaviour (timing of `expressionError`, selectio
 - ✅ recipe save → preflight → run (no AI needed) → history
 - ✅ Tool Factory draft conversion keeps Claude output untrusted
 - ✅ Copilot plan → saved recipe
+- ✅ Brand store: create, validate, update, export/import, delete
+- ✅ Brand colour → text fill, shape fill + stroke, solid via MOE Brand Fill (solid source untouched); restore
+- ✅ Brand colour → selected COLOR property wins over layer targets
+- ✅ Brand font auto: Arabic text → Arabic font + RTL; English → English font; keyframed Source Text at CTI; missing font refused
+- ✅ Palette extraction (k-means) and fonts.list with Arabic detection
+- ✅ FFX parser reads all four owner presets exactly
+- ✅ Built-in Signature presets match the decoded owner files
+- ✅ Animate Text builds the animator at CTI; Out ends at layer out point; re-apply replaces; restore removes
+- ✅ Arabic text: character presets switch to Words; distance & direction controls
+- ✅ Imported .ffx: stored in the library, previewable, applied via applyPreset to exactly the selected text layers
+- ✅ Preview engine: hidden at start, revealed at end, words reveal in order
+- ✅ Proximity: effector + controls created, combined expressions per property, engine-valid, restore removes everything
+- ✅ Proximity: reuses a selected effector, protects user expressions, rejects contradictory features, 3D-only features skipped on 2D
+- ✅ Proximity remove (selected / all) and Center Anchor keeps the layer in place
+- ✅ Select: types, filters, modes, search, same-as, labels, invert, history
+- ✅ Select tool (Copilot) and layer switches with restore
+- ✅ Copilot catalog includes the new tools and context carries brands + preset ids
+- ✅ UI module loads: main.js
+- ✅ UI module loads: ui/copilot.js
+- ✅ UI module loads: ui/diff.js
+- ✅ UI module loads: ui/dom.js
+- ✅ UI module loads: ui/form.js
+- ✅ UI module loads: ui/palette.js
+- ✅ UI module loads: ui/report.js
+- ✅ UI module loads: ui/shell.js
+- ✅ UI module loads: ui/state.js
+- ✅ UI module loads: ui/textPreview.js
+- ✅ UI module loads: ui/toolBlock.js
+- ✅ UI module loads: ui/views/brand.js
+- ✅ UI module loads: ui/views/diagnostics.js
+- ✅ UI module loads: ui/views/expressions.js
+- ✅ UI module loads: ui/views/favorites.js
+- ✅ UI module loads: ui/views/history.js
+- ✅ UI module loads: ui/views/motion.js
+- ✅ UI module loads: ui/views/select.js
+- ✅ UI module loads: ui/views/settings.js
+- ✅ UI module loads: ui/views/text.js
+- ✅ UI module loads: ui/views/tools.js
 
 Coverage against the requested test areas:
 
@@ -131,6 +169,7 @@ Coverage against the requested test areas:
 | 15 Copilot plan with compositing.grade validates | ✅ |
 | 16 Old settings gain `modify.effects`; existing tools unchanged (all 56 earlier tests still pass) | ✅ |
 | 17 UI preview Comp at 260/360/560 px, layer picker | ✅ (preview, not CEP) |
+| Studio (v0.3.0): brand store/colour/font/palette, ffx parser vs owner files, built-in presets = decoded values, animator build/replace/restore, Arabic switch, ffx import + applyPreset selection, preview engine, proximity build/reuse/protect/remove/center-anchor, select types/modes/search/same/labels/history, Copilot context | ✅ (mock host) |
 | Extra: host rollback on mid-call failure; keyed-layer measurement with bypass; unkeyed screen refused for Match | ✅ |
 
 Mock limitations specific to this module: the mock's `sampleImage` averages a procedural image; its Keylight is a colour-distance threshold and its Channel Mixer applies the documented affine maths. Real Keylight quality, real Channel Mixer units, and real parameter names are **not** proven here.
@@ -155,6 +194,14 @@ Record results here with AE version/build from the Diagnostics view.
 12. Disconnect network → local tools still work; AI shows "Cannot reach the Claude API".
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
+
+### Studio checklist (v0.3.0)
+23. Text: apply IN Down to an English and an Arabic text layer at the CTI; compare with your own `Animation_IN_Down.ffx` applied manually (same timing, ease, look). Apply OUT Down → ends at the layer out point.
+24. Text: import your 4 `.ffx` files with the upload button; previews appear; Apply → only the selected text layers receive them; selection restored.
+25. Brand: create a client, set Arabic/English fonts from the picker (fonts list loads), click a colour with text / shape / solid / an effect colour property selected; Auto fonts on mixed Arabic/English layers → Arabic gets RTL.
+26. Proximity: select 10 shape layers → Apply (Grow + Repel) → move `MOE Effector 1` → layers react; change Proximity Radius in Effect Controls; Remove (Whole comp); History › Restore.
+27. Proximity on 3D layers with Position Z / Rotation X; check no expression errors with the JavaScript and the Legacy expression engines.
+28. Select: counts match your comp; Shift-click adds, Alt-click removes; Back/Forward; scope Project on a large project (record time); label names come from your preferences.
 
 ### Compositing checklist (v0.2.0)
 15. Analyze Shot on a footage layer: swatches match the frame; no "MOE Probe (temporary)" layer remains; Edit › Undo history shows one "MOE: Analyze (temporary)" entry. Record time taken (Balanced, 1080p and 4K).

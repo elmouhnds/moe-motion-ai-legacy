@@ -1,4 +1,4 @@
-# Features (v0.2.0)
+# Features (v0.3.0)
 
 Legend: **Local** = no network. **AI** = uses Claude (optional). Host = verified in AE? (see TEST_REPORT.md)
 
@@ -6,6 +6,14 @@ Legend: **Local** = no network. **AI** = uses Claude (optional). Host = verified
 |---|---|---|---|---|---|
 | Motion | Smart Ease (`motion.smartEase`) | Local | Sets temporal ease influence (speed 0) on selected keys or all keys of selected properties. Presets Easy/Smooth/Strong/Snappy/Launch. Correct ease array size per value type; HOLD sides preserved; sides set to Bezier. | 1 undo step + checkpoint restore | ⏳ |
 | Motion | Stagger Layers (`motion.stagger`) | Local | Offsets selected layers' start times by N frames (any fps), order Top→Bottom / Bottom→Top / Selection / Random(seed); mode add-to-current or align. Locked layers skipped. | 1 undo step + checkpoint restore | ⏳ |
+| Text | Animate Text (`text.animate`) | Local | 27 presets (owner's 4 + 23 new), live previews, In/Out, duration/distance/direction/based-on/timing; `MOE In`/`MOE Out` animators; Arabic-safe auto switch. Imported `.ffx` applied via `applyPreset`. | 1 undo step + checkpoint (animator removed) | ⏳ |
+| Text | Remove Text Animation (`text.removeAnimation`) | Local | Removes MOE In/Out animators. | Undo | ⏳ |
+| Brand | Apply Brand Colour (`brand.applyColor`) | Local | Selected colour props → text fill/stroke → shape fill/stroke → MOE Brand Fill on footage/solids. | 1 undo step + checkpoint | ⏳ |
+| Brand | Apply Brand Font (`brand.applyFont`) | Local | Arabic/English/auto by script; RTL + universal composer for Arabic; keyframed Source Text set at CTI. | 1 undo step + checkpoint | ⏳ |
+| Brand | Extract Palette (`brand.extractPalette`) | Local | k-means palette from the selected layer's pixels. | No net change | ⏳ |
+| Motion | Proximity (`proximity.apply`) | Local | Effector null + controls; 15 reactions; one combined expression per property. | Undo + checkpoint (effector/effects/expressions) | ⏳ |
+| Motion | Remove Proximity / Center Anchor | Local | Tagged expressions + MOE Prox effects removed; anchor centred without visual jump. | Undo (+ checkpoint) | ⏳ |
+| Select | Select view + `select.layers` | Local | Moe Selector v5 features in the panel; AI-callable selection. | Selection history (AE does not undo selections) | ⏳ |
 | Comp | Analyze Shot (`compositing.analyze`) | Local | Measures mean colour, luminance, black/white points, cast, saturation, clipping, screen colour; swatch grid; one-click "Grade with auto balance" / "Key screen". Keyed layers are measured after the key. | Net no change (temporary probe layer, one undo entry) | ⏳ |
 | Comp | Grade (`compositing.grade`) | Local | Exposure, contrast, saturation, temperature, tint, auto balance, auto levels → one Channel Mixer **MOE Grade** (created or updated in place). Presets Neutral/Warm/Cool/Punchy/Muted/Bleach. | 1 undo step + checkpoint | ⏳ |
 | Comp | Look from Words (`compositing.lookAssist`) | AI + local analysis | Describe a look → Claude proposes Grade settings from measured stats → "Use in Grade" fills the form. Never writes. | — | n/a |

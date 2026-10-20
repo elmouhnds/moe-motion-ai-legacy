@@ -62,6 +62,14 @@ One senior motion graphics / CGI / VFX artist. Works fast, knows AE deeply, hate
 | Green/blue screen key setup with auto screen colour + cleanup chain | **Built** |
 | Reference image file (vision), curves/split toning, light wrap, grain match | Planned |
 
+### E. Studio (v0.3.0)
+| Capability | Status |
+|---|---|
+| Text animation library with previews, In/Out, owner presets + new presets, `.ffx` import | **Built** |
+| Brand Kit: client palettes + Arabic/English fonts, one-click apply | **Built** |
+| Proximity effector (ProximityPro-style) | **Built** (time remap, glow, shadow, look-at 3D planned) |
+| Select (Moe Selector v5 port) | **Built** |
+
 ### Platform
 Context inspection, registry, executor, permissions, presets, history, checkpoints, AI client, cost monitor, diagnostics, command search, favorites, compact/expanded layouts — **built (M1)**.
 

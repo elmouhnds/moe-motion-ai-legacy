@@ -53,8 +53,16 @@ function renderForm(params, args, onChange, { advancedOpen, onToggleAdvanced, ct
   const field = ([key, p]) => h('div', { class: `field ${p.type === 'text' ? 'stack' : ''}`, title: p.description || '' },
     h('label', {}, p.label),
     control(key, p, args[key], (v) => onChange(Object.assign({}, args, { [key]: v })), ctx));
+  // Booleans flagged `grid` render as a compact checkbox grid (e.g. Proximity reactions).
+  const gridKeys = main.filter(([, p]) => p.type === 'boolean' && p.grid);
+  const rest = main.filter(([, p]) => !(p.type === 'boolean' && p.grid));
+  const grid = gridKeys.length ? h('div', { class: 'check-grid' }, gridKeys.map(([key, p]) => h('button', {
+    class: 'check', role: 'checkbox', 'aria-checked': String(!!args[key]), title: p.description || p.label,
+    onclick: () => onChange(Object.assign({}, args, { [key]: !args[key] }))
+  }, h('span', { class: 'box' }), p.label))) : null;
   return h('div', { class: 'form' },
-    main.map(field),
+    rest.map(field),
+    grid,
     adv.length ? h('button', { class: 'adv-toggle', 'aria-expanded': String(!!advancedOpen), onclick: onToggleAdvanced }, icon('chev', 'sm'), 'Advanced') : null,
     adv.length && advancedOpen ? adv.map(field) : null);
 }

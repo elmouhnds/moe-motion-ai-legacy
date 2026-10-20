@@ -26,6 +26,16 @@ const ICONS = {
   save: '<path d="M3 3h8l2 2v8H3z"/><path d="M5 3v3h5V3M5 13V9h6v4"/>',
   grade: '<circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11" /><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor" stroke="none" opacity=".55"/>',
   key: '<path d="M8 2s4 4.3 4 7.2A4 4 0 0 1 4 9.2C4 6.3 8 2 8 2z"/><path d="M6.3 9.8a1.8 1.8 0 0 0 1.7 1.6"/>',
+  brand: '<path d="M8 2a6 6 0 1 0 0 12c1 0 1.4-.8 1-1.6-.4-.9.2-1.9 1.2-1.9H12a2 2 0 0 0 2-2A6 6 0 0 0 8 2z"/><circle cx="5" cy="7" r=".8"/><circle cx="8" cy="5" r=".8"/><circle cx="11" cy="7" r=".8"/>',
+  type: '<path d="M3 4V3h10v1M8 3v10M6 13h4"/>',
+  target: '<circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/><path d="M8 1v2.5M8 12.5V15M1 8h2.5M12.5 8H15"/>',
+  cursor: '<path d="M3 2l9 5-4 1-1 4z"/><path d="M8.5 9.5L12 13"/>',
+  eye: '<path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/>',
+  lock: '<rect x="3.5" y="7" width="9" height="6.5" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/>',
+  solo: '<path d="M3 9a5 5 0 0 1 10 0v3h-2.5V9M3 12h2.5V9"/>',
+  shy: '<path d="M3 8c2-3 8-3 10 0M5 10l-1 2M8 10.5v2M11 10l1 2"/>',
+  upload: '<path d="M8 11V3M5 6l3-3 3 3M3 13h10"/>',
+  edit: '<path d="M10.5 2.5l3 3L6 13H3v-3z"/>',
   layers: '<path d="M8 2l6 3-6 3-6-3z"/><path d="M2 8l6 3 6-3M2 11l6 3 6-3" opacity=".6"/>'
 };
 

@@ -18,6 +18,16 @@ const SHOTS = [
   ['comp-key', '?view=compositing&fixture=comp', async (p) => { await p.click('[data-tool="compositing.keySetup"] .tool-h'); await p.click('[data-tool="compositing.keySetup"] .btn.primary'); await p.waitForSelector('[data-tool="compositing.keySetup"] .report'); }],
   ['comp-match', '?view=compositing&fixture=comp', async (p) => { await p.click('[data-tool="compositing.matchColor"] .tool-h'); await p.selectOption('[data-tool="compositing.matchColor"] select', '2'); await p.click('[data-tool="compositing.matchColor"] .btn.primary'); await p.waitForSelector('[data-tool="compositing.matchColor"] .report'); }],
   ['comp-look', '?view=compositing&fixture=comp&demoAI=1', async (p) => { await p.click('[data-tool="compositing.lookAssist"] .tool-h'); await p.fill('[data-tool="compositing.lookAssist"] textarea', 'cold clinical thriller'); await p.locator('[data-tool="compositing.lookAssist"] textarea').blur(); await p.click('[data-tool="compositing.lookAssist"] .btn.primary'); await p.waitForSelector('text=Use in Grade'); await p.click('text=Use in Grade'); await p.waitForTimeout(200); }],
+  ['text', '?view=text&fixture=studio'],
+  ['text-ar', '?view=text&fixture=studio', async (p) => { await p.click('button[title="Arabic sample"]'); await p.waitForTimeout(700); }],
+  ['text-apply', '?view=text&fixture=studio', async (p) => { await p.click('.tp-card'); await p.click('.tp-apply .btn.primary'); await p.waitForSelector('.tp-apply .report'); await p.waitForTimeout(500); }],
+  ['brand', '?view=brand&fixture=studio&seedBrand=1'],
+  ['brand-applied', '?view=brand&fixture=studio&seedBrand=1', async (p) => { await p.click('.brand-swatch:nth-child(3)'); await p.waitForSelector('.report'); await p.click('text=Auto fonts'); await p.waitForTimeout(400); }],
+  ['brand-edit', '?view=brand&fixture=studio&seedBrand=1', async (p) => { await p.click('button[title="Edit client"]'); await p.waitForSelector('.brand-edit'); }],
+  ['select', '?view=select&fixture=studio', async (p) => { await p.waitForSelector('.type-btn .count'); await p.waitForTimeout(300); }],
+  ['select-run', '?view=select&fixture=studio', async (p) => { await p.waitForTimeout(400); await p.click('.type-btn:first-child'); await p.waitForTimeout(400); }],
+  ['proximity', '?view=motion&fixture=studio', async (p) => { await p.click('[data-tool="proximity.apply"] .tool-h'); await p.waitForTimeout(200); }],
+  ['proximity-run', '?view=motion&fixture=studio', async (p) => { await p.click('[data-tool="proximity.apply"] .tool-h'); await p.click('[data-tool="proximity.apply"] .btn.primary'); await p.waitForSelector('[data-tool="proximity.apply"] .report'); }],
   ['settings', '?view=settings'],
   ['diagnostics', '?view=diagnostics'],
   ['palette', '?view=motion', async (p) => { await p.keyboard.press('Control+K'); await p.keyboard.type('ease'); }],
@@ -29,7 +39,7 @@ const SHOTS = [
   const only = process.argv[2];
   let errors = 0;
   for (const [name, qs, act] of SHOTS) {
-    if (only && name !== only) continue;
+    if (only && !name.startsWith(only)) continue;
     const page = await browser.newPage({ viewport: { width: (qs.match(/w=(\d+)/) ? Number(RegExp.$1) : 360) + 40, height: 720 }, deviceScaleFactor: 2 });
     page.on('pageerror', (e) => { errors++; console.log(`[${name}] pageerror: ${e.message}`); });
     page.on('console', (m) => { if (m.type() === 'error') { errors++; console.log(`[${name}] console: ${m.text()}`); } });

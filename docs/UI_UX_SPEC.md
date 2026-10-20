@@ -5,7 +5,8 @@ Premium, quiet, technical. Feels native next to AE's own panels: flat surfaces, 
 
 ## Layout
 ```
-┌ Header 36px ─ [M] Motion · Expressions · Comp · Tools ···· [⌕] [☆] [⏱] [⚙]
+┌ Rail 40px │ Header: section title ····························· [⌕]
+│ M · Motion · Text · Brand · Select · Expr · Comp · Tools … ☆ ⏱ ⚙
 ├ Context 26px ─ ● HERO_Title_v03  25 fps · 4 lyr  3 prop  7 keys        [↻]
 ├ Content (scroll)
 │   SECTION LABEL (purpose group, e.g. EASING / TIMING)
@@ -17,7 +18,8 @@ Premium, quiet, technical. Feels native next to AE's own panels: flat surfaces, 
 │     └ preview list → result report (status, verification checks, Restore)
 └ Copilot bar 38px ─ ✦ Describe a change…                         Ctrl+Space
 ```
-- **Main workspaces**: Motion, Expressions, Comp, Tools. **Secondary** (icons): Favorites, History, Settings. Diagnostics opens from Settings and the command palette.
+- **Rail sections** (v0.3): Motion, Text, Brand, Select, Expressions, Comp, Tools; bottom Favorites, History, Settings. Text = preset grid with live canvas previews and an apply panel; Brand = client switcher, swatches (click = apply), typography rows, Auto fonts; Select = type grid with counts, search, match reference, labels, selection history and switches.
+- **Main workspaces (v0.2)**: Motion, Expressions, Comp, Tools. **Secondary** (icons): Favorites, History, Settings. Diagnostics opens from Settings and the command palette.
 - **Comp** groups: Analyze (Analyze Shot) · Color (Grade, Look from Words, Match Color) · Key (Screen Key). Analysis results show a swatch grid and one-click follow-ups that *prefill* other tools; AI suggestions also prefill — nothing runs without the user's click.
 - **Context-aware**: each tool row's hint is computed from the live selection ("Ease 7 keyframes (in 33% / out 33%)" or "Select keyframes"). Unavailable tools stay visible but explain why.
 - **Copilot** is collapsed into a single bar; expands to a sheet over the bottom of the panel only when used. Never occupies the timeline.

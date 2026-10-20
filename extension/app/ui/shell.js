@@ -15,10 +15,14 @@ const views = {
   history: require('./views/history'),
   settings: require('./views/settings'),
   diagnostics: require('./views/diagnostics'),
-  compositing: { render: (app) => require('./views/motion').renderCategory(app, 'compositing') }
+  compositing: { render: (app) => require('./views/motion').renderCategory(app, 'compositing') },
+  text: require('./views/text'),
+  brand: require('./views/brand'),
+  select: require('./views/select')
 };
 
-const MAIN = [['motion', 'Motion', 'motion'], ['expressions', 'Expressions', 'expr'], ['compositing', 'Comp', 'layers'], ['tools', 'Tools', 'tools']];
+// Sections by creative purpose (left rail). Diagnostics opens from Settings and the palette.
+const MAIN = [['motion', 'Motion', 'motion'], ['text', 'Text', 'type'], ['brand', 'Brand', 'brand'], ['select', 'Select', 'cursor'], ['expressions', 'Expressions', 'expr'], ['compositing', 'Comp', 'layers'], ['tools', 'Tools', 'tools']];
 // Diagnostics is reached from Settings and the command palette (keeps the header within 340 px).
 const SECONDARY = [['favorites', 'Favorites', 'star'], ['history', 'History', 'history'], ['settings', 'Settings', 'gear']];
 
@@ -39,7 +43,6 @@ function createApp(root, services, env = {}) {
   };
 
   let scrollTop = 0;
-  let compactBelow = 0;
   let toastTimer = null;
 
   /* ---------- rendering ---------- */
@@ -52,18 +55,23 @@ function createApp(root, services, env = {}) {
     const fk = active && active.getAttribute && active.getAttribute('data-fk');
     const kept = fk ? { fk, value: active.value, a: active.selectionStart, b: active.selectionEnd } : null;
     clear(root);
-    const tab = ([id, label, ic]) => h('button', { class: 'tab', role: 'tab', 'aria-selected': String(s.view === id), title: label, onclick: () => app.go(id) }, icon(ic), h('span', { class: 'label' }, label));
-    const sec = ([id, label, ic]) => h('button', { class: 'icon-btn', 'aria-pressed': String(s.view === id || (id === 'settings' && s.view === 'diagnostics')), title: label, 'aria-label': label, onclick: () => app.go(s.view === id ? 'motion' : id) }, icon(ic));
+    const isSection = (id) => s.view === id || (id === 'settings' && s.view === 'diagnostics');
+    const railBtn = ([id, label, ic]) => h('button', { class: 'rail-btn', role: 'tab', 'aria-selected': String(isSection(id)), title: label, 'aria-label': label, onclick: () => app.go(id) }, icon(ic), h('span', { class: 'rail-label' }, label));
+    const current = [...MAIN, ...SECONDARY, ['diagnostics', 'Diagnostics']].find(([id]) => id === s.view) || MAIN[0];
     const appEl = h('div', { class: `app ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''}` },
-      h('div', { class: 'hdr', role: 'tablist' },
+      h('nav', { class: 'rail', role: 'tablist', 'aria-label': 'Sections' },
         h('div', { class: 'brand', title: `MOE Motion AI ${services.version}` }, 'M'),
-        h('div', { class: 'tabs' }, MAIN.map(tab)),
+        MAIN.map(railBtn),
         h('span', { class: 'spacer' }),
-        h('button', { class: 'search-btn', title: 'Search tools (Ctrl+K)', onclick: () => palette.open(app) }, icon('search', 'sm'), h('span', { class: 'label' }, 'Search'), h('span', { class: 'kbd' }, 'Ctrl K')),
-        SECONDARY.map(sec)),
-      contextStrip(s),
-      h('div', { class: 'content' }, (views[s.view] || views.motion).render(app)),
-      copilot.render(app),
+        SECONDARY.map(railBtn)),
+      h('div', { class: 'main' },
+        h('div', { class: 'hdr' },
+          h('div', { class: 'title' }, current[1]),
+          h('span', { class: 'spacer' }),
+          h('button', { class: 'search-btn', title: 'Search tools (Ctrl+K)', onclick: () => palette.open(app) }, icon('search', 'sm'), h('span', { class: 'label' }, 'Search'), h('span', { class: 'kbd' }, 'Ctrl K'))),
+        contextStrip(s),
+        h('div', { class: 'content' }, (views[s.view] || views.motion).render(app)),
+        copilot.render(app)),
       s.toast ? h('div', { class: 'toast', role: 'status' }, s.toast) : null);
     root.appendChild(appEl);
     const c2 = root.querySelector('.content');
@@ -129,6 +137,7 @@ function createApp(root, services, env = {}) {
   app.toggleTool = (id, open) => app.state.set((s) => ({ open: Object.assign({}, s.open, { [id]: open }) }));
   app.openTool = (tool) => {
     const view = tool.category === 'expressions' && tool.id !== 'expressions.inspect' ? 'expressions' : tool.category;
+    if (view === 'text' && tool.id === 'text.animate') { app.state.set({ view }); return; }
     app.state.set((s) => ({ view, open: Object.assign({}, s.open, { [tool.id]: true }) }));
     setTimeout(() => { const el = root.querySelector(`[data-tool="${tool.id}"]`); if (el) el.scrollIntoView({ block: 'nearest' }); }, 0);
   };
@@ -227,6 +236,13 @@ function createApp(root, services, env = {}) {
     const ex = app.state.get().expr;
     const r = await app.runTool('expressions.assist', { mode: ex.assist.mode, request: ex.assist.request || '' }, { resultKey: 'assist' });
     app.state.set((s) => ({ expr: Object.assign({}, s.expr, { assist: Object.assign({}, s.expr.assist, { result: r }) }) }));
+  };
+
+  /* ---------- fonts (cached once per session) ---------- */
+  let fontsPromise = null;
+  app.fonts = () => {
+    if (!fontsPromise) fontsPromise = services.host.call('fonts.list', {}).then((r) => r.fonts).catch((e) => { fontsPromise = null; throw e; });
+    return fontsPromise;
   };
 
   /* ---------- copilot ---------- */
@@ -329,9 +345,7 @@ function createApp(root, services, env = {}) {
     const d = services.settings.get().ui.density;
     const w = root.clientWidth;
     // Auto: compact when narrow, or when the header measurably overflows (fonts/locales vary).
-    const hdr = root.querySelector('.hdr');
-    if (d === 'auto' && hdr && !app.state.get().compact && hdr.scrollWidth > hdr.clientWidth + 1) compactBelow = w + 1;
-    const compact = d === 'compact' || (d === 'auto' && (w < 340 || w < compactBelow));
+    const compact = d === 'compact' || (d === 'auto' && w < 340);
     const wide = d === 'expanded' || (d === 'auto' && w >= 500);
     const st = app.state.get();
     if (compact !== st.compact || wide !== st.wide) app.state.set({ compact, wide });

@@ -97,9 +97,17 @@ See `docs/features/COMPOSITING.md`. Key patterns reusable by future modules:
 - **Parameter resolution**: English name → `<effect>-NNNN` convention → order; fallbacks only when the parameter count matches `expectParams`; method reported in checks.
 - **Effect checkpoints**: created → removed on restore; updated → previous values by parameter index.
 
+## 5c. Studio modules (v0.3.0)
+See `docs/features/STUDIO_v0.3.md`.
+- **Navigation**: left rail with sections by purpose; each section is a view (`app/ui/views/*`) over registered tools.
+- **Text**: presets are data (`features/text/presets.js`) → `buildSpec` → host `text.applyAnimator` builds a named animator; `preview.js` simulates the Range Selector for canvas previews; `.ffx` files are parsed read-only (`ffx.js`) and applied with `Layer.applyPreset`.
+- **Brand**: `brands.json` store; colour application dispatches per target type; solids use an effect, never the shared `SolidSource`.
+- **Proximity**: pure expression generator (`features/proximity/expressions.js`) + effector controls via `effects.ensure` + `expressions.set`; restore removes what was created.
+- **Select**: pure matcher over `layers.list` snapshots; selection changes go through `layers.setSelection`; history lives in the panel because AE does not undo selections.
+
 ## 6. Data locations
 
-`%APPDATA%\MOE Motion AI\` — `settings.json`, `favorites.json`, `presets.json`, `snippets.json`, `recipes.json`, `checkpoints.json` (last 50), `usage.json`, `history.jsonl`, `diagnostics.jsonl`, `secrets.dat` (DPAPI). Override with env `MOE_DATA_DIR`.
+`%APPDATA%\MOE Motion AI\` — `brands.json`, `text-presets.json` + `presets/*.ffx`, `settings.json`, `favorites.json`, `presets.json`, `snippets.json`, `recipes.json`, `checkpoints.json` (last 50), `usage.json`, `history.jsonl`, `diagnostics.jsonl`, `secrets.dat` (DPAPI). Override with env `MOE_DATA_DIR`.
 
 ## 7. Repository structure
 
