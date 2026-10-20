@@ -12,9 +12,9 @@ function groupTools(tools) {
 }
 
 /** Generic workspace: tools of one category, grouped by purpose. */
-function renderCategory(app, category) {
+function renderCategory(app, category, keep) {
   // Tools flagged ui.hidden are driven from another tool's UI (still in search / Copilot).
-  const tools = app.services.registry.list({ category }).filter((t) => !(t.ui && t.ui.hidden));
+  const tools = app.services.registry.list({ category }).filter((t) => !(t.ui && t.ui.hidden) && (!keep || keep(t)));
   const groups = groupTools(tools);
   let first = true;
   return h('div', { class: 'view' }, [...groups.entries()].map(([g, list]) => [

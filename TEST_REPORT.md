@@ -1,16 +1,16 @@
 # Test Report
 
-Last run: 2026-10-20 (v0.4.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-20 (v0.5.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
 | Layer | How it was tested | Result |
 |---|---|---|
-| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 156/156 automated tests pass (132 behaviour + 24 UI module loads) |
+| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 163/163 automated tests pass (135 behaviour + 28 UI module loads) |
 | ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (13 files) |
 | Core (registry, schema, permissions, executor, storage, logger, bridge) | Unit + integration tests | Pass |
 | Claude integration | Mocked HTTPS responder: request shape, retries, refusal, truncation, 401, offline, budget | Pass — **no real API call was made** |
-| Panel UI | Browser preview (`dev/preview.html`) with the real UI code + real host .jsx on the mock; Playwright clicks through 41 scenarios; zero page/console errors | Pass — **not the CEP runtime** |
+| Panel UI | Browser preview (`dev/preview.html`) with the real UI code + real host .jsx on the mock; Playwright clicks through 30 Studio scenarios (wide 900 px and narrow 380/280 px); zero page/console errors | Pass — **not the CEP runtime** |
 | Colour contrast | `tools/check-contrast.js`, WCAG, both themes | Pass |
 | **Inside After Effects 2025** | — | **Not run yet** |
 
@@ -151,7 +151,10 @@ What it does not prove: real AE behaviour (timing of `expressionError`, selectio
 - ✅ Focus Zoom chains: a second zoom starts from the rig state (pan), restore removes only its keys
 - ✅ Follow Zoom: anchor expression follows the target and is clamped
 - ✅ Cursor Animator: cursor layer with travel/hold, pulse and ripple from a keyed null
-- ✅ 24 × "UI module loads" (every panel UI file parses and loads)
+- ✅ Studio: every tile is a registered tool with valid preset args
+- ✅ Studio: every tool belongs to a section that exists in the sidebar
+- ✅ Studio: thumbnail recipes draw without throwing (canvas stub)
+- ✅ 28 × "UI module loads" (every panel UI file parses and loads)
 
 Expression maths: the mock now *evaluates* generated expressions (`tests/mock/ae-expr.js`) — Grid positions, Zoom follow, Glass links and Quick expressions are checked numerically, not only for syntax. This is still not the AE expression engine.
 
@@ -180,7 +183,9 @@ Expression maths: the mock now *evaluates* generated expressions (`tests/mock/ae
 Mock limitations specific to this module: the mock's `sampleImage` averages a procedural image; its Keylight is a colour-distance threshold and its Channel Mixer applies the documented affine maths. Real Keylight quality, real Channel Mixer units, and real parameter names are **not** proven here.
 
 ## UI preview scenarios (node tools/screenshot.js)
-motion, motion-compact (260 px), motion-wide (560 px), expressions, copilot plan, copilot executed, expression assistant diff, tool factory draft, history after a run, settings, diagnostics, command palette, light theme, Text/Brand/Select/Proximity (v0.3), and v0.4: Quick section, Quick options popover, Quick Bar run, Grid preview, Ring preset, Grid built + verification, Adapt plan preview, Adapt run, Layout Guides, Focus Zoom map picker, Glass applied, one-click expressions — screenshots in `dev/screens/` (git-ignored). The AI scenarios use canned responses (`dev/demo-ai.js`, preview only).
+v0.5 Studio: Animate (library, pick, double-click apply, All tools), Text, Layout & Grid (Ring, Wall Build applied + report), Looks & Glass (applied), Zoom & Focus, Expressions (tile, Editor), Deliver (board, per-format override, Create 3 comps), Compositing, Quick, Quick options popover, Brand, Select, Copilot, Settings, History, light theme, command search; narrow: Animate, Layout, Deliver at 380 px, compact 280 px.
+
+Earlier scenario list (v0.4 and before): motion, motion-compact (260 px), motion-wide (560 px), expressions, copilot plan, copilot executed, expression assistant diff, tool factory draft, history after a run, settings, diagnostics, command palette, light theme, Text/Brand/Select/Proximity (v0.3), and v0.4: Quick section, Quick options popover, Quick Bar run, Grid preview, Ring preset, Grid built + verification, Adapt plan preview, Adapt run, Layout Guides, Focus Zoom map picker, Glass applied, one-click expressions — screenshots in `dev/screens/` (git-ignored). The AI scenarios use canned responses (`dev/demo-ai.js`, preview only).
 
 ## Host checklist (run on Windows 11 + After Effects 2025)
 Record results here with AE version/build from the Diagnostics view.
@@ -199,6 +204,12 @@ Record results here with AE version/build from the Diagnostics view.
 12. Disconnect network → local tools still work; AI shows "Cannot reach the Claude API".
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
+
+### Studio checklist (v0.5.0)
+41. Dock the panel narrow (≈ 320 px) and wide (≈ 900 px): sidebar labels / Inspector beside the library switch at the documented widths; nothing overlaps.
+42. Thumbnails animate smoothly with 20+ tiles visible (CEP Chromium 99 canvas); CPU stays low when the panel is hidden.
+43. Double-click a tile applies with its preset; the report and Restore appear in the Inspector.
+44. Deliver: Create 3 comps from a real key visual; the active comp stays the original during the batch; each copy verified; Restore removes one copy.
 
 ### Layout & Speed checklist (v0.4.0)
 29. Grid Builder: select 12 layers → Wall / Ring / Galaxy / Globe; preview in the panel matches the comp; change Spacing, Twist, Build in Effect Controls; scrub the Build keys; JavaScript and Legacy expression engines; time per frame with 100+ items.

@@ -16,6 +16,12 @@ module.exports = {
     if (/colourist/.test(body.system[0].text)) {
       return reply({ settings: { exposure: -0.2, contrast: 25, saturation: 70, temperature: -35, tint: -5, autoBalance: 60, autoLevels: 30 }, explanation: 'Neutralises the warm cast first, then pulls the shot cold and desaturated with firmer contrast for a tense, clinical feel.', limitations: 'Teal-only shadows need split toning, which a single grade cannot do.' });
     }
+    if (/layout designer/.test(body.system[0].text)) {
+      return reply({ layout: [], explanation: 'Logo stays top-left, headline above the product, CTA bottom-right.' });
+    }
+    if (/chroma-key green/.test(body.system[0].text) || /green background/.test(body.system[0].text)) {
+      return reply({ title: 'Gold coin', prompt: 'Photoreal spinning gold coin, studio light', negative: 'text', keying: { spillRisk: 'high', choke: 1, advice: 'Gold reflects green — keep spill suppression on.' } });
+    }
     if (/Tool Factory/.test(body.system[0].text)) {
       return reply({ name: 'Soft cascade', description: 'Stagger the selected layers by N frames, then give their keys a smooth ease.', limitations: '', params: [{ key: 'step', type: 'integer', label: 'Frames apart', default_json: '3', min: 1, max: 30, options: [] }], steps: [{ tool: 'motion.stagger', args_json: '{"frames":{"$param":"step"},"order":"index","mode":"offset","seed":1}', note: 'Cascade top to bottom' }, { tool: 'motion.smartEase', args_json: '{"influenceIn":70,"influenceOut":70,"sides":"both","scope":"all"}', note: 'Smooth every key' }] });
     }

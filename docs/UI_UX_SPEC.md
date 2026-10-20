@@ -58,3 +58,9 @@ Not connected (host error + Reconnect) · no project · no comp · empty selecti
 - **Zoom**: focus map picker shows the visible window for the chosen zoom.
 - **Glass**: Brand Kit tint swatches.
 - **Expressions**: one-click tiles above the editor.
+
+## v0.5 — Studio (concept B, chosen by the owner)
+- **Sidebar** (148 px labelled ≥ 600 px wide, 44 px icons below): creative sections → helpers → client card → utilities.
+- **Library section** = tabs (Library · All tools [· Editor]) + filter chips + search + tile grid (116 px min, animated canvas thumbnails) + **Inspector** (300 px, sticky, beside the grid ≥ 760 px, under it below). Inspector = big preview (or the tool's own preview widget) · title · description · the tool's form without header/presets · Apply · report · Restore.
+- Interaction: click tile = select + fill settings once; double-click = apply with the tile preset; ★ pins the tool to Favorites; Quick Bar stays under the context line.
+- **Deliver**: format chips → board (source + one diagram per format, colour = role) → Inspector (per-layer role/zone, method, safe margin, re-stack, nested) → sticky footer "Create N comps".

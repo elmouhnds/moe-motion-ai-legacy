@@ -240,4 +240,4 @@ const body = {
 };
 const result = { 'generate.greenPrompt': greenResult };
 
-module.exports = { body, result, animated, prep };
+module.exports = { body, result, animated, prep, drawPlanFrame, ROLE_COLORS };

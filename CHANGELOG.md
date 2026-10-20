@@ -2,6 +2,19 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.5.0] — 2026-10-20 — Studio interface (concept B)
+Chosen by the product owner from two UI concepts (canvas "MOE Motion AI — UI Concepts").
+### Added
+- **Studio layout**: labelled sidebar by creative purpose — Animate · Text · Layout & Grid · Looks & Glass · Zoom & Focus · Expressions · Compositing · Deliver, then Quick · Select · Brand · Tools, the active **client card** (Brand Kit colours) and Favorites / History / Settings.
+- **Visual library + Inspector** for Animate (24 tiles), Layout & Grid (15), Looks & Glass (7), Zoom & Focus (8) and Expressions (17): animated canvas thumbnails, filter chips, search, click = inspect (the tool's own form, preview widget, Apply, verification report, Restore), double-click = apply now, ★ pin. "All tools" tab keeps every tool of the section; Expressions keeps its Editor tab.
+- **Deliver board**: every format at once (9:16, 1:1, 4:5, 16:9, 4K, 2:3, 1.91:1, 21:9, 3:1, custom) — the comp is measured once, each format is planned locally and drawn before/after; per-format role/zone overrides; Refine with Claude per format; **Create N comps** runs Resize & Adapt per format (each verified, each restorable); "Single format" tab for the classic tool.
+- Responsive: labelled sidebar from 600 px, Inspector beside the library from 760 px; narrower docks get the icon sidebar and the Inspector under the tiles.
+- Theme-aware thumbnails (light AE brightness).
+- Tests: `tests/studio-ui.test.js` (every tile → registered tool with valid preset args; every tool has a sidebar home; thumbnails draw). 163 tests; 30 preview scenarios (wide 900 px + narrow 380/280 px).
+### Changed
+- Old view ids still work (`motion` → Animate). Command search and "open tool" land on the tool's section (tile selected, or All tools).
+- Compositing lists its tools without Glass (now in Looks & Glass).
+
 ## [0.4.0] — 2026-10-20 — Layout & Speed: Grid, Resize & Adapt, Zoom, Glass, Quick Bar
 Design: `docs/features/STUDIO_v0.4.md`.
 ### Added

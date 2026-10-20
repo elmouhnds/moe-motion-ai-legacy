@@ -28,6 +28,10 @@
 - [ ] Host verification (TEST_REPORT.md → Layout & Speed checklist 29–40)
 - Next: ClickZoom Match Cut + 3D camera depth; zoom from markers; click sounds; Glass dispersion (RGB split) and Essential Graphics controls; Grid: per-item time offset (stagger keyframes), hex packing, image-grid from a folder; Adapt: text box reflow (paragraph width / line breaks), batch export of several formats in one click, render-queue hand-off; Quick Bar: Split Text into layers, keyframe nudge/retime; generation provider connectors (Firefly Services, Runway, a local ComfyUI bridge) once you choose one and its API docs are verified; CorridorKey as the keyer when installed
 
+## M1.8 — Studio interface ✅ (v0.5.0)
+- [x] Labelled sidebar, visual libraries with Inspector, Deliver board, client card, responsive layout
+- Next: Text section in the same library + Inspector pattern with previews on the selected text and client colours; hover-to-preview on the comp (temporary keys, auto-revert); "Apply In + matching Out"; context suggestions on the section home; drag-to-reorder Quick Bar
+
 ## M2 — Motion Director depth
 - Visual ease graph editor (bezier handles → speed/influence), read current ease from selection
 - Keyframe timing tools: retime, scale around playhead, snap keys to whole frames, reverse

@@ -1,4 +1,6 @@
-# Features (v0.4.0)
+# Features (v0.5.0)
+
+Interface: Studio (labelled sidebar, visual libraries + Inspector, Deliver board) — see CHANGELOG 0.5.0. Tools below are unchanged.
 
 Legend: **Local** = no network. **AI** = uses Claude (optional). Host = verified in AE? (see TEST_REPORT.md)
 

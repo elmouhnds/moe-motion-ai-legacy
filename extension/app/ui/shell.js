@@ -8,6 +8,8 @@ const { createState } = require('./state');
 const palette = require('./palette');
 const copilot = require('./copilot');
 const quickbar = require('./quickbar');
+const studio = require('./studio/sections');
+const library = require('./studio/library');
 const views = {
   motion: require('./views/motion'),
   expressions: require('./views/expressions'),
@@ -16,18 +18,21 @@ const views = {
   history: require('./views/history'),
   settings: require('./views/settings'),
   diagnostics: require('./views/diagnostics'),
-  compositing: { render: (app) => require('./views/motion').renderCategory(app, 'compositing') },
+  // Compositing lists its tools classically; glass lives in Looks & Glass.
+  compositing: { render: (app) => require('./views/motion').renderCategory(app, 'compositing', (t) => !/^glass\./.test(t.id)) },
   text: require('./views/text'),
   brand: require('./views/brand'),
   select: require('./views/select'),
-  layout: { render: (app) => require('./views/motion').renderCategory(app, 'layout') },
-  quick: { render: (app) => quickbar.view(app) }
+  quick: { render: (app) => quickbar.view(app) },
+  deliver: require('./views/deliver')
 };
+// Studio library sections (tiles + inspector).
+for (const sec of studio.SECTIONS.filter((x) => x.kind === 'library')) views[sec.id] = { render: (app) => library.render(app, sec) };
 
-// Sections by creative purpose (left rail). Diagnostics opens from Settings and the palette.
-const MAIN = [['quick', 'Quick', 'bolt'], ['motion', 'Motion', 'motion'], ['text', 'Text', 'type'], ['brand', 'Brand', 'brand'], ['layout', 'Layout', 'grid'], ['select', 'Select', 'cursor'], ['expressions', 'Expressions', 'expr'], ['compositing', 'Comp', 'layers'], ['tools', 'Tools', 'tools']];
-// Diagnostics is reached from Settings and the command palette (keeps the header within 340 px).
-const SECONDARY = [['favorites', 'Favorites', 'star'], ['history', 'History', 'history'], ['settings', 'Settings', 'gear']];
+// Studio sidebar: creative sections, then helpers; utilities at the bottom. Diagnostics opens from Settings / search.
+const MAIN = [...studio.SECTIONS.map((x) => [x.id, x.label, x.icon]), ...studio.SECONDARY.map((x) => [x.id, x.label, x.icon])];
+const SECONDARY = studio.UTILITY;
+const resolveView = (v) => studio.ALIAS[v] || v;
 
 function createApp(root, services, env = {}) {
   const ui = services.settings.get().ui;
@@ -35,7 +40,7 @@ function createApp(root, services, env = {}) {
     services,
     env,
     state: createState({
-      view: ui.workspace || 'motion',
+      view: resolveView(ui.workspace || 'animate'),
       ctx: null, hostError: null, hostInfo: null,
       running: null, results: {}, args: {}, open: {}, advanced: {},
       expr: { code: '', assist: { mode: 'generate', request: '', result: null } },
@@ -59,14 +64,18 @@ function createApp(root, services, env = {}) {
     const kept = fk ? { fk, value: active.value, a: active.selectionStart, b: active.selectionEnd } : null;
     clear(root);
     const isSection = (id) => s.view === id || (id === 'settings' && s.view === 'diagnostics');
-    const railBtn = ([id, label, ic]) => h('button', { class: 'rail-btn', role: 'tab', 'aria-selected': String(isSection(id)), title: label, 'aria-label': label, onclick: () => app.go(id) }, icon(ic), h('span', { class: 'rail-label' }, label));
+    const navBtn = ([id, label, ic]) => h('button', { class: 'nav-btn', role: 'tab', 'aria-selected': String(isSection(id)), title: label, 'aria-label': label, onclick: () => app.go(id) }, icon(ic), h('span', { class: 'nav-label' }, label));
     const current = [...MAIN, ...SECONDARY, ['diagnostics', 'Diagnostics']].find(([id]) => id === s.view) || MAIN[0];
-    const appEl = h('div', { class: `app ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''}` },
-      h('nav', { class: 'rail', role: 'tablist', 'aria-label': 'Sections' },
-        h('div', { class: 'brand', title: `MOE Motion AI ${services.version}` }, 'M'),
-        MAIN.map(railBtn),
+    const client = clientCard(s);
+    const appEl = h('div', { class: `app ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.navWide ? 'nav-wide' : ''}` },
+      h('nav', { class: 'sidebar', role: 'tablist', 'aria-label': 'Sections' },
+        h('div', { class: 'sb-brand', title: `MOE Motion AI ${services.version}` }, h('span', { class: 'brand' }, 'M'), h('span', { class: 'nav-label' }, 'MOE Studio')),
+        studio.SECTIONS.map((x) => navBtn([x.id, x.label, x.icon])),
+        h('div', { class: 'sb-sep' }),
+        studio.SECONDARY.map((x) => navBtn([x.id, x.label, x.icon])),
         h('span', { class: 'spacer' }),
-        SECONDARY.map(railBtn)),
+        client,
+        h('div', { class: 'sb-utility' }, SECONDARY.map(navBtn))),
       h('div', { class: 'main' },
         h('div', { class: 'hdr' },
           h('div', { class: 'title' }, current[1]),
@@ -91,6 +100,17 @@ function createApp(root, services, env = {}) {
       }
     }
   };
+
+  /** Active client (Brand Kit) — a click opens Brand; colours also feed Glass tints and previews. */
+  function clientCard(s) {
+    const brands = services.brands.list();
+    if (!brands.length) return h('button', { class: 'sb-client empty', title: 'Add a client in Brand', onclick: () => app.go('brand') }, icon('brand'), h('span', { class: 'nav-label' }, 'Add client'));
+    const b = brands.find((x) => x.id === services.store.get('active-client', null)) || brands[0];
+    return h('button', { class: 'sb-client', title: `Client: ${b.name} — open Brand`, onclick: () => app.go('brand') },
+      h('span', { class: 'sb-kicker nav-label' }, 'CLIENT'),
+      h('span', { class: 'sb-client-name nav-label' }, b.name),
+      h('span', { class: 'sb-swatches' }, b.colors.slice(0, 5).map((c) => h('span', { class: 'sb-sw', style: { background: c.hex } }))));
+  }
 
   function contextStrip(s) {
     if (s.hostError) {
@@ -127,6 +147,7 @@ function createApp(root, services, env = {}) {
 
   /* ---------- navigation ---------- */
   app.go = (view) => {
+    view = resolveView(view);
     app.state.set({ view });
     if (MAIN.some(([id]) => id === view)) services.settings.update({ ui: { workspace: view } });
     if (view === 'settings') app.loadKeyStatus();
@@ -141,9 +162,19 @@ function createApp(root, services, env = {}) {
   };
   app.toggleTool = (id, open) => app.state.set((s) => ({ open: Object.assign({}, s.open, { [id]: open }) }));
   app.openTool = (tool) => {
-    const view = tool.category === 'expressions' && tool.id !== 'expressions.inspect' ? 'expressions' : tool.category;
-    if (view === 'text' && tool.id === 'text.animate') { app.state.set({ view }); return; }
-    app.state.set((s) => ({ view, open: Object.assign({}, s.open, { [tool.id]: true }) }));
+    let view = studio.sectionOf(tool);
+    const sec = studio.byId(view);
+    app.state.set((s) => {
+      const patch = { view, open: Object.assign({}, s.open, { [tool.id]: true }) };
+      if (sec && sec.kind === 'library') {
+        const tile = sec.tiles.find((t) => t.tool === tool.id);
+        const cur = Object.assign({ tab: 'library', filter: 'All', q: '' }, (s.studio || {})[sec.id]);
+        // Keep settings filled by the caller (prefill): mark the tile as already filled.
+        patch.studio = Object.assign({}, s.studio, { [sec.id]: tile ? Object.assign(cur, { tab: 'library', tile: tile.id, filled: tile.id, filter: 'All' }) : Object.assign(cur, { tab: 'all' }) });
+      }
+      if (view === 'deliver') patch.deliver = Object.assign({}, s.deliver, { tab: 'tool' });
+      return patch;
+    });
     setTimeout(() => { const el = root.querySelector(`[data-tool="${tool.id}"]`); if (el) el.scrollIntoView({ block: 'nearest' }); }, 0);
   };
 
@@ -352,8 +383,11 @@ function createApp(root, services, env = {}) {
     // Auto: compact when narrow, or when the header measurably overflows (fonts/locales vary).
     const compact = d === 'compact' || (d === 'auto' && w < 340);
     const wide = d === 'expanded' || (d === 'auto' && w >= 500);
+    // Studio: labelled sidebar from 600 px, inspector beside the library from 760 px.
+    const navWide = w >= 600;
+    const studioWide = w >= 760;
     const st = app.state.get();
-    if (compact !== st.compact || wide !== st.wide) app.state.set({ compact, wide });
+    if (compact !== st.compact || wide !== st.wide || navWide !== st.navWide || studioWide !== st.studioWide) app.state.set({ compact, wide, navWide, studioWide });
   };
 
   /* ---------- global keys & context polling ---------- */
