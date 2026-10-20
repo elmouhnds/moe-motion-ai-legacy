@@ -19,7 +19,7 @@ const { createBrandStore } = require('../features/brand/brands');
 const { createTextLibrary } = require('../features/text/library');
 const { createSelector } = require('../features/select/service');
 
-const VERSION = '0.6.0';
+const VERSION = '0.6.1';
 
 function createServices({ platform, evalScript, rootPath, hostTimeoutMs }) {
   const store = createStore(platform.fs);
@@ -52,6 +52,7 @@ function createServices({ platform, evalScript, rootPath, hostTimeoutMs }) {
     list: () => store.get('favorites', []),
     toggle: (id) => store.update('favorites', [], (f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id]))
   };
+  services.updater = require('./updater').createUpdater({ http: platform.http, system: platform.system || null, getSettings: settings.get, current: VERSION, logger, root: rootPath });
   services.presets = {
     list: (toolId) => store.get('presets', []).filter((p) => !toolId || p.toolId === toolId),
     save: (toolId, name, args, meta = {}) => store.update('presets', [], (all) => [...all, { id: meta.id || `pre_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, toolId, name, args, tile: meta.tile || null }]),

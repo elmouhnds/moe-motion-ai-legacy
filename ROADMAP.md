@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.10 — Distribution ✅ (v0.6.1)
+- [x] Windows installer with in-place updates, legacy cleanup and uninstall; Settings › Updates (verified download, install on AE close); `npm run release`
+- [ ] Verify on Windows 11 + AE 2025 (TEST_REPORT.md → Install checklist 55–62)
+- Next: code-signing certificate (removes the SmartScreen warning; then a signed ZXP for Adobe's installer too), Ed25519 signature on the feed in addition to SHA-256, macOS .pkg if AE on Mac is ever needed, a hosted feed (GitHub Releases) once the repo has a remote
+
 ## M2 — Motion Director depth
 - Visual ease graph editor (bezier handles → speed/influence), read current ease from selection
 - Keyframe timing tools: retime, scale around playhead, snap keys to whole frames, reverse

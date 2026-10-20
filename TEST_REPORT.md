@@ -1,17 +1,19 @@
 # Test Report
 
-Last run: 2026-10-20 (v0.6.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-20 (v0.6.1), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
 | Layer | How it was tested | Result |
 |---|---|---|
-| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 190/190 automated tests pass (156 behaviour + 34 UI module loads) |
+| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 200/200 automated tests pass (166 behaviour + 34 UI module loads) |
 | ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (14 files) |
 | Core (registry, schema, permissions, executor, storage, logger, bridge) | Unit + integration tests | Pass |
 | Claude integration | Mocked HTTPS responder: request shape, retries, refusal, truncation, 401, offline, budget | Pass — **no real API call was made** |
 | Panel UI | Browser preview (`dev/preview.html`) with the real UI code + real host .jsx on the mock; Playwright clicks through 49 scenarios (wide 900 px and narrow 380/280 px), incl. 19 v0.6 Premium screens; zero page/console errors | Pass — **not the CEP runtime** |
 | Colour contrast | `tools/check-contrast.js`, WCAG — 3 themes (dark, midnight, light) × 8 accents, 93 pairs | Pass |
+| Windows installer (`dist/MOE-Motion-AI-Setup-0.6.1.exe`) | Run under **Wine 9.0 (64-bit) on Linux**, not real Windows: silent install, legacy cleanup, in-place update 0.6.0 → 0.6.1, `/WAITAE` with a fake `AfterFX.exe`, silent uninstall; welcome page rendered under Xvfb | Pass — **real Windows 11 not run yet** |
+| Updater over HTTPS | Real Node HTTPS download from a local self-signed server (redirect, progress, SHA-256, oversize cut-off) | Pass |
 | **Inside After Effects 2025** | — | **Not run yet** |
 
 What the mock proves: our logic, argument handling, ES3 syntax, undo-group balance, verification and restore paths.
@@ -191,7 +193,20 @@ Expression maths: the mock now *evaluates* generated expressions (`tests/mock/ae
 
 Mock limitations specific to this module: the mock's `sampleImage` averages a procedural image; its Keylight is a colour-distance threshold and its Channel Mixer applies the documented affine maths. Real Keylight quality, real Channel Mixer units, and real parameter names are **not** proven here.
 
+## Installer runs (Wine 9.0, v0.6.1)
+| Check | Result |
+|---|---|
+| `/S` install → files in `%APPDATA%\Adobe\CEP\extensions\tv.madtomato.moe.motionai`, `install.json`, no `.debug` | ✅ |
+| `HKCU\Software\Adobe\CSXS.12\PlayerDebugMode = 1`; one Apps entry (name, version, publisher, icon, uninstall + quiet uninstall, size) | ✅ |
+| Old MOE copy `moe-motion-ai-v0.5.0` (same bundle id) removed; `moe-motion-ai-backup` (other bundle id) and another panel kept | ✅ |
+| User data folder `%APPDATA%\MOE Motion AI` untouched by install / update / silent uninstall | ✅ |
+| Update 0.6.0 → 0.6.1: same folder, Apps version 0.6.1, a file that no longer exists in 0.6.1 is gone, installed files == staged files | ✅ |
+| `/WAITAE` while a process named `AfterFX.exe` runs: waits (14 s) until it exits, then installs | ✅ |
+| Silent uninstall: extension folder, Apps entry and tool folder removed | ✅ |
+| Developer junction unlinked without touching its target | ⏳ not testable under Wine — Windows checklist 57 |
+
 ## UI preview scenarios (node tools/screenshot.js)
+v0.6.1 Updates: Settings › Updates with a demo feed — update available (notes, size), downloaded and verified, scheduled for After Effects close.
 v0.6 Premium: Home, Shapes & Icons (grid, search + duotone preview, insert + report, native shapes), Backgrounds (palette panel, mesh applied), Expressions "Auto", Animate "Ease", What's New, Shortcuts, About, Settings (Appearance + My Presets), Midnight + Violet, Light + Mint, save to My Presets, splash, narrow Home and Shapes.
 v0.5 Studio: Animate (library, pick, double-click apply, All tools), Text, Layout & Grid (Ring, Wall Build applied + report), Looks & Glass (applied), Zoom & Focus, Expressions (tile, Editor), Deliver (board, per-format override, Create 3 comps), Compositing, Quick, Quick options popover, Brand, Select, Copilot, Settings, History, light theme, command search; narrow: Animate, Layout, Deliver at 380 px, compact 280 px.
 
@@ -214,6 +229,16 @@ Record results here with AE version/build from the Diagnostics view.
 12. Disconnect network → local tools still work; AI shows "Cannot reach the Claude API".
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
+
+### Install checklist (v0.6.1) — Windows 11 + AE 2025
+55. Run Setup.exe as a normal user: no UAC prompt; SmartScreen "More info › Run anyway" appears (unsigned) — record the wording.
+56. AE open during install → "close After Effects" retry message; after closing, install continues.
+57. With `tools\install-dev.ps1` installed first: the installer unlinks the junction and the repo folder is intact.
+58. AE → Window › Extensions › MOE Motion AI opens; Settings › Updates says "Installed with the MOE installer".
+59. Host `dist/latest.json` + Setup.exe on HTTPS (e.g. GitHub Release): Check now → Download & verify → Install when I close AE → quit AE → reopen: new version, settings / presets / API key still there.
+60. Install from file… with a downloaded Setup.exe (CEP file dialog opens).
+61. Settings › Apps shows one MOE Motion AI entry with the new version; Uninstall asks about data; default keeps it.
+62. Run an older Setup over a newer install → downgrade question.
 
 ### Premium checklist (v0.6.0)
 45. *Window › Extensions*: the MOE panel icon shows (dark and light AE brightness; normal and roll-over).

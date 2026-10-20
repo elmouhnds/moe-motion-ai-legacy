@@ -45,3 +45,7 @@
 | 41 | CEP 12 = Chromium 99: newer CSS/JS (e.g. `color-mix`, `:has`) would silently fail | Low | Med | Scan for post-99 APIs before each release; SMIL / var() / backdrop-filter used are supported in 99 | Mitigated |
 | 42 | Bundled third-party content licences (Lucide ISC/MIT, Sora OFL) | Low | Low | Licence files ship next to the assets; About sheet credits them | Mitigated |
 | 43 | 1,899-icon library cost in the panel (636 KB JSON, DOM size) | Low | Med | Loaded on first use, paged grid (96 + 192), off-screen thumbnails not redrawn | Verify in host |
+| 44 | Installer is not code-signed: SmartScreen "Unknown publisher" warning | Med | High | INSTALL.md explains "More info › Run anyway"; buy a code-signing certificate before wide distribution | Open |
+| 45 | Update feed or host compromised | High | Low | HTTPS only, SHA-256 + size from the feed, user click required; next: Ed25519-signed feed with the public key bundled | Mitigated (partly) |
+| 46 | PlayerDebugMode=1 is required for unsigned CEP panels | Low | Certain | Per-user key only, left in place on uninstall (other panels may need it); a signed ZXP removes the need | Accepted |
+| 47 | Installer verified under Wine 9, not real Windows 11 | Med | Med | Install checklist 55–62 on a real machine | Verify on Windows |

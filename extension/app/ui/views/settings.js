@@ -25,6 +25,7 @@ function render(app) {
   const presets = app.services.presets.list();
 
   return h('div', { class: 'view' },
+    updatesSection(app, st),
     h('div', { class: 'section-h' }, 'Appearance'),
     h('div', { class: 'set-group' },
       h('div', { class: 'field' }, h('label', {}, 'Theme'), seg(theme.THEMES, st.ui.theme || 'auto', (v) => updUi({ theme: v }))),
@@ -75,4 +76,54 @@ function render(app) {
       h('button', { class: 'btn ghost', onclick: () => app.state.set({ modal: 'about' }) }, icon('info', 'sm'), 'About'),
       h('button', { class: 'btn ghost', onclick: () => app.state.set({ modal: 'whatsnew' }) }, icon('gift', 'sm'), "What's new")));
 }
-module.exports = { render };
+/* ---------- Updates ---------- */
+const KIND = {
+  installer: ['Installed with the MOE installer', 'Updates replace this copy in place.'],
+  'dev-link': ['Developer link (install-dev.ps1)', 'This copy follows the repository — update with git pull. The installer will unlink it.'],
+  manual: ['Manual copy', 'Run the MOE installer once: it replaces manual copies so updates stay in one place.'],
+  unknown: ['Preview / unknown', '']
+};
+
+function updatesSection(app, st) {
+  const u = app.state.get().update || { phase: 'idle' };
+  const info = app.services.updater.installInfo();
+  const [kindLabel, kindNote] = KIND[info.kind] || KIND.unknown;
+  const up = st.updates || {};
+  const feed = h('input', { class: 'txt', 'data-fk': 'upd-feed', placeholder: 'https://…/latest.json', value: up.feedUrl || '', spellcheck: 'false',
+    onchange: (e) => { app.services.settings.update({ updates: { feedUrl: e.target.value.trim() } }); app.render(); } });
+  const pct = Math.round((u.progress || 0) * 100);
+  let status;
+  switch (u.phase) {
+    case 'checking': status = h('div', { class: 'upd-status' }, h('span', { class: 'spin' }), 'Checking…'); break;
+    case 'current': status = h('div', { class: 'upd-status ok' }, icon('check', 'sm'), `You have the latest version (${app.services.version}).`); break;
+    case 'available': status = h('div', { class: 'upd-card' },
+      h('div', { class: 'upd-h' }, icon('gift', 'sm'), h('b', {}, `Version ${u.info.version} is available`), h('span', { class: 'why' }, `${(u.info.size / 1048576).toFixed(1)} MB`)),
+      u.info.notes ? h('pre', { class: 'upd-notes' }, u.info.notes.replace(/^## .*\n/, '').replace(/^#+ /gm, '').slice(0, 1200)) : null,
+      h('div', { class: 'actions' }, h('button', { class: 'btn primary', disabled: info.kind === 'dev-link', onclick: () => app.downloadUpdate() }, icon('download', 'sm'), 'Download & verify'),
+        info.kind === 'dev-link' ? h('span', { class: 'why' }, 'Developer link: use git pull') : null)); break;
+    case 'downloading': status = h('div', { class: 'upd-card' }, h('div', { class: 'upd-h' }, h('span', { class: 'spin' }), h('b', {}, `Downloading ${u.info.version}… ${pct}%`)), h('div', { class: 'upd-bar' }, h('span', { style: { width: `${pct}%` } }))); break;
+    case 'ready': status = h('div', { class: 'upd-card' },
+      h('div', { class: 'upd-h' }, icon('check', 'sm'), h('b', {}, `${u.info.version} downloaded and verified (SHA-256)`)),
+      h('div', { class: 'why' }, 'It replaces this version in place; settings, presets, clients and your API key stay.'),
+      h('div', { class: 'actions' }, h('button', { class: 'btn primary', onclick: () => app.installUpdate('on-close') }, 'Install when I close After Effects'),
+        h('button', { class: 'btn ghost', onclick: () => app.installUpdate('now') }, 'Install now…'))); break;
+    case 'scheduled': status = h('div', { class: 'upd-status ok' }, icon('clock', 'sm'), `Ready: ${u.info.version} installs as soon as After Effects closes. Reopen AE to use it.`); break;
+    case 'launched': status = h('div', { class: 'upd-status ok' }, icon('check', 'sm'), 'The installer is open — close After Effects when it asks.'); break;
+    case 'error': status = h('div', { class: 'upd-status err' }, icon('x', 'sm'), u.error); break;
+    default: status = null;
+  }
+  return h('div', {},
+    h('div', { class: 'section-h' }, 'Updates'),
+    h('div', { class: 'set-group' },
+      h('div', { class: 'field' }, h('label', {}, 'Installed'), h('div', { class: 'upd-installed' }, h('b', {}, `MOE Motion AI ${app.services.version}`), h('span', { class: 'why' }, kindLabel))),
+      kindNote ? h('div', { class: 'why' }, kindNote) : null,
+      h('div', { class: 'field' }, h('label', {}, 'Update feed'), feed),
+      h('div', { class: 'field' }, h('label', {}, 'Check on start'), h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(up.autoCheck !== false), onclick: () => { app.services.settings.update({ updates: { autoCheck: up.autoCheck === false } }); app.render(); } }),
+        up.lastCheck ? h('span', { class: 'why' }, `last checked ${new Date(up.lastCheck).toLocaleString()}`) : null),
+      h('div', { class: 'actions', style: { marginTop: '6px' } },
+        h('button', { class: 'btn', disabled: !up.feedUrl || u.phase === 'checking' || u.phase === 'downloading', onclick: () => app.checkUpdates(true) }, icon('refresh', 'sm'), 'Check now'),
+        h('button', { class: 'btn ghost', disabled: info.kind === 'dev-link', onclick: () => app.installFromFile() }, icon('import', 'sm'), 'Install from file…')),
+      status));
+}
+
+module.exports = { render, updatesSection };

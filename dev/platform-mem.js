@@ -3,7 +3,7 @@
  * In-memory platform (tests + browser preview). Same interface as
  * extension/core/platform/node.js. HTTP is injectable for AI tests.
  */
-function createMemPlatform({ http, apiKey = null } = {}) {
+function createMemPlatform({ http, apiKey = null, system = null } = {}) {
   const files = new Map();
   const dataDir = '/mem/MOE Motion AI';
   let key = apiKey;
@@ -23,6 +23,7 @@ function createMemPlatform({ http, apiKey = null } = {}) {
       remove: (p) => files.delete(p)
     },
     http: http || { request: async () => { const e = new Error('offline'); e.code = 'ENOTFOUND'; throw e; } },
+    system,
     secrets: {
       status: async () => ({ stored: !!key, protection: 'memory' }),
       getApiKey: async () => key,

@@ -13,6 +13,7 @@ const path = require('path');
 const os = require('os');
 const https = require('https');
 const { spawn } = require('child_process');
+const crypto = require('crypto');
 
 const APP_DIR_NAME = 'MOE Motion AI';
 
@@ -60,6 +61,71 @@ function request({ method = 'POST', url, headers = {}, body, timeoutMs = 120000 
     req.end();
   });
 }
+
+/**
+ * Download a file over HTTPS only (redirects followed, max 5, each must stay HTTPS).
+ * Streams to "<dest>.part", enforces maxBytes, renames on success.
+ */
+function download(url, dest, { maxBytes = 300 * 1024 * 1024, onProgress, timeoutMs = 120000 } = {}) {
+  return new Promise((resolve, reject) => {
+    const part = `${dest}.part`;
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    const get = (u, hops) => {
+      const parsed = new URL(u);
+      if (parsed.protocol !== 'https:') return reject(Object.assign(new Error('Only HTTPS downloads are allowed'), { code: 'NOT_HTTPS' }));
+      const req = https.get(u, { headers: { 'user-agent': 'MOE-Motion-AI-Updater' } }, (res) => {
+        if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
+          res.resume();
+          if (hops >= 5) return reject(Object.assign(new Error('Too many redirects'), { code: 'REDIRECTS' }));
+          return get(new URL(res.headers.location, u).toString(), hops + 1);
+        }
+        if (res.statusCode !== 200) { res.resume(); return reject(Object.assign(new Error(`HTTP ${res.statusCode}`), { code: `HTTP_${res.statusCode}` })); }
+        const total = Number(res.headers['content-length']) || 0;
+        if (total > maxBytes) { res.resume(); return reject(Object.assign(new Error('File is larger than announced'), { code: 'TOO_LARGE' })); }
+        const out = fs.createWriteStream(part);
+        let got = 0;
+        res.on('data', (c) => {
+          got += c.length;
+          if (got > maxBytes) { req.destroy(Object.assign(new Error('File is larger than announced'), { code: 'TOO_LARGE' })); return; }
+          if (onProgress) onProgress(got, total);
+        });
+        res.pipe(out);
+        out.on('finish', () => out.close(() => { try { fs.renameSync(part, dest); resolve({ bytes: got }); } catch (e) { reject(e); } }));
+        out.on('error', reject);
+      });
+      req.setTimeout(timeoutMs, () => req.destroy(Object.assign(new Error('Download timed out'), { code: 'ETIMEDOUT' })));
+      req.on('error', (e) => { try { fs.unlinkSync(part); } catch (ignored) { /* none */ } reject(e); });
+    };
+    get(url, 0);
+  });
+}
+
+function sha256File(file) {
+  return new Promise((resolve, reject) => {
+    const h = crypto.createHash('sha256');
+    fs.createReadStream(file).on('data', (c) => h.update(c)).on('end', () => resolve(h.digest('hex'))).on('error', reject);
+  });
+}
+
+/** Where and how this extension is installed (install.json is written by the Windows installer). */
+function extensionInfo(root) {
+  if (!root) return null;
+  const out = { root, linked: false, install: null };
+  try { out.linked = fs.lstatSync(root).isSymbolicLink(); } catch (e) { /* unknown */ }
+  try { out.install = JSON.parse(fs.readFileSync(path.join(root, 'install.json'), 'utf8')); } catch (e) { out.install = null; }
+  return out;
+}
+
+const system = {
+  download,
+  sha256File,
+  extensionInfo,
+  tempPath: (name) => path.join(os.tmpdir(), 'MOE Motion AI', path.basename(name)),
+  fileSize: (p) => { try { return fs.statSync(p).size; } catch (e) { return -1; } },
+  removeFile: (p) => { try { fs.unlinkSync(p); } catch (e) { /* already gone */ } },
+  /** Start a program detached from After Effects (it keeps running after AE quits). */
+  launch: (file, args) => { const c = spawn(file, args || [], { detached: true, stdio: 'ignore', windowsHide: false }); c.unref(); }
+};
 
 function runPowerShell(script, stdinText) {
   return new Promise((resolve, reject) => {
@@ -123,6 +189,7 @@ function createNodePlatform() {
     kind: 'cep-node',
     fs: createFs(dataDir),
     http: { request },
+    system,
     secrets: createSecrets(dataDir),
     info: { platform: process.platform, node: process.version, dataDir }
   };

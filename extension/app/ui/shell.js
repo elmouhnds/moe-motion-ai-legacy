@@ -52,7 +52,7 @@ function createApp(root, services, env = {}) {
       expr: { code: '', assist: { mode: 'generate', request: '', result: null } },
       factory: { description: '', draft: null, busy: false, error: null },
       copilot: { open: false, request: '', phase: 'idle', validated: null, progress: {}, run: null, error: null },
-      keyStatus: null, toast: null, toastKind: null, modal: null, compact: false, wide: false
+      keyStatus: null, toast: null, toastKind: null, modal: null, update: { phase: 'idle' }, compact: false, wide: false
     })
   };
 
@@ -89,6 +89,7 @@ function createApp(root, services, env = {}) {
           current[2] ? h('span', { class: 'hdr-ic' }, icon(current[2], 'sm')) : null,
           h('div', { class: 'title' }, current[1]),
           h('span', { class: 'spacer' }),
+          ['available', 'ready'].includes(s.update.phase) ? h('button', { class: 'hdr-update', title: `Update to ${s.update.info.version}`, onclick: () => app.go('settings') }, icon('download', 'sm'), h('span', { class: 'label' }, s.update.info.version)) : null,
           h('button', { class: `icon-btn hdr-new ${seen ? '' : 'dot'}`, title: "What's new", 'aria-label': "What's new", onclick: () => app.state.set({ modal: 'whatsnew' }) }, icon('gift', 'sm')),
           h('button', { class: 'icon-btn', title: 'Shortcuts (?)', 'aria-label': 'Keyboard shortcuts', onclick: () => app.state.set({ modal: 'shortcuts' }) }, icon('keyboard', 'sm')),
           h('button', { class: 'search-btn', title: 'Search tools (Ctrl+K)', onclick: () => palette.open(app) }, icon('search', 'sm'), h('span', { class: 'label' }, 'Search'), h('span', { class: 'kbd' }, 'Ctrl K'))),
@@ -163,6 +164,9 @@ function createApp(root, services, env = {}) {
     const ui = services.settings.get().ui;
     const next = () => { if (ui.seenVersion !== services.version) { app.state.set({ modal: 'whatsnew' }); services.settings.update({ ui: { seenVersion: services.version } }); } };
     if (ui.splash !== false) document.body.appendChild(chrome.splash(next)); else next();
+    // Quiet update check at most twice a day, only when a feed is set.
+    const up = services.settings.get().updates || {};
+    if (up.autoCheck !== false && up.feedUrl && (!up.lastCheck || Date.now() - Date.parse(up.lastCheck) > 12 * 3600 * 1000)) setTimeout(() => app.checkUpdates(false), 4000);
   };
 
   /* ---------- navigation ---------- */
@@ -389,6 +393,51 @@ function createApp(root, services, env = {}) {
     app.loadKeyStatus();
   };
   /** My Presets pack: saved next to the settings (data folder) and copied to the clipboard. */
+  /* ---------- updates (Settings › Updates) ---------- */
+  const setU = (patch) => app.state.set((s) => ({ update: Object.assign({}, s.update, patch) }));
+  /** manual = user clicked "Check now" (show "up to date"); auto = quiet start-up check. */
+  app.checkUpdates = async (manual = true) => {
+    setU({ phase: 'checking', error: null });
+    const r = await services.updater.check();
+    services.settings.update({ updates: { lastCheck: new Date().toISOString() } });
+    if (!r.ok) { setU({ phase: manual ? 'error' : 'idle', error: r.error }); return r; }
+    if (r.newer) {
+      setU({ phase: 'available', info: r.update });
+      if (!manual) app.toast(`MOE Motion AI ${r.update.version} is available — Settings › Updates`, 6000, 'info');
+    } else setU({ phase: 'current', info: r.update });
+    return r;
+  };
+  app.downloadUpdate = async () => {
+    const info = app.state.get().update.info;
+    setU({ phase: 'downloading', progress: 0, error: null });
+    const r = await services.updater.download(info, (got, total) => setU({ progress: total ? got / total : 0 }));
+    if (!r.ok) { setU({ phase: 'error', error: r.error }); return r; }
+    setU({ phase: 'ready', file: r.file });
+    return r;
+  };
+  app.installUpdate = (when = 'on-close') => {
+    const u = app.state.get().update;
+    const r = services.updater.launch(u.file, when);
+    if (!r.ok) { setU({ phase: 'error', error: r.error }); return r; }
+    setU({ phase: when === 'on-close' ? 'scheduled' : 'launched' });
+    app.toast(when === 'on-close' ? `MOE ${u.info.version} installs when you close After Effects` : 'Installer started — close After Effects when it asks', 6000, 'ok');
+    return r;
+  };
+  /** Pick a downloaded Setup .exe (CEP file dialog when available, else paste a path). */
+  app.installFromFile = async () => {
+    let file = null;
+    try {
+      const r = window.cep && window.cep.fs && window.cep.fs.showOpenDialogEx ? window.cep.fs.showOpenDialogEx(false, false, 'Choose the MOE Motion AI Setup .exe', '', ['exe']) : null;
+      if (r && !r.err && r.data && r.data.length) file = r.data[0];
+    } catch (e) { file = null; }
+    if (!file) file = await app.dialog({ title: 'Install from file', body: 'Path of a downloaded MOE-Motion-AI-Setup-x.y.z.exe', input: '', okLabel: 'Install when AE closes' });
+    if (!file) return null;
+    const r = services.updater.launch(String(file).trim().replace(/^"|"$/g, ''), 'on-close');
+    app.toast(r.ok ? 'The installer runs when you close After Effects' : r.error, 5000, r.ok ? 'ok' : 'err');
+    if (r.ok) setU({ phase: 'scheduled', info: { version: 'from file' } });
+    return r;
+  };
+
   app.exportPresets = () => {
     const json = services.presets.exportPack();
     const name = `MOE-Presets-${new Date().toISOString().slice(0, 10)}.moepack.json`;

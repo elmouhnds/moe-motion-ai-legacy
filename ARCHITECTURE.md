@@ -124,6 +124,11 @@ See `docs/features/STUDIO_v0.4.md`.
 - UI: `app/ui/theme.js` (theme/accent/motion/headings → `<html data-*>`), `art.js` (logo + section illustrations as token-coloured SVG), `chrome.js` (section banners, splash, What's New / About / Shortcuts sheets), `views/home.js`, `views/shapes.js`; `studio/library.js` gains Mine tiles, Save as preset, palette panel, NEW badges; `form.js` colour field.
 - Assets: `assets/icons/` (Lucide data + licence, built by `tools/build-icons.js`), `assets/fonts/` (Sora + OFL), `icons/` (panel icons for the manifest, built by `tools/build-panel-icons.js`).
 
+## 5g. Distribution (v0.6.1)
+- `installer/moe-motion-ai.nsi` → per-user Setup.exe; install folder = bundle id, so every version lands in the same place. `install.json` in that folder records the installer and version.
+- `core/updater.js` (pure, injected `http` / `system`) + `platform.system` (Node: HTTPS-only download, SHA-256, detached launch, `extensionInfo`). The panel never replaces its own files: it hands a verified installer to Windows, which runs after After Effects quits (`/WAITAE`).
+- `tools/build-release.js` → `dist/` (Setup.exe, portable zip, `latest.json`). User data lives outside the extension folder (`%APPDATA%\MOE Motion AI`), so updates and uninstall never touch it.
+
 ## 6. Data locations
 
 `%APPDATA%\MOE Motion AI\` — `quick-bar.json`, `brands.json`, `text-presets.json` + `presets/*.ffx`, `settings.json`, `favorites.json`, `presets.json`, `snippets.json`, `recipes.json`, `checkpoints.json` (last 50), `usage.json`, `history.jsonl`, `diagnostics.jsonl`, `secrets.dat` (DPAPI). Override with env `MOE_DATA_DIR`.

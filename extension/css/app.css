@@ -647,3 +647,18 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 
 /* Reduced motion: hold everything still */
 :root[data-motion="reduced"] *, :root[data-motion="reduced"] *::before, :root[data-motion="reduced"] *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+
+/* ---------- v0.6.1 Updates ---------- */
+.hdr-update { display: inline-flex; align-items: center; gap: 4px; height: 22px; margin-right: 4px; padding: 0 8px; border: 0; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: var(--fs-xs); font-weight: 700; cursor: pointer; }
+.hdr-update:hover { background: var(--accent-hover); }
+.upd-installed { display: flex; flex-direction: column; gap: 1px; }
+.upd-status { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 10px; border-radius: var(--r-lg); background: var(--bg-active); color: var(--text-2); line-height: 1.4; }
+.upd-status.ok { background: var(--ok-soft); color: var(--ok); }
+.upd-status.err { background: var(--err-soft); color: var(--err); }
+.upd-card { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: radial-gradient(120% 140% at 100% 0%, var(--accent-soft), transparent 60%), var(--bg-raised); }
+.upd-h { display: flex; align-items: center; gap: 8px; color: var(--text); }
+.upd-h .svg-i { color: var(--accent); }
+.upd-h .why { margin-left: auto; }
+.upd-notes { max-height: 140px; overflow: auto; margin: 0; padding: 8px; border-radius: 6px; background: var(--bg-sunken); color: var(--text-2); font: var(--fs-sm)/1.45 var(--font); white-space: pre-wrap; }
+.upd-bar { height: 4px; border-radius: 4px; background: var(--bg-active); overflow: hidden; }
+.upd-bar span { display: block; height: 100%; background: var(--accent); transition: width 120ms linear; }

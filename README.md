@@ -4,7 +4,11 @@ Independent motion-design workbench panel for **Adobe After Effects 2025** (Wind
 Real tools that change real project data — easing, timing, expressions, reusable tool recipes —
 with an optional, approval-based Claude Copilot.
 
-> Status: **v0.6.0** — Premium: Shapes & Icons (1,899 icons + 22 native shapes), Backgrounds (32 palettes), Colorize, 33 one-click expressions, ease library, Home, My Presets packs, artwork, Midnight theme + 8 accents — on the Studio interface (labelled sidebar, visual libraries with an Inspector, Deliver board) and foundation, Compositing, Studio (Text library, Brand Kit, Proximity, Select) and Layout & Speed (Grid Builder, Resize & Adapt, Zoom & Focus, Glass, Quick Bar, one-click expressions, Generate on Green). All logic is tested against an AE mock; **in-host verification on AE 2025 is the next step** (see TEST_REPORT.md).
+> Status: **v0.6.1** — one-click Windows installer with in-place updates (Settings › Updates). Premium: Shapes & Icons (1,899 icons + 22 native shapes), Backgrounds (32 palettes), Colorize, 33 one-click expressions, ease library, Home, My Presets packs, artwork, Midnight theme + 8 accents — on the Studio interface (labelled sidebar, visual libraries with an Inspector, Deliver board) and foundation, Compositing, Studio (Text library, Brand Kit, Proximity, Select) and Layout & Speed (Grid Builder, Resize & Adapt, Zoom & Focus, Glass, Quick Bar, one-click expressions, Generate on Green). All logic is tested against an AE mock; **in-host verification on AE 2025 is the next step** (see TEST_REPORT.md).
+
+## Install (users)
+Run **`MOE-Motion-AI-Setup-x.y.z.exe`** (per-user, no admin) → open After Effects → *Window › Extensions › MOE Motion AI*.
+Updates replace the installed copy in place — from **Settings › Updates** inside the panel, or by running a newer Setup. Full guide (Arabic + English): [INSTALL.md](INSTALL.md).
 
 ## Install (developer mode, Windows)
 1. Install Node.js 18+ (only needed for tests).

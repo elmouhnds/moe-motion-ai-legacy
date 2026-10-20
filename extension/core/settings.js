@@ -13,6 +13,7 @@ const DEFAULTS = {
   },
   permissions: Object.assign({}, DEFAULT_POLICY),
   limits: { maxLayers: 200, maxProps: 200 },
+  updates: { feedUrl: '', autoCheck: true, lastCheck: '' },
   ui: { density: 'auto', workspace: 'home', theme: 'auto', accent: 'tomato', motion: 'full', headings: 'display', banners: true, splash: true, seenVersion: '' }
 };
 

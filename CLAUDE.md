@@ -52,6 +52,11 @@ Permanent rules for anyone (human or AI) working in this repository.
 - Host-verification status lives in `TEST_REPORT.md`. Update it honestly: what ran where, what is still unverified.
 - Never fabricate test results.
 
+## Release rules
+- Ship only through `npm run release` (installer + feed). All five version strings must match; the staged build never contains `.debug` (it opens a remote-debugging port).
+- The install folder is always the bundle id (`tv.madtomato.moe.motionai`); never install side-by-side copies. User data stays in `%APPDATA%\MOE Motion AI`, outside the extension folder.
+- The update feed is untrusted: HTTPS only, product id + semver + size + SHA-256 checked, mismatching downloads deleted, and the installer only starts after the user clicks.
+
 ## Docs to keep current
 `ROADMAP.md`, `FEATURES.md`, `CHANGELOG.md`, `TEST_REPORT.md`, `ARCHITECTURE.md` — update in the same commit as the change.
 

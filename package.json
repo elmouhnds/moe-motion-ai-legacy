@@ -1,6 +1,6 @@
 {
   "name": "moe-motion-ai",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
   "description": "MOE Motion AI — independent After Effects 2025 workbench panel (CEP 12 + ExtendScript).",
   "license": "UNLICENSED",
@@ -8,7 +8,8 @@
     "test": "node --test \"tests/**/*.test.js\"",
     "lint:jsx": "node tools/lint-jsx.js",
     "check": "npm run lint:jsx && node tools/check-contrast.js && npm test",
-    "preview": "node tools/dev-server.js"
+    "preview": "node tools/dev-server.js",
+    "release": "node tools/build-release.js"
   },
   "devDependencies": {
     "acorn": "8.15.0",

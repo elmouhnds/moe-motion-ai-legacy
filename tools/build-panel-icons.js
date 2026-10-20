@@ -23,6 +23,15 @@ const ICONS = [
   ['icon-dark.png', glyph('#b3b3b3'), 23], ['icon-dark-rollover.png', glyph('#ffffff'), 23],
   ['moe-mark-128.png', mark, 128]
 ];
+/* Installer artwork (installer/assets): 256 px mark for the .ico, 164 × 314 welcome sidebar. */
+const sidebar = `<div style="width:164px;height:314px;position:relative;overflow:hidden;font-family:Segoe UI,system-ui,sans-serif;
+  background:radial-gradient(120% 70% at 100% 0%,rgba(255,122,89,.55),transparent 60%),radial-gradient(90% 60% at 0% 100%,rgba(108,92,231,.45),transparent 60%),#17171b">
+  <div style="position:absolute;left:22px;top:34px">${mark.replace('<svg ', '<svg width="64" height="64" ')}</div>
+  <div style="position:absolute;left:22px;top:112px;color:#fff;font-weight:700;font-size:17px;line-height:1.15">MOE<br>Motion AI</div>
+  <div style="position:absolute;left:22px;top:160px;color:#ffb38a;font-size:10px;letter-spacing:.12em;font-weight:700">FOR AFTER EFFECTS</div>
+  <svg width="164" height="120" style="position:absolute;left:0;bottom:0" viewBox="0 0 164 120"><path d="M-10 100 C 40 100, 50 40, 90 40 S 150 90, 180 50" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2" stroke-dasharray="4 5"/>
+  <path d="M90 33l7 7-7 7-7-7z" fill="#ff7a59"/><path d="M30 93l6 6-6 6-6-6z" fill="rgba(255,255,255,.6)"/><rect x="130" y="58" width="22" height="16" rx="4" fill="#ff7a59"/></svg></div>`;
+const INSTALLER = [['moe-256.png', mark.replace('<svg ', '<svg width="256" height="256" '), 256, 256], ['sidebar.png', sidebar, 164, 314]];
 
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
@@ -33,6 +42,15 @@ const ICONS = [
     await page.screenshot({ path: path.join(OUT, file), omitBackground: true, clip: { x: 0, y: 0, width: size, height: size } });
     await page.close();
     console.log(`✓ ${file} (${size}px)`);
+  }
+  const IOUT = path.join(__dirname, '..', 'installer', 'assets');
+  fs.mkdirSync(IOUT, { recursive: true });
+  for (const [file, html, w, hh] of INSTALLER) {
+    const page = await browser.newPage({ viewport: { width: w, height: hh }, deviceScaleFactor: 1 });
+    await page.setContent(`<html><body style="margin:0;background:transparent">${html}</body></html>`);
+    await page.screenshot({ path: path.join(IOUT, file), omitBackground: true, clip: { x: 0, y: 0, width: w, height: hh } });
+    await page.close();
+    console.log(`✓ installer/assets/${file}`);
   }
   await browser.close();
 })();

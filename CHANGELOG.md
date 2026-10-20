@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.6.1] — 2026-10-20 — Easy install & in-place updates
+### Added
+- **Windows installer** (`installer/moe-motion-ai.nsi`, NSIS 3, 64-bit, per-user, no admin): installs to one fixed folder named after the bundle id (`%APPDATA%\Adobe\CEP\extensions\tv.madtomato.moe.motionai`), wiped and rewritten on every install; removes older manual MOE copies (same bundle id only; developer junctions are unlinked, never followed); sets `PlayerDebugMode` for CSXS 12; one *Settings › Apps* entry with version, icon and uninstaller; asks to close After Effects; asks before a downgrade; English + Arabic; `/S` silent and `/WAITAE` (wait for AE to quit, then install silently). Uninstall keeps your data unless you say otherwise.
+- **Settings › Updates**: installed version and install type (installer / developer link / manual copy), update feed URL, check on start (≤ twice a day), **Check now → Download & verify (size + SHA-256) → Install when I close After Effects / Install now**, **Install from file…**; header **Update** pill when a newer version exists. `core/updater.js` validates the feed (format, product id, semver, HTTPS-only, .exe, size cap, hash) and deletes any download that does not match.
+- Platform: HTTPS-only downloader with redirect limit and size cap, streaming SHA-256, detached launch, install detection (`install.json` written by the installer).
+- **`npm run release`** (`tools/build-release.js`): checks that all five version strings agree, runs `npm run check`, stages the extension without the `.debug` remote-debugging file, builds `Setup.exe`, a portable zip and the `latest.json` feed (notes from this CHANGELOG).
+- Installer artwork (icon, welcome sidebar) built by `tools/build-panel-icons.js`; `INSTALL.md` (Arabic + English).
+- Tests: `tests/updater.test.js` (feed validation, verified / rejected downloads, launch modes, install detection, real HTTPS download with redirect through a local self-signed server, release-script version check). The installer was run under Wine 9: install, legacy cleanup, in-place update, wait-for-AE, uninstall.
+
 ## [0.6.0] — 2026-10-20 — Premium: content libraries, artwork, appearance
 Requested by the product owner: "saturate the plugin with icons, images and extras — premium, high value, professional".
 ### Added

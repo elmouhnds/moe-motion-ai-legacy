@@ -1,4 +1,6 @@
-# Features (v0.6.0)
+# Features (v0.6.1)
+
+Install & updates: Windows Setup.exe (in place, no admin) + Settings › Updates — see INSTALL.md.
 
 Interface: Studio (labelled sidebar, visual libraries + Inspector, Deliver board) — CHANGELOG 0.5.0. Premium content, Home, artwork and appearance — CHANGELOG 0.6.0.
 

@@ -4,6 +4,10 @@ const { chromium } = require(require('child_process').execSync('npm root -g').to
 
 const W = (q) => `${q}&w=900`;
 const SHOTS = [
+  // v0.6.1 Updates
+  ['u-updates', W('?view=settings&demoUpdate=1'), async (p) => { await p.click('text=Check now'); await p.waitForSelector('.upd-card'); await p.waitForTimeout(300); }],
+  ['u-ready', W('?view=settings&demoUpdate=1'), async (p) => { await p.click('text=Check now'); await p.waitForSelector('.upd-card'); await p.click('text=Download & verify'); await p.waitForSelector('text=Install when I close After Effects', { timeout: 8000 }); await p.waitForTimeout(200); }],
+  ['u-scheduled', W('?view=settings&demoUpdate=1'), async (p) => { await p.click('text=Check now'); await p.waitForSelector('.upd-card'); await p.click('text=Download & verify'); await p.click('text=Install when I close After Effects', { timeout: 8000 }); await p.waitForTimeout(300); }],
   // v0.6 Premium
   ['p-home', W('?view=home&fixture=layout'), async (p) => { await p.waitForTimeout(700); }],
   ['p-shapes', W('?view=shapes&fixture=layout'), async (p) => { await p.click('.sh-tile:nth-child(9)'); await p.waitForTimeout(500); }],
