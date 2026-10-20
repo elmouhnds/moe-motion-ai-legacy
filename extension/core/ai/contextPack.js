@@ -15,7 +15,7 @@ function packContext(ctx, { maxLayers = 30, maxProps = 30, maxExpr = 1500 } = {}
     comp: { name: c.name, fps: r3(c.frameRate), duration: r3(c.duration), size: [c.width, c.height], currentTime: r3(c.time) },
     expressionEngine: ctx.expressionEngine || 'unknown',
     selectedLayers: (ctx.layers || []).slice(0, maxLayers).map((l) => ({
-      index: l.index, name: l.name, type: l.type, start: r3(l.startTime), in: r3(l.inPoint), out: r3(l.outPoint),
+      index: l.index, name: l.name, type: l.type, start: r3(l.startTime), in: r3(l.inPoint), out: r3(l.outPoint), text: l.text ? String(l.text).slice(0, 80) : undefined,
       parent: l.parentIndex, locked: l.locked || undefined, threeD: l.threeD || undefined
     })),
     selectedProperties: (ctx.properties || []).slice(0, maxProps).map((p) => ({
@@ -29,6 +29,8 @@ function packContext(ctx, { maxLayers = 30, maxProps = 30, maxExpr = 1500 } = {}
       expressionError: p.expressionError || undefined
     })),
     compLayers: (ctx.compLayers || []).slice(0, 60).map((l) => ({ index: l.index, name: l.name, type: l.type })),
+    brands: ctx.brands && ctx.brands.length ? ctx.brands : undefined,
+    textPresets: ctx.textPresets && ctx.textPresets.length ? ctx.textPresets : undefined,
     truncated: ctx.truncated || (ctx.layers || []).length > maxLayers || (ctx.properties || []).length > maxProps || undefined
   };
 }

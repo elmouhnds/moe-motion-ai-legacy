@@ -12,11 +12,13 @@ const { createServices } = require('../../extension/core/services');
 
 const ROOT = path.resolve(__dirname, '../../extension');
 
-function createHostEnv(fixture) {
+function createHostEnv(fixture, memFiles) {
   const sandbox = {};
   const context = vm.createContext(sandbox);
   const evalCode = (code) => vm.runInContext(code, context);
-  const env = installAE(sandbox, fixture, { readFile: (p) => fs.readFileSync(p, 'utf8'), evalCode });
+  // Host-side File checks see both real files (host .jsx) and the in-memory data folder.
+  const readFile = (p) => (memFiles && memFiles.has(p) ? memFiles.get(p) : fs.readFileSync(p, 'utf8'));
+  const env = installAE(sandbox, fixture, { readFile, evalCode });
   const evalScript = (script, cb) => {
     setImmediate(() => {
       let res;
@@ -28,8 +30,8 @@ function createHostEnv(fixture) {
 }
 
 async function createTestServices(fixture, platformOpts) {
-  const h = createHostEnv(fixture);
   const platform = createMemPlatform(platformOpts);
+  const h = createHostEnv(fixture, platform.files);
   const services = createServices({ platform, evalScript: h.evalScript, rootPath: ROOT, hostTimeoutMs: 5000 });
   await services.host.init();
   return Object.assign(h, { services, platform });

@@ -17,7 +17,10 @@ function createMemPlatform({ http, apiKey = null } = {}) {
       readText: (p) => { if (!files.has(p)) throw new Error('ENOENT ' + p); return files.get(p); },
       writeText: (p, s) => files.set(p, s),
       writeTextAtomic: (p, s) => files.set(p, s),
-      appendText: (p, s) => files.set(p, (files.get(p) || '') + s)
+      appendText: (p, s) => files.set(p, (files.get(p) || '') + s),
+      readBytes: (p) => { if (!files.has(p)) throw new Error('ENOENT ' + p); return files.get(p); },
+      writeBytes: (p, b) => files.set(p, b),
+      remove: (p) => files.delete(p)
     },
     http: http || { request: async () => { const e = new Error('offline'); e.code = 'ENOTFOUND'; throw e; } },
     secrets: {

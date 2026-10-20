@@ -65,13 +65,28 @@
         return { layerId: layer.id, layerIndex: layer.index, indices: indices, matchNames: matchNames };
     };
 
+    /* Addresses may omit indices (resolve by matchName) and may use "name:<display name>"
+       entries to pick a named child (e.g. a specific MOE effect among several of one type). */
+    function childByName(node, nm) {
+        var j;
+        for (j = 1; j <= node.numProperties; j++) { if (node.property(j).name === nm) { return node.property(j); } }
+        return null;
+    }
+
     U.resolveProperty = function (comp, addr) {
-        var layer = U.findLayer(comp, addr), node = layer, i, next;
-        for (i = 0; i < addr.indices.length; i++) {
+        var layer = U.findLayer(comp, addr), node = layer, i, next, mn, idx;
+        for (i = 0; i < addr.matchNames.length; i++) {
             next = null;
-            try { next = node.property(addr.indices[i]); } catch (e1) { next = null; }
-            if (!next || next.matchName !== addr.matchNames[i]) {
-                try { next = node.property(addr.matchNames[i]); } catch (e2) { next = null; }
+            mn = addr.matchNames[i];
+            idx = addr.indices ? addr.indices[i] : null;
+            if (mn.substring(0, 5) === 'name:') {
+                next = childByName(node, mn.substring(5));
+                if (next) { node = next; continue; }
+                U.fail('PROPERTY_NOT_FOUND', 'Property not found: ' + addr.matchNames.join(' > '));
+            }
+            if (idx) { try { next = node.property(idx); } catch (e1) { next = null; } }
+            if (!next || next.matchName !== mn) {
+                try { next = node.property(mn); } catch (e2) { next = null; }
             }
             if (!next) {
                 U.fail('PROPERTY_NOT_FOUND', 'Property not found: ' + addr.matchNames.join(' > '));

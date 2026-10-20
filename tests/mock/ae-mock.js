@@ -15,6 +15,28 @@ const PropertyValueType = {
 };
 const KeyframeInterpolationType = { LINEAR: 6612, BEZIER: 6613, HOLD: 6614 };
 const PropertyType = { PROPERTY: 6812, INDEXED_GROUP: 6813, NAMED_GROUP: 6814 };
+const ParagraphDirection = { DIRECTION_LEFT_TO_RIGHT: 1, DIRECTION_RIGHT_TO_LEFT: 2 };
+const ComposerEngine = { UNIVERSAL_TYPE_ENGINE: 1, LATIN_CJK_ENGINE: 2 };
+const CTScript = { CT_ROMAN_SCRIPT: 0, CT_ARABIC_SCRIPT: 4 };
+
+/** TextDocument: fillColor throws on read when applyFill is false (as documented). */
+class TextDocument {
+  constructor(text, o = {}) {
+    this.text = text;
+    this.font = o.font || 'ArialMT';
+    this.applyFill = o.applyFill !== false;
+    this.applyStroke = !!o.applyStroke;
+    this._fill = o.fillColor || [1, 1, 1];
+    this._stroke = o.strokeColor || [0, 0, 0];
+    this.direction = o.direction || ParagraphDirection.DIRECTION_LEFT_TO_RIGHT;
+    this.composerEngine = ComposerEngine.UNIVERSAL_TYPE_ENGINE;
+  }
+  get fillColor() { if (!this.applyFill) throw new Error('After Effects error: fillColor not available'); return this._fill.slice(); }
+  set fillColor(v) { this._fill = v.slice(); this.applyFill = true; }
+  get strokeColor() { if (!this.applyStroke) throw new Error('After Effects error: strokeColor not available'); return this._stroke.slice(); }
+  set strokeColor(v) { this._stroke = v.slice(); }
+  clone() { const d = new TextDocument(this.text); Object.assign(d, this); d._fill = this._fill.slice(); d._stroke = this._stroke.slice(); return d; }
+}
 
 class KeyframeEase {
   constructor(speed, influence) {
@@ -25,7 +47,7 @@ class KeyframeEase {
   }
 }
 
-function clone(v) { return Array.isArray(v) ? v.slice() : v; }
+function clone(v) { return Array.isArray(v) ? v.slice() : (v && v.clone ? v.clone() : v); }
 
 /**
  * Minimal expression evaluator for the probe: runs the expression as JavaScript
@@ -91,7 +113,11 @@ const EFFECTS = {
   'ADBE KeyCleaner': [{ name: 'Additional Edge Radius', valueType: 'OneD', value: 1 }],
   'ADBE Spill2': [{ name: 'Method', valueType: 'OneD', value: 1 }],
   'ADBE Simple Choker': [{ name: 'View', valueType: 'OneD', value: 1 }, { name: 'Choke Matte', valueType: 'OneD', value: 0 }],
-  'ADBE Gaussian Blur 2': [{ name: 'Blurriness', valueType: 'OneD', value: 0 }]
+  'ADBE Gaussian Blur 2': [{ name: 'Blurriness', valueType: 'OneD', value: 0 }],
+  'ADBE Tint': [{ name: 'Map Black To', valueType: 'COLOR', value: [0, 0, 0, 1] }, { name: 'Map White To', valueType: 'COLOR', value: [1, 1, 1, 1] }, { name: 'Amount to Tint', valueType: 'OneD', value: 100 }],
+  'ADBE Fill': [{ name: 'Fill Mask', valueType: 'OneD', value: 0 }, { name: 'All Masks', valueType: 'OneD', value: 0 }, { name: 'Color', valueType: 'COLOR', value: [1, 0, 0, 1] }, { name: 'Invert', valueType: 'OneD', value: 0 }, { name: 'Horizontal Feather', valueType: 'OneD', value: 0 }, { name: 'Vertical Feather', valueType: 'OneD', value: 0 }, { name: 'Opacity', valueType: 'OneD', value: 1 }],
+  'ADBE Slider Control': [{ name: 'Slider', valueType: 'OneD', value: 0 }],
+  'ADBE Checkbox Control': [{ name: 'Checkbox', valueType: 'OneD', value: 0 }]
 };
 
 class MockEffect {
@@ -144,6 +170,20 @@ class MockParade {
     return fx;
   }
 }
+
+const DEFAULT_TRANSFORM = [
+  { name: 'Anchor Point', matchName: 'ADBE Anchor Point', valueType: 'TwoD_SPATIAL', value: [0, 0], keys: [] },
+  { name: 'Position', matchName: 'ADBE Position', valueType: 'TwoD_SPATIAL', value: [0, 0], keys: [] },
+  { name: 'Scale', matchName: 'ADBE Scale', valueType: 'TwoD', value: [100, 100], keys: [] },
+  { name: 'Rotation', matchName: 'ADBE Rotate Z', valueType: 'OneD', value: 0, keys: [] },
+  { name: 'Opacity', matchName: 'ADBE Opacity', valueType: 'OneD', value: 100, keys: [] }
+];
+
+const DEFAULT_FONTS = [
+  [{ postScriptName: 'ArialMT', familyName: 'Arial', styleName: 'Regular', writingScripts: [0] }],
+  [{ postScriptName: 'Montserrat-Bold', familyName: 'Montserrat', styleName: 'Bold', writingScripts: [0] }, { postScriptName: 'Montserrat-Regular', familyName: 'Montserrat', styleName: 'Regular', writingScripts: [0] }],
+  [{ postScriptName: 'Cairo-Bold', familyName: 'Cairo', styleName: 'Bold', writingScripts: [0, 4] }]
+];
 
 function dimsFor(valueType) {
   if (valueType === PropertyValueType.TwoD) return 2;
@@ -218,7 +258,25 @@ class MockProperty {
     if (this.propertyValueType === PropertyValueType.COLOR && (!Array.isArray(v) || v.length !== 4)) throw new Error('After Effects error: color value must have 4 components');
     this._value = clone(v);
   }
+  setValueAtTime(t, v) {
+    const lt = t - this._layer().startTime;
+    const dims = dimsFor(this.propertyValueType);
+    const lin = () => Array.from({ length: dims }, () => ({ speed: 0, influence: 16.666666667 }));
+    let k = this._keys.find((x) => Math.abs(x.t - lt) < 1e-9);
+    if (!k) {
+      k = { t: lt, value: null, inInterp: KeyframeInterpolationType.LINEAR, outInterp: KeyframeInterpolationType.LINEAR, easeIn: lin(), easeOut: lin(), selected: false };
+      this._keys.push(k);
+      this._keys.sort((a, b) => a.t - b.t);
+    }
+    k.value = clone(v);
+  }
   valueAtTime(t, preExpression) {
+    if (this._keys.length && (preExpression || !this._expression)) {
+      const lt = t - this._layer().startTime;
+      let best = this._keys[0];
+      for (const k of this._keys) if (k.t <= lt + 1e-9) best = k;
+      return clone(best.value);
+    }
     if (preExpression || !this._expression || !this.expressionEnabled) return this.value;
     return evalExpression(this, t);
   }
@@ -264,6 +322,79 @@ class MockGroup {
   propertyGroup(countUp) { return MockProperty.prototype.propertyGroup.call(this, countUp); }
 }
 
+/* Generic named/indexed groups used by text animators and shape contents. */
+class MockNode {
+  constructor(name, matchName, parent, type) {
+    this.name = name; this.matchName = matchName; this.parentProperty = parent;
+    this.propertyType = type || PropertyType.NAMED_GROUP; this.propertyDepth = parent.propertyDepth + 1; this._children = [];
+    this.enabled = true;
+  }
+  get propertyIndex() { return this.parentProperty._children ? this.parentProperty._children.indexOf(this) + 1 : 1; }
+  get numProperties() { return this._children.length; }
+  property(key) { return MockGroup.prototype.property.call(this, key); }
+  propertyGroup(countUp) { return MockProperty.prototype.propertyGroup.call(this, countUp); }
+  remove() { this.parentProperty._children.splice(this.propertyIndex - 1, 1); }
+  canAddProperty(mn) { return !!(this._factory && this._factory[mn]); }
+  addProperty(mn) {
+    if (!this.canAddProperty(mn)) throw new Error('After Effects error: cannot add ' + mn + ' to ' + this.matchName);
+    const child = this._factory[mn](this);
+    this._children.push(child);
+    return child;
+  }
+  _prop(name, matchName, valueType, value) {
+    const p = new MockProperty({ name, matchName, valueType, value }, this, this._children.length + 1);
+    this._children.push(p);
+    return p;
+  }
+}
+
+const TEXT_PROPS = {
+  'ADBE Text Position 3D': ['Position', 'ThreeD_SPATIAL', [0, 0, 0]], 'ADBE Text Scale 3D': ['Scale', 'ThreeD', [100, 100, 100]],
+  'ADBE Text Rotation': ['Rotation', 'OneD', 0], 'ADBE Text Opacity': ['Opacity', 'OneD', 100], 'ADBE Text Blur': ['Blur', 'TwoD', [0, 0]],
+  'ADBE Text Tracking Amount': ['Tracking Amount', 'OneD', 0], 'ADBE Text Skew': ['Skew', 'OneD', 0], 'ADBE Text Fill Color': ['Fill Color', 'COLOR', [1, 0, 0, 1]]
+};
+const ADV_PROPS = [['Units', 'ADBE Text Range Units', 1], ['Based On', 'ADBE Text Range Type2', 1], ['Mode', 'ADBE Text Selector Mode', 1], ['Amount', 'ADBE Text Selector Max Amount', 100],
+  ['Shape', 'ADBE Text Range Shape', 1], ['Smoothness', 'ADBE Text Selector Smoothness', 100], ['Ease High', 'ADBE Text Levels Max Ease', 0], ['Ease Low', 'ADBE Text Levels Min Ease', 0], ['Randomize Order', 'ADBE Text Randomize Order', 0]];
+
+function makeSelector(parent) {
+  const sel = new MockNode('Range Selector 1', 'ADBE Text Selector', parent);
+  sel._prop('Start', 'ADBE Text Percent Start', 'OneD', 0);
+  sel._prop('End', 'ADBE Text Percent End', 'OneD', 100);
+  sel._prop('Offset', 'ADBE Text Percent Offset', 'OneD', 0);
+  const adv = new MockNode('Advanced', 'ADBE Text Range Advanced', sel);
+  sel._children.push(adv);
+  ADV_PROPS.forEach(([n, mn, v]) => adv._prop(n, mn, 'OneD', v));
+  return sel;
+}
+function makeAnimator(parent) {
+  const a = new MockNode('Animator ' + (parent._children.length + 1), 'ADBE Text Animator', parent);
+  const sels = new MockNode('Selectors', 'ADBE Text Selectors', a, PropertyType.INDEXED_GROUP);
+  sels._factory = { 'ADBE Text Selector': makeSelector };
+  const props = new MockNode('Properties', 'ADBE Text Animator Properties', a, PropertyType.INDEXED_GROUP);
+  props._factory = {};
+  Object.entries(TEXT_PROPS).forEach(([mn, [n, vt, v]]) => { props._factory[mn] = (g) => new MockProperty({ name: n, matchName: mn, valueType: vt, value: v }, g, g._children.length + 1); });
+  a._children.push(sels, props);
+  return a;
+}
+
+/** Shape contents: spec.shapes = [{ name, fill: [r,g,b], stroke: [r,g,b] }] */
+function makeShapeContents(layer, shapes) {
+  const root = new MockNode('Contents', 'ADBE Root Vectors Group', layer);
+  root.propertyDepth = 1;
+  (shapes || []).forEach((sh) => {
+    const g = new MockNode(sh.name, 'ADBE Vector Group', root);
+    root._children.push(g);
+    const c = new MockNode('Contents', 'ADBE Vectors Group', g);
+    g._children.push(c);
+    if (sh.fill) { const f = new MockNode('Fill 1', 'ADBE Vector Graphic - Fill', c); c._children.push(f); f._prop('Color', 'ADBE Vector Fill Color', 'COLOR', sh.fill.concat([1])); }
+    if (sh.stroke) { const k = new MockNode('Stroke 1', 'ADBE Vector Graphic - Stroke', c); c._children.push(k); k._prop('Color', 'ADBE Vector Stroke Color', 'COLOR', sh.stroke.concat([1])); }
+  });
+  return root;
+}
+
+class SolidSource { constructor(color) { this.color = color || [0.5, 0.5, 0.5]; } }
+class FileSource { constructor(isStill) { this.isStill = !!isStill; } }
+
 function build(spec, parent, index) {
   return spec.children ? new MockGroup(spec, parent, index) : new MockProperty(spec, parent, index);
 }
@@ -294,14 +425,46 @@ class MockLayer {
     this._pixels = spec.pixels || (() => [0.5, 0.5, 0.5, 1]);
     this._parade = spec.camera ? null : new MockParade(this, comp._fxOpts || {});
     (spec.effects || []).forEach((e) => { const fx = this._parade.addProperty(e.matchName); if (e.name) fx.name = e.name; });
-    const tf = (spec.transform || []).map((p) => Object.assign({}, p));
+    this.label = spec.label || 0; this.comment = spec.comment || ''; this.shy = !!spec.shy; this.solo = false;
+    this.guideLayer = !!spec.guide; this.motionBlur = !!spec.motionBlur; this.enabled = spec.enabled !== false;
+    this._rect = spec.rect || { left: -100, top: -30, width: 200, height: 60 };
+    if (spec.source) {
+      const src = spec.source;
+      const id = nextId++;
+      if (src.kind === 'precomp') this.source = Object.assign(new CompItem({ name: src.name || 'Pre-comp', layers: [] }), { hasVideo: true, hasAudio: false });
+      else this.source = { id, name: src.name || 'Footage', hasVideo: src.kind !== 'audio', hasAudio: src.kind === 'video' || src.kind === 'audio',
+        mainSource: src.kind === 'solid' ? new SolidSource(src.color) : new FileSource(src.kind === 'image'), file: src.file ? { name: src.file } : null };
+      if (spec.sourceId) this.source.id = spec.sourceId;
+    }
+
+    const tf = (spec.transform || (spec.camera ? [] : DEFAULT_TRANSFORM)).map((p) => Object.assign({}, p));
     this._group = new MockGroup({ name: 'root', children: [{ name: 'Transform', matchName: 'ADBE Transform Group', children: tf }] }, { propertyDepth: -1 }, 0);
     this._group._children.forEach((c) => { c.parentProperty = this; c.propertyDepth = 1; fixDepth(c); });
+    if (spec.text !== undefined) {
+      const tp = new MockNode('Text', 'ADBE Text Properties', this._group);
+      tp.propertyDepth = 1; tp.parentProperty = this;
+      const doc = tp._prop('Source Text', 'ADBE Text Document', 'TEXT_DOCUMENT', new TextDocument(spec.text, spec.textStyle || {}));
+      doc.canSetExpression = true;
+      if (spec.textKeys) spec.textKeys.forEach((t) => doc.setValueAtTime(t, new TextDocument(spec.text, spec.textStyle || {})));
+      const anims = new MockNode('Animators', 'ADBE Text Animators', tp, PropertyType.INDEXED_GROUP);
+      anims._factory = { 'ADBE Text Animator': makeAnimator };
+      tp._children.push(anims);
+      this._group._children.push(tp);
+    }
+    if (spec.shapes) { const c = makeShapeContents(this, spec.shapes); this._group._children.push(c); }
   }
   get index() { return this._comp._layers.indexOf(this) + 1; }
+  get numProperties() { return this._group._children.length + (this._parade ? 1 : 0); }
   property(key) {
     if (key === 'ADBE Effect Parade' || key === 'Effects') return this._parade;
+    if (typeof key === 'number' && key === this._group._children.length + 1) return this._parade;
     return this._group.property(key);
+  }
+  sourceRectAtTime() { return Object.assign({}, this._rect); }
+  applyPreset(file) {
+    const comp = this._comp;
+    comp._appliedPresets = comp._appliedPresets || [];
+    comp._appliedPresets.push({ path: file.fsName, layers: comp._layers.filter((l) => l.selected).map((l) => l.name) });
   }
   remove() {
     const i = this._comp._layers.indexOf(this);
@@ -311,6 +474,8 @@ class MockLayer {
 }
 
 class MockCameraLayer extends MockLayer {}
+class MockTextLayer extends MockLayer {}
+class MockShapeLayer extends MockLayer {}
 
 function fixDepth(node) {
   (node._children || []).forEach((c) => { c.propertyDepth = node.propertyDepth + 1; fixDepth(c); });
@@ -326,12 +491,12 @@ class CompItem {
     this.frameRate = spec.frameRate || 25;
     this.frameDuration = 1 / this.frameRate;
     this.duration = spec.duration || 10;
-    this.time = 0;
+    this.time = spec.time || 0;
     this.workAreaStart = 0;
     this.workAreaDuration = this.duration;
     this.displayStartTime = 0;
     this._fxOpts = spec.effectsOptions || {};
-    this._layers = (spec.layers || []).map((l) => (l.camera ? new MockCameraLayer(l, this) : new MockLayer(l, this)));
+    this._layers = (spec.layers || []).map((l) => (l.camera ? new MockCameraLayer(l, this) : l.text !== undefined ? new MockTextLayer(l, this) : l.shapes ? new MockShapeLayer(l, this) : new MockLayer(l, this)));
     const comp = this;
     this.layers = {
       addNull(duration) {
@@ -380,11 +545,18 @@ function markSelected(comp, fixture) {
  */
 function installAE(target, fixture, { readFile, evalCode }) {
   const undo = { depth: 0, groups: [] };
-  const project = fixture ? { file: null, dirty: true, activeItem: null, bitsPerChannel: fixture.bitsPerChannel || 16, expressionEngine: 'javascript-1.0' } : null;
+  const project = fixture ? { file: null, dirty: true, activeItem: null, bitsPerChannel: fixture.bitsPerChannel || 16, expressionEngine: 'javascript-1.0', _items: [], selection: [] } : null;
+  if (project) {
+    Object.defineProperty(project, 'numItems', { get() { return project._items.length; } });
+    project.item = (i) => project._items[i - 1];
+  }
   if (fixture && fixture.comp) {
     const comp = new CompItem(fixture.comp);
     markSelected(comp, fixture.comp);
     project.activeItem = comp;
+    project._items.push(comp);
+    (fixture.otherComps || []).forEach((oc) => { const c = new CompItem(oc); project._items.push(c); if (oc.projectSelected) project.selection.push(c); });
+    if (fixture.comp.projectSelected) project.selection.push(comp);
   }
   class File {
     constructor(p) { this.fsName = p; this.name = String(p).split('/').pop(); }
@@ -392,12 +564,19 @@ function installAE(target, fixture, { readFile, evalCode }) {
   }
   Object.assign(target, {
     PropertyValueType, KeyframeInterpolationType, PropertyType, KeyframeEase, CompItem, File,
-    TextLayer: function TextLayer() {}, ShapeLayer: function ShapeLayer() {},
+    TextLayer: MockTextLayer, ShapeLayer: MockShapeLayer, AVLayer: MockLayer, FileSource,
+    ParagraphDirection, ComposerEngine, CTScript, PREFType: { PREF_Type_MACHINE_INDEPENDENT: 0 },
     CameraLayer: MockCameraLayer, LightLayer: function LightLayer() {},
-    SolidSource: function SolidSource() {},
+    SolidSource,
     app: {
       version: '25.0.0x00 (mock)', buildNumber: 0, buildName: 'mock', isoLanguage: 'en_US',
       project,
+      fonts: {
+        allFonts: (fixture && fixture.fonts ? fixture.fonts : DEFAULT_FONTS).map((g) => g.map((f) => Object.assign({}, f))),
+        getFontsByPostScriptName(ps) { return [].concat(...this.allFonts).filter((f) => f.postScriptName === ps); }
+      },
+      effects: Object.keys(EFFECTS).map((mn) => ({ displayName: mn.replace(/^ADBE /, ''), matchName: mn, category: 'Mock' })).concat((fixture && fixture.extraEffects) || []),
+      preferences: { getPrefAsString() { throw new Error('After Effects error: preference not found'); } },
       beginUndoGroup(label) { undo.depth++; undo.groups.push(label); },
       endUndoGroup() { undo.depth--; }
     },
@@ -409,4 +588,4 @@ function installAE(target, fixture, { readFile, evalCode }) {
   return { undo, project };
 }
 
-module.exports = { installAE, PropertyValueType, KeyframeInterpolationType, KeyframeEase };
+module.exports = { installAE, PropertyValueType, KeyframeInterpolationType, KeyframeEase, TextDocument, ParagraphDirection };

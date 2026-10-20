@@ -54,6 +54,14 @@
         return info;
     }
 
+    function textOf(layer) {
+        try {
+            var tp = layer.property('ADBE Text Properties');
+            if (!tp) { return null; }
+            return U.truncate(tp.property('ADBE Text Document').value.text, 300);
+        } catch (e) { return null; }
+    }
+
     function listEffects(layer) {
         var out = [], parade = null, i, fx;
         try { parade = layer.property('ADBE Effect Parade'); } catch (e) { parade = null; }
@@ -122,7 +130,8 @@
                     selectionOrder: i,
                     width: L.width || 0,
                     height: L.height || 0,
-                    effects: listEffects(L)
+                    effects: listEffects(L),
+                    text: textOf(L)
                 });
             }
 

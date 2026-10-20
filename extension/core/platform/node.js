@@ -36,7 +36,10 @@ function createFs(dataDir) {
       fs.writeFileSync(tmp, s, 'utf8');
       fs.renameSync(tmp, p);
     },
-    appendText: (p, s) => fs.appendFileSync(p, s, 'utf8')
+    appendText: (p, s) => fs.appendFileSync(p, s, 'utf8'),
+    readBytes: (p) => new Uint8Array(fs.readFileSync(p)),
+    writeBytes: (p, bytes) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, Buffer.from(bytes)); },
+    remove: (p) => { if (fs.existsSync(p)) fs.unlinkSync(p); }
   };
 }
 
