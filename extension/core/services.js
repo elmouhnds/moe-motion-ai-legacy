@@ -19,7 +19,7 @@ const { createBrandStore } = require('../features/brand/brands');
 const { createTextLibrary } = require('../features/text/library');
 const { createSelector } = require('../features/select/service');
 
-const VERSION = '0.5.0';
+const VERSION = '0.6.0';
 
 function createServices({ platform, evalScript, rootPath, hostTimeoutMs }) {
   const store = createStore(platform.fs);
@@ -54,7 +54,13 @@ function createServices({ platform, evalScript, rootPath, hostTimeoutMs }) {
   };
   services.presets = {
     list: (toolId) => store.get('presets', []).filter((p) => !toolId || p.toolId === toolId),
-    save: (toolId, name, args) => store.update('presets', [], (all) => [...all, { id: `pre_${Date.now().toString(36)}`, toolId, name, args }]),
+    save: (toolId, name, args, meta = {}) => store.update('presets', [], (all) => [...all, { id: meta.id || `pre_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`, toolId, name, args, tile: meta.tile || null }]),
+    exportPack: (opts) => require('./presetPacks').exportPack(store.get('presets', []), opts),
+    importPack(text) {
+      const r = require('./presetPacks').parsePack(text, services.registry);
+      if (r.presets.length) store.update('presets', [], (all) => [...all, ...r.presets.map((p, i) => Object.assign({ id: `pre_${Date.now().toString(36)}${i}` }, p))]);
+      return { ok: r.ok, imported: r.presets.length, skipped: r.skipped };
+    },
     remove: (id) => store.update('presets', [], (all) => all.filter((p) => p.id !== id))
   };
   return services;

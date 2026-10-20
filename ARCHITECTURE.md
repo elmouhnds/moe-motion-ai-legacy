@@ -117,6 +117,13 @@ See `docs/features/STUDIO_v0.4.md`.
 ## 5e. Studio UI (v0.5.0)
 `app/ui/studio/sections.js` is data: sections, tiles (tool id + preset args + thumbnail recipe + tags), aliases and `sectionOf(tool)`. `studio/library.js` renders any library section (tiles + Inspector reusing `toolBlock.renderTool`, so validation, approval, verification and restore are unchanged). `studio/thumbs.js` draws tile thumbnails (grid tiles use the real `grid/layouts.js` maths). `views/deliver.js` measures once (`adapt/measure.js`), plans every format with the pure planner and runs `adapt.resize` per format. No new host code.
 
+## 5f. Premium modules (v0.6.0)
+- `features/design/`: `svgShape.js` (pure SVG → AE Shape converter, tested against all bundled icons), `shapesLib.js` (Lucide data loaded on first use from `assets/icons/lucide.json` + 22 parametric primitives), `palettes.js` (32 palettes), `tools.js` (`design.insertShape`, `design.background`, `design.colorize`).
+- Host: `host/ops/design.jsx` → `shapes.insert` (one shape layer, one named group, paths or a Rect/Ellipse/Polystar primitive, stroke/fill; removes its layer on any failure; reads everything back).
+- `core/presetPacks.js`: My Presets export/import; packs are validated per tool schema before anything is stored.
+- UI: `app/ui/theme.js` (theme/accent/motion/headings → `<html data-*>`), `art.js` (logo + section illustrations as token-coloured SVG), `chrome.js` (section banners, splash, What's New / About / Shortcuts sheets), `views/home.js`, `views/shapes.js`; `studio/library.js` gains Mine tiles, Save as preset, palette panel, NEW badges; `form.js` colour field.
+- Assets: `assets/icons/` (Lucide data + licence, built by `tools/build-icons.js`), `assets/fonts/` (Sora + OFL), `icons/` (panel icons for the manifest, built by `tools/build-panel-icons.js`).
+
 ## 6. Data locations
 
 `%APPDATA%\MOE Motion AI\` — `quick-bar.json`, `brands.json`, `text-presets.json` + `presets/*.ffx`, `settings.json`, `favorites.json`, `presets.json`, `snippets.json`, `recipes.json`, `checkpoints.json` (last 50), `usage.json`, `history.jsonl`, `diagnostics.jsonl`, `secrets.dat` (DPAPI). Override with env `MOE_DATA_DIR`.

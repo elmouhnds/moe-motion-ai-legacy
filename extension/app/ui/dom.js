@@ -39,7 +39,7 @@ const ICONS = {
   layers: '<path d="M8 2l6 3-6 3-6-3z"/><path d="M2 8l6 3 6-3M2 11l6 3 6-3" opacity=".6"/>'
 };
 
-Object.assign(ICONS, require('./icons2'));
+Object.assign(ICONS, require('./icons2'), require('./icons3'));
 
 function icon(name, cls) {
   const span = document.createElement('span');

@@ -64,3 +64,16 @@ Not connected (host error + Reconnect) · no project · no comp · empty selecti
 - **Library section** = tabs (Library · All tools [· Editor]) + filter chips + search + tile grid (116 px min, animated canvas thumbnails) + **Inspector** (300 px, sticky, beside the grid ≥ 760 px, under it below). Inspector = big preview (or the tool's own preview widget) · title · description · the tool's form without header/presets · Apply · report · Restore.
 - Interaction: click tile = select + fill settings once; double-click = apply with the tile preset; ★ pins the tool to Favorites; Quick Bar stays under the context line.
 - **Deliver**: format chips → board (source + one diagram per format, colour = role) → Inspector (per-layer role/zone, method, safe margin, re-stack, nested) → sticky footer "Create N comps".
+
+## v0.6 — Premium
+- **Home** is the first section: greeting + library stats + quick actions, the active comp, six illustrated quick starts, Recent, Favorites, tip of the day.
+- **Section banners**: kicker, title, one-line pitch, stats chips and a theme-coloured illustration; hideable per section (Settings › Appearance brings them back); hidden in compact docks, illustration hidden below 600 px.
+- **Shapes & Icons**: Icons / Shapes / All tools tabs; category chips with counts, Starred, search by name or tag (featured icons first when browsing All); paged grid (96 + 192 per "Show more"); Inspector with a live preview of style, colours and animation, tags (click = search), copy SVG, star.
+- **Backgrounds**: palette tiles render the real gradient; Inspector palette strip (hover = hex, click = copy) with Colorize selection / Save as client / Use in Shapes.
+- **Mine** filter in every library: the user's presets as dashed tiles; ⧉ in the Inspector saves; right-click deletes (confirm).
+- **NEW** corner badge on 0.6 tiles; tiles lift with a soft shadow on hover.
+- **Sheets** (What's New after an update, About from the logo, Shortcuts from the header or `?`): centred, blurred backdrop, Esc / click outside to close.
+- **Splash** (≈ 1 s, click to skip, off in Settings); **toasts** carry a status icon.
+- **Appearance**: Auto / Dark / Midnight / Light; 8 accents; Motion Full / Reduced (thumbnails, banners and sheets hold still); Headings Sora / System.
+- **Colour fields**: swatch picker + hex + up to 12 quick swatches (active client first).
+

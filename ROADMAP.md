@@ -32,6 +32,11 @@
 - [x] Labelled sidebar, visual libraries with Inspector, Deliver board, client card, responsive layout
 - Next: Text section in the same library + Inspector pattern with previews on the selected text and client colours; hover-to-preview on the comp (temporary keys, auto-revert); "Apply In + matching Out"; context suggestions on the section home; drag-to-reorder Quick Bar
 
+## M1.9 — Premium ✅ (v0.6.0)
+- [x] Shapes & Icons (1,899 icons + 22 native shapes), Backgrounds (32 palettes, gradient / mesh / grain / drift), Colorize, 33 expressions, ease library, Home, My Presets + packs, artwork & banners, appearance (Midnight, 8 accents, reduced motion, Sora), panel icons
+- [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
+- Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
+
 ## M2 — Motion Director depth
 - Visual ease graph editor (bezier handles → speed/influence), read current ease from selection
 - Keyframe timing tools: retime, scale around playhead, snap keys to whole frames, reverse

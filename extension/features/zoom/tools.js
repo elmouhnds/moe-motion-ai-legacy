@@ -263,7 +263,7 @@ const cursor = {
   params: {
     kind: { type: 'enum', label: 'Cursor', default: 'arrow', options: [{ value: 'arrow', label: 'Arrow' }, { value: 'hand', label: 'Hand' }] },
     size: { type: 'number', label: 'Size', min: 12, max: 160, step: 1, default: 36, unit: 'px' },
-    color: { type: 'string', label: 'Colour', default: '#FFFFFF', maxLength: 7 },
+    color: { type: 'string', label: 'Colour', default: '#FFFFFF', maxLength: 7, format: 'color' },
     pulse: { type: 'boolean', label: 'Click pulse', default: true },
     travel: { type: 'number', label: 'Travel', min: 0.1, max: 3, step: 0.05, default: 0.45, unit: 's', advanced: true, description: 'Time to move to each click' }
   },

@@ -7,6 +7,7 @@
  */
 const { PRESETS: EXPR } = require('../../../features/expressions/quick');
 const { LOOKS } = require('../../../features/glass/tools');
+const PAL = require('../../../features/design/palettes');
 
 const T = (id, label, tool, args, thumb, tags, badge) => ({ id, label, tool, args: args || {}, thumb, tags: tags || [], badge });
 
@@ -28,8 +29,21 @@ const ANIMATE = [
   T('trimErase', 'Erase', 'quick.trimPaths', { mode: 'erase' }, { k: 'trim', mode: 'erase' }, ['Trim'], 'TRIM'),
   T('trimTravel', 'Travel', 'quick.trimPaths', { mode: 'travel' }, { k: 'trim', mode: 'travel' }, ['Trim'], 'TRIM'),
   T('trimBoth', 'Draw + Erase', 'quick.trimPaths', { mode: 'drawErase' }, { k: 'trim', mode: 'drawErase' }, ['Trim'], 'TRIM'),
-  T('easeSmooth', 'Smooth Ease', 'motion.smartEase', { influenceIn: 75, influenceOut: 75 }, { k: 'ease', a: 0.75, b: 0.75 }, ['Keys'], 'KEYS'),
-  T('easeSnappy', 'Snappy Ease', 'motion.smartEase', { influenceIn: 90, influenceOut: 15 }, { k: 'ease', a: 0.15, b: 0.9 }, ['Keys'], 'KEYS'),
+  T('easeSmooth', 'Smooth Ease', 'motion.smartEase', { influenceIn: 75, influenceOut: 75 }, { k: 'ease', a: 0.75, b: 0.75 }, ['Keys', 'Ease'], 'EASE'),
+  T('easeSnappy', 'Snappy Ease', 'motion.smartEase', { influenceIn: 90, influenceOut: 15 }, { k: 'ease', a: 0.15, b: 0.9 }, ['Keys', 'Ease'], 'EASE'),
+  T('riseIn', 'Rise In', 'quick.animate', { kind: 'moveBT', dir: 'in', ease: 'expo', distance: 120, duration: 0.8 }, { k: 'move', dx: 0, dy: 0.45, dir: 'in' }, ['In', 'Slide'], 'IN'),
+  T('dropIn', 'Drop In', 'quick.animate', { kind: 'moveTB', dir: 'in', overshoot: true, distance: 160 }, { k: 'move', dx: 0, dy: -0.5, dir: 'in' }, ['In', 'Slide'], 'IN'),
+  T('cascadeIn', 'Cascade In', 'quick.animate', { kind: 'moveBT', dir: 'in', distance: 80, stagger: 0.08, ease: 'smooth' }, { k: 'stagger' }, ['In', 'Slide'], 'IN'),
+  T('cascadeFade', 'Cascade Fade', 'quick.animate', { kind: 'fade', dir: 'in', stagger: 0.06, duration: 0.5 }, { k: 'fade', dir: 'in' }, ['In', 'Fade'], 'IN'),
+  T('gentlePop', 'Soft Pop', 'quick.animate', { kind: 'scale', dir: 'in', ease: 'gentle', duration: 0.8 }, { k: 'scale', dir: 'in' }, ['In', 'Scale'], 'IN'),
+  T('spinOut', 'Spin Out', 'quick.animate', { kind: 'spin', dir: 'out' }, { k: 'spin', dir: 'out' }, ['Out'], 'OUT'),
+  T('popOut', 'Pop Out', 'quick.animate', { kind: 'scale', dir: 'out', overshoot: true, duration: 0.45 }, { k: 'scale', dir: 'out', over: true }, ['Out', 'Scale'], 'OUT'),
+  T('easeGentle', 'Gentle Ease', 'motion.smartEase', { influenceIn: 33.33, influenceOut: 33.33 }, { k: 'ease', a: 0.33, b: 0.33 }, ['Keys', 'Ease'], 'EASE'),
+  T('easeExpo', 'Expo Ease', 'motion.smartEase', { influenceIn: 95, influenceOut: 95 }, { k: 'ease', a: 0.95, b: 0.95 }, ['Keys', 'Ease'], 'EASE'),
+  T('easeDecel', 'Decelerate', 'motion.smartEase', { influenceIn: 85, influenceOut: 10 }, { k: 'ease', a: 0.1, b: 0.85 }, ['Keys', 'Ease'], 'EASE'),
+  T('easeHard', 'Hard Stop', 'motion.smartEase', { influenceIn: 100, influenceOut: 5 }, { k: 'ease', a: 0.05, b: 1 }, ['Keys', 'Ease'], 'EASE'),
+  T('easeAccel', 'Accelerate', 'motion.smartEase', { influenceIn: 10, influenceOut: 85 }, { k: 'ease', a: 0.85, b: 0.1 }, ['Keys', 'Ease'], 'EASE'),
+  T('easeLaunch', 'Launch', 'motion.smartEase', { influenceIn: 5, influenceOut: 100 }, { k: 'ease', a: 1, b: 0.05 }, ['Keys', 'Ease'], 'EASE'),
   T('stagger', 'Stagger', 'motion.stagger', {}, { k: 'stagger' }, ['Keys'], 'KEYS'),
   T('reverse', 'Reverse Keys', 'quick.reverseKeys', {}, { k: 'icon', icon: 'reverse' }, ['Keys'], 'KEYS'),
   T('mirror', 'Mirror Keys', 'quick.mirrorKeys', { mode: 'mirror' }, { k: 'icon', icon: 'mirror' }, ['Keys'], 'KEYS'),
@@ -69,20 +83,25 @@ const ZOOM = [
   T('cursorHand', 'Cursor · Hand', 'zoom.cursor', { kind: 'hand' }, { k: 'cursor', hand: true }, ['Cursor'])
 ];
 
-const EXPRESSIONS = Object.entries(EXPR).map(([id, p]) => T(`x-${id}`, p.label, 'expressions.quick', { preset: id }, { k: 'expr', preset: id },
-  [/loop|Ping|posterize|inertia/i.test(id + p.label) ? 'Keys' : /wiggle|jitter|flicker/i.test(id) ? 'Random' : 'Periodic']));
+// A tile carries its preset's own numbers (the form's generic defaults would override them otherwise).
+const EXPRESSIONS = Object.entries(EXPR).map(([id, p]) => Object.assign(T(`x-${id}`, p.label, 'expressions.quick', Object.assign({ preset: id }, p.nums), { k: 'expr', preset: id }, [p.tag || 'Periodic']), { hint: p.hint }));
+
+const BACKGROUNDS = PAL.PALETTES.map((p) => T(`bg-${p.id}`, p.name, 'design.background', { palette: p.id, style: 'linear', from: 0, to: 2 }, { k: 'bg', palette: p.id, style: 'linear' }, p.tags));
 
 /**
  * kind: 'library' (tiles + inspector) | 'view' (custom view id) | 'category' (classic tool list)
  * categories: tool categories / ids listed under "All tools".
  */
 const SECTIONS = [
-  { id: 'animate', label: 'Animate', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Trim', 'Keys', 'Proximity'], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
+  { id: 'home', label: 'Home', icon: 'home', kind: 'view' },
+  { id: 'animate', label: 'Animate', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Trim', 'Ease', 'Keys', 'Proximity'], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },
   { id: 'layout', label: 'Layout & Grid', icon: 'grid', kind: 'library', tiles: LAYOUT, filters: ['All', 'Grid', 'Radial', 'Path', '3D', 'Animated', 'Guides', 'Cells'], tools: (t) => /^grid\./.test(t.id) },
   { id: 'looks', label: 'Looks & Glass', icon: 'glass', kind: 'library', tiles: LOOK_TILES, filters: ['All', 'Clear', 'Frosted', 'Liquid', 'Tinted'], tools: (t) => /^glass\./.test(t.id) },
   { id: 'zoom', label: 'Zoom & Focus', icon: 'zoom', kind: 'library', tiles: ZOOM, filters: ['All', 'Zoom', 'Focus', 'Cursor'], tools: (t) => /^zoom\./.test(t.id) },
-  { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys'], tools: null, editor: true },
+  { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true },
+  { id: 'shapes', label: 'Shapes & Icons', icon: 'shapes', kind: 'view' },
+  { id: 'backgrounds', label: 'Backgrounds', icon: 'background', kind: 'library', tiles: BACKGROUNDS, filters: PAL.TAGS, tools: (t) => /^design\.(background|colorize)$/.test(t.id), extras: 'palette' },
   { id: 'compositing', label: 'Compositing', icon: 'layers', kind: 'category' },
   { id: 'deliver', label: 'Deliver', icon: 'resize', kind: 'view' }
 ];
@@ -103,6 +122,8 @@ function sectionOf(tool) {
   if (/^zoom\./.test(id)) return 'zoom';
   if (/^glass\./.test(id)) return 'looks';
   if (/^adapt\./.test(id)) return 'deliver';
+  if (id === 'design.insertShape') return 'shapes';
+  if (/^design\./.test(id)) return 'backgrounds';
   if (/^grid\./.test(id)) return 'layout';
   if (/^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(id)) return 'animate';
   if (/^quick\./.test(id)) return 'quick';
@@ -114,6 +135,11 @@ function sectionOf(tool) {
   if (tool.category === 'compositing') return 'compositing';
   return tool.category;
 }
+
+/* v0.6 tiles get a NEW corner badge. */
+const NEW_TILES = new Set(['riseIn', 'dropIn', 'cascadeIn', 'cascadeFade', 'gentlePop', 'spinOut', 'popOut', 'easeGentle', 'easeExpo', 'easeDecel', 'easeHard', 'easeAccel', 'easeLaunch',
+  ...['bounceBack', 'squash', 'orbit', 'swing', 'heartbeat', 'breathe', 'wiggleRot', 'wiggleScale', 'organic', 'loopWiggle', 'drift', 'clock', 'faceMotion', 'scatter', 'popIn', 'slideIn'].map((x) => `x-${x}`)]);
+for (const sec of SECTIONS) for (const t of sec.tiles || []) if (NEW_TILES.has(t.id)) t.isNew = true;
 
 const byId = (id) => SECTIONS.find((s) => s.id === id) || null;
 

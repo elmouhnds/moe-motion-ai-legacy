@@ -40,3 +40,8 @@
 | 36 | Reveal Layer Source uses the English menu name | Low | Med | Falls back to selecting the item in the Project panel | Accepted |
 | 37 | Claude cannot generate images / video | — | Certain | Prompt + your generator + Import & Key; provider connectors on the roadmap | Accepted |
 | 38 | "Purge All" clears the Undo history | Med | Low | Default is image cache; All is marked destructive | Mitigated |
+| 39 | Shape property match names (Line Cap/Join, Fill Rule, Polystar "Roundess") not yet confirmed in AE 2025 | Med | Low | `shapes.insert` collects missing names, removes its layer and reports them | Verify in host |
+| 40 | Gradient Ramp / 4-Color Gradient / Noise parameter names differ by language or version | Med | Med | English names first, then match-name suffix / structural fallback; background layer removed on failure; grain non-fatal | Verify in host |
+| 41 | CEP 12 = Chromium 99: newer CSS/JS (e.g. `color-mix`, `:has`) would silently fail | Low | Med | Scan for post-99 APIs before each release; SMIL / var() / backdrop-filter used are supported in 99 | Mitigated |
+| 42 | Bundled third-party content licences (Lucide ISC/MIT, Sora OFL) | Low | Low | Licence files ship next to the assets; About sheet credits them | Mitigated |
+| 43 | 1,899-icon library cost in the panel (636 KB JSON, DOM size) | Low | Med | Loaded on first use, paged grid (96 + 192), off-screen thumbnails not redrawn | Verify in host |

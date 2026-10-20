@@ -21,7 +21,6 @@
     (function () {
       var q = new URLSearchParams(location.search);
       if (q.get('w')) document.querySelector('.frame').style.setProperty('--w', q.get('w') + 'px');
-      if (q.get('theme')) document.documentElement.setAttribute('data-theme', q.get('theme'));
       var mock = require('/tests/mock/ae-mock.js');
       var fixture = require({ comp: '/dev/preview-fixture-comp.js', studio: '/dev/preview-fixture-studio.js', layout: '/dev/preview-fixture-layout.js' }[q.get('fixture')] || '/dev/preview-fixture.js');
       var mem = require('/dev/platform-mem.js');
@@ -36,7 +35,7 @@
         }
       };
       var platform = mem.createMemPlatform(q.get('demoAI') ? { apiKey: 'sk-ant-preview-demo', http: require('/dev/demo-ai.js') } : {});
-      require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform }).then(function (app) {
+      require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform, ui: { theme: q.get('theme') || 'auto', accent: q.get('accent') || 'tomato', splash: q.get('splash') === '1', banners: q.get('banners') !== '0', motion: q.get('motion') || 'full', seenVersion: q.get('fresh') ? '' : '0.6.0' } }).then(function (app) {
         window.__app = app;
         if (q.get('seedBrand')) {
           app.services.brands.save({ name: 'Nile Bank', notes: 'Gold only on dark backgrounds. Arabic headlines in Cairo Bold.', colors: [

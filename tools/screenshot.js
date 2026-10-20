@@ -4,6 +4,26 @@ const { chromium } = require(require('child_process').execSync('npm root -g').to
 
 const W = (q) => `${q}&w=900`;
 const SHOTS = [
+  // v0.6 Premium
+  ['p-home', W('?view=home&fixture=layout'), async (p) => { await p.waitForTimeout(700); }],
+  ['p-shapes', W('?view=shapes&fixture=layout'), async (p) => { await p.click('.sh-tile:nth-child(9)'); await p.waitForTimeout(500); }],
+  ['p-shapes-search', W('?view=shapes&fixture=layout'), async (p) => { await p.fill('[data-fk="sh-q"]', 'rocket'); await p.press('[data-fk="sh-q"]', 'Enter'); await p.waitForTimeout(200); await p.click('.sh-tile:nth-child(1)'); await p.click('.st-inspector .seg button:has-text("Duo")'); await p.waitForTimeout(500); }],
+  ['p-shapes-insert', W('?view=shapes&fixture=layout'), async (p) => { await p.click('.st-inspector .btn.primary'); await p.waitForSelector('.st-inspector .report'); await p.waitForTimeout(400); }],
+  ['p-shapes-prim', W('?view=shapes&fixture=layout'), async (p) => { await p.click('text=Shapes · 22'); await p.waitForTimeout(200); await p.click('.sh-tile.prim:nth-child(3)'); await p.waitForTimeout(500); }],
+  ['p-bg', W('?view=backgrounds&fixture=layout'), async (p) => { await p.click('.st-tile:nth-child(2)'); await p.waitForTimeout(700); }],
+  ['p-bg-mesh', W('?view=backgrounds&fixture=layout'), async (p) => { await p.click('.st-tile:nth-child(14)'); await p.waitForTimeout(200); await p.click('.st-inspector .seg button:has-text("Mesh")'); await p.click('.st-inspector .btn.primary'); await p.waitForSelector('.st-inspector .report'); await p.waitForTimeout(400); }],
+  ['p-expr', W('?view=expressions&fixture=layout'), async (p) => { await p.click('.chip-btn:has-text("Auto")'); await p.waitForTimeout(500); }],
+  ['p-ease', W('?view=animate&fixture=layout'), async (p) => { await p.click('.chip-btn:has-text("Ease")'); await p.waitForTimeout(500); }],
+  ['p-whatsnew', W('?view=home&fixture=layout&fresh=1')],
+  ['p-shortcuts', W('?view=animate&fixture=layout'), async (p) => { await p.keyboard.press('Shift+Slash'); await p.waitForTimeout(300); }],
+  ['p-about', W('?view=home&fixture=layout'), async (p) => { await p.click('.sb-brand'); await p.waitForTimeout(300); }],
+  ['p-settings', W('?view=settings'), async (p) => { await p.waitForTimeout(200); }],
+  ['p-midnight', W('?view=home&fixture=layout&theme=midnight&accent=violet'), async (p) => { await p.waitForTimeout(600); }],
+  ['p-light-mint', W('?view=shapes&fixture=layout&theme=light&accent=mint'), async (p) => { await p.waitForTimeout(500); }],
+  ['p-mine', W('?view=animate&fixture=layout'), async (p) => { await p.click('.st-tile:nth-child(3)'); await p.waitForTimeout(200); await p.click('.st-inspector [aria-label="Save as preset"]'); await p.waitForSelector('.overlay .txt'); await p.fill('.overlay .txt', 'My slide'); await p.click('.overlay .btn.primary'); await p.waitForTimeout(500); }],
+  ['p-splash', W('?view=home&fixture=layout&splash=1'), async (p) => { await p.waitForTimeout(450); }],
+  ['p-narrow-home', '?view=home&fixture=layout&w=380', async (p) => { await p.waitForTimeout(500); }],
+  ['p-narrow-shapes', '?view=shapes&fixture=layout&w=380', async (p) => { await p.waitForTimeout(500); }],
   // Studio (wide, 900 px)
   ['s-animate', W('?view=animate&fixture=layout'), async (p) => { await p.waitForTimeout(500); }],
   ['s-animate-pick', W('?view=animate&fixture=layout'), async (p) => { await p.click('.st-tile:nth-child(6)'); await p.waitForTimeout(500); }],
@@ -45,10 +65,11 @@ const SHOTS = [
   for (const [name, qs, act] of SHOTS) {
     if (only && !name.startsWith(only)) continue;
     const page = await browser.newPage({ viewport: { width: (qs.match(/w=(\d+)/) ? Number(RegExp.$1) : 360) + 40, height: 720 }, deviceScaleFactor: 2 });
+    page.setDefaultTimeout(6000);
     page.on('pageerror', (e) => { errors++; console.log(`[${name}] pageerror: ${e.message}`); });
     page.on('console', (m) => { if (m.type() === 'error') { errors++; console.log(`[${name}] console: ${m.text()}`); } });
     await page.goto(`http://localhost:5173/${qs}`);
-    await page.waitForSelector('.ctx .dot.live', { timeout: 5000 }).catch(() => console.log(`[${name}] host not live`));
+    if (!/splash=1/.test(qs)) await page.waitForSelector('.ctx .dot.live', { timeout: 5000 }).catch(() => console.log(`[${name}] host not live`));
     await page.waitForTimeout(150);
     if (act) await act(page).catch((e) => { errors++; console.log(`[${name}] action failed: ${e.message.split('\n')[0]}`); });
     await page.waitForTimeout(250);

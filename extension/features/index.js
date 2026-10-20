@@ -20,6 +20,7 @@ const glass = require('./glass/tools');
 const quick = require('./quick/tools');
 const exprQuick = require('./expressions/quick');
 const green = require('./generate/green');
+const design = require('./design/tools');
 
 const TOOLS = [
   smartEase, stagger, proximity.apply, proximity.centerAnchor, proximity.remove,
@@ -34,7 +35,8 @@ const TOOLS = [
   quick.selectSame, quick.reverseKeys, quick.mirrorKeys, quick.animate, quick.trim, quick.typewriter, quick.counter,
   ...compositing,
   glass.apply, glass.look,
-  green.greenPrompt, green.importKey
+  green.greenPrompt, green.importKey,
+  design.insertShape, design.background, design.colorize
 ];
 
 function registerAll(registry) {

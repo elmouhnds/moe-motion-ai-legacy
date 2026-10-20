@@ -13,7 +13,7 @@ const DEFAULTS = {
   },
   permissions: Object.assign({}, DEFAULT_POLICY),
   limits: { maxLayers: 200, maxProps: 200 },
-  ui: { density: 'auto', workspace: 'motion' }
+  ui: { density: 'auto', workspace: 'home', theme: 'auto', accent: 'tomato', motion: 'full', headings: 'display', banners: true, splash: true, seenVersion: '' }
 };
 
 function merge(base, over) {

@@ -10,6 +10,9 @@ const copilot = require('./copilot');
 const quickbar = require('./quickbar');
 const studio = require('./studio/sections');
 const library = require('./studio/library');
+const chrome = require('./chrome');
+const art = require('./art');
+const theme = require('./theme');
 const views = {
   motion: require('./views/motion'),
   expressions: require('./views/expressions'),
@@ -24,7 +27,9 @@ const views = {
   brand: require('./views/brand'),
   select: require('./views/select'),
   quick: { render: (app) => quickbar.view(app) },
-  deliver: require('./views/deliver')
+  deliver: require('./views/deliver'),
+  home: require('./views/home'),
+  shapes: require('./views/shapes')
 };
 // Studio library sections (tiles + inspector).
 for (const sec of studio.SECTIONS.filter((x) => x.kind === 'library')) views[sec.id] = { render: (app) => library.render(app, sec) };
@@ -33,6 +38,7 @@ for (const sec of studio.SECTIONS.filter((x) => x.kind === 'library')) views[sec
 const MAIN = [...studio.SECTIONS.map((x) => [x.id, x.label, x.icon]), ...studio.SECONDARY.map((x) => [x.id, x.label, x.icon])];
 const SECONDARY = studio.UTILITY;
 const resolveView = (v) => studio.ALIAS[v] || v;
+const TOAST_ICON = { ok: 'check', err: 'x', warn: 'pulse', info: 'info' };
 
 function createApp(root, services, env = {}) {
   const ui = services.settings.get().ui;
@@ -40,13 +46,13 @@ function createApp(root, services, env = {}) {
     services,
     env,
     state: createState({
-      view: resolveView(ui.workspace || 'animate'),
+      view: resolveView(ui.workspace || 'home'),
       ctx: null, hostError: null, hostInfo: null,
       running: null, results: {}, args: {}, open: {}, advanced: {},
       expr: { code: '', assist: { mode: 'generate', request: '', result: null } },
       factory: { description: '', draft: null, busy: false, error: null },
       copilot: { open: false, request: '', phase: 'idle', validated: null, progress: {}, run: null, error: null },
-      keyStatus: null, toast: null, compact: false, wide: false
+      keyStatus: null, toast: null, toastKind: null, modal: null, compact: false, wide: false
     })
   };
 
@@ -67,26 +73,32 @@ function createApp(root, services, env = {}) {
     const navBtn = ([id, label, ic]) => h('button', { class: 'nav-btn', role: 'tab', 'aria-selected': String(isSection(id)), title: label, 'aria-label': label, onclick: () => app.go(id) }, icon(ic), h('span', { class: 'nav-label' }, label));
     const current = [...MAIN, ...SECONDARY, ['diagnostics', 'Diagnostics']].find(([id]) => id === s.view) || MAIN[0];
     const client = clientCard(s);
+    const seen = services.settings.get().ui.seenVersion === services.version;
     const appEl = h('div', { class: `app ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.navWide ? 'nav-wide' : ''}` },
       h('nav', { class: 'sidebar', role: 'tablist', 'aria-label': 'Sections' },
-        h('div', { class: 'sb-brand', title: `MOE Motion AI ${services.version}` }, h('span', { class: 'brand' }, 'M'), h('span', { class: 'nav-label' }, 'MOE Studio')),
+        h('button', { class: 'sb-brand', title: `MOE Motion AI ${services.version} — About`, onclick: () => app.state.set({ modal: 'about' }) }, h('span', { class: 'brand-mark', html: art.logo(22) }), h('span', { class: 'nav-label' }, h('span', { class: 'sb-name' }, 'MOE Studio'), h('span', { class: 'sb-ver' }, services.version))),
+        h('div', { class: 'sb-scroll' },
         studio.SECTIONS.map((x) => navBtn([x.id, x.label, x.icon])),
         h('div', { class: 'sb-sep' }),
-        studio.SECONDARY.map((x) => navBtn([x.id, x.label, x.icon])),
+        studio.SECONDARY.map((x) => navBtn([x.id, x.label, x.icon]))),
         h('span', { class: 'spacer' }),
         client,
         h('div', { class: 'sb-utility' }, SECONDARY.map(navBtn))),
       h('div', { class: 'main' },
         h('div', { class: 'hdr' },
+          current[2] ? h('span', { class: 'hdr-ic' }, icon(current[2], 'sm')) : null,
           h('div', { class: 'title' }, current[1]),
           h('span', { class: 'spacer' }),
+          h('button', { class: `icon-btn hdr-new ${seen ? '' : 'dot'}`, title: "What's new", 'aria-label': "What's new", onclick: () => app.state.set({ modal: 'whatsnew' }) }, icon('gift', 'sm')),
+          h('button', { class: 'icon-btn', title: 'Shortcuts (?)', 'aria-label': 'Keyboard shortcuts', onclick: () => app.state.set({ modal: 'shortcuts' }) }, icon('keyboard', 'sm')),
           h('button', { class: 'search-btn', title: 'Search tools (Ctrl+K)', onclick: () => palette.open(app) }, icon('search', 'sm'), h('span', { class: 'label' }, 'Search'), h('span', { class: 'kbd' }, 'Ctrl K'))),
         contextStrip(s),
         quickbar.strip(app),
-        h('div', { class: 'content' }, (views[s.view] || views.motion).render(app)),
+        h('div', { class: 'content' }, chrome.banner(app, s.view), (views[s.view] || views.home).render(app)),
         copilot.render(app)),
       quickbar.popover(app),
-      s.toast ? h('div', { class: 'toast', role: 'status' }, s.toast) : null);
+      s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, s.toastKind ? h('span', { class: 'toast-ic' }, icon(TOAST_ICON[s.toastKind] || 'info', 'sm')) : null, h('span', {}, s.toast)) : null,
+      s.modal ? chrome.sheet(app, s.modal) : null);
     root.appendChild(appEl);
     const c2 = root.querySelector('.content');
     if (c2) c2.scrollTop = scrollTop;
@@ -139,10 +151,18 @@ function createApp(root, services, env = {}) {
 
   app.state.sub(() => app.render());
 
-  app.toast = (msg, ms = 2600) => {
+  /** kind: 'ok' | 'err' | 'warn' | 'info' (optional; adds an icon and colour). */
+  app.toast = (msg, ms = 2600, kind = null) => {
     clearTimeout(toastTimer);
-    app.state.set({ toast: msg });
-    toastTimer = setTimeout(() => app.state.set({ toast: null }), ms);
+    app.state.set({ toast: msg, toastKind: kind });
+    toastTimer = setTimeout(() => app.state.set({ toast: null, toastKind: null }), ms);
+  };
+  app.applyAppearance = () => theme.apply(services.settings.get().ui);
+  /** First paint: splash (optional), then What's New once per version. */
+  app.boot = () => {
+    const ui = services.settings.get().ui;
+    const next = () => { if (ui.seenVersion !== services.version) { app.state.set({ modal: 'whatsnew' }); services.settings.update({ ui: { seenVersion: services.version } }); } };
+    if (ui.splash !== false) document.body.appendChild(chrome.splash(next)); else next();
   };
 
   /* ---------- navigation ---------- */
@@ -240,7 +260,7 @@ function createApp(root, services, env = {}) {
         r = await services.executor.run(toolId, args, { origin: 'user', approved: true });
       }
       app.state.set((s) => ({ results: Object.assign({}, s.results, { [key]: r }) }));
-      if (r.status === 'success' && r.summary && r.checkpointId) app.toast(r.summary);
+      if (r.status === 'success' && r.summary && r.checkpointId) app.toast(r.summary, 2600, 'ok');
       return r;
     } finally {
       app.state.set({ running: null });
@@ -368,6 +388,22 @@ function createApp(root, services, env = {}) {
     await services.platform.secrets.clear();
     app.loadKeyStatus();
   };
+  /** My Presets pack: saved next to the settings (data folder) and copied to the clipboard. */
+  app.exportPresets = () => {
+    const json = services.presets.exportPack();
+    const name = `MOE-Presets-${new Date().toISOString().slice(0, 10)}.moepack.json`;
+    let where = '';
+    try { const fsa = services.platform && services.platform.fs; if (fsa && fsa.join && fsa.writeText) { where = fsa.join(fsa.dataDir, name); fsa.writeText(where, json); } } catch (e) { where = ''; }
+    app.copy(json);
+    app.toast(where ? `Pack saved: ${where} (also copied)` : 'Pack copied to the clipboard', 5000, 'ok');
+  };
+  app.importPresets = async () => {
+    const text = await app.dialog({ title: 'Import preset pack', body: 'Paste a MOE preset pack (JSON). Every preset is checked against its tool before it is added.', input: '', okLabel: 'Import' });
+    if (!text) return;
+    const r = services.presets.importPack(text);
+    app.toast(r.imported ? `Imported ${r.imported} preset(s)${r.skipped.length ? ` · skipped ${r.skipped.length}` : ''}` : `Nothing imported: ${r.skipped.slice(0, 2).join(' · ')}`, 5000, r.imported ? 'ok' : 'err');
+    app.render();
+  };
   app.copy = (text) => {
     const ta = h('textarea', { style: { position: 'fixed', opacity: '0' } }, text);
     document.body.appendChild(ta);
@@ -396,6 +432,9 @@ function createApp(root, services, env = {}) {
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); if (!app.paletteOpen) palette.open(app); }
     else if (e.key === '/' && !typing && !app.paletteOpen) { e.preventDefault(); palette.open(app); }
     else if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); app.openCopilot(); }
+    else if (e.key === 'Escape' && app.state.get().modal) { e.preventDefault(); app.state.set({ modal: null }); }
+    else if (e.key === '?' && !typing) { e.preventDefault(); app.state.set({ modal: 'shortcuts' }); }
+    else if ((e.ctrlKey || e.metaKey) && /^Digit[1-9]$/.test(e.code)) { const sec = MAIN[Number(e.code.slice(5)) - 1]; if (sec) { e.preventDefault(); app.go(sec[0]); } }
   });
   // AE sends no selection-change events to panels: re-read on focus / hover,
   // and poll lightly only while the pointer is over the panel.

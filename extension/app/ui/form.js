@@ -43,15 +43,28 @@ function control(key, p, value, set, ctx) {
     ta.addEventListener('change', (e) => set(e.target.value));
     return ta;
   }
+  if (p.format === 'color') return colorControl(p, value, set, ctx);
   return h('input', { class: 'txt', value: value || '', placeholder: p.description || '', onchange: (e) => set(e.target.value), 'aria-label': p.label });
 }
 
-function renderForm(params, args, onChange, { advancedOpen, onToggleAdvanced, ctx } = {}) {
+/** Colour field: native picker + #RRGGBB text + quick swatches (active client first). */
+function colorControl(p, value, set, ctx) {
+  const ok = /^#[0-9a-fA-F]{6}$/.test(value || '');
+  const swatches = (ctx && ctx.__swatches) || [];
+  return h('div', { class: 'color-row' },
+    h('label', { class: 'color-chip', style: { background: ok ? value : 'transparent' }, title: 'Pick a colour' },
+      h('input', { type: 'color', value: ok ? value : '#ffffff', 'aria-label': p.label, onchange: (e) => set(e.target.value.toUpperCase()) })),
+    h('input', { class: 'txt hex', value: value || '', maxlength: 7, spellcheck: 'false', 'aria-label': `${p.label} hex`, onchange: (e) => { let v = e.target.value.trim(); if (/^[0-9a-fA-F]{6}$/.test(v)) v = `#${v}`; set(v.toUpperCase()); } }),
+    swatches.length ? h('div', { class: 'swatches' }, swatches.map((hex) => h('button', { class: `sw ${hex === String(value).toUpperCase() ? 'on' : ''}`, style: { background: hex }, title: hex, 'aria-label': hex, onclick: () => set(hex) }))) : null);
+}
+
+function renderForm(params, args, onChange, { advancedOpen, onToggleAdvanced, ctx, swatches } = {}) {
+  if (swatches) ctx = Object.assign({}, ctx, { __swatches: swatches });
   // `hidden` params are set by custom UI (e.g. a picker); `showIf(args)` makes a field conditional.
   const entries = Object.entries(params || {}).filter(([, p]) => !p.hidden && (!p.showIf || p.showIf(args)));
   const main = entries.filter(([, p]) => !p.advanced);
   const adv = entries.filter(([, p]) => p.advanced);
-  const field = ([key, p]) => h('div', { class: `field ${p.type === 'text' ? 'stack' : ''}`, title: p.description || '' },
+  const field = ([key, p]) => h('div', { class: `field ${p.type === 'text' || p.format === 'color' ? 'stack' : ''}`, title: p.description || '' },
     h('label', {}, p.label),
     control(key, p, args[key], (v) => onChange(Object.assign({}, args, { [key]: v })), ctx));
   // Booleans flagged `grid` render as a compact checkbox grid (e.g. Proximity reactions).

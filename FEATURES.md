@@ -1,13 +1,18 @@
-# Features (v0.5.0)
+# Features (v0.6.0)
 
-Interface: Studio (labelled sidebar, visual libraries + Inspector, Deliver board) — see CHANGELOG 0.5.0. Tools below are unchanged.
+Interface: Studio (labelled sidebar, visual libraries + Inspector, Deliver board) — CHANGELOG 0.5.0. Premium content, Home, artwork and appearance — CHANGELOG 0.6.0.
+
+Library content: 37 Animate tiles (incl. 8 ease curves) · 33 one-click expressions · 15 layouts · 7 glass looks · 8 zooms · 27 text presets · 1,899 icons · 22 native shapes · 32 palettes · your own presets ("Mine").
 
 Legend: **Local** = no network. **AI** = uses Claude (optional). Host = verified in AE? (see TEST_REPORT.md)
 
 | Workspace | Tool (id) | Type | What it does | Undo / recovery | Host verified |
 |---|---|---|---|---|---|
 | Quick | Quick Bar (`quick.*`, 14 tools) | Local | Reveal (project / folder / pre-comp), Purge cache, Duplicate comp (deep), Flip H/V, Parent to Null, Pre-compose, Separate X/Y (keeps easing), Select Same Property, Reverse keys, Mirror/Clone keys, Quick Animate (slide 4 directions in/out, fade, scale, spin; overshoot; stagger), Trim Paths (draw/erase/travel/draw+erase), Typewriter, Number Counter. Bar in every section; right-click = options. | undo + checkpoint (Pre-compose, Separate: Edit › Undo) | ⏳ |
-| Expressions | Quick Expression (`expressions.quick`) | Local | 17 one-click presets with icons; natural target per preset; live Slider controls option; user expressions protected. | undo + checkpoint | ⏳ |
+| Shapes & Icons | Insert Shape / Icon (`design.insertShape`) | Local | 1,899 Lucide icons as editable Bézier paths or 22 native parametric shapes; Line / Solid / Both / Duotone; Draw, Pop or Fade at the playhead; read-back of paths, stroke, fill, keys. | layer removed (undo + checkpoint) | ⏳ |
+| Backgrounds | Background (`design.background`) | Local | Palette → linear / radial Gradient Ramp, 4-Colour mesh or flat `MOE Background` at the bottom; grain (Noise); slow drift expressions. | layer removed (undo + checkpoint) | ⏳ |
+| Backgrounds | Colorize from Palette (`design.colorize`) | Local | Cycle / shuffle / blend palette colours over the selection (text, shapes, footage via MOE Palette Fill). | undo + checkpoint (exact) | ⏳ |
+| Expressions | Quick Expression (`expressions.quick`) | Local | 33 one-click presets with icons, preview curves and explanations; natural target per preset; live Slider controls option; user expressions protected. | undo + checkpoint | ⏳ |
 | Layout | Grid Builder (`grid.build`) | Local | 6 modes on one MOE Grid null with controls; order, honeycomb, twist, scale step, random, Build animation (styles × orders, stagger), Effector, auto spacing; live preview = same maths as the expressions. | undo + checkpoint (exact) | ⏳ |
 | Layout | Grid Controls / Release Grid (`grid.update`, `grid.remove`) | Local | Live control changes; remove (layers return) or freeze (bake). | undo + checkpoint | ⏳ |
 | Layout | Layout Guides / Place in Cells (`grid.guides`, `grid.placeInCells`) | Local | Columns/rows/gutters/margins as comp guides; tile layers into cells keeping keyframes. | undo + checkpoint | ⏳ |

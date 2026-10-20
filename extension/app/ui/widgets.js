@@ -13,8 +13,19 @@ const AT = require('../../features/adapt/tools');
 /* ---------- shared canvas loop (stops when canvases unmount) ---------- */
 const live = new Set();
 let raf = null;
+/* Off-screen canvases are skipped (≈ every 6th frame check); "Reduced motion" draws once and holds. */
+let frame = 0;
 function loop(now) {
-  for (const e of live) { if (!e.canvas.isConnected) { live.delete(e); continue; } e.draw(now); }
+  frame++;
+  const still = typeof document !== 'undefined' && document.documentElement.getAttribute('data-motion') === 'reduced';
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 1e9;
+  for (const e of live) {
+    if (!e.canvas.isConnected) { live.delete(e); continue; }
+    if (still && e.drawn) continue;
+    if (frame % 6 === 0 || e.visible === undefined) { const r = e.canvas.getBoundingClientRect(); e.visible = r.bottom > -40 && r.top < vh + 40 && r.width > 0; }
+    if (!e.visible) continue;
+    e.draw(still ? 1200 : now); e.drawn = true;
+  }
   raf = live.size ? requestAnimationFrame(loop) : null;
 }
 function animated(canvas, draw) {

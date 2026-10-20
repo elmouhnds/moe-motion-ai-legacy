@@ -1,3 +1,11 @@
+/* Display face for headings (Sora, SIL OFL 1.1 — assets/fonts/LICENSE-sora-OFL.txt). */
+@font-face {
+  font-family: "MOE Display";
+  src: url("../assets/fonts/sora-latin-wght.woff2") format("woff2");
+  font-weight: 100 800;
+  font-display: swap;
+}
+
 /*
  * MOE Motion AI — design tokens.
  * Dark is the default and matches After Effects' panel workspace. The panel
@@ -33,6 +41,7 @@
   --focus: 0 0 0 2px rgba(255, 122, 89, 0.55);
 
   --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --display: "MOE Display", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
   --mono: "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
   --fs-xs: 10.5px;
   --fs-sm: 11px;
@@ -73,3 +82,34 @@
   --warn-soft: rgba(138, 97, 0, 0.1);
   --focus: 0 0 0 2px rgba(194, 65, 12, 0.45);
 }
+
+/* Midnight: deeper, slightly cool dark for dim rooms / OLED. */
+:root[data-theme="midnight"] {
+  --bg: #141418;
+  --bg-raised: #1c1c22;
+  --bg-sunken: #0e0e11;
+  --bg-hover: rgba(255, 255, 255, 0.05);
+  --bg-active: rgba(255, 255, 255, 0.09);
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.15);
+  --text: #ececf1;
+  --text-2: #b3b3bf;
+  --text-3: #8e8e9c;
+}
+
+/* Accent colours (Settings › Appearance). Dark/midnight values first, then light-theme variants. */
+:root[data-accent="electric"] { --accent: #4d8dff; --accent-hover: #6ba0ff; --accent-ink: #050d1f; --accent-soft: rgba(77, 141, 255, 0.15); --focus: 0 0 0 2px rgba(77, 141, 255, 0.55); }
+:root[data-accent="violet"] { --accent: #a78bfa; --accent-hover: #b9a2fb; --accent-ink: #160c33; --accent-soft: rgba(167, 139, 250, 0.15); --focus: 0 0 0 2px rgba(167, 139, 250, 0.55); }
+:root[data-accent="mint"] { --accent: #34d399; --accent-hover: #55dcab; --accent-ink: #04210f; --accent-soft: rgba(52, 211, 153, 0.14); --focus: 0 0 0 2px rgba(52, 211, 153, 0.55); }
+:root[data-accent="gold"] { --accent: #f5b942; --accent-hover: #f7c662; --accent-ink: #231703; --accent-soft: rgba(245, 185, 66, 0.14); --focus: 0 0 0 2px rgba(245, 185, 66, 0.55); }
+:root[data-accent="rose"] { --accent: #fb7185; --accent-hover: #fc8b9b; --accent-ink: #2a0710; --accent-soft: rgba(251, 113, 133, 0.15); --focus: 0 0 0 2px rgba(251, 113, 133, 0.55); }
+:root[data-accent="sky"] { --accent: #38bdf8; --accent-hover: #5ccafa; --accent-ink: #031925; --accent-soft: rgba(56, 189, 248, 0.14); --focus: 0 0 0 2px rgba(56, 189, 248, 0.55); }
+:root[data-accent="lime"] { --accent: #a3e635; --accent-hover: #b4ec5a; --accent-ink: #142002; --accent-soft: rgba(163, 230, 53, 0.14); --focus: 0 0 0 2px rgba(163, 230, 53, 0.55); }
+:root[data-theme="light"][data-accent="electric"] { --accent: #1d4ed8; --accent-hover: #1a44bd; --accent-ink: #ffffff; --accent-soft: rgba(29, 78, 216, 0.12); --focus: 0 0 0 2px rgba(29, 78, 216, 0.45); }
+:root[data-theme="light"][data-accent="violet"] { --accent: #6d28d9; --accent-hover: #5f22be; --accent-ink: #ffffff; --accent-soft: rgba(109, 40, 217, 0.12); --focus: 0 0 0 2px rgba(109, 40, 217, 0.45); }
+:root[data-theme="light"][data-accent="mint"] { --accent: #047857; --accent-hover: #03684b; --accent-ink: #ffffff; --accent-soft: rgba(4, 120, 87, 0.12); --focus: 0 0 0 2px rgba(4, 120, 87, 0.45); }
+:root[data-theme="light"][data-accent="gold"] { --accent: #92400e; --accent-hover: #7f370c; --accent-ink: #ffffff; --accent-soft: rgba(146, 64, 14, 0.12); --focus: 0 0 0 2px rgba(146, 64, 14, 0.45); }
+:root[data-theme="light"][data-accent="rose"] { --accent: #be123c; --accent-hover: #a50f34; --accent-ink: #ffffff; --accent-soft: rgba(190, 18, 60, 0.12); --focus: 0 0 0 2px rgba(190, 18, 60, 0.45); }
+:root[data-theme="light"][data-accent="sky"] { --accent: #0369a1; --accent-hover: #025b8c; --accent-ink: #ffffff; --accent-soft: rgba(3, 105, 161, 0.12); --focus: 0 0 0 2px rgba(3, 105, 161, 0.45); }
+:root[data-theme="light"][data-accent="lime"] { --accent: #3f6212; --accent-hover: #34520f; --accent-ink: #ffffff; --accent-soft: rgba(63, 98, 18, 0.12); --focus: 0 0 0 2px rgba(63, 98, 18, 0.45); }
+

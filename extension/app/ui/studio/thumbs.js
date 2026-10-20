@@ -7,6 +7,7 @@ const L = require('../../../features/grid/layouts');
 const GX = require('../../../features/grid/expressions');
 const { LOOKS } = require('../../../features/glass/tools');
 const { hexToRgb } = require('../../../features/brand/brands');
+const PAL = require('../../../features/design/palettes');
 
 // Theme-aware ink (light AE brightness → dark ink). Refreshed once per drawn frame.
 let ACC = '#ff7a59';
@@ -184,6 +185,34 @@ const DRAW = {
     const pts = th.hand ? [[-2.5, 0], [2.5, 0], [3.2, 12], [9.5, 12.3], [17.6, 13.6], [18.6, 24], [15.6, 31], [3.5, 31], [-7.4, 15.6], [-3.2, 14.2]] : [[0, 0], [0, 26], [6.5, 20], [11, 30], [15, 28.2], [10.6, 18.6], [19, 18.6]];
     pts.forEach((q, i) => (i ? c.lineTo(q[0] * 0.6, q[1] * 0.6) : c.moveTo(q[0] * 0.6, q[1] * 0.6))); c.closePath(); c.fill(); c.stroke(); c.restore();
   },
+  /** Background tile: the real gradient for that palette + slow drift, with swatches along the bottom. */
+  bg(c, W, H, th, t) {
+    const pal = PAL.byId(th.palette);
+    if (!pal) return;
+    const col = pal.colors;
+    const style = th.style || 'linear';
+    const dx = Math.sin(t * 0.5) * W * 0.08, dy = Math.cos(t * 0.4) * H * 0.08;
+    let g;
+    if (style === 'radial') { g = c.createRadialGradient(W / 2 + dx, H / 2 + dy, 0, W / 2, H / 2, Math.hypot(W, H) / 2); g.addColorStop(0, col[th.from || 0]); g.addColorStop(1, col[th.to === undefined ? 2 : th.to]); }
+    else { g = c.createLinearGradient(dx, dy, W - dx, H - dy); g.addColorStop(0, col[th.from || 0]); g.addColorStop(1, col[th.to === undefined ? 2 : th.to]); }
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    if (style === 'mesh') {
+      [[0.15, 0.2, 2], [0.85, 0.2, 3], [0.2, 0.85, 4], [0.85, 0.8, 1]].forEach(([x, y, i], k) => {
+        const rg = c.createRadialGradient(W * x + Math.sin(t * 0.6 + k) * 8, H * y, 0, W * x, H * y, W * 0.55);
+        rg.addColorStop(0, col[i]); rg.addColorStop(1, 'rgba(0,0,0,0)');
+        c.globalAlpha = 0.75; c.fillStyle = rg; c.fillRect(0, 0, W, H); c.globalAlpha = 1;
+      });
+    }
+    const sw = W / 5;
+    col.forEach((hex, i) => { c.fillStyle = hex; c.fillRect(i * sw, H - 6, sw, 6); });
+  },
+  /** Palette strip (Colorize / palette pickers). */
+  palette(c, W, H, th) {
+    const pal = PAL.byId(th.palette);
+    if (!pal) return;
+    const sw = W / pal.colors.length;
+    pal.colors.forEach((hex, i) => { c.fillStyle = hex; c.fillRect(i * sw, 0, sw + 1, H); });
+  },
   expr(c, W, H, th, t) {
     const f = EXPR_FN[th.preset] || EXPR_FN.wiggle;
     const span = 4;
@@ -211,7 +240,22 @@ const EXPR_FN = {
   pendulum: (u) => Math.sin(u * Math.PI * 2) * Math.exp(-u * 0.6),
   pulse: (u) => Math.sin(u * Math.PI * 2) * 0.6, float: (u) => Math.sin(u * Math.PI) * 0.6,
   inertia: (u) => (u < 1 ? -1 + 2 * u : 1 + 0.5 * Math.sin((u - 1) * 9) * Math.exp(-(u - 1) * 3.5)),
-  posterize: (u) => -1 + Math.floor((u / 4) * 8) / 4
+  posterize: (u) => -1 + Math.floor((u / 4) * 8) / 4,
+  bounceBack: (u) => { if (u < 1) return 1 - 2 * u * u; let t = u - 1, h = 1.2, d = 0.9; while (t > d && d > 0.05) { t -= d; d *= 0.6; h *= 0.36; } return t > d ? -1 : -1 + h * 4 * (t / d) * (1 - t / d); },
+  squash: (u) => Math.sin(u * Math.PI * 2 * 1.2) * Math.exp(-u * 0.7) * 0.9,
+  orbit: (u) => Math.sin(u * Math.PI * 1.5) * 0.8,
+  swing: (u) => Math.sin(u * Math.PI * 1.6) * 0.7,
+  heartbeat: (u) => { const p = (u * 0.9) % 1; return -0.5 + 1.3 * (Math.exp(-Math.pow((p - 0.1) / 0.05, 2)) + 0.6 * Math.exp(-Math.pow((p - 0.3) / 0.05, 2))); },
+  breathe: (u) => Math.sin(u * Math.PI) * 0.7,
+  wiggleRot: (u) => noise(u, 7) * 0.8, wiggleScale: (u) => noise(u, 9) * 0.7,
+  organic: (u) => noise(u * 0.6, 4) * 0.9,
+  loopWiggle: (u) => noise(u % 2, 6) * (1 - Math.abs((u % 2) - 1) * 0.2),
+  drift: (u) => -1 + (u / 4) * 1.6,
+  clock: (u) => -1 + Math.floor(u * 2) / 4,
+  faceMotion: (u) => Math.atan(Math.cos(u * 1.8) * 3) / 1.4,
+  scatter: (u) => Math.sin(Math.floor(u * 3) * 78.233) * 0.8,
+  popIn: (u) => { const x = u % 2; if (x > 1) return 0.6; return x <= 0 ? -1 : -1 + 1.6 * (1 + 0.15 * Math.sin(Math.PI * x) - Math.pow(1 - x, 3)); },
+  slideIn: (u) => { const x = Math.min((u % 2) / 0.8, 1); return -1 + 1.7 * (1 - Math.pow(1 - x, 3)); }
 };
 
 /** Draw one thumbnail frame. */

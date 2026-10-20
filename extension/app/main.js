@@ -5,27 +5,22 @@
  */
 const { createServices } = require('../core/services');
 const { createApp } = require('./ui/shell');
+const theme = require('./ui/theme');
 
-/** Match AE's interface brightness: light token set when AE panels are light. */
-function syncTheme(cs) {
-  try {
-    const c = cs.getHostEnvironment().appSkinInfo.panelBackgroundColor.color;
-    const lum = (0.2126 * c.red + 0.7152 * c.green + 0.0722 * c.blue) / 255;
-    document.documentElement.setAttribute('data-theme', lum > 0.5 ? 'light' : 'dark');
-    if (lum <= 0.5) document.documentElement.style.setProperty('--bg', `rgb(${Math.round(c.red)}, ${Math.round(c.green)}, ${Math.round(c.blue)})`);
-  } catch (e) { /* keep defaults */ }
-}
-
-async function start({ cs, root, platform, mount }) {
+async function start({ cs, root, platform, mount, ui }) {
   const plat = platform || require('../core/platform/node').createNodePlatform();
   const services = createServices({ platform: plat, evalScript: (script, cb) => cs.evalScript(script, cb), rootPath: root });
+  // Appearance: follow AE's interface brightness unless the user picked a theme.
   if (cs.getHostEnvironment) {
-    syncTheme(cs);
-    cs.addEventListener('com.adobe.csxs.events.ThemeColorChanged', () => syncTheme(cs));
+    theme.readHost(cs);
+    cs.addEventListener('com.adobe.csxs.events.ThemeColorChanged', () => { theme.readHost(cs); theme.apply(services.settings.get().ui); });
   }
+  if (ui) services.settings.update({ ui }); // preview / tests: appearance overrides
+  theme.apply(services.settings.get().ui);
   const app = createApp(mount || document.getElementById('app'), services, { cs });
   app.render();
   app.applyDensity();
+  app.boot();
   services.logger.info('app', `MOE Motion AI ${services.version} starting`, plat.info);
   await app.reconnect();
   return app;

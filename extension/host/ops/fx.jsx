@@ -27,6 +27,7 @@
     function place(comp, L, args) {
         if (args.above) { L.moveBefore(U.findLayer(comp, { layerId: args.above })); }
         else if (args.below) { L.moveAfter(U.findLayer(comp, { layerId: args.below })); }
+        else if (args.bottom) { L.moveToEnd(); }
         if (args.inPoint !== undefined && args.inPoint !== null) { L.inPoint = num(args.inPoint); }
         if (args.outPoint !== undefined && args.outPoint !== null) { L.outPoint = num(args.outPoint); }
         if (args.label !== undefined) { L.label = args.label; }
@@ -48,7 +49,7 @@
         }
     };
 
-    /* args: { compId, name, color, above, below, inPoint, outPoint, label, comment } */
+    /* args: { compId, name, color, above, below, bottom, inPoint, outPoint, label, comment } */
     ops['layers.createSolid'] = {
         mutates: true,
         run: function (args) {

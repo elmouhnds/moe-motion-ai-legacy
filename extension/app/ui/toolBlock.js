@@ -7,6 +7,14 @@ const contextReq = require('../../core/context');
 const { defaults } = require('../../core/schema');
 const widgets = require('./widgets');
 
+/** Quick colour swatches for colour fields: the active client first, then MOE's own set. */
+function swatchesFor(app) {
+  const brands = app.services.brands.list();
+  const b = brands.find((x) => x.id === app.services.store.get('active-client', null)) || brands[0];
+  const own = ['#FFFFFF', '#1C1C1E', '#FF7A59', '#FFB38A', '#4D8DFF', '#34D399', '#F5B942', '#A78BFA'];
+  return [...new Set([...(b ? b.colors.map((c) => c.hex.toUpperCase()) : []), ...own])].slice(0, 12);
+}
+
 function availability(tool, ctx, args) {
   const r = contextReq.evaluate(tool.requires, ctx);
   if (!r.ok) return { ok: false, hint: r.reasons[0] };
@@ -50,7 +58,7 @@ function renderTool(app, tool, { openByDefault = false } = {}) {
         oncontextmenu: p.user ? (e) => { e.preventDefault(); app.services.presets.remove(p.id); app.render(); } : undefined
       }, p.label))) : null,
       (tool.ui && tool.ui.renderBody) || widgets.body[tool.id] ? ((tool.ui && tool.ui.renderBody) || widgets.body[tool.id])(args, setArgs, { h, app, ctx: s.ctx }) : null,
-      renderForm(tool.params, args, setArgs, { ctx: s.ctx, advancedOpen: s.advanced[tool.id], onToggleAdvanced: () => app.state.set((st) => ({ advanced: Object.assign({}, st.advanced, { [tool.id]: !st.advanced[tool.id] }) })) }),
+      renderForm(tool.params, args, setArgs, { ctx: s.ctx, swatches: swatchesFor(app), advancedOpen: s.advanced[tool.id], onToggleAdvanced: () => app.state.set((st) => ({ advanced: Object.assign({}, st.advanced, { [tool.id]: !st.advanced[tool.id] }) })) }),
       h('div', { class: 'actions' },
         h('button', { class: 'btn primary', disabled: !av.ok || !!s.running, onclick: () => app.runTool(tool.id, args) },
           running ? h('span', { class: 'spin' }) : null, (tool.ui && tool.ui.primaryLabel) || 'Run'),

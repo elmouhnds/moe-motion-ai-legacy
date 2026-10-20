@@ -32,10 +32,84 @@ const PRESETS = {
     'if (numKeys > 0) { k = nearestKey(time).index; if (key(k).time > time) { k--; } }',
     'if (k > 0) { var t = time - key(k).time; var v = velocityAtTime(key(k).time - thisComp.frameDuration / 10); value + v * amp * Math.sin(freq * t * 2 * Math.PI) / Math.exp(decay * t); } else { value; }'
   ].join('\n') },
-  posterize: { label: 'Stop Motion', icon: 'xPoster', target: 'keyed', nums: { fps: 12 }, code: (n) => `posterizeTime(${n('fps')});\nvalue;` }
+  posterize: { label: 'Stop Motion', icon: 'xPoster', target: 'keyed', nums: { fps: 12 }, code: (n) => `posterizeTime(${n('fps')});\nvalue;` },
+  // ---- v0.6 additions ----
+  bounceBack: { label: 'Bounce Land', icon: 'xBounceLand', target: 'keyed', nums: { elastic: 0.6, gravity: 4000 }, code: (n) => [
+    `var e = ${n('elastic')}, g = ${n('gravity')}, nMax = 9, k = 0;`,
+    'if (numKeys > 0) { k = nearestKey(time).index; if (key(k).time > time) { k--; } }',
+    'if (k > 0 && k == numKeys) {',
+    '  var t = time - key(k).time, v = -velocityAtTime(key(k).time - 0.001) * e, vl = length(v);',
+    '  var vu = (value instanceof Array) ? ((vl > 0) ? normalize(v) : v) : ((v < 0) ? -1 : 1);',
+    '  var tCur = 0, segDur = 2 * vl / g, tNext = segDur, nb = 1;',
+    '  while (tNext < t && nb <= nMax) { vl *= e; segDur *= e; tCur = tNext; tNext += segDur; nb++; }',
+    '  if (nb <= nMax) { var dt = t - tCur; value + vu * dt * (vl - g * dt / 2); } else { value; }',
+    '} else { value; }'
+  ].join('\n') },
+  squash: { label: 'Squash & Stretch', icon: 'xSquash', target: 'scale', nums: { amp: 12, freq: 2, decay: 3 }, code: (n) => `var t = Math.max(time - inPoint, 0);\nvar s = ${n('amp')} / 100 * Math.sin(t * ${n('freq')} * 2 * Math.PI) / Math.exp(${n('decay')} * t);\n[value[0] * (1 + s), value[1] * (1 - s)].concat(value.slice(2));` },
+  orbit: { label: 'Orbit', icon: 'xOrbit', target: 'position', nums: { radius: 80, speed: 90 }, code: (n) => `var a = degreesToRadians(time * ${n('speed')}) + index;\nvar o = [${n('radius')} * Math.cos(a), ${n('radius')} * Math.sin(a)];\nvalue.length > 2 ? add(value, o.concat([0])) : add(value, o);` },
+  swing: { label: 'Swing', icon: 'xSwing', target: 'rotation', nums: { amp: 15, freq: 0.8 }, code: (n) => `value + ${n('amp')} * Math.sin(time * ${n('freq')} * 2 * Math.PI);` },
+  heartbeat: { label: 'Heartbeat', icon: 'xHeart', target: 'scale', nums: { amp: 12, rate: 1.2 }, code: (n) => `var p = (time * ${n('rate')}) % 1;\nvar b = Math.exp(-Math.pow((p - 0.1) / 0.05, 2)) + 0.6 * Math.exp(-Math.pow((p - 0.3) / 0.05, 2));\nmul(value, 1 + ${n('amp')} / 100 * b);` },
+  breathe: { label: 'Breathe', icon: 'xBreathe', target: 'opacity', nums: { min: 35, freq: 0.5 }, code: (n) => `${n('min')} + (value - ${n('min')}) * (0.5 + 0.5 * Math.sin(time * ${n('freq')} * 2 * Math.PI));` },
+  wiggleRot: { label: 'Wiggle Rotation', icon: 'xWiggleRot', target: 'rotation', nums: { freq: 2, amp: 8 }, code: (n) => `wiggle(${n('freq')}, ${n('amp')});` },
+  wiggleScale: { label: 'Wiggle Scale', icon: 'xWiggleScale', target: 'scale', nums: { freq: 2, amp: 6 }, code: (n) => `var w = wiggle(${n('freq')}, ${n('amp')});\nvar d = w[0] - value[0];\nvalue.length > 2 ? add(value, [d, d, d]) : add(value, [d, d]);` },
+  organic: { label: 'Organic Wiggle', icon: 'xOrganic', target: 'position', nums: { freq: 1, amp: 25 }, code: (n) => `wiggle(${n('freq')}, ${n('amp')}, 3, 0.35);` },
+  loopWiggle: { label: 'Loop Wiggle', icon: 'xLoopWiggle', target: 'position', nums: { freq: 1.5, amp: 30, loop: 4 }, code: (n) => `var L = Math.max(${n('loop')}, 0.1), t = time % L;\nvar w1 = wiggle(${n('freq')}, ${n('amp')}, 1, 0.5, t), w2 = wiggle(${n('freq')}, ${n('amp')}, 1, 0.5, t - L);\nlinear(t, 0, L, w1, w2);` },
+  drift: { label: 'Drift', icon: 'xDrift', target: 'position', nums: { pxs: 40 }, code: (n) => `var d = ${n('pxs')} * (time - inPoint);\nvalue.length > 2 ? add(value, [d, 0, 0]) : add(value, [d, 0]);` },
+  clock: { label: 'Clock Ticks', icon: 'xClock', target: 'rotation', nums: { rate: 1, amp: 6 }, code: (n) => `value + Math.floor(time * ${n('rate')}) * ${n('amp')};` },
+  faceMotion: { label: 'Face Motion', icon: 'xFace', target: 'rotation', nums: {}, code: () => 'var p = transform.position, f = thisComp.frameDuration;\nvar d = sub(p.valueAtTime(time + f), p.valueAtTime(time - f));\n(length(d) > 0.01) ? value + radiansToDegrees(Math.atan2(d[1], d[0])) : value;' },
+  scatter: { label: 'Random Scatter', icon: 'xScatter', target: 'position', nums: { amp: 120, seed: 1 }, code: (n) => `seedRandom(${n('seed')} + index, true);\nvar r = ${n('amp')};\nvalue.length > 2 ? add(value, [random(-r, r), random(-r, r), 0]) : add(value, [random(-r, r), random(-r, r)]);` },
+  popIn: { label: 'Auto Pop-In', icon: 'xPopIn', target: 'scale', nums: { secs: 0.5 }, code: (n) => `var d = Math.max(${n('secs')}, 0.01), u = (time - inPoint) / d;\nvar s = (u >= 1) ? 1 : ((u <= 0) ? 0 : 1 + 0.15 * Math.sin(Math.PI * u) - Math.pow(1 - u, 3));\nmul(value, Math.max(0, s));` },
+  slideIn: { label: 'Auto Slide-In', icon: 'xSlideIn', target: 'position', nums: { secs: 0.6, amp: 300 }, code: (n) => `var u = Math.min(Math.max((time - inPoint) / Math.max(${n('secs')}, 0.01), 0), 1);\nvar o = -${n('amp')} * Math.pow(1 - u, 3);\nvalue.length > 2 ? add(value, [o, 0, 0]) : add(value, [o, 0]);` }
 };
 
-const NUM_LABEL = { freq: 'Frequency', amp: 'Amount', fps: 'Frames/sec', rate: 'Rate', min: 'Min %', secs: 'Fade time', speed: 'Degrees/sec', decay: 'Decay' };
+/* Library filter tags (Studio). */
+const TAGS = {
+  Random: ['wiggle', 'wiggleX', 'wiggleY', 'jitter', 'flicker', 'wiggleRot', 'wiggleScale', 'organic', 'loopWiggle', 'scatter'],
+  Periodic: ['blink', 'timeRotate', 'pendulum', 'pulse', 'float', 'swing', 'heartbeat', 'breathe', 'orbit', 'clock', 'squash'],
+  Keys: ['loopCycle', 'loopPingPong', 'loopOffset', 'loopInOut', 'inertia', 'posterize', 'bounceBack'],
+  Auto: ['autoFade', 'popIn', 'slideIn', 'drift', 'faceMotion']
+};
+for (const [tag, ids] of Object.entries(TAGS)) for (const id of ids) PRESETS[id].tag = tag;
+
+/* One-line explanations shown in the Studio Inspector. */
+const HINTS = {
+  wiggle: 'Random, smooth movement on every axis — the classic wiggle(freq, amount).',
+  wiggleX: 'Wiggle on X only; Y and Z keep their values or keyframes.',
+  wiggleY: 'Wiggle on Y only; X and Z keep their values or keyframes.',
+  jitter: 'Wiggle that jumps at a lower frame rate — a nervous, hand-made feel.',
+  blink: 'Switches opacity on and off at a steady rate.',
+  flicker: 'Random opacity dips between Min % and full, like a faulty light.',
+  autoFade: 'Fades in after the layer starts and out before it ends — no keyframes.',
+  loopCycle: 'Repeats your keyframes forever (loopOut cycle).',
+  loopPingPong: 'Plays your keyframes forward, then backward, forever.',
+  loopOffset: 'Repeats the keyframed move and keeps adding it — endless travel.',
+  loopInOut: 'Loops before the first key and after the last one.',
+  timeRotate: 'Constant spin: degrees per second added to the rotation.',
+  pendulum: 'Swing that slowly settles — a decaying sine on rotation.',
+  pulse: 'Gentle, steady scale breathing.',
+  float: 'Soft up-and-down bob, offset per layer so groups do not move in sync.',
+  inertia: 'Overshoot and settle after each keyframe — springy motion from your keys.',
+  posterize: 'Holds frames to a lower frame rate: instant stop-motion.',
+  bounceBack: 'After the last keyframe the layer bounces like a ball landing.',
+  squash: 'Squash & stretch wobble on scale that fades out after the layer starts.',
+  orbit: 'Circles around its position at a set radius and speed.',
+  swing: 'Endless back-and-forth rotation, like a sign in the wind.',
+  heartbeat: 'Double pulse on scale — lub-dub — at a set rate.',
+  breathe: 'Opacity rises and falls smoothly between Min % and full.',
+  wiggleRot: 'Random rotation jitter around the current angle.',
+  wiggleScale: 'Random, uniform scale jitter — width and height stay locked.',
+  organic: 'Multi-octave wiggle: slow drift with fine detail, feels natural.',
+  loopWiggle: 'A wiggle that loops seamlessly after Loop length — great for GIFs.',
+  drift: 'Moves sideways at a constant speed from the layer start.',
+  clock: 'Rotation that ticks in steps, like a clock hand.',
+  faceMotion: 'Rotates the layer to point where it is moving (auto-orient by expression).',
+  scatter: 'Places each layer at a random offset (seeded, so it stays put).',
+  popIn: 'Scales up from 0 with a little overshoot when the layer starts — no keys.',
+  slideIn: 'Slides in from the left with an ease when the layer starts — no keys.'
+};
+for (const [id, hint] of Object.entries(HINTS)) PRESETS[id].hint = hint;
+
+const NUM_LABEL = { freq: 'Frequency', amp: 'Amount', fps: 'Frames/sec', rate: 'Rate', min: 'Min %', secs: 'Duration', speed: 'Degrees/sec', decay: 'Decay', elastic: 'Elasticity', gravity: 'Gravity', radius: 'Radius', loop: 'Loop length', pxs: 'Pixels/sec', seed: 'Seed' };
 
 function code(presetId, values, live) {
   const p = PRESETS[presetId];
@@ -50,9 +124,15 @@ const params = {
   rate: { type: 'number', label: 'Rate', min: 0.1, max: 60, step: 0.1, default: 2, unit: 'Hz', showIf: (a) => 'rate' in PRESETS[a.preset].nums },
   fps: { type: 'number', label: 'Frames/sec', min: 1, max: 60, step: 1, default: 8, showIf: (a) => 'fps' in PRESETS[a.preset].nums },
   speed: { type: 'number', label: 'Degrees/sec', min: -3600, max: 3600, step: 5, default: 90, showIf: (a) => 'speed' in PRESETS[a.preset].nums },
-  secs: { type: 'number', label: 'Fade time', min: 0.01, max: 10, step: 0.05, default: 0.5, unit: 's', showIf: (a) => 'secs' in PRESETS[a.preset].nums },
+  secs: { type: 'number', label: 'Duration', min: 0.01, max: 10, step: 0.05, default: 0.5, unit: 's', showIf: (a) => 'secs' in PRESETS[a.preset].nums },
   decay: { type: 'number', label: 'Decay', min: 0, max: 30, step: 0.1, default: 0.6, showIf: (a) => 'decay' in PRESETS[a.preset].nums },
   min: { type: 'number', label: 'Min %', min: 0, max: 100, step: 1, default: 40, showIf: (a) => 'min' in PRESETS[a.preset].nums },
+  elastic: { type: 'number', label: 'Elasticity', min: 0, max: 0.95, step: 0.05, default: 0.6, showIf: (a) => 'elastic' in PRESETS[a.preset].nums },
+  gravity: { type: 'number', label: 'Gravity', min: 100, max: 20000, step: 100, default: 4000, showIf: (a) => 'gravity' in PRESETS[a.preset].nums },
+  radius: { type: 'number', label: 'Radius', min: 0, max: 4000, step: 1, default: 80, unit: 'px', showIf: (a) => 'radius' in PRESETS[a.preset].nums },
+  loop: { type: 'number', label: 'Loop length', min: 0.1, max: 60, step: 0.1, default: 4, unit: 's', showIf: (a) => 'loop' in PRESETS[a.preset].nums },
+  pxs: { type: 'number', label: 'Pixels/sec', min: -5000, max: 5000, step: 1, default: 40, showIf: (a) => 'pxs' in PRESETS[a.preset].nums },
+  seed: { type: 'integer', label: 'Seed', min: 0, max: 9999, default: 1, showIf: (a) => 'seed' in PRESETS[a.preset].nums },
   live: { type: 'boolean', label: 'Live controls', default: false, description: 'Put the numbers on Slider Controls (editable / keyframeable)' },
   replace: { type: 'boolean', label: 'Replace existing', default: false, advanced: true }
 };
@@ -75,8 +155,8 @@ const quick = {
   category: 'expressions',
   group: 'Quick Expressions',
   name: 'Quick Expression',
-  description: 'One-click expressions: wiggle (all / X / Y / stepped), blinker, flicker, auto-fade, loops (cycle, ping-pong, offset, in+out), time rotation, pendulum, pulse, float, inertia bounce, stop motion. Works on selected properties, or on the natural property of selected layers.',
-  keywords: ['wiggle', 'loop', 'loopout', 'pingpong', 'cycle', 'blink', 'blinker', 'flicker', 'time', 'rotation', 'bounce', 'inertia', 'pulse', 'float', 'pendulum', 'fade', 'posterize', 'expression'],
+  description: 'One-click expressions (33): wiggle (all / X / Y / stepped / rotation / scale / organic / seamless loop), blinker, flicker, breathe, auto-fade, auto pop-in, auto slide-in, loops (cycle, ping-pong, offset, in+out), time rotation, clock ticks, swing, pendulum, orbit, pulse, heartbeat, squash & stretch, float, drift, face motion, random scatter, inertia bounce, bounce landing, stop motion. Works on selected properties, or on the natural property of selected layers.',
+  keywords: ['orbit', 'swing', 'heartbeat', 'breathe', 'squash', 'stretch', 'scatter', 'drift', 'bounce', 'clock', 'auto orient', 'pop', 'slide', 'wiggle', 'loop', 'loopout', 'pingpong', 'cycle', 'blink', 'blinker', 'flicker', 'time', 'rotation', 'bounce', 'inertia', 'pulse', 'float', 'pendulum', 'fade', 'posterize', 'expression'],
   icon: 'expr',
   params,
   requires: { comp: true },
@@ -130,4 +210,4 @@ const quick = {
   summarize(result) { return `${result.preset} on ${result.set.targets.length} propert(ies)`; }
 };
 
-module.exports = { quick, PRESETS, code, TAG };
+module.exports = { quick, PRESETS, TAGS, code, TAG };

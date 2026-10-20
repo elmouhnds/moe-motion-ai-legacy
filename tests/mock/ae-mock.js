@@ -121,6 +121,9 @@ const EFFECTS = {
   'ADBE Layer Control': [{ name: 'Layer', valueType: 'LAYER_INDEX', value: 0 }],
   'ADBE Dropdown Control': [{ name: 'Menu', valueType: 'OneD', value: 1 }],
   'ADBE Tint': [{ name: 'Map Black To', valueType: 'COLOR', value: [0, 0, 0, 1] }, { name: 'Map White To', valueType: 'COLOR', value: [1, 1, 1, 1] }, { name: 'Amount to Tint', valueType: 'OneD', value: 100 }],
+  'ADBE Ramp': [{ name: 'Start of Ramp', valueType: 'TwoD_SPATIAL', value: [0, 0] }, { name: 'Start Color', valueType: 'COLOR', value: [0, 0, 0, 1] }, { name: 'End of Ramp', valueType: 'TwoD_SPATIAL', value: [0, 100] }, { name: 'End Color', valueType: 'COLOR', value: [1, 1, 1, 1] }, { name: 'Ramp Shape', valueType: 'OneD', value: 1 }, { name: 'Ramp Scatter', valueType: 'OneD', value: 0 }, { name: 'Blend With Original', valueType: 'OneD', value: 0 }],
+  'ADBE 4ColorGradient': [{ name: 'Point 1', valueType: 'TwoD_SPATIAL', value: [0, 0] }, { name: 'Color 1', valueType: 'COLOR', value: [1, 1, 0, 1] }, { name: 'Point 2', valueType: 'TwoD_SPATIAL', value: [100, 0] }, { name: 'Color 2', valueType: 'COLOR', value: [0, 1, 0, 1] }, { name: 'Point 3', valueType: 'TwoD_SPATIAL', value: [0, 100] }, { name: 'Color 3', valueType: 'COLOR', value: [1, 0, 1, 1] }, { name: 'Point 4', valueType: 'TwoD_SPATIAL', value: [100, 100] }, { name: 'Color 4', valueType: 'COLOR', value: [0, 0, 1, 1] }, { name: 'Blend', valueType: 'OneD', value: 100 }, { name: 'Jitter', valueType: 'OneD', value: 0 }, { name: 'Opacity', valueType: 'OneD', value: 100 }, { name: 'Blending Mode', valueType: 'OneD', value: 1 }],
+  'ADBE Noise': [{ name: 'Amount of Noise', valueType: 'OneD', value: 0 }, { name: 'Noise Type', valueType: 'OneD', value: 1 }, { name: 'Clipping', valueType: 'OneD', value: 1 }],
   'ADBE Fill': [{ name: 'Fill Mask', valueType: 'OneD', value: 0 }, { name: 'All Masks', valueType: 'OneD', value: 0 }, { name: 'Color', valueType: 'COLOR', value: [1, 0, 0, 1] }, { name: 'Invert', valueType: 'OneD', value: 0 }, { name: 'Horizontal Feather', valueType: 'OneD', value: 0 }, { name: 'Vertical Feather', valueType: 'OneD', value: 0 }, { name: 'Opacity', valueType: 'OneD', value: 1 }],
   'ADBE Slider Control': [{ name: 'Slider', valueType: 'OneD', value: 0 }],
   'ADBE Checkbox Control': [{ name: 'Checkbox', valueType: 'OneD', value: 0 }]
@@ -533,8 +536,22 @@ const VECTOR_ITEMS = {
   'ADBE Vector Filter - Trim': makeTrim,
   'ADBE Vector Shape - Group': (g) => { const n = new MockNode('Path ' + (g._children.length + 1), 'ADBE Vector Shape - Group', g); n._prop('Path', 'ADBE Vector Shape', 'SHAPE', new Shape()); return n; },
   'ADBE Vector Shape - Ellipse': (g) => { const n = new MockNode('Ellipse Path 1', 'ADBE Vector Shape - Ellipse', g); n._prop('Size', 'ADBE Vector Ellipse Size', 'TwoD', [100, 100]); n._prop('Position', 'ADBE Vector Ellipse Position', 'TwoD_SPATIAL', [0, 0]); return n; },
-  'ADBE Vector Graphic - Fill': (g) => { const n = new MockNode('Fill 1', 'ADBE Vector Graphic - Fill', g); n._prop('Color', 'ADBE Vector Fill Color', 'COLOR', [1, 0, 0, 1]); n._prop('Opacity', 'ADBE Vector Fill Opacity', 'OneD', 100); return n; },
-  'ADBE Vector Graphic - Stroke': (g) => { const n = new MockNode('Stroke 1', 'ADBE Vector Graphic - Stroke', g); n._prop('Color', 'ADBE Vector Stroke Color', 'COLOR', [1, 1, 1, 1]); n._prop('Opacity', 'ADBE Vector Stroke Opacity', 'OneD', 100); n._prop('Stroke Width', 'ADBE Vector Stroke Width', 'OneD', 2); return n; }
+  'ADBE Vector Shape - Rect': (g) => { const n = new MockNode('Rectangle Path 1', 'ADBE Vector Shape - Rect', g); n._prop('Size', 'ADBE Vector Rect Size', 'TwoD', [100, 100]); n._prop('Position', 'ADBE Vector Rect Position', 'TwoD_SPATIAL', [0, 0]); n._prop('Roundness', 'ADBE Vector Rect Roundness', 'OneD', 0); return n; },
+  'ADBE Vector Shape - Star': (g) => {
+    const n = new MockNode('Polystar Path 1', 'ADBE Vector Shape - Star', g);
+    n._prop('Type', 'ADBE Vector Star Type', 'OneD', 1); n._prop('Points', 'ADBE Vector Star Points', 'OneD', 5);
+    n._prop('Position', 'ADBE Vector Star Position', 'TwoD_SPATIAL', [0, 0]); n._prop('Rotation', 'ADBE Vector Star Rotation', 'OneD', 0);
+    n._prop('Inner Radius', 'ADBE Vector Star Inner Radius', 'OneD', 50); n._prop('Outer Radius', 'ADBE Vector Star Outer Radius', 'OneD', 100);
+    n._prop('Inner Roundness', 'ADBE Vector Star Inner Roundess', 'OneD', 0); n._prop('Outer Roundness', 'ADBE Vector Star Outer Roundess', 'OneD', 0);
+    return n;
+  },
+  'ADBE Vector Graphic - Fill': (g) => { const n = new MockNode('Fill 1', 'ADBE Vector Graphic - Fill', g); n._prop('Fill Rule', 'ADBE Vector Fill Rule', 'OneD', 1); n._prop('Color', 'ADBE Vector Fill Color', 'COLOR', [1, 0, 0, 1]); n._prop('Opacity', 'ADBE Vector Fill Opacity', 'OneD', 100); return n; },
+  'ADBE Vector Graphic - Stroke': (g) => {
+    const n = new MockNode('Stroke 1', 'ADBE Vector Graphic - Stroke', g);
+    n._prop('Color', 'ADBE Vector Stroke Color', 'COLOR', [1, 1, 1, 1]); n._prop('Opacity', 'ADBE Vector Stroke Opacity', 'OneD', 100); n._prop('Stroke Width', 'ADBE Vector Stroke Width', 'OneD', 2);
+    n._prop('Line Cap', 'ADBE Vector Stroke Line Cap', 'OneD', 1); n._prop('Line Join', 'ADBE Vector Stroke Line Join', 'OneD', 1);
+    return n;
+  }
 };
 
 class MockLayer {
@@ -632,6 +649,7 @@ class MockLayer {
   moveBefore(L) { const a = this._comp._layers; a.splice(a.indexOf(this), 1); a.splice(a.indexOf(L), 0, this); }
   moveAfter(L) { const a = this._comp._layers; a.splice(a.indexOf(this), 1); a.splice(a.indexOf(L) + 1, 0, this); }
   moveToBeginning() { const a = this._comp._layers; a.splice(a.indexOf(this), 1); a.unshift(this); }
+  moveToEnd() { const a = this._comp._layers; a.splice(a.indexOf(this), 1); a.push(this); }
   replaceSource(item) { this.source = item; if (item.width) { this.width = item.width; this.height = item.height; } }
   duplicate() {
     const d = cloneLayer(this, this._comp);

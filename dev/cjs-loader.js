@@ -15,6 +15,10 @@
     return x.responseText;
   }
   function load(abs) {
+    if (/\.json$/.test(abs)) {
+      if (!cache[abs]) cache[abs] = { exports: JSON.parse(fetchText(abs)) };
+      return cache[abs].exports;
+    }
     var file = /\.js$/.test(abs) ? abs : abs + '.js';
     var src;
     try { src = fetchText(file); } catch (e) { file = abs + '/index.js'; src = fetchText(file); }

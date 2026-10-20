@@ -1,5 +1,6 @@
 'use strict';
-const { h } = require('../dom');
+const { h, icon } = require('../dom');
+const theme = require('../theme');
 const { PRICES } = require('../../../core/ai/cost');
 const { SCOPES } = require('../../../core/permissions');
 
@@ -19,7 +20,29 @@ function render(app) {
   const upd = (patch) => { app.services.settings.update(patch); app.render(); };
   const keyInput = h('input', { class: 'txt', type: 'password', placeholder: key.stored ? '•••••••• saved' : 'sk-ant-…', autocomplete: 'off', spellcheck: 'false' });
 
+  const updUi = (patch) => { app.services.settings.update({ ui: patch }); app.applyAppearance(); app.render(); };
+  const hiddenBanners = app.services.store.get('banners-hidden', []);
+  const presets = app.services.presets.list();
+
   return h('div', { class: 'view' },
+    h('div', { class: 'section-h' }, 'Appearance'),
+    h('div', { class: 'set-group' },
+      h('div', { class: 'field' }, h('label', {}, 'Theme'), seg(theme.THEMES, st.ui.theme || 'auto', (v) => updUi({ theme: v }))),
+      h('div', { class: 'field' }, h('label', {}, 'Accent'), h('div', { class: 'accent-row', role: 'radiogroup', 'aria-label': 'Accent colour' },
+        theme.ACCENTS.map(([id, label, hex]) => h('button', { class: `accent-sw ${(st.ui.accent || 'tomato') === id ? 'on' : ''}`, role: 'radio', 'aria-checked': String((st.ui.accent || 'tomato') === id), title: label, 'aria-label': label, style: { background: hex }, onclick: () => updUi({ accent: id }) })))),
+      h('div', { class: 'field' }, h('label', {}, 'Motion'), seg([['full', 'Full'], ['reduced', 'Reduced']], st.ui.motion || 'full', (v) => updUi({ motion: v }))),
+      h('div', { class: 'field' }, h('label', {}, 'Headings'), seg([['display', 'Sora'], ['system', 'System']], st.ui.headings || 'display', (v) => updUi({ headings: v }))),
+      h('div', { class: 'field' }, h('label', {}, 'Section banners'), h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(st.ui.banners !== false), onclick: () => updUi({ banners: st.ui.banners === false }) }),
+        hiddenBanners.length ? h('button', { class: 'btn ghost', onclick: () => { app.services.store.set('banners-hidden', []); app.render(); } }, `Show ${hiddenBanners.length} hidden`) : null),
+      h('div', { class: 'field' }, h('label', {}, 'Splash on start'), h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(st.ui.splash !== false), onclick: () => updUi({ splash: st.ui.splash === false }) }))),
+
+    h('div', { class: 'section-h' }, 'My Presets'),
+    h('div', { class: 'set-group' },
+      h('div', { class: 'why' }, `${presets.length} preset${presets.length === 1 ? '' : 's'} saved. Packs are plain JSON (format "moe-presets") — share them with your team.`),
+      h('div', { class: 'actions', style: { marginTop: '6px' } },
+        h('button', { class: 'btn', disabled: !presets.length, onclick: () => app.exportPresets() }, icon('download', 'sm'), 'Export pack'),
+        h('button', { class: 'btn', onclick: () => app.importPresets() }, icon('import', 'sm'), 'Import pack'))),
+
     h('div', { class: 'section-h' }, 'Claude API'),
     h('div', { class: 'set-group' },
       h('div', { class: 'field' }, h('label', {}, 'AI features'), h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(st.ai.enabled), onclick: () => upd({ ai: { enabled: !st.ai.enabled } }) })),
@@ -48,6 +71,8 @@ function render(app) {
 
     h('div', { class: 'section-h' }, 'Data'),
     h('dl', { class: 'kv' }, h('dt', {}, 'Folder'), h('dd', {}, app.services.store.dataDir)),
-    h('div', { class: 'actions pad' }, h('button', { class: 'btn', onclick: () => app.go('diagnostics') }, 'Diagnostics')));
+    h('div', { class: 'actions pad' }, h('button', { class: 'btn', onclick: () => app.go('diagnostics') }, 'Diagnostics'),
+      h('button', { class: 'btn ghost', onclick: () => app.state.set({ modal: 'about' }) }, icon('info', 'sm'), 'About'),
+      h('button', { class: 'btn ghost', onclick: () => app.state.set({ modal: 'whatsnew' }) }, icon('gift', 'sm'), "What's new")));
 }
 module.exports = { render };

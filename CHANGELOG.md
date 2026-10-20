@@ -2,6 +2,31 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.6.0] — 2026-10-20 — Premium: content libraries, artwork, appearance
+Requested by the product owner: "saturate the plugin with icons, images and extras — premium, high value, professional".
+### Added
+- **Shapes & Icons** section: **1,899 vector icons** (Lucide 1.60, ISC licence — `extension/assets/icons/LICENSE-lucide.txt`) in 18 categories with search by name/tag, featured first, ★ starred icons, paging, copy SVG; **22 native shapes** (Rectangle / Ellipse / Polystar: square, rounded, card, pill, bar, circle, oval, ring, triangle, soft triangle, diamond, pentagon, hexagon, octagon, star, soft star, star 6, sparkle, burst, seal, flower, blob) that stay parametric in AE. Live Inspector preview of style, colour and animation.
+- **`design.insertShape`**: icon → editable Bézier paths (`features/design/svgShape.js`: full SVG path parser — M L H V C S Q T A Z, relative/absolute, compact arc flags — plus circle, ellipse, rect incl. rounded, line, polyline, polygon; arcs split into ≤ 90° cubics). Styles Line / Solid / Both / Duotone, colour + fill colour, size, auto line width, round caps/joins, even-odd fill; **Draw** (MOE Trim end 0 → 100), **Pop** (overshoot) or **Fade** at the playhead. Layer `MOE Icon • …` / `MOE Shape • …`; read-back of paths, stroke, fill and keys; Restore removes the layer.
+- **Backgrounds** section: **32 curated palettes** (`features/design/palettes.js`) as tiles with real gradient thumbnails. **`design.background`**: `MOE Background` at the bottom of the comp — linear / radial Gradient Ramp (angle, spread), **4-Colour mesh**, or flat — optional **film grain** (Noise) and **slow drift** (tagged `// MOE Background` expressions). Palette panel: copy hex, **Colorize selection**, **Save as client** (Brand Kit), **Use in Shapes**.
+- **`design.colorize`**: colour the selection from a palette — cycle, shuffle (seeded) or blend in selection order; text / shapes / footage (`MOE Palette Fill`); verified per target; restorable.
+- **Expressions: 33 presets** (16 new — Bounce Land, Squash & Stretch, Orbit, Swing, Heartbeat, Breathe, Wiggle Rotation, Wiggle Scale, Organic Wiggle, Loop Wiggle, Drift, Clock Ticks, Face Motion, Random Scatter, Auto Pop-In, Auto Slide-In), new **Auto** filter, a one-line explanation per preset, 16 new icons and preview curves.
+- **Animate: 37 tiles** — 6 new animations (Rise In, Drop In, Cascade In, Cascade Fade, Soft Pop, Pop/Spin Out) and an **Ease** filter with 8 curve tiles (Gentle, Smooth, Snappy, Expo, Decelerate, Hard Stop, Accelerate, Launch). **NEW** badges on everything added in 0.6.
+- **Home**: greeting, library stats, quick actions, the active comp card, 6 illustrated quick starts, Recent tools, Favorites, tip of the day.
+- **My Presets**: ⧉ in any Inspector saves the current settings as your own tile (filter **Mine**, right-click to delete); **preset packs** export (data folder + clipboard) / import (validated against each tool's schema; unknown tools skipped) — `core/presetPacks.js`.
+- **Artwork**: MOE logo mark; an animated, theme-aware illustration per section (`app/ui/art.js`) used in **section banners** (hideable), Home and empty states; splash screen; **What's New**, **About** and **Keyboard & mouse** sheets.
+- **Appearance** (Settings): theme Auto (follows AE) / Dark / **Midnight** / Light, **8 accent colours**, Motion Full / Reduced, Headings **Sora** (OFL, bundled) / System, banners and splash toggles. All 93 theme × accent pairs pass WCAG (`tools/check-contrast.js`).
+- **Colour fields** with picker, hex and quick swatches (active client first) — Shapes, Glass tint, Cursor colour.
+- Status toasts (✓ / ✕ / !), header What's New dot and Shortcuts, Ctrl + 1…9 section jump, `?` shortcuts sheet, Esc closes sheets.
+- **Panel icons** for *Window › Extensions* (`extension/icons/`, manifest `<Icons>`), built by `tools/build-panel-icons.js`.
+- Host op `shapes.insert` (`host/ops/design.jsx`); `layers.createSolid` gains `bottom`.
+- Mock: Rectangle / Polystar shapes, fill rule, line cap/join, `moveToEnd`, Gradient Ramp, 4-Color Gradient, Noise.
+- Tests: `tests/design.test.js` (converter, every icon, every primitive, insert/draw/duotone/restore, backgrounds, colorize), `tests/premium-ui.test.js` (packs, appearance, artwork, banners, expressions); 190 tests; 49 preview scenarios.
+### Changed
+- Library tiles carry their preset's own numbers (Expressions used the form's generic defaults before).
+- Changing a filter selects the first visible tile when the current one is hidden.
+- Thumbnails off-screen are not redrawn; Reduced motion draws them once.
+- Default section for new installs: Home.
+
 ## [0.5.0] — 2026-10-20 — Studio interface (concept B)
 Chosen by the product owner from two UI concepts (canvas "MOE Motion AI — UI Concepts").
 ### Added

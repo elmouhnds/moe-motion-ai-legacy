@@ -1,17 +1,17 @@
 # Test Report
 
-Last run: 2026-10-20 (v0.5.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-20 (v0.6.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
 | Layer | How it was tested | Result |
 |---|---|---|
-| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 163/163 automated tests pass (135 behaviour + 28 UI module loads) |
-| ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (13 files) |
+| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 190/190 automated tests pass (156 behaviour + 34 UI module loads) |
+| ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (14 files) |
 | Core (registry, schema, permissions, executor, storage, logger, bridge) | Unit + integration tests | Pass |
 | Claude integration | Mocked HTTPS responder: request shape, retries, refusal, truncation, 401, offline, budget | Pass — **no real API call was made** |
-| Panel UI | Browser preview (`dev/preview.html`) with the real UI code + real host .jsx on the mock; Playwright clicks through 30 Studio scenarios (wide 900 px and narrow 380/280 px); zero page/console errors | Pass — **not the CEP runtime** |
-| Colour contrast | `tools/check-contrast.js`, WCAG, both themes | Pass |
+| Panel UI | Browser preview (`dev/preview.html`) with the real UI code + real host .jsx on the mock; Playwright clicks through 49 scenarios (wide 900 px and narrow 380/280 px), incl. 19 v0.6 Premium screens; zero page/console errors | Pass — **not the CEP runtime** |
+| Colour contrast | `tools/check-contrast.js`, WCAG — 3 themes (dark, midnight, light) × 8 accents, 93 pairs | Pass |
 | **Inside After Effects 2025** | — | **Not run yet** |
 
 What the mock proves: our logic, argument handling, ES3 syntax, undo-group balance, verification and restore paths.
@@ -154,7 +154,16 @@ What it does not prove: real AE behaviour (timing of `expressionError`, selectio
 - ✅ Studio: every tile is a registered tool with valid preset args
 - ✅ Studio: every tool belongs to a section that exists in the sidebar
 - ✅ Studio: thumbnail recipes draw without throwing (canvas stub)
-- ✅ 28 × "UI module loads" (every panel UI file parses and loads)
+- ✅ 34 × "UI module loads" (every panel UI file parses and loads)
+- ✅ v0.6 SVG → AE Shape: absolute/relative lines, H/V, Z merge; cubic tangents relative to their vertex, S reflection, Q → cubic; arcs stay on the circle (< 0.01 px), compact arc flags; circle / rounded rect / line / polygon elements
+- ✅ v0.6 every bundled Lucide icon (1,899) converts and stays inside its 24-grid box; search ranks the exact name first
+- ✅ v0.6 Insert icon (line + pop): paths, round caps, stroke = size/12, scale keys, starts at the playhead; restore removes it
+- ✅ v0.6 Insert native star: Polystar points / radii, fill colour; draw-on refused for fill-only shapes
+- ✅ v0.6 Insert with draw-on (MOE Trim end 0 → 100) and duotone (35 % even-odd fill)
+- ✅ v0.6 Unknown icon / bad colour refused before touching AE; every native primitive inserts and verifies
+- ✅ v0.6 Background geometry; linear + grain + drift on a bottom `MOE Background` (Ramp colours read back, tagged drift expressions); mesh = 4-Colour Gradient; flat = no effect; restore removes the layer
+- ✅ v0.6 Palette maths (cycle wraps, blend hits both ends, shuffle deterministic); 32 palettes valid; Colorize text + shape + footage, restore
+- ✅ v0.6 Preset packs round-trip; unknown tools, bad args and junk skipped; appearance resolve; artwork for every section; banner copy; expressions (33, tagged, own numbers, no `undefined` in code); NEW badges; Home/Shapes sections
 
 Expression maths: the mock now *evaluates* generated expressions (`tests/mock/ae-expr.js`) — Grid positions, Zoom follow, Glass links and Quick expressions are checked numerically, not only for syntax. This is still not the AE expression engine.
 
@@ -183,6 +192,7 @@ Expression maths: the mock now *evaluates* generated expressions (`tests/mock/ae
 Mock limitations specific to this module: the mock's `sampleImage` averages a procedural image; its Keylight is a colour-distance threshold and its Channel Mixer applies the documented affine maths. Real Keylight quality, real Channel Mixer units, and real parameter names are **not** proven here.
 
 ## UI preview scenarios (node tools/screenshot.js)
+v0.6 Premium: Home, Shapes & Icons (grid, search + duotone preview, insert + report, native shapes), Backgrounds (palette panel, mesh applied), Expressions "Auto", Animate "Ease", What's New, Shortcuts, About, Settings (Appearance + My Presets), Midnight + Violet, Light + Mint, save to My Presets, splash, narrow Home and Shapes.
 v0.5 Studio: Animate (library, pick, double-click apply, All tools), Text, Layout & Grid (Ring, Wall Build applied + report), Looks & Glass (applied), Zoom & Focus, Expressions (tile, Editor), Deliver (board, per-format override, Create 3 comps), Compositing, Quick, Quick options popover, Brand, Select, Copilot, Settings, History, light theme, command search; narrow: Animate, Layout, Deliver at 380 px, compact 280 px.
 
 Earlier scenario list (v0.4 and before): motion, motion-compact (260 px), motion-wide (560 px), expressions, copilot plan, copilot executed, expression assistant diff, tool factory draft, history after a run, settings, diagnostics, command palette, light theme, Text/Brand/Select/Proximity (v0.3), and v0.4: Quick section, Quick options popover, Quick Bar run, Grid preview, Ring preset, Grid built + verification, Adapt plan preview, Adapt run, Layout Guides, Focus Zoom map picker, Glass applied, one-click expressions — screenshots in `dev/screens/` (git-ignored). The AI scenarios use canned responses (`dev/demo-ai.js`, preview only).
@@ -204,6 +214,18 @@ Record results here with AE version/build from the Diagnostics view.
 12. Disconnect network → local tools still work; AI shows "Cannot reach the Claude API".
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
+
+### Premium checklist (v0.6.0)
+45. *Window › Extensions*: the MOE panel icon shows (dark and light AE brightness; normal and roll-over).
+46. Shapes & Icons: insert 10 icons of different categories (incl. ones with circles / rounded rects / arcs) → compare with the preview; Trim Paths draw-on runs on every path; Solid fills with even-odd holes look right; native shapes stay editable (Polystar Points / Roundness).
+47. Shape property match names: confirm `ADBE Vector Stroke Line Cap/Join`, `ADBE Vector Fill Rule`, `ADBE Vector Star Inner/Outer Roundess` resolve in AE 2025 (otherwise the op fails cleanly and lists them).
+48. Backgrounds: Gradient Ramp parameter names (Start of Ramp, Start Color, End of Ramp, End Color, Ramp Shape) and 4-Color Gradient points/colours resolve (record any fallback used); Noise "Amount of Noise" resolves; drift loops without jumps.
+49. Colorize: cycle / shuffle / blend on 8 mixed layers; Restore returns every colour exactly.
+50. Settings › Appearance: Midnight, Light, all 8 accents read well inside AE; Auto follows AE brightness changes live.
+51. Sora headings render in CEP (bundled woff2); System falls back cleanly.
+52. Splash + What's New appear once after an update, never again; Reduced motion stops thumbnails, banners and sheet animations.
+53. My Presets: save, apply by double-click, delete (right-click); export pack file lands in the data folder; import the pack on a second machine.
+54. Performance: Shapes grid with 300+ icons and the Backgrounds grid scroll smoothly; idle CPU stays low when tiles are off-screen.
 
 ### Studio checklist (v0.5.0)
 41. Dock the panel narrow (≈ 320 px) and wide (≈ 900 px): sidebar labels / Inspector beside the library switch at the documented widths; nothing overlaps.
