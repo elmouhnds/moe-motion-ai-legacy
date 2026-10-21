@@ -176,7 +176,7 @@ const remove = {
     return { set, fx, scan };
   },
   verify({ result }) {
-    const left = result.set.targets.filter((t) => t.final && t.final.expression !== '');
+    const left = result.set.targets.filter((t) => t.finalState && t.finalState.expression !== '');
     return { ok: left.length === 0, checks: [{ ok: left.length === 0, label: 'Expressions', detail: `${result.set.targets.length} removed` }, { ok: true, label: 'Effects', detail: `${result.fx.removed} MOE Prox effect(s) removed (Edit › Undo brings them back)` }] };
   },
   checkpoint({ result, ctx }) {

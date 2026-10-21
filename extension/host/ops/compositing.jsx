@@ -1,5 +1,5 @@
 /*
- * MOE Motion AI — compositing host operations (ExtendScript / ES3).
+ * MOE Motion AI - compositing host operations (ExtendScript / ES3).
  *
  *  pixels.sample   Reads pixel statistics with the expression-only sampleImage():
  *                  a temporary null + Color Control probe whose expression maps

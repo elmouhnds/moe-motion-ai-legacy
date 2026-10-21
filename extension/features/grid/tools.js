@@ -337,7 +337,7 @@ const remove = {
       const ok = result.bake.items.every((i) => i.skipped || i.after !== undefined);
       return { ok, checks: [{ ok, label: 'Freeze', detail: `${result.bake.items.filter((i) => !i.skipped).length} propert(ies) baked to static values` }] };
     }
-    const left = result.set.targets.filter((t) => t.final && t.final.expression !== '');
+    const left = result.set.targets.filter((t) => t.finalState && t.finalState.expression !== '');
     return { ok: left.length === 0, checks: [{ ok: left.length === 0, label: 'Expressions', detail: `${result.set.targets.length} removed` }, { ok: true, label: 'Layers', detail: `${result.kids.length} back to their own positions · ${result.removed.removed.join(', ') || 'grid null kept'}` }] };
   },
   checkpoint({ result, ctx }) {

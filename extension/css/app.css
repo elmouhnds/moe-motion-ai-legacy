@@ -662,3 +662,10 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .upd-notes { max-height: 140px; overflow: auto; margin: 0; padding: 8px; border-radius: 6px; background: var(--bg-sunken); color: var(--text-2); font: var(--fs-sm)/1.45 var(--font); white-space: pre-wrap; }
 .upd-bar { height: 4px; border-radius: 4px; background: var(--bg-active); overflow: hidden; }
 .upd-bar span { display: block; height: 100%; background: var(--accent); transition: width 120ms linear; }
+
+/* v0.6.3 connection state */
+.ctx-err { gap: 6px; }
+.ctx-reason { min-width: 0; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); font-size: var(--fs-xs); }
+.ctx-btn { height: 20px; padding: 0 8px; font-size: var(--fs-xs); }
+.hm-conn { min-width: 0; }
+.hm-comp.conn { border-color: var(--err); }

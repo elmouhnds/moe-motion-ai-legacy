@@ -1,12 +1,12 @@
 /*
- * MOE Motion AI — layout operations (ExtendScript / ES3).
+ * MOE Motion AI - layout operations (ExtendScript / ES3).
  *   layers.bounds     comp-space bounding boxes of layers at given times. Uses the documented
  *                     probe pattern: temporary null + Point Controls whose expressions call
  *                     sourceRectAtTime() and toComp(); values read with valueAtTime(). Removed in finally.
- *   transform.remap   uniform affine p' = s·p + d on top-level layers' Position (all keys, tangents,
- *                     ease speeds) and Scale — keeps every keyframe and its timing.
+ *   transform.remap   uniform affine p' = s-p + d on top-level layers' Position (all keys, tangents,
+ *                     ease speeds) and Scale - keeps every keyframe and its timing.
  *   transform.restore restore values/eases/tangents captured by remap.
- *   layers.setParent  setParentWithJump (no compensation) — used with identity rig nulls.
+ *   layers.setParent  setParentWithJump (no compensation) - used with identity rig nulls.
  *   adapt.apply       duplicate (or reuse) a comp, resize it and apply a per-layer plan (direct remap or
  *                     rig null), recursively for full-frame pre-comps. One undo group.
  *   comps.remove      remove comps MOE created (name guard).
@@ -146,7 +146,7 @@
         }
     }
 
-    /* Map one property: f(value) for value and every key; tangents ×tk; ease speeds ×ek. */
+    /* Map one property: f(value) for value and every key; tangents xtk; ease speeds xek. */
     function mapProp(prop, f, tk, ek) {
         var k, ei, eo, ti, to, i;
         if (prop.numKeys === 0) { prop.setValue(f(plain(prop.value))); return; }
@@ -231,7 +231,7 @@
         }
     };
 
-    /* args: { compId, any, label, items: [{ layerId, parentId (null = none) }] } — no compensation (setParentWithJump). */
+    /* args: { compId, any, label, items: [{ layerId, parentId (null = none) }] } - no compensation (setParentWithJump). */
     ops['layers.setParent'] = {
         mutates: true,
         run: function (args) {
@@ -295,7 +295,7 @@
             if (L.parent) { rec.skipped = 'PARENTED'; report.layers.push(rec); continue; }
             rigKey = (it.rig || 'Layout') + '|' + num(it.s).toFixed(5) + '|' + num(it.d[0]).toFixed(2) + '|' + num(it.d[1]).toFixed(2);
             if (!rigs[rigKey]) {
-                rigs[rigKey] = makeRig(target, 'MOE Adapt • ' + (it.rig || 'Layout'), num(it.s), it.d, 11);
+                rigs[rigKey] = makeRig(target, 'MOE Adapt \u2022 ' + (it.rig || 'Layout'), num(it.s), it.d, 11);
                 report.rigs.push({ layerId: rigs[rigKey].id, name: rigs[rigKey].name, s: num(it.s), d: [num(it.d[0]), num(it.d[1])] });
             }
             L.setParentWithJump(rigs[rigKey]);
@@ -365,7 +365,7 @@
         }
     };
 
-    /* args: { ids: [compId], nameContains } — removes comps created by MOE (guarded by name). */
+    /* args: { ids: [compId], nameContains } - removes comps created by MOE (guarded by name). */
     ops['comps.remove'] = {
         mutates: true,
         run: function (args) {
@@ -382,7 +382,7 @@
         }
     };
 
-    /* args: { compId, width, height, layers: [{ layerId, before }], unparent: [{ layerId, parentId }], rigs: [id] } — undo of in-place adapt. */
+    /* args: { compId, width, height, layers: [{ layerId, before }], unparent: [{ layerId, parentId }], rigs: [id] } - undo of in-place adapt. */
     ops['adapt.restoreInPlace'] = {
         mutates: true,
         run: function (args) {
@@ -454,7 +454,7 @@
         }
     };
 
-    /* args: { compId, label, time, items: [{ address }] } — freeze: value at time becomes static, expression removed. */
+    /* args: { compId, label, time, items: [{ address }] } - freeze: value at time becomes static, expression removed. */
     ops['props.bake'] = {
         mutates: true,
         run: function (args) {
@@ -475,7 +475,7 @@
         }
     };
 
-    /* args: { compId, items: [{ address, value, expression, expressionEnabled }] } — undo of props.bake */
+    /* args: { compId, items: [{ address, value, expression, expressionEnabled }] } - undo of props.bake */
     ops['props.unbake'] = {
         mutates: true,
         run: function (args) {

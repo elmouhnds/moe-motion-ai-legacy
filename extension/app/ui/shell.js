@@ -137,9 +137,22 @@ function createApp(root, services, env = {}) {
       h('span', { class: 'sb-swatches' }, b.colors.slice(0, 5).map((c) => h('span', { class: 'sb-sw', style: { background: c.hex } }))));
   }
 
+  /** One line for the strip: which file/line or what kind of failure. */
+  function shortReason(msg) {
+    const m = String(msg || '');
+    const file = /host\/[\w/]+\.jsx line \S+/.exec(m);
+    if (file) return `· ${file[0]}`;
+    if (/did not answer/.test(m)) return '· AE is busy (render / dialog?)';
+    if (/EvalScript error/.test(m)) return '· ExtendScript could not run';
+    return m ? `· ${m.slice(0, 60)}${m.length > 60 ? '…' : ''}` : '';
+  }
+
   function contextStrip(s) {
     if (s.hostError) {
-      return h('div', { class: 'ctx' }, h('span', { class: 'dot err' }), h('span', { class: 'comp' }, 'After Effects not connected'), h('span', { class: 'spacer' }),
+      return h('div', { class: 'ctx ctx-err', title: s.hostError },
+        h('span', { class: 'dot err' }), h('span', { class: 'comp' }, 'After Effects not connected'),
+        h('span', { class: 'ctx-reason' }, shortReason(s.hostError)), h('span', { class: 'spacer' }),
+        h('button', { class: 'btn ghost ctx-btn', title: 'Show the full error and copy a report', onclick: () => app.go('diagnostics') }, 'Details'),
         h('button', { class: 'icon-btn', title: 'Reconnect', onclick: () => app.reconnect() }, icon('refresh', 'sm')));
     }
     const c = s.ctx;
@@ -253,14 +266,23 @@ function createApp(root, services, env = {}) {
     })();
     return ctxInFlight;
   };
-  app.reconnect = async () => {
+  /* Connect to the ExtendScript side. At start-up AE can still be busy, so a failed attempt is
+     retried a few times (2 s, 5 s, 10 s, 20 s); the strip shows the reason meanwhile. */
+  let retryTimer = null, retries = 0;
+  app.reconnect = async (auto = false) => {
+    clearTimeout(retryTimer);
+    if (!auto) retries = 0;
     try {
       await services.host.init();
       const info = await services.host.call('host.ping', {});
+      retries = 0;
       app.state.set({ hostInfo: info, hostError: null });
       await app.refreshContext(true);
     } catch (e) {
+      services.logger.error('host', 'connect failed', { code: e.code, message: e.message, attempt: retries + 1 });
       app.state.set({ hostError: e.message });
+      const delays = [2000, 5000, 10000, 20000];
+      if (retries < delays.length) retryTimer = setTimeout(() => app.reconnect(true), delays[retries++]);
     }
   };
 

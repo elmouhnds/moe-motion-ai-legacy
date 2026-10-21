@@ -1,5 +1,5 @@
 /*
- * MOE Motion AI — host utilities (ExtendScript / ES3).
+ * MOE Motion AI - host utilities (ExtendScript / ES3).
  * Addressing: a property is identified by { layerId, layerIndex, indices[], matchNames[] }.
  * We resolve by index (fast) and verify every level by matchName so a stale
  * address can never silently hit a different property.
@@ -149,7 +149,7 @@
 
     U.truncate = function (s, max) {
         s = String(s || '');
-        return s.length > max ? s.substring(0, max) + '…' : s;
+        return s.length > max ? s.substring(0, max) + '\u2026' : s;
     };
 
     U.withUndo = function (label, fn) {

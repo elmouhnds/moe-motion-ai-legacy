@@ -50,3 +50,4 @@
 | 46 | PlayerDebugMode=1 is required for unsigned CEP panels | Low | Certain | Per-user key only, left in place on uninstall (other panels may need it); a signed ZXP removes the need | Accepted |
 | 47 | Installer verified under Wine 9, not real Windows 11 | Med | Med | Install checklist 55–62 on a real machine | Verify on Windows |
 | 48 | UI behaviour inside AE's CEF (focus, events, repaint) differs from desktop Chromium | High | Med | In-place rendering, press guard, adaptive polling, no moving hover styles, Calm motion; `npm run stress`; Diagnostics counters | Verify in host (63–66) |
+| 49 | Host tests run .jsx in V8, more permissive than ExtendScript (a reserved word kept v0.6.2 from connecting) | High | Med | AST lint for ES3 reserved words, ASCII-only, ES5+ API patterns; loader names the failing file; real-AE checklist 67–68 | Mitigated |

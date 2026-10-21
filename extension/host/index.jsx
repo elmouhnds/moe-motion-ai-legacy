@@ -1,16 +1,16 @@
 /*
- * MOE Motion AI — host entry point (ExtendScript / ES3).
+ * MOE Motion AI - host entry point (ExtendScript / ES3).
  *
  * Loaded by the panel with:  $.global.MOE_ROOT = "<extension path>"; $.evalFile(".../host/index.jsx")
  * The panel only ever calls MOE_dispatch(opName, argsJson). Only ops registered
- * in MOE.ops can run — there is no generic "eval this code" entry point.
+ * in MOE.ops can run - there is no generic "eval this code" entry point.
  */
 (function (G) {
     var root = G.MOE_ROOT;
     if (!root) { throw new Error('MOE_ROOT is not set'); }
 
     G.MOE = G.MOE || {};
-    G.MOE.version = '0.6.2';
+    G.MOE.version = '0.6.3';
     G.MOE.ops = {};
 
     var files = [
@@ -31,7 +31,12 @@
     for (var i = 0; i < files.length; i++) {
         var f = new File(root + '/host/' + files[i]);
         if (!f.exists) { throw new Error('MOE host file missing: ' + f.fsName); }
-        $.evalFile(f);
+        try {
+            $.evalFile(f);
+        } catch (eFile) {
+            /* Name the file so a load failure inside After Effects is diagnosable from the panel. */
+            throw new Error('host/' + files[i] + ' line ' + (eFile.line || '?') + ': ' + (eFile.message || eFile));
+        }
     }
 
     G.MOE_dispatch = function (opName, argsJson) {

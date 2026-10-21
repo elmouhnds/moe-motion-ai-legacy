@@ -1,5 +1,5 @@
 /*
- * MOE Motion AI — read-only host operations: ping and selection context.
+ * MOE Motion AI - read-only host operations: ping and selection context.
  * Never scans the full project: only the active comp and its current selection.
  */
 (function (G) {

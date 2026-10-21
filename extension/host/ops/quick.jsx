@@ -1,9 +1,9 @@
 /*
- * MOE Motion AI — Quick Bar operations (ExtendScript / ES3). Small one-click helpers.
+ * MOE Motion AI - Quick Bar operations (ExtendScript / ES3). Small one-click helpers.
  *   project.reveal       select the item in the Project panel / open its folder / open a pre-comp
  *   app.purge            app.purge(PurgeTarget.*)
  *   comps.deepDuplicate  duplicate a comp and every nested pre-comp (independent copy)
- *   layers.flip          negate Scale X or Y (value, keys, ease speeds) — running it twice restores
+ *   layers.flip          negate Scale X or Y (value, keys, ease speeds) - running it twice restores
  *   layers.parentToNull  new null at a point; layers parented with the documented compensation (Layer.parent)
  *   layers.unparentFromNull  reverse of the above
  *   layers.precompose    LayerCollection.precompose
@@ -115,7 +115,7 @@
         }
     };
 
-    /* args: { compId, layerIds, name, position: [x, y] } — Layer.parent keeps each layer where it is (pick-whip behaviour). */
+    /* args: { compId, layerIds, name, position: [x, y] } - Layer.parent keeps each layer where it is (pick-whip behaviour). */
     ops['layers.parentToNull'] = {
         mutates: true,
         run: function (args) {
@@ -171,7 +171,7 @@
         }
     };
 
-    /* args: { compId, layerIds } — keep each key's influence; split speed by the motion direction. */
+    /* args: { compId, layerIds } - keep each key's influence; split speed by the motion direction. */
     ops['position.separate'] = {
         mutates: true,
         run: function (args) {
@@ -265,7 +265,7 @@
         }
     }
 
-    /* args: { compId, items: [{ address, keys: [index] | null }] } — reverse in time within the selected span. */
+    /* args: { compId, items: [{ address, keys: [index] | null }] } - reverse in time within the selected span. */
     ops['keys.reverse'] = {
         mutates: true,
         run: function (args) {
@@ -301,7 +301,7 @@
         }
     };
 
-    /* args: { compId, items: [{ address, snapshot }] } — rebuild keys exactly (restore). */
+    /* args: { compId, items: [{ address, snapshot }] } - rebuild keys exactly (restore). */
     ops['keys.rebuild'] = {
         mutates: true,
         run: function (args) {
@@ -373,7 +373,7 @@
         }
     };
 
-    /* args: { compId, layerId } — remove the MOE Trim operator (restore when it was created by MOE). */
+    /* args: { compId, layerId } - remove the MOE Trim operator (restore when it was created by MOE). */
     ops['shapes.untrim'] = {
         mutates: true,
         run: function (args) {

@@ -1,5 +1,5 @@
 /*
- * MOE Motion AI — layer timing operations (mutating).
+ * MOE Motion AI - layer timing operations (mutating).
  */
 (function (G) {
     var MOE = G.MOE, U = MOE.util, ops = MOE.ops;

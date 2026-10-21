@@ -1,5 +1,5 @@
 /*
- * MOE Motion AI — expression operations.
+ * MOE Motion AI - expression operations.
  * Validation uses the real After Effects expression engine: the expression is
  * set, Property.expressionError is read, then the original is restored.
  */
@@ -48,7 +48,7 @@
                         layerName: r.layer.name,
                         before: before,
                         after: after,
-                        final: state(prop),
+                        finalState: state(prop),
                         reverted: reverted
                     });
                 }

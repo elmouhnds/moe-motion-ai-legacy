@@ -13,7 +13,7 @@ Permanent rules for anyone (human or AI) working in this repository.
 - Use only APIs documented in the After Effects Scripting Guide (docsforadobe.dev) and CEP 12 docs. **Never invent API methods.** When unsure, read the docs and cite them in code comments.
 
 ## Architecture rules
-- `extension/host/` = ExtendScript only. ES3 syntax: no `let/const`, arrow functions, `JSON`, `Array.prototype.forEach/map/indexOf`, `Object.keys`, `String.trim`. Run `npm run lint:jsx`.
+- `extension/host/` = ExtendScript only. ES3 syntax: no `let/const`, arrow functions, `JSON`, `Array.prototype.forEach/map/indexOf`, `Object.keys`, `String.trim`; **no ES3 reserved words as names or keys** (`final`, `default`, `class`, `int`, `short`, `char`, `native`…); **ASCII-only source** (use `\uXXXX` in strings). Run `npm run lint:jsx`. Host tests run in Node, which is more permissive than ExtendScript — the linter is the guard.
 - The panel talks to ExtendScript **only** through `core/host/bridge.js` → `MOE_dispatch(op, argsJson)`. Only ops registered in `MOE.ops` can run. **No generic eval entry point, ever.**
 - Host ops are small, explicit primitives. Business logic (targets, ordering, presets, verification) lives in JS tools so it is testable.
 - Every capability is a **registered tool** (`core/registry.js` documents the contract). Add tools by adding a file in `extension/features/<module>/` and listing it in `features/index.js`. No giant files.

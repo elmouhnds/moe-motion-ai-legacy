@@ -40,6 +40,16 @@ function greeting() {
 }
 
 function compCard(app, ctx) {
+  const err = app.state.get().hostError;
+  if (err) {
+    return h('div', { class: 'hm-card hm-comp empty conn' }, h('div', { class: 'hm-empty-art', html: art.empty('comp') }),
+      h('div', { class: 'hm-conn' },
+        h('div', { class: 'hm-t' }, 'Not connected to After Effects'),
+        h('div', { class: 'why' }, 'MOE retries on its own. If it stays like this, open Details and send the report.'),
+        h('div', { class: 'hm-actions' },
+          h('button', { class: 'btn primary', onclick: () => app.reconnect() }, icon('refresh', 'sm'), 'Reconnect'),
+          h('button', { class: 'btn ghost', onclick: () => app.go('diagnostics') }, icon('info', 'sm'), 'Details'))));
+  }
   if (!ctx || !ctx.comp) {
     return h('div', { class: 'hm-card hm-comp empty' }, h('div', { class: 'hm-empty-art', html: art.empty('comp') }),
       h('div', {}, h('div', { class: 'hm-t' }, 'No active composition'), h('div', { class: 'why' }, 'Open or select a comp in After Effects — MOE reads it live.')));

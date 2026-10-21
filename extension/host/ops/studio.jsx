@@ -1,5 +1,5 @@
 /*
- * MOE Motion AI — studio operations (ExtendScript / ES3).
+ * MOE Motion AI - studio operations (ExtendScript / ES3).
  *   props.colorTargets  find fill/stroke colour properties inside shape layers
  *   props.setValues     set values on addressed properties (before/after; at current time if keyframed)
  *   layers.createNull   named null (effectors)
@@ -161,7 +161,7 @@
         }
     };
 
-    /* args: { compId, layerIds, onlyNamed } — removes layers MOE created (name prefix guard). */
+    /* args: { compId, layerIds, onlyNamed } - removes layers MOE created (name prefix guard). */
     ops['layers.remove'] = {
         mutates: true,
         run: function (args) {
@@ -362,7 +362,7 @@
         }
     };
 
-    /* args: { query } — installed effects whose display or match name contains the query (case-insensitive). */
+    /* args: { query } - installed effects whose display or match name contains the query (case-insensitive). */
     ops['effects.find'] = {
         mutates: false,
         run: function (args) {

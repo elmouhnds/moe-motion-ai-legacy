@@ -1,16 +1,16 @@
 /*
- * MOE Motion AI — design ops (ExtendScript / ES3).
+ * MOE Motion AI - design ops (ExtendScript / ES3).
  *
- *   shapes.insert   one shape layer with one named group: either Bézier paths (icons / SVG)
+ *   shapes.insert   one shape layer with one named group: either Bezier paths (icons / SVG)
  *                   or a native parametric primitive (Rectangle / Ellipse / Polystar), plus
  *                   stroke and/or fill. Reads everything back. On any failure the layer it
  *                   created is removed before the error is reported.
  *
- * Match names used (After Effects Scripting Guide › Shape layer match names):
+ * Match names used (After Effects Scripting Guide > Shape layer match names):
  *   ADBE Root Vectors Group, ADBE Vector Group, ADBE Vectors Group, ADBE Vector Transform Group,
  *   ADBE Vector Shape - Group / ADBE Vector Shape, ADBE Vector Shape - Rect (Size, Position, Roundness),
  *   ADBE Vector Shape - Ellipse (Size, Position), ADBE Vector Shape - Star (Type, Points, Position,
- *   Rotation, Inner/Outer Radius, Inner/Outer Roundess — AE's own spelling),
+ *   Rotation, Inner/Outer Radius, Inner/Outer Roundess - AE's own spelling),
  *   ADBE Vector Graphic - Stroke (Color, Opacity, Width, Line Cap, Line Join),
  *   ADBE Vector Graphic - Fill (Color, Opacity, Fill Rule).
  */

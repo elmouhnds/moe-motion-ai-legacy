@@ -51,7 +51,7 @@ const apply = {
     const checks = result.targets.map((t) => {
       if (t.skipped) return { ok: false, label: t.name || 'Property', detail: t.skipped };
       if (t.after.expressionError) return { ok: false, label: `${t.layerName} › ${t.name}`, detail: `${t.after.expressionError}${t.reverted ? ' — reverted' : ''}` };
-      const ok = t.final.expression === args.code && t.final.expressionEnabled;
+      const ok = t.finalState.expression === args.code && t.finalState.expressionEnabled;
       return { ok, label: `${t.layerName} › ${t.name}`, detail: ok ? 'applied, no engine errors' : 'read-back did not match' };
     });
     return { ok: checks.length > 0 && checks.every((c) => c.ok), checks };
@@ -171,7 +171,7 @@ const remove = {
     return host.call('expressions.set', { compId: prepared.compId, label: 'MOE: Remove Expressions', targets: prepared.targets, revertOnError: false });
   },
   verify({ result }) {
-    const checks = result.targets.map((t) => ({ ok: !t.skipped && t.final.expression === '', label: `${t.layerName} › ${t.name}`, detail: t.final && t.final.expression === '' ? 'cleared' : 'still has an expression' }));
+    const checks = result.targets.map((t) => ({ ok: !t.skipped && t.finalState.expression === '', label: `${t.layerName} › ${t.name}`, detail: t.finalState && t.finalState.expression === '' ? 'cleared' : 'still has an expression' }));
     return { ok: checks.every((c) => c.ok), checks };
   },
   checkpoint: apply.checkpoint,

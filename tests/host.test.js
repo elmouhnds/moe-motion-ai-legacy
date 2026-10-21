@@ -7,7 +7,7 @@ const fx = require('./fixtures/comps');
 test('host loads and answers ping', async () => {
   const { services } = await createTestServices(fx.easeComp());
   const info = await services.host.call('host.ping', {});
-  assert.equal(info.hostModuleVersion, '0.6.2');
+  assert.equal(info.hostModuleVersion, '0.6.3');
   assert.match(info.appVersion, /^25\./);
 });
 
@@ -55,4 +55,17 @@ test('stale address is detected by matchName verification', async () => {
 test('comp switch between read and write is refused', async () => {
   const { services } = await createTestServices(fx.easeComp());
   await assert.rejects(services.host.call('layers.setStartTimes', { compId: 999999, layers: [] }), (e) => e.code === 'COMP_CHANGED');
+});
+
+test('a host file that fails to load is named in the connection error (file + line)', async () => {
+  const path = require('path');
+  const { createHostEnv, ROOT } = require('./helpers/harness');
+  const { createServices } = require('../extension/core/services');
+  const { createMemPlatform } = require('../dev/platform-mem');
+  const platform = createMemPlatform();
+  const bad = path.join(ROOT, 'host/ops/expressions.jsx');
+  platform.files.set(bad, 'throw new Error("Syntax error");');
+  const h = createHostEnv(fx.easeComp(), platform.files);
+  const services = createServices({ platform, evalScript: h.evalScript, rootPath: ROOT, hostTimeoutMs: 5000 });
+  await assert.rejects(services.host.init(), (e) => e.code === 'HOST_INIT_FAILED' && /host\/ops\/expressions\.jsx line/.test(e.message));
 });

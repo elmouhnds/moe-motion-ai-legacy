@@ -1,5 +1,5 @@
 /*
- * MOE Motion AI — keyframe operations (mutating).
+ * MOE Motion AI - keyframe operations (mutating).
  * Every mutating op: one undo group, explicit addresses, read-back of the result.
  */
 (function (G) {

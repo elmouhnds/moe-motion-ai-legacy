@@ -1,5 +1,5 @@
 /*
- * MOE Motion AI — host JSON helpers (ExtendScript / ES3).
+ * MOE Motion AI - host JSON helpers (ExtendScript / ES3).
  * ExtendScript has no native JSON object, so we ship a small, strict one.
  * parse() validates the text with the json2.js structural regex before eval,
  * so only data (never code) can pass through.

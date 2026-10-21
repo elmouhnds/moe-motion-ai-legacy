@@ -1,5 +1,5 @@
 /*
- * MOE Motion AI — text operations (ExtendScript / ES3).
+ * MOE Motion AI - text operations (ExtendScript / ES3).
  *   fonts.list         installed fonts (app.fonts.allFonts, AE 24+)
  *   text.setStyle      font / fill / stroke / direction on text layers (before/after for restore)
  *   text.applyAnimator build a named Text Animator from a MOE preset spec
@@ -182,7 +182,7 @@
         }
     };
 
-    /* args: { compId, layers: [layerId], path } — selection is set to exactly these layers, then restored. */
+    /* args: { compId, layers: [layerId], path } - selection is set to exactly these layers, then restored. */
     ops['text.applyFfx'] = {
         mutates: true,
         run: function (args) {

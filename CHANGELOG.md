@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.6.3] — 2026-10-21 — Fix: "After Effects not connected"
+Reported by the product owner: the panel always showed "After Effects not connected".
+### Fixed
+- **Likely root cause**: `host/ops/expressions.jsx` used `final` as an object key. `final` is an ES3 *future reserved word*; Node (which runs our host tests) accepts it, ExtendScript (an ES3 engine) can refuse the whole file — and one host file failing to load means the panel never connects. Renamed to `finalState` (JS readers updated). The ES3 linter ran with `allowReserved: true`, so it never checked this.
+- All host `.jsx` files are now pure ASCII (non-ASCII only in comments and two strings, now `\u` escapes): ExtendScript may read source in the Windows code page.
+### Added
+- Linter: AST check for every ES3 keyword / future reserved word as identifier, object key or dot-property; non-ASCII check; more ES5+ API patterns (`Date.now`, `.bind`, `.includes`, `Math.hypot`, `Map`…). All 14 host files pass.
+- The host loader names the file and line that failed (`host/ops/x.jsx line N: …`); test proves it.
+- The context strip shows the reason next to "After Effects not connected", with **Details** (Diagnostics + Copy report) and Reconnect; Home shows a connection card; automatic retries at 2 s, 5 s, 10 s and 20 s after a failed start.
+
 ## [0.6.2] — 2026-10-20 — Fix: flicker, trembling icons and ignored clicks
 Reported by the product owner inside After Effects: moving the mouse over icons made them blink and tremble, the pointer shook, and buttons did not respond.
 ### Fixed

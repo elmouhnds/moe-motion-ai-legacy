@@ -1,5 +1,5 @@
 /*
- * MOE Motion AI — rig / look building operations (ExtendScript / ES3).
+ * MOE Motion AI - rig / look building operations (ExtendScript / ES3).
  *   layers.createAdjustment  named adjustment layer (solid + adjustmentLayer = true)
  *   layers.createSolid       named solid layer
  *   layers.duplicateLinked   duplicate a layer, strip effects/matte/transform animation, parent it to
@@ -274,7 +274,7 @@
         }
     };
 
-    /* args: { compId, path, name, fit: 'fit'|'fill'|'none', atTime } — import a file and add it to the comp. */
+    /* args: { compId, path, name, fit: 'fit'|'fill'|'none', atTime } - import a file and add it to the comp. */
     ops['footage.importToComp'] = {
         mutates: true,
         run: function (args) {
@@ -300,7 +300,7 @@
         }
     };
 
-    /* args: { compId, layerId, itemId } — remove an imported layer and its project item. */
+    /* args: { compId, layerId, itemId } - remove an imported layer and its project item. */
     ops['footage.remove'] = {
         mutates: true,
         run: function (args) {
