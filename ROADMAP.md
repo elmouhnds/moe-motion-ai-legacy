@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.10c — Copilot fix ✅ (v0.6.4)
+- [x] Compact plan schema (fixes API 400 "compiled grammar is too large"), local args validation unchanged, size guard test
+- [ ] Confirm with a real API key inside AE (TEST_REPORT.md → Copilot checklist 69–70)
+- Next: "Clone to count" in Grid Builder (duplicate one selected layer N times, then arrange) so "radial clone of a circle" works from a single layer
+
 ## M1.10b — Stability fix ✅ (v0.6.2)
 - [x] In-place rendering, click guard, adaptive polling, no moving hover styles, Calm motion, stress test
 - [ ] Confirm inside AE 2025 (TEST_REPORT.md → UI stability checklist 63–66)

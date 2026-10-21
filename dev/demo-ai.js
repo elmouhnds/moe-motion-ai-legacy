@@ -26,8 +26,8 @@ module.exports = {
       return reply({ name: 'Soft cascade', description: 'Stagger the selected layers by N frames, then give their keys a smooth ease.', limitations: '', params: [{ key: 'step', type: 'integer', label: 'Frames apart', default_json: '3', min: 1, max: 30, options: [] }], steps: [{ tool: 'motion.stagger', args_json: '{"frames":{"$param":"step"},"order":"index","mode":"offset","seed":1}', note: 'Cascade top to bottom' }, { tool: 'motion.smartEase', args_json: '{"influenceIn":70,"influenceOut":70,"sides":"both","scope":"all"}', note: 'Smooth every key' }] });
     }
     return reply({ summary: 'Give the selected keys a snappy feel — fast departure, long settle — then cascade the four layers 3 frames apart.', warnings: ['“BG” is locked and will be left alone.'], clarification: '', steps: [
-      { tool: 'motion.smartEase', args: { influenceIn: 90, influenceOut: 15, sides: 'both', scope: 'selected' }, reason: 'Snappy = quick out of each key, long ease into the next.' },
-      { tool: 'motion.stagger', args: { frames: 3, order: 'index', mode: 'offset', seed: 1 }, reason: 'Sequential reveal, top to bottom.' }
+      { tool: 'motion.smartEase', args_json: '{"influenceIn":90,"influenceOut":15,"sides":"both","scope":"selected"}', reason: 'Snappy = quick out of each key, long ease into the next.' },
+      { tool: 'motion.stagger', args_json: '{"frames":3,"order":"index","mode":"offset","seed":1}', reason: 'Sequential reveal, top to bottom.' }
     ] });
   }
 };

@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.6.4] — 2026-10-21 — Fix: Copilot "compiled grammar is too large"
+Reported by the product owner: every Copilot request (e.g. "radial clone of circle shapes") failed with *Claude API error 400: The compiled grammar is too large… Simplify your tool schemas*.
+### Fixed
+- **Cause**: the plan's structured-output schema had one strict variant per AI-callable tool (`anyOf` of 42 objects, each with its full parameter schema — 37.6 KB, 85 objects). The API compiles the schema into a grammar and refused it as too large. It grew with every tool added in v0.4–v0.6; the tests used a mocked API, so nothing caught it.
+- **Fix**: the plan schema now pins only the tool id (`enum` of the 42 ids); each step's arguments travel as `args_json` (a JSON object string) described by the tool catalog in the system prompt — the pattern Tool Factory already used. 1.6 KB, 2 objects, no `anyOf`. Safety is unchanged: arguments are parsed and re-validated locally against the tool's own schema (unknown keys, types, ranges, options) before anything can be approved, and broken JSON is shown as a step error.
+### Added
+- Tests: the plan schema stays compact (< 4 KB, no `anyOf`/`oneOf`, every object closed) as the catalog grows; `args_json` parsing (truncated JSON, arrays, unknown keys refused; defaults filled).
+
 ## [0.6.3] — 2026-10-21 — Fix: "After Effects not connected"
 Reported by the product owner: the panel always showed "After Effects not connected".
 ### Fixed

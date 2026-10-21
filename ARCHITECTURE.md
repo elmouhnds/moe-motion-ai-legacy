@@ -77,8 +77,8 @@ The UI, palette search, favorites, presets, history, Copilot catalog and recipes
 
 1. User describes a change (bottom bar, Ctrl+Space).
 2. Panel reads fresh context; `planner.createPlan` sends: deterministic system prompt (rules + sorted tool catalog, cached) + user message (request + compact context).
-3. Response is constrained by a JSON schema whose steps are an `anyOf` of the AI-callable tools' arg schemas.
-4. `validatePlan` re-validates every step locally (tool exists & callable, args schema, first step against current selection/permissions). Invalid plans cannot be approved.
+3. Response is constrained by a small JSON schema: each step is `{ tool: enum of AI-callable ids, args_json: string, reason }`. (Until v0.6.3 every tool had its own strict variant in an `anyOf`; with 42 tools the API rejected it — "compiled grammar is too large". Keep structured-output schemas small and independent of the number of tools.)
+4. `validatePlan` parses `args_json` and re-validates every step locally (tool exists & callable, args schema, first step against current selection/permissions). Invalid plans cannot be approved.
 5. User approves → steps run through the executor with `origin: 'agent'`; each is verified; execution stops on first failure.
 6. Roll back restores completed steps' checkpoints newest-first. A successful plan can be saved as a recipe (reusable without Claude).
 

@@ -58,6 +58,7 @@ function banner(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['spark', 'Copilot works again', 'Fixed "Claude API error 400: compiled grammar is too large". Plans are still checked locally before you approve anything.'],
   ['shapes', 'Shapes & Icons', '1,899 vector icons and 22 native shapes. Insert as editable shape layers — line, solid, line + fill or duotone — with draw-on, pop or fade.'],
   ['background', 'Backgrounds', '32 curated palettes as linear, radial or mesh gradients, with film grain and a slow looping drift.'],
   ['palette', 'Colorize from palette', 'Recolour a whole selection in one click: cycle, shuffle or blend through a palette. Save any palette as a client.'],

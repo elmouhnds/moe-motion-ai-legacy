@@ -60,7 +60,7 @@ test('Plan schema only allows AI-callable tools', async () => {
 
 test('Copilot: plan validated → approved → executed → verified → rolled back', async () => {
   const plan = { summary: 'Snappy ease, then stagger', warnings: [], clarification: '', steps: [
-    { tool: 'motion.smartEase', args: { influenceIn: 90, influenceOut: 15, sides: 'both', scope: 'selected' }, reason: 'snappy' }
+    { tool: 'motion.smartEase', args_json: '{"influenceIn":90,"influenceOut":15,"sides":"both","scope":"selected"}', reason: 'snappy' }
   ] };
   const http = fakeHttp(() => ok(plan));
   const { services, comp } = await createTestServices(fx.easeComp(), { http, apiKey: 'sk-ant-k-12345678' });
@@ -91,6 +91,36 @@ test('Copilot: hallucinated tools and bad args are rejected before approval', as
   assert.match(v.steps[0].errors[0], /Not an AI-callable tool/);
   assert.ok(v.steps[1].errors.some((e) => /≤ 100/.test(e)));
   assert.match(v.steps[2].errors[0], /Not an AI-callable tool/);
+});
+
+test('Plan schema stays compact: no per-tool variants (API "compiled grammar is too large")', async () => {
+  const { services } = await createTestServices(fx.easeComp());
+  const schema = planner.planSchema(services.registry);
+  const s = JSON.stringify(schema);
+  assert.ok(services.registry.list({ aiCallable: true }).length > 30, 'catalog is large');
+  assert.ok(s.length < 4000, `schema is ${s.length} bytes`);
+  assert.ok(!/anyOf|oneOf|allOf/.test(s));
+  assert.equal((s.match(/"type":"object"/g) || []).length, 2, 'only the plan and the step object');
+  // every object is closed (structured outputs requirement)
+  const walk = (o) => { if (o && typeof o === 'object') { if (o.type === 'object') assert.equal(o.additionalProperties, false); Object.values(o).forEach(walk); } };
+  walk(schema);
+});
+
+test('Copilot: args_json is parsed and re-validated locally; broken JSON and unknown keys are refused', async () => {
+  const { services } = await createTestServices(fx.easeComp());
+  const ctx = await services.executor.readContext();
+  const v = await services.copilot.validate({ summary: 'x', steps: [
+    { tool: 'motion.smartEase', args_json: '{"influenceIn":80', reason: 'truncated' },
+    { tool: 'motion.smartEase', args_json: '[1,2]', reason: 'not an object' },
+    { tool: 'motion.stagger', args_json: '{"frames":3,"rm -rf":1}', reason: 'unknown key' },
+    { tool: 'motion.stagger', args_json: '{"frames":4}', reason: 'defaults fill the rest' }
+  ] }, ctx);
+  assert.match(v.steps[0].errors[0], /not a valid JSON object/);
+  assert.match(v.steps[1].errors[0], /not a valid JSON object/);
+  assert.ok(v.steps[2].errors.some((e) => /Unknown parameter "rm -rf"/.test(e)));
+  assert.deepEqual(v.steps[3].errors, []);
+  assert.equal(v.steps[3].args.frames, 4);
+  assert.equal(planner.stepArgs({}).error, 'Missing arguments');
 });
 
 test('Copilot: agent-origin changes need approval', async () => {

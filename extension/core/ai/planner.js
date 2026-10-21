@@ -8,7 +8,7 @@
  * user is asked to approve it, and executed through the normal executor.
  */
 
-const { toJsonSchema, validateArgs } = require('../schema');
+const { validateArgs } = require('../schema');
 const { packContext } = require('./contextPack');
 
 function aiTools(registry) {
@@ -31,33 +31,52 @@ function catalogText(registry) {
   }).join('\n');
 }
 
+/**
+ * Structured-output schema for a plan.
+ *
+ * v0.6.4: kept deliberately small. One strict variant per tool (anyOf of ~40 objects with
+ * full parameter schemas) made the API reject the request with "compiled grammar is too
+ * large". The grammar now only pins the tool id (enum); the arguments travel as a JSON
+ * string described by the catalog in the system prompt, and are parsed and re-validated
+ * locally against the tool's own schema (validatePlan) — the same pattern Tool Factory uses.
+ */
 function planSchema(registry) {
-  const stepVariants = aiTools(registry).map((t) => ({
-    type: 'object',
-    additionalProperties: false,
-    required: ['tool', 'args', 'reason'],
-    properties: {
-      tool: { type: 'string', enum: [t.id] },
-      args: {
-        type: 'object',
-        additionalProperties: false,
-        required: Object.keys(t.params || {}),
-        properties: toJsonSchema(t.params || {})
-      },
-      reason: { type: 'string', description: 'One short sentence: why this step.' }
-    }
-  }));
   return {
     type: 'object',
     additionalProperties: false,
     required: ['summary', 'steps', 'warnings', 'clarification'],
     properties: {
       summary: { type: 'string', description: 'What the plan will do, in one or two sentences.' },
-      steps: { type: 'array', items: stepVariants.length === 1 ? stepVariants[0] : { anyOf: stepVariants } },
+      steps: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['tool', 'args_json', 'reason'],
+          properties: {
+            tool: { type: 'string', enum: aiTools(registry).map((t) => t.id) },
+            args_json: { type: 'string', description: 'JSON object with every parameter of that tool, e.g. {"influenceIn":90,"sides":"both"}' },
+            reason: { type: 'string', description: 'One short sentence: why this step.' }
+          }
+        }
+      },
       warnings: { type: 'array', items: { type: 'string' } },
       clarification: { type: 'string', description: 'Empty string, unless the request cannot be done with the available tools — then explain why and what the user should select or change.' }
     }
   };
+}
+
+/** Turn a step's args_json (or a legacy args object) into an object; errors are reported, not thrown. */
+function stepArgs(s) {
+  if (s && s.args && typeof s.args === 'object' && !Array.isArray(s.args)) return { args: s.args };
+  if (s && typeof s.args_json === 'string') {
+    try {
+      const v = JSON.parse(s.args_json || '{}');
+      if (v && typeof v === 'object' && !Array.isArray(v)) return { args: v };
+    } catch (e) { /* fall through */ }
+    return { args: {}, error: 'Arguments are not a valid JSON object' };
+  }
+  return { args: {}, error: 'Missing arguments' };
 }
 
 function systemPrompt(registry) {
@@ -69,7 +88,7 @@ function systemPrompt(registry) {
     '- Use the fewest steps that achieve the request. Prefer one precise step over several vague ones.',
     '- Tools act on the CURRENT selection in After Effects (selected layers / properties / keyframes). Check the provided context before planning.',
     '- If the selection does not support the request (e.g. no keyframes selected), return no steps and explain what to select in "clarification".',
-    '- Fill every parameter explicitly. Respect each parameter\'s min/max.',
+    '- Put the arguments of each step in "args_json" as a JSON object string. Fill every parameter of that tool explicitly, use only the parameter names listed for it, and respect each parameter\'s type, options and min/max.',
     '- Translate creative language into concrete values, e.g. "snappy" = fast departure, long settle; "floaty" = soft, wide influence; frame counts are at the comp frame rate.',
     '- Mention anything risky or uncertain in "warnings". Never claim the change already happened.',
     '',
@@ -89,11 +108,14 @@ async function validatePlan({ plan, registry, executor, ctx }) {
   const steps = [];
   for (const [i, s] of (plan.steps || []).entries()) {
     const tool = registry.get(s.tool);
-    const step = { index: i, tool: s.tool, toolName: tool ? tool.name : s.tool, args: s.args, reason: s.reason, errors: [] };
+    const parsed = stepArgs(s);
+    const step = { index: i, tool: s.tool, toolName: tool ? tool.name : s.tool, args: parsed.args, reason: s.reason, errors: [] };
     if (!tool || !tool.ai || !tool.ai.callable) {
       step.errors.push('Not an AI-callable tool');
+    } else if (parsed.error) {
+      step.errors.push(parsed.error);
     } else {
-      const v = validateArgs(tool.params || {}, s.args);
+      const v = validateArgs(tool.params || {}, parsed.args);
       if (!v.ok) step.errors.push(...v.errors);
       else {
         step.args = v.value;
@@ -141,4 +163,4 @@ async function rollbackPlan({ results, executor }) {
   return { ok: out.every((r) => r.ok), restored: out.filter((r) => r.ok).length };
 }
 
-module.exports = { createPlan, validatePlan, runPlan, rollbackPlan, planSchema, systemPrompt, catalogText };
+module.exports = { createPlan, validatePlan, runPlan, rollbackPlan, planSchema, systemPrompt, catalogText, stepArgs };
