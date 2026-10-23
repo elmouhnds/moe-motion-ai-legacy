@@ -1,12 +1,12 @@
 # Test Report
 
-Last run: 2026-10-21 (v0.6.4), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-23 (v0.6.5), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
 | Layer | How it was tested | Result |
 |---|---|---|
-| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 208/208 automated tests pass (172 behaviour + 34 UI module loads) |
+| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 211/211 automated tests pass (172 behaviour + 34 UI module loads) |
 | ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (14 files) — since v0.6.3 also: ES3 reserved words (AST), ASCII-only sources, ES5+ APIs. **Why it matters:** the host tests run the .jsx in Node (V8), which is more permissive than ExtendScript — v0.6.2 and earlier had `final:` as an object key, legal in V8, reserved in ES3 |
 | Core (registry, schema, permissions, executor, storage, logger, bridge) | Unit + integration tests | Pass |
 | Claude integration | Mocked HTTPS responder: request shape, retries, refusal, truncation, 401, offline, budget; plan-schema size guard | Pass — **no real API call was made** (a mocked API does not compile the schema; that is how the v0.6.3 "grammar too large" error got through — now guarded by a size test, but only a real call proves acceptance) |
@@ -14,6 +14,7 @@ Last run: 2026-10-21 (v0.6.4), Linux cloud sandbox (Node 22.22.0). **After Effec
 | Colour contrast | `tools/check-contrast.js`, WCAG — 3 themes (dark, midnight, light) × 8 accents, 93 pairs | Pass |
 | Windows installer (`dist/MOE-Motion-AI-Setup-0.6.1.exe`) | Run under **Wine 9.0 (64-bit) on Linux**, not real Windows: silent install, legacy cleanup, in-place updates 0.6.0 → 0.6.1 → … → 0.6.4 (one folder, `install.json` version updated, no `.debug`), `/WAITAE` with a fake `AfterFX.exe`, silent uninstall; welcome page rendered under Xvfb | Pass — **real Windows 11 not run yet** |
 | UI stability under AE-like load | `npm run stress`: Chromium, host answers in 250 ms, selection changes on every read, mouse resting on tiles, slow 120 ms clicks, pointer 1 px inside a tile edge — Animate, Shapes, Home, Backgrounds | Pass after v0.6.2 (before: swaps in every view, 12–14/20 clicks, 22–24 hover flips). **Not yet confirmed inside AE** — checklist 63–66 |
+| Every button (v0.6.5) | `node tools/audit-ui.js`: every button / tab / chip / tile in 19 views + 3 data variants clicked from a known state with real mouse clicks, tiles double-clicked, controls revealed by a click clicked too; layout at 340–900 px — see `docs/UX_AUDIT.md` | 2,495 interactions: 0 JS errors, 0 unreachable or unnamed controls, 0 overflow; 7 bugs found and fixed. **Preview + mock host, not After Effects** |
 | Updater over HTTPS | Real Node HTTPS download from a local self-signed server (redirect, progress, SHA-256, oversize cut-off) | Pass |
 | **Inside After Effects 2025** | — | **Not run yet** |
 
@@ -233,13 +234,18 @@ Record results here with AE version/build from the Diagnostics view.
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
 
+### Audit fixes checklist (v0.6.5) — inside After Effects 2025
+71. Ctrl K → move the mouse over results → click one: it opens (before: the click was often lost).
+72. Text section: every card shows its text at rest, including OUT presets; only the card under the mouse animates.
+73. Quick Bar in a narrow panel: the mouse wheel over the bar scrolls it sideways; a failing button shows a red message.
+
 ### Copilot checklist (v0.6.4) — inside After Effects 2025, with an API key
 69. Select 2+ circle layers → Copilot: "radial clone of these circles" → a plan appears (no "API error 400"); it should propose Grid Builder in Radial mode. Approve → circles arranged on a ring with a MOE Grid null → Roll back.
 70. With nothing selected, the same request returns a clarification (what to select), not an error.
 
 ### Connection checklist (v0.6.3) — inside After Effects 2025
 67. Open the panel: the strip shows the comp name (green dot), not "not connected". If not: Details → Copy report → send (the message names the host file and line).
-68. Diagnostics shows AE version, build, ExtendScript version and Host module 0.6.4.
+68. Diagnostics shows AE version, build, ExtendScript version and Host module 0.6.5.
 
 ### UI stability checklist (v0.6.2) — inside After Effects 2025
 63. Rest the mouse on icons / tiles / sidebar buttons for 10 s: nothing blinks or shakes; the pointer is steady.

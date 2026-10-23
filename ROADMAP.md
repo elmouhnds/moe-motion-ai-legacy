@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.11 — UX audit ✅ (v0.6.5)
+- [x] Click-every-button audit tool; 7 UI bugs fixed (docs/UX_AUDIT.md)
+- [ ] Owner picks from the ranked recommendations: sticky Apply bar, tile readiness, search presets + Enter, Repeat last, grouped sidebar, one library pattern, banners once, compact density
+
 ## M1.10c — Copilot fix ✅ (v0.6.4)
 - [x] Compact plan schema (fixes API 400 "compiled grammar is too large"), local args validation unchanged, size guard test
 - [ ] Confirm with a real API key inside AE (TEST_REPORT.md → Copilot checklist 69–70)

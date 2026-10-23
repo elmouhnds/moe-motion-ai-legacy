@@ -7,14 +7,11 @@ const { buildSpec } = require('../../features/text/presets');
 const sim = require('../../features/text/preview');
 const { hasArabic } = require('../../features/brand/brands');
 
-const cards = new Set();
-let raf = null;
 
 function lerp(a, b, t) { return a + (b - a) * t; }
 
 function draw(entry, now) {
   const { canvas, preset, text } = entry;
-  if (!canvas.isConnected) { cards.delete(entry); return; }
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.clientWidth;
@@ -25,7 +22,9 @@ function draw(entry, now) {
   const spec = entry.spec || (entry.spec = buildSpec(preset, hasArabic(text) && preset.basedOn < 3 ? { basedOn: 3 } : {}));
   // Hold the start state briefly, play, then hold the end state.
   const cycle = spec.duration + 1.2;
-  const t = ((now / 1000) % cycle) - 0.35;
+  // Still frame (Calm / Off motion, or not hovered): the text fully visible —
+  // the end of an In, the start of an Out (an Out's end frame is empty).
+  const t = now === null ? (preset.kind === 'out' ? -0.1 : spec.duration + 0.2) : ((now / 1000) % cycle) - 0.35;
   const units = sim.frame(spec, text, t);
   const rtl = hasArabic(text);
   const style = getComputedStyle(canvas);
@@ -61,18 +60,17 @@ function draw(entry, now) {
   });
 }
 
-function loop(now) {
-  cards.forEach((c) => draw(c, now));
-  raf = cards.size ? requestAnimationFrame(loop) : null;
-}
-
-/** Mount a preview canvas for a preset. Returns the canvas element. */
+/**
+ * Mount a preview canvas for a preset. Returns the canvas element.
+ * v0.6.5: runs on the shared widgets loop, so it follows Settings › Motion (Calm animates only the
+ * card under the mouse, 30 fps max, nothing off-screen) instead of animating every card forever.
+ */
 function previewCanvas(preset, text) {
   const canvas = document.createElement('canvas');
   canvas.className = 'tp-canvas';
-  cards.add({ canvas, preset, text });
-  if (!raf && typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(loop);
-  return canvas;
+  canvas.setAttribute('data-key', `tp|${preset.id}|${text}`);
+  const entry = { canvas, preset, text };
+  return require('./widgets').animated(canvas, (now) => draw(entry, now));
 }
 
 module.exports = { previewCanvas };

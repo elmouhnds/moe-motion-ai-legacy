@@ -36,7 +36,7 @@ const COPY = {
   quick: () => ({ kicker: 'QUICK', title: 'The everyday buttons', pitch: 'Reveal, purge, flip, reverse keys, precompose, parent to null and more — one click each.' }),
   select: () => ({ kicker: 'SELECT', title: 'Find layers fast', pitch: 'Select by type, name, label, effect or property across the comp.' }),
   brand: () => ({ kicker: 'BRAND', title: 'Client kits', pitch: 'Colours and fonts per client, applied everywhere in one click.' }),
-  tools: (n) => ({ kicker: 'TOOLS', title: 'Your toolbox', pitch: 'Saved recipes, the Tool Factory and every tool in one list.', stats: [[n.tools, 'tools']] })
+  tools: (n) => ({ kicker: 'TOOLS', title: 'Your toolbox', pitch: 'Your saved tools, and the Tool Factory to build new one-click tools from existing ones. Every tool is one search away (Ctrl K).', stats: [[n.tools, 'tools available']] })
 };
 
 function banner(app, sectionId) {
@@ -58,6 +58,7 @@ function banner(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['search', 'Search & previews fixed', 'Mouse clicks in search (Ctrl K) always register, text previews rest on a readable frame, and the Quick Bar scrolls with the mouse wheel.'],
   ['spark', 'Copilot works again', 'Fixed "Claude API error 400: compiled grammar is too large". Plans are still checked locally before you approve anything.'],
   ['shapes', 'Shapes & Icons', '1,899 vector icons and 22 native shapes. Insert as editable shape layers — line, solid, line + fill or duotone — with draw-on, pop or fade.'],
   ['background', 'Backgrounds', '32 curated palettes as linear, radial or mesh gradients, with film grain and a slow looping drift.'],

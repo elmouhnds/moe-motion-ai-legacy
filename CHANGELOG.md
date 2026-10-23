@@ -2,6 +2,20 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.6.5] — 2026-10-23 — Click-every-button audit
+Requested by the product owner: test every button and suggest improvements. Report: `docs/UX_AUDIT.md`.
+### Added
+- `tools/audit-ui.js` + `tools/audit-summary.js`: clicks every button, tab, chip and tile in every view (and the controls that appear after a click), double-clicks every tile, checks layout at 340–900 px. 2,495 interactions in the preview: 0 JavaScript errors, 0 unreachable controls, 0 unnamed controls.
+### Fixed
+- Search (Ctrl K): mouse clicks on results were lost — hovering redrew the list and replaced the row under the pointer. Hover now only moves the highlight.
+- Animated thumbnails: the first paint drew a random moment and overwrote the still frame, so in Calm motion Text "OUT" cards were blank and some tiles froze mid-move.
+- Text previews ignored Settings › Motion and animated all 27 cards forever; they now follow Calm / Full / Off like every other preview.
+- Quick Bar results are coloured by outcome (error / blocked / done) instead of all neutral.
+- Search "Go to…" listed old section names and missed nine sections; it is now generated from the sidebar.
+- The mouse wheel scrolls the Quick Bar sideways in narrow panels (11 of 26 buttons were off-screen).
+- Tools banner text no longer promises a full tool list.
+- Preview fixture layers have the Transform properties every AE layer has (dev only).
+
 ## [0.6.4] — 2026-10-21 — Fix: Copilot "compiled grammar is too large"
 Reported by the product owner: every Copilot request (e.g. "radial clone of circle shapes") failed with *Claude API error 400: The compiled grammar is too large… Simplify your tool schemas*.
 ### Fixed

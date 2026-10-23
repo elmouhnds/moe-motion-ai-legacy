@@ -79,3 +79,38 @@ test('CSS: no hover / press style moves or resizes an element (that made icons t
   assert.deepEqual(bad, []);
   assert.ok(!/backdrop-filter/.test(css), 'backdrop-filter is costly in CEP');
 });
+
+test('search palette: hovering a result keeps the row (no rebuild), so a mouse click runs it', () => {
+  const palette = require('../extension/app/ui/palette');
+  const ran = [];
+  const tools = ['a', 'b', 'c'].map((id) => ({ id, name: `Tool ${id}`, description: 'd', icon: 'tools', category: 'motion' }));
+  const app = { services: { registry: { search: () => tools }, recipes: { list: () => [] } }, openTool: (t) => ran.push(t.id), go: () => {}, refreshContext: () => {}, openCopilot: () => {} };
+  palette.open(app);
+  const rows = () => [...document.querySelectorAll('.pal-item')];
+  const target = rows()[1];
+  target.dispatchEvent(new window.MouseEvent('mouseenter'));
+  assert.equal(rows()[1], target, 'row under the pointer is the same element after hover');
+  assert.equal(target.getAttribute('aria-selected'), 'true');
+  assert.equal(rows()[0].getAttribute('aria-selected'), 'false');
+  target.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  assert.deepEqual(ran, ['b']);
+  assert.equal(app.paletteOpen, false);
+});
+
+test('search palette lists every sidebar section', () => {
+  const palette = require('../extension/app/ui/palette');
+  const studio = require('../extension/app/ui/studio/sections');
+  const app = { services: { registry: { search: () => [] }, recipes: { list: () => [] } }, go: () => {}, refreshContext: () => {}, openCopilot: () => {} };
+  const ids = palette.results(app, '').filter((x) => x.kind === 'nav').map((x) => x.id);
+  for (const s of [...studio.SECTIONS, ...studio.SECONDARY]) assert.ok(ids.includes(s.id), s.id);
+});
+
+test('animated previews: the first paint is the still frame (never a random moment)', async () => {
+  const widgets = require('../extension/app/ui/widgets');
+  const calls = [];
+  const c = document.createElement('canvas');
+  document.body.appendChild(c);
+  widgets.animated(c, (now) => calls.push(now));
+  await new Promise((r) => setTimeout(r, 5));
+  assert.equal(calls[0], null);
+});

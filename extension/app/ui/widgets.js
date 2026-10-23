@@ -33,7 +33,7 @@ function loop(now) {
     if (frame % 6 === 0 || e.visible === undefined) { const r = e.canvas.getBoundingClientRect(); e.visible = r.bottom > -40 && r.top < vh + 40 && r.width > 0; }
     if (!e.visible) continue;
     let animate = mode === 'full';
-    if (mode === 'calm') { const host = e.canvas.closest('.st-tile, .st-inspector, .tool'); animate = !!host && (host.classList.contains('st-tile') ? host.matches(':hover') : true); }
+    if (mode === 'calm') { const host = e.canvas.closest('.st-tile, .tp-card, .st-inspector, .tool'); animate = !!host && (host.classList.contains('st-tile') || host.classList.contains('tp-card') ? host.matches(':hover') : true); }
     if (!animate && e.drawn) continue;
     e.draw(animate ? now : null); e.drawn = true; // null = still frame (each drawer picks its rest pose)
   }
@@ -43,7 +43,9 @@ function animated(canvas, draw) {
   const entry = { canvas, draw };
   live.add(entry);
   if (!raf && typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(loop);
-  setTimeout(() => draw(typeof performance !== 'undefined' ? performance.now() : 0), 0);
+  // First paint is the still frame. (It used to be a random moment of the animation, and it ran
+  // after the loop's still frame, so Calm tiles could rest on an empty frame — e.g. Text "OUT" cards.)
+  setTimeout(() => draw(null), 0);
   return canvas;
 }
 function prep(canvas) {

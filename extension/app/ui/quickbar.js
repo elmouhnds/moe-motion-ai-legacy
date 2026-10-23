@@ -26,8 +26,8 @@ async function run(app, a) {
   const args = Object.assign(defaults(tool.params || {}), a.args);
   const r = await app.runTool(a.tool, args, { resultKey: `quick:${a.id}` });
   if (!r) return;
-  if (r.status === 'success' || r.status === 'partial') app.toast(r.summary || a.label);
-  else app.toast(`${a.label}: ${(r.errors || r.reasons || [r.status]).join(' · ')}`, 5000);
+  if (r.status === 'success' || r.status === 'partial') app.toast(r.summary || a.label, 2600, r.status === 'partial' ? 'warn' : 'ok');
+  else app.toast(`${a.label}: ${(r.errors || r.reasons || [r.status]).join(' · ')}`, 5000, r.status === 'blocked' ? 'warn' : 'err');
 }
 
 function openOptions(app, a) {
@@ -51,7 +51,10 @@ function button(app, a, cls = 'qb-btn') {
 /** Strip rendered by the shell under the context line. */
 function strip(app) {
   if (app.services.store.get('quick-bar-hidden', false)) return null;
-  return h('div', { class: 'qbar', role: 'toolbar', 'aria-label': 'Quick Bar' },
+  // In a narrow panel part of the bar is off to the right; a normal mouse wheel scrolls it sideways
+  // (before, only the 4 px scrollbar reached those buttons).
+  return h('div', { class: 'qbar', role: 'toolbar', 'aria-label': 'Quick Bar',
+    onwheel: (e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) { el.scrollLeft += e.deltaY; e.preventDefault(); } } },
     barIds(app).map((id) => button(app, byId(id))),
     h('button', { class: 'qb-btn more', title: 'All quick actions', 'aria-label': 'All quick actions', onclick: () => app.go('quick') }, icon('bolt')));
 }

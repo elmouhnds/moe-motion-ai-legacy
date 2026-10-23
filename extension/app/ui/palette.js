@@ -3,10 +3,13 @@
 const { h, icon, clear } = require('./dom');
 
 function commands(app) {
+  // Navigation comes from the sidebar's own section list, so it never drifts from it (v0.6.5).
+  const studio = require('./studio/sections');
   const nav = [
-    ['motion', 'Motion', 'Go to Motion workspace', 'motion'], ['expressions', 'Expressions', 'Go to Expression workspace', 'expr'], ['text', 'Text', 'Text animation library', 'type'], ['brand', 'Brand', 'Client palettes and fonts', 'brand'], ['select', 'Select', 'Moe Selector: select layers by type, label, search', 'cursor'], ['compositing', 'Comp', 'Grade, match colour, screen key', 'layers'], ['tools', 'Tools', 'Tool Factory and saved tools', 'tools'],
-    ['favorites', 'Favorites', 'Pinned tools', 'star'], ['history', 'History', 'Recent changes and restore', 'history'],
-    ['settings', 'Settings', 'API key, permissions, budget', 'gear'], ['diagnostics', 'Diagnostics', 'Host connection and logs', 'pulse']
+    ...studio.SECTIONS.map((x) => [x.id, x.label, `Go to ${x.label}`, x.icon]),
+    ...studio.SECONDARY.map((x) => [x.id, x.label, `Go to ${x.label}`, x.icon]),
+    ...studio.UTILITY.map(([id, label, ic]) => [id, label, `Go to ${label}`, ic]),
+    ['diagnostics', 'Diagnostics', 'Host connection, logs and report', 'pulse']
   ].map(([id, name, desc, ic]) => ({ kind: 'nav', id, name, desc, icon: ic, ws: 'go', run: () => app.go(id) }));
   const extra = [
     { kind: 'cmd', id: 'refresh', name: 'Refresh selection', desc: 'Re-read the After Effects selection', icon: 'refresh', ws: 'cmd', run: () => app.refreshContext(true) },
@@ -32,10 +35,16 @@ function open(app) {
   function draw() {
     clear(list);
     if (!items.length) list.appendChild(h('div', { class: 'empty' }, 'No matches'));
-    items.forEach((it, i) => list.appendChild(h('div', { class: 'pal-item', role: 'option', 'aria-selected': String(i === sel), onmouseenter: () => { sel = i; draw(); }, onclick: () => choose(i) },
+    items.forEach((it, i) => list.appendChild(h('div', { class: 'pal-item', role: 'option', 'aria-selected': String(i === sel), onmouseenter: () => mark(i), onclick: () => choose(i) },
       icon(it.icon || 'tools', 'sm'), h('span', { class: 'pn' }, it.name), h('span', { class: 'pd' }, it.desc), h('span', { class: 'ws' }, it.ws))));
     const cur = list.children[sel];
     if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
+  }
+  // Hover only moves the highlight. Redrawing the list here replaced the row under the
+  // pointer between mouse-down and mouse-up, so mouse clicks on results were lost (v0.6.5).
+  function mark(i) {
+    sel = i;
+    [...list.children].forEach((el, k) => el.setAttribute('aria-selected', String(k === sel)));
   }
   function choose(i) { const it = items[i]; close(); if (it) it.run(); }
   function close() { overlay.remove(); app.paletteOpen = false; }
