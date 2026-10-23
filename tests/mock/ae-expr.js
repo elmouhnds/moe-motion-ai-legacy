@@ -185,7 +185,11 @@ function evaluate(prop, t, extra = {}) {
   Object.defineProperty(scope, 'parent', { get() { return thisLayer.parent; } });
   for (const k of ['anchorPoint', 'position', 'scale', 'rotation', 'opacity']) Object.defineProperty(scope, k, { get() { return thisLayer.transform[k]; } });
   // eslint-disable-next-line no-new-func
-  const fn = new Function('__s', '__code', 'with (__s) { return eval(__code); }');
+  let fn;
+  try { fn = new Function('__s', '__code', 'with (__s) { return eval(__code); }'); } catch (e) {
+    if (e instanceof EvalError) return prop.valueAtTime(t, true); // web preview without eval: hold the value
+    throw e;
+  }
   return unwrap(fn(scope, prop._expression));
 }
 

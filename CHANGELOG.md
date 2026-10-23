@@ -2,6 +2,29 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.7.0] — 2026-10-23 — Faster workflow (UX audit recommendations)
+All twelve recommendations of `docs/UX_AUDIT.md`, approved by the product owner.
+### Added
+- **Sticky action bar** in every library section and in Text: the selected preset, what it will do on the current selection, and Apply — one click from any scroll position (Apply was up to 2,900 px down in a docked panel).
+- **▶ on every tile** (hover) — apply in one click; double-click still works.
+- **Tile readiness**: tiles the selection cannot run are dimmed with the tool's own reason (same check as Run: requirements + prepare); ▶ explains instead of failing. "Setup" tiles (look description, reference layer, file) open their settings.
+- **Repeat last (F4)** and a ↻ chip in the selection line: re-run the last successful change on the current selection.
+- **Search applies presets**: Ctrl K finds library and text presets, ranked by name; Enter applies, Shift+Enter opens only.
+- **Grouped sidebar**: Animate (Animate, Text, Expressions) · Design (Shapes & Icons, Backgrounds, Looks & Glass, Brand) · Layout (Layout & Grid, Zoom & Focus, Deliver) · Finish (Compositing) · Utilities (Quick Bar, Select, Tools). Settings › Sidebar hides sections; Ctrl 1–9 follows what is visible.
+- **Compositing is a library** (one tile per tool, incl. green-screen prompt and import & key) with Inspector and action bar.
+- **Banners once**: the full section intro shows on the first visit, then a one-line title (ⓘ brings it back; Settings › Show intros again).
+- **Compact tiles** (Settings › Appearance › Tiles; Auto = compact under 520 px): 3–4 columns in a docked panel (8 → 15+ tiles on screen).
+- **Home for returning users**: one-line greeting, then Recent and Favorites before "Start with".
+- Quick section is now the **Quick Bar** editor; "Reset bar" is disabled (with a reason) when the bar is already the default, and confirms when it resets.
+### Changed
+- 24 px minimum targets: segmented controls 28 px, mini segments 24 px, switches 36 × 22, colour swatches 22 × 22.
+### Fixed
+- **Thumbnails went blank after the first re-render** (since v0.6.2): the in-place update removed a kept canvas's width/height, which clears it, and Calm tiles are not redrawn. Kept canvases now keep their size. Test added.
+- A hovered thumbnail froze on its last moving frame when the mouse left; it now returns to the still frame.
+### Dev
+- `npm run preview:web` (`tools/build-web-preview.js`): one self-contained HTML file with the real panel code and real host scripts on the AE mock — runs without a server and without eval (host JSON reader swapped for `JSON.parse`; expressions are not evaluated where a page forbids eval, and the page says so). Published as the live preview for the product owner.
+- `npm run audit`: the click-every-button audit and its summary.
+
 ## [0.6.5] — 2026-10-23 — Click-every-button audit
 Requested by the product owner: test every button and suggest improvements. Report: `docs/UX_AUDIT.md`.
 ### Added

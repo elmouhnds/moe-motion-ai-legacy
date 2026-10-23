@@ -20,7 +20,9 @@ test('Studio: every tile is a registered tool with valid preset args', () => {
       const v = validateArgs(tool.params || {}, Object.assign(defaults(tool.params || {}), t.args));
       // A required layer pick (e.g. Follow Zoom's target) is chosen in the Inspector, not by the tile.
       const layerPicks = Object.values(tool.params || {}).filter((p) => p.type === 'layer' && p.required).map((p) => `${p.label} is required`);
-      const errs = v.errors.filter((e) => !layerPicks.includes(e));
+      // "Setup" tiles (look description, reference layer, file) leave required inputs to the Inspector.
+      const userInputs = t.needsInput ? Object.values(tool.params || {}).filter((p) => p.required).map((p) => `${p.label} is required`) : [];
+      const errs = v.errors.filter((e) => !layerPicks.includes(e) && !userInputs.includes(e));
       assert.deepEqual(errs, [], `${sec.id}/${t.id}`);
       assert.ok(t.thumb && t.thumb.k, `${t.id} needs a thumbnail recipe`);
       for (const tag of t.tags) assert.ok(sec.filters.includes(tag), `${t.id}: filter chip missing for tag ${tag}`);

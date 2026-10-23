@@ -114,3 +114,13 @@ test('animated previews: the first paint is the still frame (never a random mome
   await new Promise((r) => setTimeout(r, 5));
   assert.equal(calls[0], null);
 });
+
+test('morph keeps a kept canvas drawn (width/height are not stripped, which would clear it)', () => {
+  const mk = (key) => { const c = document.createElement('canvas'); c.setAttribute('data-key', key); return c; };
+  const box = (c) => { const d = document.createElement('div'); d.appendChild(c); return d; };
+  const a = box(mk('thumb-a'));
+  a.firstChild.width = 240; a.firstChild.height = 148; // set by the drawer (devicePixelRatio size)
+  morph(a, box(mk('thumb-a')));
+  assert.equal(a.firstChild.getAttribute('width'), '240');
+  assert.equal(a.firstChild.getAttribute('height'), '148');
+});

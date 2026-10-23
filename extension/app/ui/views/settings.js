@@ -22,6 +22,9 @@ function render(app) {
 
   const updUi = (patch) => { app.services.settings.update({ ui: patch }); app.applyAppearance(); app.render(); };
   const hiddenBanners = app.services.store.get('banners-hidden', []);
+  const seenBanners = app.services.store.get('banners-seen', []);
+  const hiddenSections = st.ui.hiddenSections || [];
+  const studio = require('../studio/sections');
   const presets = app.services.presets.list();
 
   return h('div', { class: 'view' },
@@ -34,8 +37,19 @@ function render(app) {
       h('div', { class: 'field' }, h('label', {}, 'Motion'), seg([['calm', 'Calm'], ['full', 'Full'], ['reduced', 'Off']], st.ui.motion || 'calm', (v) => updUi({ motion: v }))),
       h('div', { class: 'field' }, h('label', {}, 'Headings'), seg([['display', 'Sora'], ['system', 'System']], st.ui.headings || 'display', (v) => updUi({ headings: v }))),
       h('div', { class: 'field' }, h('label', {}, 'Section banners'), h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(st.ui.banners !== false), onclick: () => updUi({ banners: st.ui.banners === false }) }),
-        hiddenBanners.length ? h('button', { class: 'btn ghost', onclick: () => { app.services.store.set('banners-hidden', []); app.render(); } }, `Show ${hiddenBanners.length} hidden`) : null),
+        hiddenBanners.length || seenBanners.length ? h('button', { class: 'btn ghost', title: 'Show every section intro in full again', onclick: () => { app.services.store.set('banners-hidden', []); app.services.store.set('banners-seen', []); app.toast('Section intros will show in full again', 2200, 'ok'); app.render(); } }, 'Show intros again') : null),
+      h('div', { class: 'field' }, h('label', {}, 'Tiles'), seg([['auto', 'Auto'], ['comfortable', 'Large'], ['compact', 'Compact']], st.ui.tiles || 'auto', (v) => { app.services.settings.update({ ui: { tiles: v } }); app.applyDensity(); app.render(); })),
       h('div', { class: 'field' }, h('label', {}, 'Splash on start'), h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(st.ui.splash !== false), onclick: () => updUi({ splash: st.ui.splash === false }) }))),
+
+    h('div', { class: 'section-h' }, 'Sidebar'),
+    h('div', { class: 'set-group' },
+      h('div', { class: 'why', style: { marginBottom: '6px' } }, 'Hide the sections you do not use. Hidden sections stay one search away (Ctrl K); Ctrl 1–9 follows what you see.'),
+      h('div', { class: 'sec-toggles' }, studio.NAV.filter((id) => id !== 'home').map((id) => {
+        const sec = studio.byId(id);
+        const on = !hiddenSections.includes(id);
+        return h('label', { class: 'sec-toggle' }, icon(sec.icon, 'sm'), h('span', { class: 'n' }, sec.label),
+          h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(on), 'aria-label': `Show ${sec.label} in the sidebar`, onclick: () => updUi({ hiddenSections: on ? hiddenSections.concat(id) : hiddenSections.filter((x) => x !== id) }) }));
+      }))),
 
     h('div', { class: 'section-h' }, 'My Presets'),
     h('div', { class: 'set-group' },

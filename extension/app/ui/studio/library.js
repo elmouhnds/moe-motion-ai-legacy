@@ -7,8 +7,8 @@
  * "All tools" tab lists every tool of the section as classic blocks.
  */
 const { h, icon } = require('../dom');
-const { renderTool } = require('../toolBlock');
-const { defaults } = require('../../../core/schema');
+const { renderTool, availability } = require('../toolBlock');
+const { defaults, validateArgs } = require('../../../core/schema');
 const widgets = require('../widgets');
 const thumbs = require('./thumbs');
 const art = require('../art');
@@ -36,12 +36,41 @@ function fill(app, tile) {
   app.state.set((s) => ({ args: Object.assign({}, s.args, { [tool.id]: Object.assign(defaults(tool.params || {}), tile.args) }), open: Object.assign({}, s.open, { [tool.id]: true }) }));
 }
 
-async function applyNow(app, tile) {
+/**
+ * Can this tile run on the current selection? (v0.7, UX audit: 32 tile runs failed with a message
+ * the user only saw after clicking.) Same check as the tool's own Run button: requirements, then
+ * prepare(). kind: 'select' = the selection does not fit; 'input' = a setting must be chosen first.
+ */
+function readiness(app, tile, args) {
+  const s = app.state.get();
+  if (!s.ctx) return { ok: false, kind: 'select', hint: s.hostError ? 'After Effects not connected' : 'Reading After Effects…' };
   const tool = app.services.registry.get(tile.tool);
-  const r = await app.runTool(tile.tool, Object.assign(defaults(tool.params || {}), tile.args));
-  if (!r) return;
+  const a = args || Object.assign(defaults(tool.params || {}), tile.args);
+  // Settings first (a required description / layer / file), exactly as the executor validates them.
+  const v = validateArgs(tool.params || {}, a);
+  if (!v.ok) return { ok: false, kind: 'input', hint: v.errors[0] };
+  const r = availability(tool, s.ctx, a);
+  if (r.ok) return { ok: true, hint: r.hint };
+  // 'input' only when a setting is missing (a required pick or a setup tile); else the selection does not fit.
+  const input = tile.needsInput || /is required|^Choose /i.test(r.hint || '');
+  return { ok: false, kind: input ? 'input' : 'select', hint: r.hint || 'Not available for this selection' };
+}
+
+/** ▶ / double-click / search Enter: run the tile now — or explain why not and open its settings. */
+async function applyNow(app, tile, section, args) {
+  const tool = app.services.registry.get(tile.tool);
+  const runArgs = args || Object.assign(defaults(tool.params || {}), tile.args);
+  const ready = readiness(app, tile, runArgs);
+  if (!ready.ok) {
+    if (section) setSt(app, section, { tile: tile.id, filled: null });
+    app.toast(`${tile.label}: ${ready.hint}${ready.kind === 'input' ? ' — set it in the Inspector' : ''}`, 4500, 'warn');
+    return null;
+  }
+  const r = await app.runTool(tile.tool, runArgs, { label: tile.label });
+  if (!r) return r;
   const ok = r.status === 'success' || r.status === 'partial';
   app.toast(ok ? (r.summary || tile.label) : `${tile.label}: ${(r.errors || r.reasons || [r.status]).join(' · ')}`, ok ? 2600 : 5000, ok ? (r.status === 'partial' ? 'warn' : 'ok') : 'err');
+  return r;
 }
 
 function thumbEl(tile, cls) {
@@ -131,13 +160,18 @@ function render(app, section) {
   const tool = app.services.registry.get(tile.tool);
   const pinned = app.services.favorites.list().includes(tool.id);
 
-  const grid = h('div', { class: 'st-grid' }, tiles.length ? tiles.map((t) => h('button', {
-    class: `st-tile ${t.id === tile.id ? 'on' : ''} ${t.user ? 'mine' : ''}`, 'data-key': t.id, title: `${t.label} — double-click to apply now${t.user ? ' · right-click to delete' : ''}`, 'aria-pressed': String(t.id === tile.id),
-    onclick: () => { setSt(app, section, { tile: t.id, filled: null }); },
-    ondblclick: () => applyNow(app, t),
-    oncontextmenu: t.user ? (e) => { e.preventDefault(); removePreset(app, section, t); } : undefined
-  }, thumbEl(t), t.isNew ? h('span', { class: 'st-new' }, 'NEW') : null,
-  h('span', { class: 'st-meta' }, h('span', { class: 'st-name' }, t.label), t.badge ? h('span', { class: `st-badge ${t.badge.toLowerCase()}` }, t.badge) : null)))
+  const grid = h('div', { class: 'st-grid' }, tiles.length ? tiles.map((t) => {
+    const rd = readiness(app, t);
+    return h('div', { class: `st-cell ${rd.ok ? '' : `blocked ${rd.kind}`}`, 'data-key': t.id },
+      h('button', {
+        class: `st-tile ${t.id === tile.id ? 'on' : ''} ${t.user ? 'mine' : ''}`, title: `${t.label}${rd.ok ? '' : ` — ${rd.hint}`} · ▶ or double-click to apply now${t.user ? ' · right-click to delete' : ''}`, 'aria-pressed': String(t.id === tile.id),
+        onclick: () => { setSt(app, section, { tile: t.id, filled: null }); },
+        ondblclick: () => applyNow(app, t, section),
+        oncontextmenu: t.user ? (e) => { e.preventDefault(); removePreset(app, section, t); } : undefined
+      }, thumbEl(t), t.isNew ? h('span', { class: 'st-new' }, 'NEW') : null,
+      h('span', { class: 'st-meta' }, h('span', { class: 'st-name' }, t.label), rd.ok || rd.kind !== 'input' ? null : h('span', { class: 'st-why', title: rd.hint }, 'setup'), t.badge ? h('span', { class: `st-badge ${t.badge.toLowerCase()}` }, t.badge) : null)),
+      h('button', { class: 'st-play', title: rd.ok ? `Apply ${t.label} now` : rd.hint, 'aria-label': `Apply ${t.label} now`, onclick: () => applyNow(app, t, section) }, icon('play', 'sm')));
+  })
     : h('div', { class: 'empty' }, h('div', { html: art.empty(st.filter === 'Mine' ? 'star' : 'search') }), st.filter === 'Mine' ? [h('b', {}, 'No presets of your own yet'), h('br'), 'Tune a tile in the Inspector, then click ', icon('presets', 'xs'), ' Save as preset.'] : 'Nothing matches'));
 
   const inspector = h('aside', { class: 'st-inspector', 'aria-label': 'Inspector' },
@@ -153,7 +187,26 @@ function render(app, section) {
   const filters = section.filters.concat(['Mine']);
   return h('div', { class: 'view studio-sec' }, tabs,
     h('div', { class: 'st-chips' }, filters.map((f) => h('button', { class: `chip-btn ${f === 'Mine' ? 'mine' : ''}`, 'aria-pressed': String(st.filter === f), onclick: () => pickFilter(app, section, all, f) }, f === 'Mine' ? [icon('presets', 'xs'), ` Mine${mine.length ? ` ${mine.length}` : ''}`] : f))),
-    h('div', { class: `st-body ${s.studioWide ? 'wide' : ''}` }, h('div', { class: 'st-main' }, grid, h('div', { class: 'st-hint' }, 'Click to inspect · double-click to apply now · save your own settings with ', icon('presets', 'xs'))), inspector));
+    h('div', { class: `st-body ${s.studioWide ? 'wide' : ''}` }, h('div', { class: 'st-main' }, grid, h('div', { class: 'st-hint' }, 'Click to inspect · ▶ applies now · F4 repeats the last change · save your own settings with ', icon('presets', 'xs'))), inspector),
+    actionBar(app, section, tile, tool));
 }
 
-module.exports = { render, stateOf, setSt, fill, applyNow, userTiles };
+/**
+ * Sticky action bar (v0.7): the selected tile, what it will do on the current selection, and Apply —
+ * one click from any scroll position (Apply used to sit up to 4 screens down in a docked panel).
+ */
+function actionBar(app, section, tile, tool) {
+  const s = app.state.get();
+  const args = Object.assign(defaults(tool.params || {}), s.args[tool.id] || tile.args);
+  const rd = readiness(app, tile, args);
+  const running = s.running === tool.id;
+  return h('div', { class: 'st-actbar', role: 'region', 'aria-label': 'Apply' },
+    h('div', { class: 'st-act-text' },
+      h('div', { class: 'st-act-name' }, tile.label),
+      h('div', { class: `st-act-hint ${rd.ok ? '' : 'warn'}`, title: rd.hint }, rd.hint || tool.name)),
+    s.studioWide ? null : h('button', { class: 'btn ghost', title: 'Show the settings of this tile', onclick: () => { const el = document.querySelector('.st-inspector'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } }, icon('sliders', 'sm'), h('span', { class: 'label' }, 'Settings')),
+    h('button', { class: 'btn primary', disabled: !rd.ok || !!s.running, title: rd.ok ? `${(tool.ui && tool.ui.primaryLabel) || 'Apply'} (${tile.label})` : rd.hint, onclick: () => applyNow(app, tile, section, args) },
+      running ? h('span', { class: 'spin' }) : icon('play', 'sm'), (tool.ui && tool.ui.primaryLabel) || 'Apply'));
+}
+
+module.exports = { render, stateOf, setSt, fill, applyNow, readiness, userTiles, actionBar };

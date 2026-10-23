@@ -128,6 +128,14 @@ See `docs/features/STUDIO_v0.4.md`.
 - State → `scheduleRender()` (coalesced per microtask, deferred while a pointer is pressed) → views build a fresh tree with `h()` → `morph(live, fresh)` updates the live DOM in place. Handlers live on elements as `__on<type>` behind one dispatcher, so morph moves the newest closures onto kept elements. Inputs / textareas / selects and unkeyed canvases are replaced; `data-key` decides identity for tiles and thumbnails.
 - Background work: selection polling ≥ 2.5 s, adaptive to host latency, paused during interaction / hidden panel; thumbnails animate per Motion mode (Calm = hovered tile + Inspector, ≤ 30 fps).
 
+## 5i. Workflow layer (v0.7.0)
+- `studio/sections.js` adds `GROUPS` / `NAV` (sidebar groups and Ctrl 1–9 order) and makes Compositing a library (one tile per tool; `needsInput` marks tiles that need a description / reference / file).
+- `studio/library.js`: `readiness(app, tile)` = the Run button's own check (`toolBlock.availability`: requirements + `prepare`), used for dimmed tiles, ▶, double-click, search and the sticky `actionBar`. Nothing new reaches the host; every run still goes through `app.runTool` → executor.
+- `shell.js`: `app.runTool(..., { label })` records `state.last` after a successful change by a non-read-only tool; `app.repeatLast()` (F4 / ↻ chip) re-runs it through the same pipeline on the current selection. Hidden sections (`ui.hiddenSections`), tile density (`ui.tiles` → `.tiles-compact`).
+- `palette.js`: `presetItems()` turns library tiles and text presets into results; `run` applies (via `library.applyNow`, so readiness applies), `open` only navigates.
+- `chrome.js`: banners full on the first visit (`banners-seen` in the store), one-line title after.
+- `dom.morph` keeps a kept canvas's width/height (removing them clears the bitmap).
+
 ## 5g. Distribution (v0.6.1)
 - `installer/moe-motion-ai.nsi` → per-user Setup.exe; install folder = bundle id, so every version lands in the same place. `install.json` in that folder records the installer and version.
 - `core/updater.js` (pure, injected `http` / `system`) + `platform.system` (Node: HTTPS-only download, SHA-256, detached launch, `extensionInfo`). The panel never replaces its own files: it hands a verified installer to Windows, which runs after After Effects quits (`/WAITAE`).

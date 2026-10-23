@@ -669,3 +669,75 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .ctx-btn { height: 20px; padding: 0 8px; font-size: var(--fs-xs); }
 .hm-conn { min-width: 0; }
 .hm-comp.conn { border-color: var(--err); }
+
+/* ---------- v0.7 workflow (UX audit) ---------- */
+/* Tile cell: the tile + a ▶ that appears on hover (opacity only — nothing moves). */
+.st-cell { position: relative; display: flex; min-width: 0; }
+.st-cell > .st-tile, .st-cell > .tp-card { flex: 1; min-width: 0; }
+.st-play { position: absolute; top: 6px; right: 6px; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: var(--accent); color: var(--accent-ink); cursor: pointer; opacity: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); transition: opacity var(--t), filter var(--t); }
+.st-cell:hover .st-play, .st-play:focus-visible { opacity: 1; }
+.st-play:hover { filter: brightness(1.1); }
+.st-cell.blocked .st-play { background: var(--bg-active); color: var(--text-2); }
+.st-cell.blocked .st-thumb { opacity: 0.45; }
+.st-cell.blocked .st-name { color: var(--text-3); }
+.st-why { flex: none; padding: 0 5px; border-radius: 999px; background: var(--bg-active); color: var(--text-3); font-size: 9.5px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+.st-cell.input .st-why { color: var(--warn); }
+/* Sticky action bar: always one click away. */
+.st-actbar { position: sticky; bottom: 0; z-index: 3; display: flex; align-items: center; gap: 8px; margin-top: 4px; padding: 8px 12px; border-top: 1px solid var(--line); background: var(--bg); box-shadow: 0 -6px 14px rgba(0, 0, 0, 0.18); }
+.st-act-text { flex: 1; min-width: 0; }
+.st-act-name { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-act-hint { color: var(--text-3); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-act-hint.warn { color: var(--warn); }
+.st-actbar .btn { height: 30px; flex: none; }
+.app:not(.nav-wide) .st-actbar .btn.ghost .label { display: none; }
+/* Repeat last change (F4). */
+.ctx-repeat { display: inline-flex; align-items: center; gap: 5px; height: 20px; max-width: 34%; padding: 0 8px; border: 1px solid var(--line-strong); border-radius: 999px; background: var(--bg-raised); color: var(--text-2); font-size: var(--fs-xs); cursor: pointer; flex: 0 1 auto; min-width: 0; }
+.ctx-repeat:hover { color: var(--text); border-color: var(--accent); }
+.ctx-repeat[disabled] { opacity: 0.5; cursor: default; }
+.ctx-repeat-l { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+/* Grouped sidebar. */
+.sb-group { display: flex; flex-direction: column; gap: 1px; }
+.sb-group-h { height: 1px; margin: 6px 4px; background: var(--line); }
+.sb-group-h .nav-label { display: none; }
+.app.nav-wide .sb-group-h { height: auto; margin: 10px 10px 3px; background: none; }
+.app.nav-wide .sb-group-h .nav-label { display: inline; font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+/* One-line section title after the first visit. */
+.hero-line { display: flex; align-items: center; gap: 8px; margin: 8px 12px 0; padding: 4px 4px 4px 2px; min-width: 0; }
+.hero-line-t { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.hero-x.on { opacity: 1; }
+/* Compact tiles (Settings › Appearance › Tiles; auto under 520 px). */
+.app.tiles-compact .st-grid { grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 6px; }
+.app.tiles-compact .st-thumb { height: 50px; }
+.app.tiles-compact .st-thumb.big { height: 110px; }
+.app.tiles-compact .st-meta { padding: 4px 6px; gap: 4px; }
+.app.tiles-compact .st-name { font-size: var(--fs-xs); }
+.app.tiles-compact .st-badge, .app.tiles-compact .st-new { display: none; }
+.app.tiles-compact .st-play { top: 4px; right: 4px; width: 24px; height: 24px; }
+.app.tiles-compact .tp-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+.app.tiles-compact .tp-canvas { height: 44px; }
+/* 24 px targets (WCAG 2.2 target size). */
+.seg { min-height: 28px; }
+.seg.mini { height: 24px; min-height: 24px; }
+.toggle { width: 36px; height: 22px; border-radius: 11px; flex: none; }
+.toggle::after { top: 3px; left: 3px; width: 16px; height: 16px; }
+.toggle[aria-checked="true"]::after { transform: translateX(14px); }
+.sw { width: 22px; height: 22px; border-radius: 5px; }
+/* Text section action bar uses the library bar. */
+.tl-actbar-pad { height: 4px; }
+/* Settings › Sidebar list. */
+.sec-toggles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 12px; }
+.sec-toggle { display: flex; align-items: center; gap: 8px; min-height: 28px; color: var(--text-2); }
+.sec-toggle .svg-i { flex: none; }
+.sec-toggle span.n { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Home for returning users: compact greeting. */
+.hm-hero.mini { padding: 10px 14px; }
+.hm-hero.mini .hm-hello { font-size: 16px; }
+.pal-apply { display: inline-flex; align-items: center; gap: 3px; flex: none; padding: 0 6px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: var(--fs-xs); font-weight: 600; }
+.pal-foot { display: flex; gap: 12px; padding: 6px 10px 2px; border-top: 1px solid var(--line); margin-top: 4px; color: var(--text-3); font-size: var(--fs-xs); }
+.pal-foot b { color: var(--text-2); font-weight: 600; }
+.st-cell .st-why { position: absolute; top: 6px; left: 6px; }
+.app.tiles-compact .tp-meta .badge:not(.ok):not(:first-of-type) { display: none; }
+.app.tiles-compact .tp-meta .badge + .badge { display: none; }
+
+.ctx .comp { flex: 0 1 auto; min-width: 56px; }
+.app.has-actbar .toast { bottom: 100px; }

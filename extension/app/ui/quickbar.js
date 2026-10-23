@@ -24,7 +24,7 @@ function togglePin(app, id) {
 async function run(app, a) {
   const tool = app.services.registry.get(a.tool);
   const args = Object.assign(defaults(tool.params || {}), a.args);
-  const r = await app.runTool(a.tool, args, { resultKey: `quick:${a.id}` });
+  const r = await app.runTool(a.tool, args, { resultKey: `quick:${a.id}`, label: a.label });
   if (!r) return;
   if (r.status === 'success' || r.status === 'partial') app.toast(r.summary || a.label, 2600, r.status === 'partial' ? 'warn' : 'ok');
   else app.toast(`${a.label}: ${(r.errors || r.reasons || [r.status]).join(' · ')}`, 5000, r.status === 'blocked' ? 'warn' : 'err');
@@ -78,9 +78,12 @@ function view(app) {
   const hidden = app.services.store.get('quick-bar-hidden', false);
   return h('div', { class: 'view' },
     h('div', { class: 'pad tl-bar' },
-      h('span', { class: 'why', style: { flex: 1 } }, 'Click = run · Right-click = options · ★ = on the bar'),
+      h('span', { class: 'why', style: { flex: 1 } }, `Click = run · Right-click = options · ★ = on the bar (${pinned.size} pinned)`),
       h('button', { class: 'btn ghost', onclick: () => { app.services.store.set('quick-bar-hidden', !hidden); app.render(); } }, hidden ? 'Show bar' : 'Hide bar'),
-      h('button', { class: 'btn ghost', title: 'Reset the bar to the default set', onclick: () => { app.services.store.set('quick-bar', B.DEFAULT_BAR); app.render(); } }, icon('undo', 'sm'))),
+      (() => {
+        const isDefault = JSON.stringify(barIds(app)) === JSON.stringify(B.DEFAULT_BAR.filter((id) => byId(id)));
+        return h('button', { class: 'btn ghost', disabled: isDefault, title: isDefault ? 'The bar already has the default set' : 'Reset the bar to the default set', onclick: () => { app.services.store.set('quick-bar', B.DEFAULT_BAR); app.toast('Quick Bar reset to the default set', 2200, 'ok'); app.render(); } }, icon('undo', 'sm'));
+      })()),
     B.GROUPS.map((g) => [
       h('div', { class: 'section-h' }, g),
       h('div', { class: 'qt-grid pad' }, ACTIONS.filter((a) => a.group === g).map((a) => h('div', { class: 'qt-wrap' },

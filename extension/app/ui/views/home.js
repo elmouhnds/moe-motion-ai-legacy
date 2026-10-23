@@ -8,12 +8,14 @@ const art = require('../art');
 const chrome = require('../chrome');
 
 const TIPS = [
-  'Double-click any library tile to apply it straight away — a single click only inspects.',
+  'Press ▶ on any tile (or double-click it) to apply it straight away — a single click only inspects.',
+  'F4 repeats your last change on whatever is selected now — great for the next layer.',
+  'Search (Ctrl K) finds presets too: type "pop", press Enter, and it is applied.',
   'Every change MOE makes can be restored from History, even after other edits.',
   'Shapes & Icons: icons land as real Bézier paths, so Trim Paths, Offset Paths and Wiggle Paths all work.',
   'Turn on "Live controls" for an expression to get keyframeable sliders on the layer.',
   'Backgrounds with "Slow drift" loop forever — the gradient points move with a tagged expression.',
-  'Ctrl + 1…9 jumps between sections. Press ? for every shortcut.',
+  'Ctrl + 1…9 jumps between sections. Press ? for every shortcut. Hide sections you never use in Settings › Sidebar.',
   'Colorize → Blend makes a smooth colour ramp across a whole selection, in selection order.',
   'Deliver plans every aspect ratio at once; the keyframes of your animation are kept.',
   'Save any Inspector setting as your own preset — it appears as a tile under "My Presets".',
@@ -82,32 +84,43 @@ function render(app) {
   const tip = TIPS[Math.floor(Date.now() / 86400000) % TIPS.length];
   const toolBtn = (t, sub) => h('button', { class: 'hm-tool', title: t.description, onclick: () => app.openTool(t) }, h('span', { class: 'hm-tool-ic' }, icon(t.icon || 'tools')), h('span', { class: 'hm-tool-t' }, t.name), sub ? h('span', { class: 'hm-tool-s' }, sub) : null);
 
-  return h('div', { class: 'view home' },
-    h('section', { class: 'hm-hero' },
+  const returning = recent.length > 0 || favs.length > 0;
+  const actions = h('div', { class: 'hm-actions' },
+    h('button', { class: 'btn primary', onclick: () => require('../palette').open(app) }, icon('search', 'sm'), 'Search tools'),
+    h('button', { class: 'btn', onclick: () => app.openCopilot() }, icon('spark', 'sm'), 'Ask Copilot'),
+    h('button', { class: 'btn ghost', onclick: () => app.state.set({ modal: 'whatsnew' }) }, icon('gift', 'sm'), "What's new"));
+  // Returning users (v0.7): a one-line greeting, then Recent and Favorites first; the full hero only for new users.
+  const hero = returning
+    ? h('section', { class: 'hm-hero mini' }, h('div', { class: 'hm-hero-text' }, h('div', { class: 'hm-hello' }, `${greeting()}.`), actions))
+    : h('section', { class: 'hm-hero' },
       h('div', { class: 'hm-hero-text' },
         h('div', { class: 'hm-kicker' }, `MOE STUDIO ${app.services.version}`),
         h('div', { class: 'hm-hello' }, `${greeting()}.`),
         h('div', { class: 'why' }, `${n.tools} tools · ${n.icons.toLocaleString('en-US')} icons · ${n.animate + n.ease} animations · ${n.expressions} expressions · ${n.palettes} palettes`),
-        h('div', { class: 'hm-actions' },
-          h('button', { class: 'btn primary', onclick: () => require('../palette').open(app) }, icon('search', 'sm'), 'Search tools'),
-          h('button', { class: 'btn', onclick: () => app.openCopilot() }, icon('spark', 'sm'), 'Ask Copilot'),
-          h('button', { class: 'btn ghost', onclick: () => app.state.set({ modal: 'whatsnew' }) }, icon('gift', 'sm'), "What's new"))),
-      h('div', { class: 'hm-hero-art', html: art.art('home') })),
-    compCard(app, s.ctx),
+        actions),
+      h('div', { class: 'hm-hero-art', html: art.art('home') }));
+  const cols = h('div', { class: 'hm-cols' },
+    h('div', { class: 'hm-col' },
+      h('div', { class: 'section-h' }, 'Recent'),
+      recent.length ? h('div', { class: 'hm-tools' }, recent.map((e) => toolBtn(reg.get(e.toolId), relTime(e.t))))
+        : h('div', { class: 'hm-empty' }, h('span', { html: art.empty('clock') }), h('span', { class: 'why' }, 'Tools you run show up here.'))),
+    h('div', { class: 'hm-col' },
+      h('div', { class: 'section-h' }, 'Favorites'),
+      favs.length ? h('div', { class: 'hm-tools' }, favs.map((t) => toolBtn(t)))
+        : h('div', { class: 'hm-empty' }, h('span', { html: art.empty('star') }), h('span', { class: 'why' }, 'Pin tools with ☆ in any Inspector.'))));
+  const starts = [
     h('div', { class: 'section-h' }, 'Start with'),
     h('div', { class: 'hm-starts' }, STARTS.map(([id, t, sub, ic]) => h('button', { class: 'hm-start', onclick: () => app.go(id) },
       h('div', { class: 'hm-start-art', html: art.art(id) }),
       h('div', { class: 'hm-start-t' }, icon(ic, 'sm'), t),
-      h('div', { class: 'hm-start-s' }, sub)))),
-    h('div', { class: 'hm-cols' },
-      h('div', { class: 'hm-col' },
-        h('div', { class: 'section-h' }, 'Recent'),
-        recent.length ? h('div', { class: 'hm-tools' }, recent.map((e) => toolBtn(reg.get(e.toolId), relTime(e.t))))
-          : h('div', { class: 'hm-empty' }, h('span', { html: art.empty('clock') }), h('span', { class: 'why' }, 'Tools you run show up here.'))),
-      h('div', { class: 'hm-col' },
-        h('div', { class: 'section-h' }, 'Favorites'),
-        favs.length ? h('div', { class: 'hm-tools' }, favs.map((t) => toolBtn(t)))
-          : h('div', { class: 'hm-empty' }, h('span', { html: art.empty('star') }), h('span', { class: 'why' }, 'Pin tools with ☆ in any Inspector.')))),
+      h('div', { class: 'hm-start-s' }, sub))))];
+
+  return h('div', { class: 'view home' },
+    hero,
+    compCard(app, s.ctx),
+    returning ? cols : null,
+    starts,
+    returning ? null : cols,
     h('div', { class: 'hm-tip' }, h('span', { class: 'hm-tip-ic' }, icon('lightbulb')), h('div', {}, h('div', { class: 'hm-kicker' }, 'TIP OF THE DAY'), h('div', {}, tip))),
     h('div', { class: 'hm-foot' },
       h('button', { class: 'btn ghost', onclick: () => app.state.set({ modal: 'shortcuts' }) }, icon('keyboard', 'sm'), 'Shortcuts'),

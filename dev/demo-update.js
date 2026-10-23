@@ -1,9 +1,9 @@
 'use strict';
-/** Preview only: a fake update feed (0.7.0) + fake download/launch, so Settings › Updates can be clicked through. */
+/** Preview only: a fake update feed (9.0.0) + fake download/launch, so Settings › Updates can be clicked through. */
 const FEED = {
   format: 'moe-update', version: 1, product: 'tv.madtomato.moe.motionai',
-  release: { version: '0.7.0', published: '2026-11-02T10:00:00Z', minAE: '25.0', notes: '## [0.7.0] — Preview feed\n### Added\n- Icon morphs\n- Lower thirds from shapes + text\n- Pattern backgrounds' },
-  installer: { url: 'MOE-Motion-AI-Setup-0.7.0.exe', sha256: 'a'.repeat(64), size: 720000 }
+  release: { version: '9.0.0', published: '2026-11-02T10:00:00Z', minAE: '25.0', notes: '## [9.0.0] — Preview feed\n### Added\n- Icon morphs\n- Lower thirds from shapes + text\n- Pattern backgrounds' },
+  installer: { url: 'MOE-Motion-AI-Setup-9.0.0.exe', sha256: 'a'.repeat(64), size: 720000 }
 };
 const http = { request: async ({ url }) => (/latest\.json$/.test(url) ? { status: 200, headers: {}, body: JSON.stringify(FEED) } : { status: 404, headers: {}, body: '' }) };
 const system = {

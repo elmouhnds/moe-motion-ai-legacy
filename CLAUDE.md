@@ -52,6 +52,9 @@ Permanent rules for anyone (human or AI) working in this repository.
 - No hover / active style may move or resize an element (no transform, margin, padding, size, flex changes) — it makes elements tremble under a resting pointer. Use colour, border, shadow, brightness.
 - Anything that calls the host in the background must be throttled, adaptive to the host's answer time, and paused during pointer presses; AE runs ExtendScript on its main thread.
 - `npm run stress` must pass before a release.
+- Library sections end with the sticky action bar (`library.actionBar`); tiles show readiness from the tool's own `requires` + `prepare` — never a separate rule list.
+- A run the user may want again passes `{ label }` to `app.runTool` so F4 / ↻ can name it.
+- Run `node tools/audit-ui.js` (and `tools/audit-summary.js`) after UI changes: 0 JS errors, 0 unreachable or unnamed controls.
 
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).

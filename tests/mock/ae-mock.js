@@ -343,7 +343,7 @@ class MockProperty {
     try {
       // Syntax-only stand-in for the AE expression engine.
       // eslint-disable-next-line no-new-func
-      new Function(this._expression);
+      try { new Function(this._expression); } catch (eCsp) { if (!(eCsp instanceof EvalError)) throw eCsp; /* web preview without eval: skip the syntax check */ }
       if (/thisComp\.layer\("([^"]+)"\)/.test(this._expression)) {
         const name = RegExp.$1;
         const comp = this._layer()._comp;

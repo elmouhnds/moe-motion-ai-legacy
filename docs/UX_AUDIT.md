@@ -60,7 +60,7 @@ search results). Views with empty states were also run with data (`brand@seed`, 
 - Small targets: segmented options 18 px tall, switches 28 × 16, colour swatches 16 × 16 (< 24 px).
 - "Reset bar" when the bar is already default, and the two file pickers, give no visible feedback.
 
-## Recommendations (ranked by time saved)
+## Recommendations (ranked by time saved) — all shipped in v0.7.0
 
 1. **Sticky action bar in every library** — "Slide In ← · 4 layers · [Apply] [★]" pinned to the bottom,
    like Deliver's "Create 3 comps". Apply becomes 1 click from any scroll position at any width.
@@ -82,3 +82,16 @@ search results). Views with empty states were also run with data (`brand@seed`, 
 10. **Quick = the bar's editor** — the Quick section duplicates the Quick Bar; make it the place to edit the bar.
 11. **24 px minimum** for segmented options, switches and swatches.
 12. **Home for returning users** — Recent and Favorites first; the hero only on the first day.
+
+## Re-run on v0.7.0 (after the recommendations shipped)
+
+| | v0.6.5 | v0.7.0 |
+|---|---|---|
+| Interactions | 2,495 | 2,451 |
+| JavaScript errors | 0 | 0 |
+| Unreachable controls | 0 | 0 |
+| Tile / button runs that failed | 99 (32 after the fixture fix) | 12 — all conditions only the host can see (no Position keys for the cursor, no screen colour found, project not saved); everything predictable is now explained on the tile before the click |
+| Apply distance in Animate at 420 px | 2,902 px | 0 (sticky bar) |
+| Animate tiles on the first screen at 420 px | 8 | 15 |
+
+Found while building v0.7.0 and fixed: thumbnails went blank after the first re-render (since v0.6.2) because the in-place update stripped a kept canvas's width/height; hovered thumbnails froze mid-move.

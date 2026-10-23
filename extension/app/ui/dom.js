@@ -86,7 +86,10 @@ function morph(a, b) {
   const tag = a.nodeName;
   if (ka !== kb || b.hasAttribute('data-fresh') || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (tag === 'CANVAS' && !kb)) { a.replaceWith(b); return b; }
   // attributes
-  for (const at of Array.from(a.attributes)) if (!b.hasAttribute(at.name)) a.removeAttribute(at.name);
+  // A kept canvas keeps its bitmap size: removing width/height would clear the drawing, and still
+  // (Calm) thumbnails are not redrawn — every tile went blank after the first re-render (v0.7 fix).
+  const keepSize = tag === 'CANVAS';
+  for (const at of Array.from(a.attributes)) if (!b.hasAttribute(at.name) && !(keepSize && (at.name === 'width' || at.name === 'height'))) a.removeAttribute(at.name);
   for (const at of Array.from(b.attributes)) if (a.getAttribute(at.name) !== at.value) a.setAttribute(at.name, at.value);
   // handlers
   for (const k of Object.keys(a)) if (k.startsWith('__on') && !(k in b)) delete a[k];

@@ -35,7 +35,7 @@ const views = {
 for (const sec of studio.SECTIONS.filter((x) => x.kind === 'library')) views[sec.id] = { render: (app) => library.render(app, sec) };
 
 // Studio sidebar: creative sections, then helpers; utilities at the bottom. Diagnostics opens from Settings / search.
-const MAIN = [...studio.SECTIONS.map((x) => [x.id, x.label, x.icon]), ...studio.SECONDARY.map((x) => [x.id, x.label, x.icon])];
+const MAIN = studio.NAV.map((id) => { const x = studio.byId(id); return [x.id, x.label, x.icon]; });
 const SECONDARY = studio.UTILITY;
 const resolveView = (v) => studio.ALIAS[v] || v;
 const TOAST_ICON = { ok: 'check', err: 'x', warn: 'pulse', info: 'info' };
@@ -76,18 +76,24 @@ function createApp(root, services, env = {}) {
     const active = document.activeElement;
     const fk = active && active.getAttribute && active.getAttribute('data-fk');
     const kept = fk ? { fk, value: active.value, a: active.selectionStart, b: active.selectionEnd } : null;
+    const hiddenSections = services.settings.get().ui.hiddenSections || [];
     const isSection = (id) => s.view === id || (id === 'settings' && s.view === 'diagnostics');
     const navBtn = ([id, label, ic]) => h('button', { class: 'nav-btn', role: 'tab', 'aria-selected': String(isSection(id)), title: label, 'aria-label': label, onclick: () => app.go(id) }, icon(ic), h('span', { class: 'nav-label' }, label));
     const current = [...MAIN, ...SECONDARY, ['diagnostics', 'Diagnostics']].find(([id]) => id === s.view) || MAIN[0];
     const client = clientCard(s);
     const seen = services.settings.get().ui.seenVersion === services.version;
-    const appEl = h('div', { class: `app ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.navWide ? 'nav-wide' : ''}` },
+    const appEl = h('div', { class: `app ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.navWide ? 'nav-wide' : ''} ${s.tilesCompact ? 'tiles-compact' : ''} ${(studio.byId(s.view) || {}).kind === 'library' || s.view === 'text' ? 'has-actbar' : ''}` },
       h('nav', { class: 'sidebar', role: 'tablist', 'aria-label': 'Sections' },
         h('button', { class: 'sb-brand', title: `MOE Motion AI ${services.version} — About`, onclick: () => app.state.set({ modal: 'about' }) }, h('span', { class: 'brand-mark', html: art.logo(22) }), h('span', { class: 'nav-label' }, h('span', { class: 'sb-name' }, 'MOE Studio'), h('span', { class: 'sb-ver' }, services.version))),
         h('div', { class: 'sb-scroll' },
-        studio.SECTIONS.map((x) => navBtn([x.id, x.label, x.icon])),
-        h('div', { class: 'sb-sep' }),
-        studio.SECONDARY.map((x) => navBtn([x.id, x.label, x.icon]))),
+          navBtn(MAIN[0]),
+          studio.GROUPS.map((g) => {
+            const items = g.items.filter((id) => !hiddenSections.includes(id) || s.view === id);
+            if (!items.length) return null;
+            return h('div', { class: 'sb-group', role: 'group', 'aria-label': g.label, 'data-key': `g-${g.id}` },
+              h('div', { class: 'sb-group-h', 'aria-hidden': 'true' }, h('span', { class: 'nav-label' }, g.label)),
+              items.map((id) => navBtn(MAIN.find((m) => m[0] === id))));
+          })),
         h('span', { class: 'spacer' }),
         client,
         h('div', { class: 'sb-utility' }, SECONDARY.map(navBtn))),
@@ -172,6 +178,7 @@ function createApp(root, services, env = {}) {
       h('span', { class: 'chip' }, h('b', {}, c.properties.length), ' prop'),
       h('span', { class: 'chip' }, h('b', {}, keys), ' keys'),
       h('span', { class: 'spacer' }),
+      s.last ? h('button', { class: 'ctx-repeat', title: `Repeat “${s.last.label}” on the current selection (F4)`, disabled: !!s.running, onclick: () => app.repeatLast() }, icon('repeat', 'sm'), h('span', { class: 'ctx-repeat-l' }, s.last.label)) : null,
       h('button', { class: 'icon-btn', title: 'Refresh selection', onclick: () => app.refreshContext(true) }, icon('refresh', 'sm')));
   }
 
@@ -214,6 +221,9 @@ function createApp(root, services, env = {}) {
   /* ---------- navigation ---------- */
   app.go = (view) => {
     view = resolveView(view);
+    // Section banners show in full on the first visit only; afterwards a one-line title (v0.7).
+    const prev = app.state.get().view;
+    if (prev && prev !== view) chrome.markBannerSeen(app, prev);
     app.state.set({ view });
     if (MAIN.some(([id]) => id === view)) services.settings.update({ ui: { workspace: view } });
     if (view === 'settings') app.loadKeyStatus();
@@ -304,7 +314,9 @@ function createApp(root, services, env = {}) {
   });
 
   /* ---------- running tools ---------- */
-  app.runTool = async (toolId, args, { resultKey } = {}) => {
+  /** Tools whose last successful run can be repeated (F4): anything that changes the comp. */
+  const repeatable = (tool) => tool && (tool.permissions || []).some((p) => p !== 'read') && !(tool.ai === null && tool.destructive);
+  app.runTool = async (toolId, args, { resultKey, label } = {}) => {
     const key = resultKey || toolId;
     app.state.set({ running: toolId });
     try {
@@ -317,12 +329,27 @@ function createApp(root, services, env = {}) {
         r = await services.executor.run(toolId, args, { origin: 'user', approved: true });
       }
       app.state.set((s) => ({ results: Object.assign({}, s.results, { [key]: r }) }));
+      if ((r.status === 'success' || r.status === 'partial') && repeatable(services.registry.get(toolId))) {
+        app.state.set({ last: { toolId, args: JSON.parse(JSON.stringify(args || {})), label: label || services.registry.get(toolId).name } });
+      }
       if (r.status === 'success' && r.summary && r.checkpointId) app.toast(r.summary, 2600, 'ok');
       return r;
     } finally {
       app.state.set({ running: null });
       app.refreshContext(true);
     }
+  };
+  /** Repeat the last successful change on whatever is selected now (F4 / the ↻ chip). */
+  app.repeatLast = async () => {
+    const last = app.state.get().last;
+    if (!last || app.state.get().running) return null;
+    await app.refreshContext(true);
+    const r = await app.runTool(last.toolId, last.args, { label: last.label });
+    if (r) {
+      const ok = r.status === 'success' || r.status === 'partial';
+      app.toast(ok ? `${last.label} — ${r.summary || 'done'}` : `${last.label}: ${(r.errors || r.reasons || [r.status]).join(' · ')}`, ok ? 2600 : 5000, ok ? 'ok' : (r.status === 'blocked' ? 'warn' : 'err'));
+    }
+    return r;
   };
   app.clearResult = (key) => app.state.set((s) => { const results = Object.assign({}, s.results); delete results[key]; return { results }; });
   app.restore = async (checkpointId, key) => {
@@ -524,8 +551,11 @@ function createApp(root, services, env = {}) {
     // Studio: labelled sidebar from 600 px, inspector beside the library from 760 px.
     const navWide = w >= 600;
     const studioWide = w >= 760;
+    // Tiles (Settings › Appearance): compact = 3–4 columns of smaller tiles; auto = compact under 520 px.
+    const tiles = services.settings.get().ui.tiles || 'auto';
+    const tilesCompact = tiles === 'compact' || (tiles === 'auto' && w < 520);
     const st = app.state.get();
-    if (compact !== st.compact || wide !== st.wide || navWide !== st.navWide || studioWide !== st.studioWide) app.state.set({ compact, wide, navWide, studioWide });
+    if (compact !== st.compact || wide !== st.wide || navWide !== st.navWide || studioWide !== st.studioWide || tilesCompact !== st.tilesCompact) app.state.set({ compact, wide, navWide, studioWide, tilesCompact });
   };
 
   /* ---------- global keys & context polling ---------- */
@@ -536,7 +566,11 @@ function createApp(root, services, env = {}) {
     else if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); app.openCopilot(); }
     else if (e.key === 'Escape' && app.state.get().modal) { e.preventDefault(); app.state.set({ modal: null }); }
     else if (e.key === '?' && !typing) { e.preventDefault(); app.state.set({ modal: 'shortcuts' }); }
-    else if ((e.ctrlKey || e.metaKey) && /^Digit[1-9]$/.test(e.code)) { const sec = MAIN[Number(e.code.slice(5)) - 1]; if (sec) { e.preventDefault(); app.go(sec[0]); } }
+    else if ((e.ctrlKey || e.metaKey) && /^Digit[1-9]$/.test(e.code)) {
+      const hidden = services.settings.get().ui.hiddenSections || [];
+      const sec = MAIN.filter(([id]) => !hidden.includes(id))[Number(e.code.slice(5)) - 1];
+      if (sec) { e.preventDefault(); app.go(sec[0]); }
+    } else if (e.key === 'F4' && !e.ctrlKey && !e.altKey) { e.preventDefault(); app.repeatLast(); }
   });
   // AE sends no selection-change events to panels: re-read on focus / hover,
   // and poll lightly only while the pointer is over the panel.

@@ -37,9 +37,14 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.12 — Faster workflow ✅ (v0.7.0)
+- [x] All 12 UX audit recommendations (action bar, ▶, readiness, F4 repeat, preset search, grouped sidebar + hide, Compositing library, banners once, compact tiles, 24 px targets, Home for returning users, Quick Bar editor)
+- [ ] Confirm inside AE 2025 (TEST_REPORT.md → v0.7.0 checklist 74–80)
+- Next: drag to reorder sidebar sections; per-tile keyboard numbers (1–9 apply favourites)
+
 ## M1.11 — UX audit ✅ (v0.6.5)
 - [x] Click-every-button audit tool; 7 UI bugs fixed (docs/UX_AUDIT.md)
-- [ ] Owner picks from the ranked recommendations: sticky Apply bar, tile readiness, search presets + Enter, Repeat last, grouped sidebar, one library pattern, banners once, compact density
+- [x] Owner approved all recommendations → shipped in v0.7.0
 
 ## M1.10c — Copilot fix ✅ (v0.6.4)
 - [x] Compact plan schema (fixes API 400 "compiled grammar is too large"), local args validation unchanged, size guard test

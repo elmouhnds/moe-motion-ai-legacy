@@ -86,6 +86,14 @@ const ZOOM = [
 // A tile carries its preset's own numbers (the form's generic defaults would override them otherwise).
 const EXPRESSIONS = Object.entries(EXPR).map(([id, p]) => Object.assign(T(`x-${id}`, p.label, 'expressions.quick', Object.assign({ preset: id }, p.nums), { k: 'expr', preset: id }, [p.tag || 'Periodic']), { hint: p.hint }));
 
+// Compositing (v0.7): one tile per tool — analyse, grade, match, key, green screen.
+const COMP_TOOLS = [...require('../../../features/compositing/index'), require('../../../features/generate/green').greenPrompt, require('../../../features/generate/green').importKey];
+const COMP_TAG = { Analyze: 'Analyze', Color: 'Color', Key: 'Key', 'Generate on Green': 'Green screen' };
+// Tools that need something only the user can give (a look description, a reference layer, a file)
+// are "setup" tiles: ▶ opens their settings instead of running.
+const COMPOSITING = COMP_TOOLS.map((t) => Object.assign(T(`c-${t.id}`, t.name, t.id, {}, { k: 'icon', icon: t.icon || 'layers' }, [COMP_TAG[t.group] || 'Color']),
+  { hint: t.description, needsInput: Object.values(t.params || {}).some((p) => p.required && p.default === undefined) }));
+
 const BACKGROUNDS = PAL.PALETTES.map((p) => T(`bg-${p.id}`, p.name, 'design.background', { palette: p.id, style: 'linear', from: 0, to: 2 }, { k: 'bg', palette: p.id, style: 'linear' }, p.tags));
 
 /**
@@ -96,21 +104,34 @@ const SECTIONS = [
   { id: 'home', label: 'Home', icon: 'home', kind: 'view' },
   { id: 'animate', label: 'Animate', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Trim', 'Ease', 'Keys', 'Proximity'], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },
-  { id: 'layout', label: 'Layout & Grid', icon: 'grid', kind: 'library', tiles: LAYOUT, filters: ['All', 'Grid', 'Radial', 'Path', '3D', 'Animated', 'Guides', 'Cells'], tools: (t) => /^grid\./.test(t.id) },
-  { id: 'looks', label: 'Looks & Glass', icon: 'glass', kind: 'library', tiles: LOOK_TILES, filters: ['All', 'Clear', 'Frosted', 'Liquid', 'Tinted'], tools: (t) => /^glass\./.test(t.id) },
-  { id: 'zoom', label: 'Zoom & Focus', icon: 'zoom', kind: 'library', tiles: ZOOM, filters: ['All', 'Zoom', 'Focus', 'Cursor'], tools: (t) => /^zoom\./.test(t.id) },
   { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true },
   { id: 'shapes', label: 'Shapes & Icons', icon: 'shapes', kind: 'view' },
   { id: 'backgrounds', label: 'Backgrounds', icon: 'background', kind: 'library', tiles: BACKGROUNDS, filters: PAL.TAGS, tools: (t) => /^design\.(background|colorize)$/.test(t.id), extras: 'palette' },
-  { id: 'compositing', label: 'Compositing', icon: 'layers', kind: 'category' },
-  { id: 'deliver', label: 'Deliver', icon: 'resize', kind: 'view' }
+  { id: 'looks', label: 'Looks & Glass', icon: 'glass', kind: 'library', tiles: LOOK_TILES, filters: ['All', 'Clear', 'Frosted', 'Liquid', 'Tinted'], tools: (t) => /^glass\./.test(t.id) },
+  { id: 'brand', label: 'Brand', icon: 'brand', kind: 'view' },
+  { id: 'layout', label: 'Layout & Grid', icon: 'grid', kind: 'library', tiles: LAYOUT, filters: ['All', 'Grid', 'Radial', 'Path', '3D', 'Animated', 'Guides', 'Cells'], tools: (t) => /^grid\./.test(t.id) },
+  { id: 'zoom', label: 'Zoom & Focus', icon: 'zoom', kind: 'library', tiles: ZOOM, filters: ['All', 'Zoom', 'Focus', 'Cursor'], tools: (t) => /^zoom\./.test(t.id) },
+  { id: 'deliver', label: 'Deliver', icon: 'resize', kind: 'view' },
+  { id: 'compositing', label: 'Compositing', icon: 'layers', kind: 'library', tiles: COMPOSITING, filters: ['All', 'Analyze', 'Color', 'Key', 'Green screen'], tools: (t) => t.category === 'compositing' && !/^glass\./.test(t.id) },
+  { id: 'quick', label: 'Quick Bar', icon: 'bolt', kind: 'view' },
+  { id: 'select', label: 'Select', icon: 'cursor', kind: 'view' },
+  { id: 'tools', label: 'Tools', icon: 'tools', kind: 'view' }
 ];
-const SECONDARY = [
-  { id: 'quick', label: 'Quick', icon: 'bolt' },
-  { id: 'select', label: 'Select', icon: 'cursor' },
-  { id: 'brand', label: 'Brand', icon: 'brand' },
-  { id: 'tools', label: 'Tools', icon: 'tools' }
+/**
+ * Sidebar groups (v0.7, from the UX audit): sections by creative purpose, Home first.
+ * Ctrl+1…9 follows this order. Users can hide sections in Settings › Appearance.
+ */
+const GROUPS = [
+  { id: 'animate', label: 'Animate', items: ['animate', 'text', 'expressions'] },
+  { id: 'design', label: 'Design', items: ['shapes', 'backgrounds', 'looks', 'brand'] },
+  { id: 'layout', label: 'Layout', items: ['layout', 'zoom', 'deliver'] },
+  { id: 'finish', label: 'Finish', items: ['compositing'] },
+  { id: 'utilities', label: 'Utilities', items: ['quick', 'select', 'tools'] }
 ];
+/** Kept for callers of v0.5–0.6: the utility sections that used to sit under the separator. */
+const SECONDARY = SECTIONS.filter((x) => ['quick', 'select', 'brand', 'tools'].includes(x.id));
+/** Navigation order: Home, then the groups. */
+const NAV = ['home', ...GROUPS.flatMap((g) => g.items)];
 const UTILITY = [['favorites', 'Favorites', 'star'], ['history', 'History', 'history'], ['settings', 'Settings', 'gear']];
 
 /** Old view ids (v0.3/0.4) → Studio sections. */
@@ -143,4 +164,4 @@ for (const sec of SECTIONS) for (const t of sec.tiles || []) if (NEW_TILES.has(t
 
 const byId = (id) => SECTIONS.find((s) => s.id === id) || null;
 
-module.exports = { SECTIONS, SECONDARY, UTILITY, ALIAS, sectionOf, byId };
+module.exports = { SECTIONS, SECONDARY, GROUPS, NAV, UTILITY, ALIAS, sectionOf, byId };

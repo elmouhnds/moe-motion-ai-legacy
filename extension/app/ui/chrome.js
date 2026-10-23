@@ -23,7 +23,7 @@ function counts(app) {
 }
 
 const COPY = {
-  animate: (n) => ({ kicker: 'ANIMATE', title: 'Motion in one click', pitch: 'Slides, pops, fades, draw-ons, eases and proximity — keyed from the playhead, always restorable.', stats: [[n.animate, 'animations'], [n.ease, 'ease curves']], tip: 'Double-click a tile to apply it straight away.' }),
+  animate: (n) => ({ kicker: 'ANIMATE', title: 'Motion in one click', pitch: 'Slides, pops, fades, draw-ons, eases and proximity — keyed from the playhead, always restorable.', stats: [[n.animate, 'animations'], [n.ease, 'ease curves']], tip: 'Press ▶ on a tile to apply it straight away.' }),
   text: (n) => ({ kicker: 'TEXT', title: 'Type that moves well', pitch: 'Signature text animators with Arabic-safe defaults (words / lines, RTL).', stats: [[n.text, 'text presets']] }),
   layout: (n) => ({ kicker: 'LAYOUT & GRID', title: 'Live grids & layouts', pitch: 'Grid, radial, spiral, path and 3D arrangements driven by one null — plus guides and cells.', stats: [[n.layout, 'layouts']] }),
   looks: (n) => ({ kicker: 'LOOKS & GLASS', title: 'Liquid & frosted glass', pitch: 'Editable glass built from native effects: lens, frost, tint, rim light and shadow.', stats: [[n.looks, 'glass looks']] }),
@@ -31,33 +31,60 @@ const COPY = {
   expressions: (n) => ({ kicker: 'EXPRESSIONS', title: 'Smart expressions, no typing', pitch: 'Wiggles, loops, bounces, orbits and auto-animations — with live slider controls.', stats: [[n.expressions, 'expressions']] }),
   shapes: (n) => ({ kicker: 'SHAPES & ICONS', title: 'Vector icons, ready to animate', pitch: 'Every icon lands as editable shape paths; native shapes stay parametric in AE.', stats: [[n.icons.toLocaleString('en-US'), 'icons'], [n.shapes, 'native shapes']] }),
   backgrounds: (n) => ({ kicker: 'BACKGROUNDS', title: 'Backgrounds & colour', pitch: 'Gradient, radial and mesh backgrounds from curated palettes — with grain and slow drift.', stats: [[n.palettes, 'palettes'], [4, 'styles']] }),
-  compositing: () => ({ kicker: 'COMPOSITING', title: 'Key, match & grade', pitch: 'Analyse a shot, pull a key, match colour and grade — measured, not guessed.' }),
+  compositing: () => ({ kicker: 'COMPOSITING', title: 'Key, match & grade', pitch: 'Analyse a shot, pull a key, match colour and grade — measured, not guessed. Green-screen prompts and import & key live here too.' }),
   deliver: () => ({ kicker: 'DELIVER', title: 'Every format from one master', pitch: 'Plan all aspect ratios at once and adapt the animation — keyframes kept.' }),
-  quick: () => ({ kicker: 'QUICK', title: 'The everyday buttons', pitch: 'Reveal, purge, flip, reverse keys, precompose, parent to null and more — one click each.' }),
+  quick: () => ({ kicker: 'QUICK BAR', title: 'Edit your Quick Bar', pitch: 'Every everyday button in one place. Star a button to put it on the bar under the selection line; right-click any button for its options.' }),
   select: () => ({ kicker: 'SELECT', title: 'Find layers fast', pitch: 'Select by type, name, label, effect or property across the comp.' }),
   brand: () => ({ kicker: 'BRAND', title: 'Client kits', pitch: 'Colours and fonts per client, applied everywhere in one click.' }),
   tools: (n) => ({ kicker: 'TOOLS', title: 'Your toolbox', pitch: 'Your saved tools, and the Tool Factory to build new one-click tools from existing ones. Every tool is one search away (Ctrl K).', stats: [[n.tools, 'tools available']] })
 };
 
+/**
+ * Section banner. The full banner shows on the first visit to a section; after that the section
+ * opens with a one-line title (more room for tiles — the banner took ~17 % of a docked panel).
+ * The ⓘ on the line brings the full banner back for this session.
+ */
 function banner(app, sectionId) {
   const ui = app.services.settings.get().ui;
   if (ui.banners === false || !COPY[sectionId]) return null;
   const hidden = app.services.store.get('banners-hidden', []);
   if (hidden.includes(sectionId)) return null;
   const c = COPY[sectionId](counts(app));
-  const el = h('section', { class: `hero hero-${sectionId}`, 'aria-label': c.title },
+  const seen = app.services.store.get('banners-seen', []).includes(sectionId);
+  const open = (app.state.get().bannerOpen || {})[sectionId];
+  const setOpen = (v) => app.state.set((st) => ({ bannerOpen: Object.assign({}, st.bannerOpen, { [sectionId]: v }) }));
+  if (seen && !open) {
+    return h('div', { class: 'hero-line', 'data-key': `hero-${sectionId}` },
+      h('span', { class: 'hero-kicker' }, c.kicker), h('span', { class: 'hero-line-t' }, c.title),
+      h('span', { class: 'spacer' }),
+      h('button', { class: 'icon-btn', title: 'About this section', 'aria-label': 'Show section intro', onclick: () => setOpen(true) }, icon('info', 'sm')));
+  }
+  const el = h('section', { class: `hero hero-${sectionId}`, 'aria-label': c.title, 'data-key': `hero-${sectionId}` },
     h('div', { class: 'hero-text' },
       h('div', { class: 'hero-kicker' }, c.kicker),
       h('div', { class: 'hero-title' }, c.title),
       h('div', { class: 'hero-pitch' }, c.pitch),
       c.stats ? h('div', { class: 'hero-stats' }, c.stats.map(([v, l]) => h('span', { class: 'hero-stat' }, h('b', {}, v), ` ${l}`))) : null),
     h('div', { class: 'hero-art', html: art.art(sectionId) }),
-    h('button', { class: 'icon-btn hero-x', title: 'Hide this banner (Settings › Appearance brings it back)', 'aria-label': 'Hide banner', onclick: () => { app.services.store.set('banners-hidden', hidden.concat(sectionId)); app.render(); } }, icon('x', 'sm')));
+    seen ? h('button', { class: 'icon-btn hero-x on', title: 'Back to the one-line title', 'aria-label': 'Collapse banner', onclick: () => setOpen(false) }, icon('chev', 'sm'))
+      : h('button', { class: 'icon-btn hero-x', title: 'Hide this banner (Settings › Appearance brings it back)', 'aria-label': 'Hide banner', onclick: () => { app.services.store.set('banners-hidden', hidden.concat(sectionId)); app.render(); } }, icon('x', 'sm')));
   return el;
+}
+
+/** Called when the user leaves a section: from now on its banner is a one-line title. */
+function markBannerSeen(app, sectionId) {
+  if (!COPY[sectionId]) return;
+  const seen = app.services.store.get('banners-seen', []);
+  if (!seen.includes(sectionId)) app.services.store.set('banners-seen', seen.concat(sectionId));
 }
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['play', 'Apply bar & ▶ on every tile', 'The selected preset and Apply stay pinned at the bottom of every library. Hover a tile and press ▶ to apply it in one click.'],
+  ['repeat', 'Repeat last (F4)', 'Applied something you like? Select the next layers and press F4 — or the ↻ chip in the selection line.'],
+  ['search', 'Search applies presets', 'Ctrl K now finds presets too: type "pop", press Enter, done. Shift+Enter only opens it.'],
+  ['eye', 'Tiles tell you first', 'Tiles the selection cannot run are dimmed with the reason; setup tiles open their settings instead of failing.'],
+  ['grid', 'Tidier sidebar', 'Sections grouped as Animate · Design · Layout · Finish · Utilities. Hide the ones you never use in Settings › Sidebar.'],
   ['search', 'Search & previews fixed', 'Mouse clicks in search (Ctrl K) always register, text previews rest on a readable frame, and the Quick Bar scrolls with the mouse wheel.'],
   ['spark', 'Copilot works again', 'Fixed "Claude API error 400: compiled grammar is too large". Plans are still checked locally before you approve anything.'],
   ['shapes', 'Shapes & Icons', '1,899 vector icons and 22 native shapes. Insert as editable shape layers — line, solid, line + fill or duotone — with draw-on, pop or fade.'],
@@ -76,7 +103,10 @@ const SHORTCUTS = [
   [['Ctrl', '1…9'], 'Jump to section 1–9'],
   [['?'], 'Show this sheet'],
   [['Esc'], 'Close sheets and dialogs'],
-  [['Double-click'], 'Apply a tile now'],
+  [['F4'], 'Repeat the last change on the current selection'],
+  [['Enter'], 'In search: apply a preset / open a tool'],
+  [['Shift', 'Enter'], 'In search: open without applying'],
+  [['▶', '/ Double-click'], 'Apply a tile now'],
   [['Right-click'], 'Quick Bar button options'],
   [['Enter'], 'Confirm a dialog']
 ];
@@ -126,4 +156,4 @@ function splash(onDone) {
   return el;
 }
 
-module.exports = { banner, sheet, splash, counts, COPY, WHATS_NEW, SHORTCUTS };
+module.exports = { banner, markBannerSeen, sheet, splash, counts, COPY, WHATS_NEW, SHORTCUTS };

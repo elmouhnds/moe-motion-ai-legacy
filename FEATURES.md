@@ -1,4 +1,6 @@
-# Features (v0.6.1)
+# Features (v0.7.0)
+
+Workflow (v0.7.0): sticky Apply bar in every library and Text · ▶ on every tile · tiles dimmed with the reason when the selection cannot run them · F4 / ↻ repeat last change · Ctrl K finds and applies presets (Enter) · grouped sidebar with hideable sections · Compositing as a tile library · banners shown in full once · compact tiles in narrow panels · Home puts Recent / Favorites first for returning users.
 
 Install & updates: Windows Setup.exe (in place, no admin) + Settings › Updates — see INSTALL.md.
 

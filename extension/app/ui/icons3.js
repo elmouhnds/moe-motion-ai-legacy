@@ -7,6 +7,8 @@ module.exports = {
   background: '<rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M2 10.5l3.5-3 3 2.5 2-1.5 3.5 3"/><circle cx="10.5" cy="5.5" r="1.2"/>',
   palette: '<path d="M8 2a6 6 0 1 0 0 12c.9 0 1.3-.7 1-1.5-.4-.9.2-1.8 1.1-1.8H12a2 2 0 0 0 2-2A6 6 0 0 0 8 2z"/><circle cx="5" cy="7.2" r=".9" fill="currentColor"/><circle cx="7.6" cy="4.8" r=".9" fill="currentColor"/><circle cx="10.6" cy="6" r=".9" fill="currentColor"/>',
   presets: '<path d="M3 2.5h10v11l-5-3-5 3z"/><path d="M6 6h4" opacity=".6"/>',
+  repeat: '<path d="M3 7V6a2 2 0 0 1 2-2h8M11 2l2 2-2 2"/><path d="M13 9v1a2 2 0 0 1-2 2H3M5 14l-2-2 2-2"/>',
+  eyeOff: '<path d="M2 2l12 12"/><path d="M6.4 4A6.7 6.7 0 0 1 8 3.5c4 0 6.5 4.5 6.5 4.5a11 11 0 0 1-1.9 2.4M4.2 5.4A11 11 0 0 0 1.5 8S4 12.5 8 12.5a6 6 0 0 0 2.2-.4"/>',
   info: '<circle cx="8" cy="8" r="6"/><path d="M8 7.2V11M8 5v.2"/>',
   keyboard: '<rect x="1.5" y="4" width="13" height="8" rx="1.5"/><path d="M4 6.5h.5M6.5 6.5H7M9 6.5h.5M11.5 6.5h.5M4 9.5h8"/>',
   gift: '<rect x="2.5" y="6" width="11" height="7.5" rx="1"/><path d="M2 6h12M8 6v7.5M8 6S6.5 2.5 4.8 3.3C3.6 4 5 6 8 6zM8 6s1.5-3.5 3.2-2.7C12.4 4 11 6 8 6z"/>',
