@@ -1,4 +1,6 @@
-# Features (v0.11.0)
+# Features (v0.11.1)
+
+**Free drag on the ease graph** (v0.11.1): press anywhere and drag, like Motion 4 — left = start (ease out), right = end (ease in), middle = both mirrored; sideways = influence, up / down = shape or speed; Shift fine, Ctrl snap; handles still grab directly.
 
 **Delay** (v0.11.0): Cinema 4D MoGraph Delay for layers — Spring / Blend / Offset on a layer's own animation, or followers trailing the first selected layer, live sliders. **Speed graph**: real units (px/s, °/s, %/s), velocity fields (AE Keyframe Velocity), whole-animation overview, pass-through middle keys.
 

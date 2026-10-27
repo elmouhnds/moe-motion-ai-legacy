@@ -2,12 +2,14 @@
 /**
  * Motion Kit ease graph (v0.10) — the control animators use most, modelled on AE's Graph Editor,
  * Motion 4's Easing screen and Flow:
- *   Value mode   the cubic-Bézier value curve; drag the two handles.
+ *   Value mode   the cubic-Bézier value curve.
  *   Speed mode   AE-style speed graph: each key has a handle whose length is the influence
  *                (horizontal) and whose height is the speed at that key (vertical; 1 = average).
  *   Spacing      a spacing chart under the graph (one tick per 1/12 of the time) + a ball.
  *   Ghost        the curve that is on the keys now, faded, while you edit.
- * Interaction: drag (commit on release) · Shift = flat (speed 0) · Ctrl = snap to the grid ·
+ * Interaction: press ANYWHERE and drag (Motion 4): left third = start, right third = end, middle =
+ * both mirrored; the curve follows the mouse relative to the press (Shift = fine, Ctrl = snap).
+ * A handle can still be grabbed directly: Shift = flat (speed 0) · Ctrl = snap to the grid ·
  * double-click a handle = reset it · arrows nudge the last handle (Shift ×5) · Enter = apply ·
  * drag the strip under the graph to resize it. The numbers can be typed or pasted (cubic-bezier).
  * Pure helpers (speeds, ranges, parsing) are exported for tests.
@@ -50,6 +52,38 @@ function parseCurve(text) {
   if (![x1, y1, x2, y2].every(Number.isFinite)) return null;
   return BZ.normalize({ x1, y1, x2, y2 });
 }
+/* ---------- free drag (Motion 4 style): press anywhere, the zone decides what moves ---------- */
+const ZONE_EDGE = [0.35, 0.65];
+/** Which part of the graph a press at time u (0–1) shapes: the start (out), the end (in) or both. */
+function zoneAt(u) { return u < ZONE_EDGE[0] ? 'out' : u > ZONE_EDGE[1] ? 'in' : 'both'; }
+/**
+ * New curve after a free drag that started on zone `zone` with curve `cv0`.
+ * dx = time moved (0–1 of the graph width, + = right); dy = graph units moved (+ = up):
+ * value mode → progress, speed mode → speed relative to the average.
+ *   out  → ↔ the start's influence, ↕ its shape / speed
+ *   in   → ↔ the end's influence, ↕ its shape (overshoot) / speed
+ *   both → ↔ both influences, mirrored (outward = a stronger ease); ↕ overshoot + anticipation / both speeds
+ */
+function freeDrag(cv0, zone, dx, dy, mode) {
+  const c = Object.assign({}, cv0);
+  if (mode === 'speed') {
+    const s = keySpeeds(cv0);
+    let out = c;
+    if (zone !== 'in') out = fromSpeed(out, 1, cv0.x1 + dx, Math.max(0, s.out + dy));
+    if (zone !== 'out') out = fromSpeed(out, 2, cv0.x2 + (zone === 'both' ? -dx : dx), Math.max(0, s.in + dy));
+    return out;
+  }
+  if (zone === 'out') { c.x1 = cv0.x1 + dx; c.y1 = cv0.y1 + dy; }
+  else if (zone === 'in') { c.x2 = cv0.x2 + dx; c.y2 = cv0.y2 + dy; }
+  else { c.x1 = cv0.x1 + dx; c.x2 = cv0.x2 - dx; c.y1 = cv0.y1 - dy; c.y2 = cv0.y2 + dy; }
+  const n = BZ.normalize(c);
+  return { x1: r3(n.x1), y1: r3(n.y1), x2: r3(n.x2), y2: r3(n.y2) };
+}
+const ZONE_HINT = {
+  value: { out: 'START · sideways: ease out · up/down: shape', in: 'END · sideways: ease in · up/down: overshoot', both: 'BOTH · sideways: ease amount · up/down: snap' },
+  speed: { out: 'START · sideways: influence · up/down: speed', in: 'END · sideways: influence · up/down: speed', both: 'BOTH · sideways: influence · up/down: speed' }
+};
+
 /** Canvas geometry: graph area on top, spacing track at the bottom. */
 function geom(W, H, range) {
   const x0 = 12, x1 = W - 12, y0 = 10, y1 = H - TRACK - 14;
@@ -90,6 +124,15 @@ function draw(canvas, st) {
   const range = st.range || (mode === 'speed' ? speedRange(cv) : valueRange(cv));
   const g = geom(W, H, range);
   const acc = css('--accent', '#ff6f59'), fg = css('--text-1', '#eee'), dim = css('--text-3', '#777'), line = css('--line-strong', 'rgba(255,255,255,.16)'), soft = css('--accent-soft', 'rgba(255,111,89,.15)');
+  // free-drag zone under the mouse (hover or drag)
+  if (st.zone) {
+    const [a, b] = st.zone === 'out' ? [0, ZONE_EDGE[0]] : st.zone === 'in' ? [ZONE_EDGE[1], 1] : ZONE_EDGE;
+    c.fillStyle = soft; c.globalAlpha = st.drag ? 0.9 : 0.55; c.fillRect(g.X(a), g.y0 - 4, g.X(b) - g.X(a), g.y1 - g.y0 + 8); c.globalAlpha = 1;
+    const hint = (ZONE_HINT[mode] || ZONE_HINT.value)[st.zone];
+    c.font = '10px sans-serif'; c.fillStyle = dim; c.textAlign = 'center';
+    const full = c.measureText(hint).width < W - 16;
+    c.fillText(full ? hint : hint.split(' · ')[0], full ? W / 2 : (g.X(a) + g.X(b)) / 2, g.y1 - 4); c.textAlign = 'left';
+  }
   // grid: quarters in time; 0 / 1 (value) or 0 / average (speed)
   c.lineWidth = 1; c.strokeStyle = line; c.setLineDash([2, 4]); c.beginPath();
   for (const x of [0.25, 0.5, 0.75]) { c.moveTo(Math.round(g.X(x)) + 0.5, g.y0); c.lineTo(Math.round(g.X(x)) + 0.5, g.y1); }
@@ -122,8 +165,14 @@ function draw(canvas, st) {
     c.strokeStyle = acc; c.lineWidth = sel ? 3 : 2; c.stroke();
   }
   // live readout next to the handle being dragged / nudged
-  const k = st.drag || st.nudge;
-  if (k) {
+  const k = st.drag === 3 ? 1 : st.drag || st.nudge;
+  if (st.drag === 3) {
+    const s = keySpeeds(cv);
+    const txt = mode === 'speed' && st.avg ? `Out ${(cv.x1 * 100).toFixed(0)}% ${fmtSpeed(s.out * st.avg, st.unit)} · In ${((1 - cv.x2) * 100).toFixed(0)}% ${fmtSpeed(s.in * st.avg, st.unit)}` : `Out ${(cv.x1 * 100).toFixed(0)}% · In ${((1 - cv.x2) * 100).toFixed(0)}%`;
+    c.font = '11px sans-serif'; const w = c.measureText(txt).width + 10, bx = (W - w) / 2, by = g.y0 + 2;
+    c.fillStyle = css('--bg-raised', '#2a2a2a'); c.strokeStyle = acc; c.lineWidth = 1; c.beginPath(); c.rect(bx, by, w, 18); c.fill(); c.stroke();
+    c.fillStyle = fg; c.fillText(txt, bx + 5, by + 13);
+  } else if (k) {
     const s = keySpeeds(cv);
     const inf = k === 1 ? cv.x1 * 100 : (1 - cv.x2) * 100, sp = k === 1 ? s.out : s.in;
     const txt = `${k === 1 ? 'Out' : 'In'} ${inf.toFixed(0)}% · ${st.avg ? fmtSpeed(sp * st.avg, st.unit) : `speed ${sp.toFixed(2)}×`}`;
@@ -152,14 +201,14 @@ function draw(canvas, st) {
  * Drags redraw this canvas only; onCommit runs on release (the shell defers renders during a press).
  */
 function widget(opts) {
-  const S = { cv: Object.assign({}, opts.get()), drag: 0, sel: opts.sel || 1, nudge: 0, range: null };
+  const S = { cv: Object.assign({}, opts.get()), drag: 0, sel: opts.sel || 1, nudge: 0, range: null, zone: null, free: null };
   const units = () => (opts.units ? opts.units() : {});
   const mode = opts.mode === 'speed' ? 'speed' : 'value';
-  const canvas = h('canvas', { class: 'kit-graph', tabindex: '0', role: 'application', 'aria-label': `Ease graph (${mode}) — drag a handle; arrows nudge; Enter applies`, title: 'Drag a handle (Shift: flat · Ctrl: snap) · double-click: reset it\nArrows nudge the last handle (Shift ×5) · Enter: apply' });
+  const canvas = h('canvas', { class: 'kit-graph', tabindex: '0', role: 'application', 'aria-label': `Ease graph (${mode}) — drag anywhere: left = start, right = end, middle = both; arrows nudge; Enter applies`, title: 'Drag anywhere: left = start, right = end, middle = both (Shift: fine · Ctrl: snap)\nOr grab a handle · double-click it: reset · arrows nudge (Shift ×5) · Enter: apply' });
   canvas.setAttribute('data-fresh', '');
   canvas.style.height = `${opts.height || 150}px`;
   let timer = null;
-  const paint = (now = null) => draw(canvas, Object.assign({ cv: S.cv, ghost: opts.ghost(), mode, range: S.range, drag: S.drag, sel: S.sel, nudge: S.nudge, now }, units()));
+  const paint = (now = null) => draw(canvas, Object.assign({ cv: S.cv, ghost: opts.ghost(), mode, range: S.range, drag: S.drag, sel: S.sel, nudge: S.nudge, zone: S.zone, now }, units()));
   const at = (e) => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, W: r.width, H: r.height }; };
   const near = (p) => { const g = geom(p.W, p.H, S.range || (mode === 'speed' ? speedRange(S.cv) : valueRange(S.cv))); const hs = handles(S.cv, mode, g); const d = hs.map((q) => Math.hypot(p.x - q.x, p.y - q.y)); const k = d[0] <= d[1] ? 1 : 2; return { k, d: Math.min(d[0], d[1]), g }; };
   const mirror = (c, k) => (opts.link ? (k === 1 ? Object.assign(c, { x2: r3(1 - c.x1), y2: r3(1 - c.y1) }) : Object.assign(c, { x1: r3(1 - c.x2), y1: r3(1 - c.y2) })) : c);
@@ -173,21 +222,46 @@ function widget(opts) {
     mirror(S.cv, k);
   }
   const commit = () => { clearTimeout(timer); S.nudge = 0; S.range = null; opts.onCommit(Object.assign({}, S.cv)); };
+  // Press on a handle = move that handle (exact). Press anywhere else = free drag (Motion 4): the
+  // zone under the press decides what moves, and the curve follows the mouse relative to the press.
   canvas.addEventListener('pointerdown', (e) => {
     const p = at(e), n = near(p);
-    if (n.d > 30) return;
-    S.drag = n.k; S.sel = n.k; S.range = mode === 'speed' ? speedRange(S.cv) : valueRange(S.cv); // range frozen while dragging
+    S.range = mode === 'speed' ? speedRange(S.cv) : valueRange(S.cv); // range frozen while dragging
+    if (n.d <= 14) { S.drag = n.k; S.sel = n.k; S.free = null; }
+    else {
+      const g = geom(p.W, p.H, S.range);
+      const zone = zoneAt(clamp(g.ix(p.x), 0, 1));
+      S.free = { zone, x: p.x, y: p.y, cv0: Object.assign({}, S.cv), g };
+      S.zone = zone; S.drag = zone === 'out' ? 1 : zone === 'in' ? 2 : 3; S.sel = zone === 'in' ? 2 : 1;
+    }
     try { canvas.setPointerCapture(e.pointerId); } catch (_) { /* older CEP */ }
     e.preventDefault(); paint();
   });
   canvas.addEventListener('pointermove', (e) => {
-    if (!S.drag) { const n = near(at(e)); canvas.style.cursor = n.d <= 30 ? 'grab' : 'default'; return; }
-    const p = at(e), g = geom(p.W, p.H, S.range);
-    moveTo(S.drag, g.ix(p.x), g.iy(p.y), e);
+    const p = at(e);
+    if (!S.drag) {
+      const n = near(p);
+      const zone = n.d <= 14 ? null : zoneAt(clamp(geom(p.W, p.H, mode === 'speed' ? speedRange(S.cv) : valueRange(S.cv)).ix(p.x), 0, 1));
+      canvas.style.cursor = n.d <= 14 ? 'grab' : 'ew-resize';
+      if (zone !== S.zone) { S.zone = zone; paint(); }
+      return;
+    }
+    if (S.free) {
+      const f = S.free, k = e.shiftKey ? 0.25 : 1; // Shift = fine
+      const dx = (p.x - f.x) / (f.g.x1 - f.g.x0) * k;
+      const dy = -(p.y - f.y) / (f.g.y1 - f.g.y0) * (S.range.hi - S.range.lo) * k;
+      S.cv = freeDrag(f.cv0, f.zone, dx, dy, mode);
+      if (e.ctrlKey || e.metaKey) S.cv = { x1: Math.round(S.cv.x1 * 20) / 20 || 0.05, y1: Math.round(S.cv.y1 * 20) / 20, x2: Math.min(0.95, Math.round(S.cv.x2 * 20) / 20), y2: Math.round(S.cv.y2 * 20) / 20 };
+      if (opts.link && f.zone !== 'both') mirror(S.cv, f.zone === 'out' ? 1 : 2);
+    } else {
+      const g = geom(p.W, p.H, S.range);
+      moveTo(S.drag, g.ix(p.x), g.iy(p.y), e);
+    }
     paint();
     if (opts.onLive) opts.onLive(S.cv);
   });
-  const up = () => { if (!S.drag) return; S.drag = 0; commit(); };
+  canvas.addEventListener('pointerleave', () => { if (!S.drag && S.zone) { S.zone = null; paint(); } });
+  const up = () => { if (!S.drag) return; S.drag = 0; S.free = null; commit(); };
   canvas.addEventListener('pointerup', up);
   canvas.addEventListener('pointercancel', up);
   canvas.addEventListener('dblclick', (e) => {
@@ -253,4 +327,4 @@ function drawOverview(canvas, segs, cv, unit) {
   c.textAlign = 'right'; c.fillText(`${segs.length} segments · ${(t1 - t0).toFixed(2)} s`, W - 10, 11); c.textAlign = 'left';
 }
 
-module.exports = { keySpeeds, fromSpeed, valueRange, speedRange, parseCurve, geom, handles, draw, widget, fmtSpeed, overviewSamples, drawOverview };
+module.exports = { keySpeeds, fromSpeed, valueRange, speedRange, parseCurve, geom, handles, draw, widget, fmtSpeed, overviewSamples, drawOverview, zoneAt, freeDrag, ZONE_HINT };

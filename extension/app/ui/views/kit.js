@@ -2,7 +2,7 @@
 /**
  * Motion Kit (v0.10) — the everyday animation tools in one compact screen, after the study in
  * docs/features/MOTION_KIT.md (Motion 4 Home + Toolbox, Flow's graph):
- *   Ease    a small value graph that shows the selected keys' curve by itself; drag a handle
+ *   Ease    a small value graph that shows the selected keys' curve by itself; drag anywhere (Motion 4 zones)
  *           and the curve lands on the keys when you let go (Auto); preset chips apply on click
  *           (Shift = ease in only, Ctrl = ease out only); Easy Ease · Linear · Hold · Copy · Paste.
  *   Anchor  3 × 3 dots — click = anchor there, nothing moves; Alt-click = also place the layer
@@ -134,7 +134,13 @@ function graph(app) {
     get: () => K.curve, ghost: () => K.ghost, mode: pr.graph, height: pr.graphH, link: pr.link, autoApply: pr.auto,
     units: () => (K.segs && K.segs[0] && K.segs[0].avg ? { avg: K.segs[0].avg, unit: K.unit } : {}),
     onCommit: (cv) => { K.curve = cv; if (pr.auto) applyCurve(app, cv, pr.side, 'Ease Curve'); else app.render(); },
-    onLive: (cv) => { const el = document.querySelector('.kit-num'); if (el && document.activeElement !== el) el.value = nums(cv); const ov = document.querySelector('.kit-overview'); if (ov) KG.drawOverview(ov, K.segs, cv, K.unit); },
+    onLive: (cv) => { const el = document.querySelector('.kit-num'); if (el && document.activeElement !== el) el.value = nums(cv); const ov = document.querySelector('.kit-overview'); if (ov) KG.drawOverview(ov, K.segs, cv, K.unit);
+      // sliders follow the drag live
+      [['out', cv.x1 * 100], ['in', (1 - cv.x2) * 100]].forEach(([side, v]) => { const r = document.querySelector(`.kit-range[data-side="${side}"]`); if (r) { r.value = Math.round(v); const t = r.nextSibling; if (t) t.textContent = `${Math.round(v)}%`; } });
+      // Keyframe Velocity fields too (not the one being typed in)
+      const avg = K.segs && K.segs[0] ? K.segs[0].avg : 0, sp = KG.keySpeeds(cv), spd = (rel) => (avg ? String(Math.round(rel * avg * 10) / 10) : String(Math.round(rel * 100) / 100));
+      [['Outgoing speed', spd(sp.out)], ['Outgoing influence', String(Math.round(cv.x1 * 100))], ['Incoming speed', spd(sp.in)], ['Incoming influence', String(Math.round((1 - cv.x2) * 100))]].forEach(([l, v]) => { const f = document.querySelector(`.kit-vel[data-vel="${l}"]`); if (f && document.activeElement !== f) f.value = v; });
+    },
     onHeight: (px) => setPref(app, { graphH: Math.round(px) })
   });
   K.graph = w;
@@ -161,7 +167,7 @@ function graph(app) {
     ov,
     w.canvas,
     h('div', { class: 'kit-gbar' },
-      h('div', { class: 'kit-seg kit-gmode', role: 'group', 'aria-label': 'Graph' }, mode('value', 'Value', 'Value graph: progress over time (like CSS / Flow)'), mode('speed', 'Speed', 'Speed graph: drag a handle sideways for influence, up / down for the speed at that key (like AE\'s speed graph)')),
+      h('div', { class: 'kit-seg kit-gmode', role: 'group', 'aria-label': 'Graph' }, mode('value', 'Value', 'Value graph: progress over time (like CSS / Flow)'), mode('speed', 'Speed', 'Speed graph: drag sideways for influence, up / down for the speed at the key (like AE\'s speed graph)')),
       thru,
       w.grip,
       num));
@@ -172,7 +178,7 @@ function slider(app, label, which) {
   const pr = prefs(app);
   const cv = K.curve;
   const val = which === 'out' ? Math.round(cv.x1 * 100) : Math.round((1 - cv.x2) * 100);
-  const input = h('input', { type: 'range', min: 1, max: 99, step: 1, value: val, 'aria-label': `${label} influence`, class: 'kit-range' });
+  const input = h('input', { type: 'range', min: 1, max: 99, step: 1, value: val, 'aria-label': `${label} influence`, class: 'kit-range', 'data-side': which });
   const out = h('span', { class: 'kit-range-v' }, `${val}%`);
   const set = (v) => {
     const c = K.curve;
@@ -192,7 +198,7 @@ function velocity(app) {
   const avg = K.segs && K.segs[0] ? K.segs[0].avg : 0, unit = K.unit;
   const sp = KG.keySpeeds(K.curve);
   const field = (label, value, suffix, on) => {
-    const input = h('input', { class: 'kit-vel', value, inputmode: 'decimal', spellcheck: 'false', 'aria-label': label, title: `${label} — Enter applies` });
+    const input = h('input', { class: 'kit-vel', value, inputmode: 'decimal', spellcheck: 'false', 'aria-label': label, 'data-vel': label, title: `${label} — Enter applies` });
     input.addEventListener('focus', () => input.select());
     input.addEventListener('keydown', (e) => { if (e.key !== 'Enter') return; const v = Number(String(input.value).replace(',', '.')); if (!Number.isFinite(v)) { app.toast('Type a number', 2400, 'warn'); return; } const cv = on(v); K.curve = cv; if (K.graph) K.graph.set(cv); if (pr.auto) applyCurve(app, cv, pr.side, label); else app.render(); });
     return h('label', { class: 'kit-vfield' }, input, h('span', { class: 'kit-vunit' }, suffix));

@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.16b — Free drag on the ease graph ✅ (v0.11.1)
+- [x] Motion 4-style zone drag (start / both / end) in Value and Speed mode, relative to the press, hover hints, live sliders + velocity fields
+- [ ] Confirm feel inside AE 2025 (TEST_REPORT.md → item 113)
+- Next: optional *Cmd/Ctrl-drag in the middle = asymmetric* (move the two sides apart), a per-user drag sensitivity setting
+
 ## M1.16 — Delay + speed graph ✅ (v0.11.0)
 - [x] C4D MoGraph-style Delay (spring / blend / offset; own animation or followers); speed graph in real units, velocity fields, whole-animation overview, pass-through
 - [ ] Confirm inside AE 2025 (TEST_REPORT.md → v0.11.0 checklist 107–112) — Delay scrub speed with 20+ followers, units vs AE's Graph Editor

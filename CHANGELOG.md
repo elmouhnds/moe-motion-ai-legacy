@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.11.1] — 2026-10-27 — Free drag on the ease graph (Motion 4)
+Requested by the product owner: "I don't want to control it from two sticks — I want to control it freely with the mouse in the middle of the graph, like Motion 4."
+### Changed
+- **Ease graph: press anywhere and drag** (Value and Speed mode), like Motion 4's Home graph. Where you press decides what moves: **left third = the start** (ease out), **right third = the end** (ease in), **middle = both together, mirrored** (a symmetric ease stays symmetric). Sideways = influence (how long it eases); up / down = the curve's shape at that side (Value: up at the end = overshoot; in the middle = steeper / snappier) or the speed at the key (Speed mode). The curve follows the mouse *relative to the press* — no jump on click. **Shift = fine** (¼ speed), **Ctrl = snap**. Hovering shows the zone and what it does; dragging the middle shows *Out % · In %* (with px/s in Speed mode). Commits on release as before (one undo step).
+- Handles can still be grabbed directly (within ~14 px) for exact placement; double-click resets, arrows nudge, Enter applies.
+- The Out / In sliders and the Keyframe Velocity fields now follow a drag live (they used to update on release).
+### Tests
+- `kit graph: free drag (Motion 4)` — zones, relative movement, mirrored middle, overshoot, legal range, speed-mode speeds never negative. 256 tests pass. Checked in the web preview with Playwright (hover, start / middle / end drags, Speed mode): no JS errors. **Not yet tried inside After Effects.**
+
 ## [0.11.0] — 2026-10-27 — Delay (C4D MoGraph) and a deeper speed graph
 Requested by the product owner: improve the speed graph further, and a Delay like Cinema 4D's MoGraph.
 ### Added

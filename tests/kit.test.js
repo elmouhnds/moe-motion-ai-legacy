@@ -272,3 +272,39 @@ test('Speed overview: real units over real time, the edited curve on every segme
   assert.equal(KG.fmtSpeed(1250, 'px'), '1250 px/s');
   assert.equal(KG.fmtSpeed(12.345, '%'), '12.3 %/s');
 });
+
+test('kit graph: free drag (Motion 4) — zone decides what moves, relative to the press', () => {
+  const KG = require('../extension/app/ui/views/kitGraph');
+  assert.equal(KG.zoneAt(0.1), 'out');
+  assert.equal(KG.zoneAt(0.5), 'both');
+  assert.equal(KG.zoneAt(0.9), 'in');
+  const c0 = { x1: 0.33, y1: 0, x2: 0.67, y2: 1 };
+  // start zone: only the out handle moves
+  const o = KG.freeDrag(c0, 'out', 0.2, 0.1, 'value');
+  assert.ok(Math.abs(o.x1 - 0.53) < 1e-9 && Math.abs(o.y1 - 0.1) < 1e-9, JSON.stringify(o));
+  assert.deepEqual([o.x2, o.y2], [0.67, 1]);
+  // end zone: only the in handle moves; dragging up past 1 = overshoot
+  const i = KG.freeDrag(c0, 'in', -0.2, 0.15, 'value');
+  assert.ok(Math.abs(i.x2 - 0.47) < 1e-9 && Math.abs(i.y2 - 1.15) < 1e-9, JSON.stringify(i));
+  assert.deepEqual([i.x1, i.y1], [0.33, 0]);
+  // middle: drag right = both influences grow, mirrored (symmetric ease stays symmetric)
+  const b = KG.freeDrag(c0, 'both', 0.2, 0, 'value');
+  assert.ok(Math.abs(b.x1 - 0.53) < 1e-9 && Math.abs(b.x2 - 0.47) < 1e-9, JSON.stringify(b));
+  assert.ok(Math.abs(b.x1 - (1 - b.x2)) < 1e-9, 'stays symmetric');
+  // middle, drag up = overshoot at the end + anticipation at the start
+  const bu = KG.freeDrag(c0, 'both', 0, 0.1, 'value');
+  assert.ok(bu.y1 < 0 && bu.y2 > 1, JSON.stringify(bu));
+  // influence stays inside the curve's legal range, however far the mouse goes
+  const far = KG.freeDrag(c0, 'both', 5, 0, 'value');
+  assert.ok(far.x1 > 0 && far.x1 <= 1 && far.x2 >= 0 && far.x2 < 1, JSON.stringify(far));
+  // speed mode: drag up in the start zone raises the start speed; the end speed is untouched
+  const s0 = KG.keySpeeds(c0);
+  const sp = KG.freeDrag(c0, 'out', 0, 0.5, 'speed');
+  const s1 = KG.keySpeeds(sp);
+  assert.ok(Math.abs(s1.out - (s0.out + 0.5)) < 0.02, JSON.stringify([s0, s1]));
+  assert.ok(Math.abs(s1.in - s0.in) < 0.02);
+  // speed mode never goes below zero
+  const neg = KG.keySpeeds(KG.freeDrag(c0, 'both', 0, -9, 'speed'));
+  assert.ok(neg.out >= 0 && neg.in >= 0);
+  assert.ok(KG.ZONE_HINT.value.both && KG.ZONE_HINT.speed.out);
+});

@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['easeCurve', 'Shape the curve from anywhere', 'Like Motion 4: press anywhere on the graph and drag — no need to catch a handle. Left = the start (ease out), right = the end (ease in), middle = both together. Sideways = how long it eases, up / down = shape or speed. Shift = fine, Ctrl = snap.'],
   ['kDelay', 'Delay — like C4D MoGraph', 'Spring (overshoot and settle), Blend (smooth lag) or Offset (time delay). One layer: its own move gets follow-through. Several: the others trail the first selected, each later. Live sliders in Effect Controls.'],
   ['easeCurve', 'Speed graph in real units', 'px/s, °/s, %/s like the Graph Editor; type exact speed + influence (Keyframe Velocity); an overview of the whole selected animation; Pass-through keeps the speed flowing through middle keys.'],
   ['kExcite', 'Home = your motion tools', 'Rebuilt after studying Motion 4 and Flow: Home now opens on the ease graph, the anchor grid, align and your pinned tools — every control acts on the selection in one click. All 18 tools and the curve library are in the Toolbox (Ctrl 2).'],
