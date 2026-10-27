@@ -27,6 +27,7 @@ function versions() {
     'package.json': pkg,
     'CSXS/manifest.xml (bundle)': (read('extension/CSXS/manifest.xml').match(/ExtensionBundleVersion="([^"]+)"/) || [])[1],
     'CSXS/manifest.xml (extension)': (read('extension/CSXS/manifest.xml').match(/<Extension Id="[^"]+" Version="([^"]+)"/) || [])[1],
+    'CSXS/manifest.xml (Motion Kit panel)': (read('extension/CSXS/manifest.xml').match(/<Extension Id="[^"]+\.kit" Version="([^"]+)"/) || [])[1],
     'host/index.jsx': (read('extension/host/index.jsx').match(/MOE\.version = '([^']+)'/) || [])[1],
     'core/services.js': (read('extension/core/services.js').match(/const VERSION = '([^']+)'/) || [])[1]
   };

@@ -55,5 +55,22 @@ module.exports = {
   alignLeft: '<path d="M2.5 2v12"/><rect x="4.5" y="4" width="8" height="3" rx=".6"/><rect x="4.5" y="9" width="5" height="3" rx=".6"/>',
   alignCenter: '<path d="M8 2v12"/><rect x="3" y="4" width="10" height="3" rx=".6"/><rect x="4.5" y="9" width="7" height="3" rx=".6"/>',
   distribute: '<path d="M2 2v12M14 2v12" opacity=".5"/><rect x="4" y="5" width="2.5" height="6" rx=".6"/><rect x="9.5" y="5" width="2.5" height="6" rx=".6"/>',
+  /* v0.10 align set (completes v0.9 alignLeft / alignCenter / distribute) */
+  alignRight: '<path d="M13.5 2v12"/><rect x="3.5" y="4" width="8" height="3" rx=".6"/><rect x="6.5" y="9" width="5" height="3" rx=".6"/>',
+  alignTop: '<path d="M2 2.5h12"/><rect x="4" y="4.5" width="3" height="8" rx=".6"/><rect x="9" y="4.5" width="3" height="5" rx=".6"/>',
+  alignMiddle: '<path d="M2 8h12"/><rect x="4" y="3" width="3" height="10" rx=".6"/><rect x="9" y="4.5" width="3" height="7" rx=".6"/>',
+  alignBottom: '<path d="M2 13.5h12"/><rect x="4" y="3.5" width="3" height="8" rx=".6"/><rect x="9" y="6.5" width="3" height="5" rx=".6"/>',
+  distributeV: '<path d="M2 2h12M2 14h12" opacity=".5"/><rect x="5" y="4" width="6" height="2.5" rx=".6"/><rect x="5" y="9.5" width="6" height="2.5" rx=".6"/>',
+  /* v0.10 Motion Kit */
+  kLinear: '<path d="M2 13L14 3"/><circle cx="2" cy="13" r="1.3" fill="currentColor"/><circle cx="14" cy="3" r="1.3" fill="currentColor"/>',
+  kHold: '<path d="M2 12h6V4h6"/><circle cx="2" cy="12" r="1.3" fill="currentColor"/><circle cx="8" cy="4" r="1.3" fill="currentColor"/>',
+  kChain: '<rect x="1.5" y="6" width="5" height="4" rx="2"/><rect x="9.5" y="6" width="5" height="4" rx="2"/><path d="M6.5 8h3"/>',
+  kExcite: '<path d="M1.5 12C5 12 5 3 8 3s2 7 3.5 7 1.5-3 3-3"/><path d="M1.5 3v10" opacity=".35"/>',
+  kStare: '<circle cx="4" cy="8" r="2.5"/><path d="M6.5 8h7M11 5.5L13.5 8 11 10.5"/>',
+  kTrimKeys: '<path d="M2 4v8M14 4v8"/><path d="M5 8h6" stroke-dasharray="1.5 1.5"/><path d="M5 6l-2 2 2 2M11 6l2 2-2 2" opacity=".6"/>',
+  kVignette: '<rect x="1.5" y="3" width="13" height="10" rx="1.5"/><ellipse cx="8" cy="8" rx="4" ry="3" fill="currentColor" opacity=".25"/>',
+  kPaste: '<rect x="4" y="3" width="8" height="11" rx="1"/><path d="M6 3V2h4v1"/><path d="M6 8h4M6 10.5h3" opacity=".6"/>',
+  kRead: '<path d="M2 8s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4z"/><path d="M5 10c1-2 2-3 3-3s2 1 3 3" opacity=".7"/>',
+  kAuto: '<path d="M9 1.5L3.5 9H8l-1 5.5L12.5 7H8z"/>',
   clone: '<circle cx="8" cy="3" r="1.4"/><circle cx="13" cy="8" r="1.4"/><circle cx="8" cy="13" r="1.4"/><circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4" opacity=".5"/>'
 };

@@ -56,6 +56,24 @@ const ACTIONS = [
   A('curveExpo', 'motion.easeCurve', { x1: 0.16, y1: 1, x2: 0.3, y2: 1 }, 'easeCurve', 'Curve: Out Expo', 'Keys'),
   A('curveBack', 'motion.easeCurve', { x1: 0.34, y1: 1.56, x2: 0.64, y2: 1 }, 'easeCurve', 'Curve: Out Back (overshoot)', 'Keys'),
 
+  // v0.10 Motion Kit tools (also pinnable to the bar). Rig tools put their numbers on Slider Controls.
+  A('k_easy', 'motion.smartEase', { influenceIn: 33.33, influenceOut: 33.33 }, 'easeCurve', 'Easy Ease (F9)', 'Kit'),
+  A('k_linear', 'kit.interp', { mode: 'linear', side: 'both' }, 'kLinear', 'Linear keys', 'Kit'),
+  A('k_hold', 'kit.interp', { mode: 'hold', side: 'both' }, 'kHold', 'Hold keys', 'Kit'),
+  A('k_parent', 'kit.parent', {}, 'kChain', 'Parent chain (Alt: reverse)', 'Kit'),
+  A('k_excite', 'expressions.quick', { preset: 'inertia', live: true }, 'kExcite', 'Excite (overshoot)', 'Kit'),
+  A('k_jump', 'expressions.quick', { preset: 'bounceBack', live: true }, 'xBounceLand', 'Jump (bounce)', 'Kit'),
+  A('k_orbit', 'expressions.quick', { preset: 'orbit', live: true }, 'xOrbit', 'Orbit', 'Kit'),
+  A('k_spin', 'expressions.quick', { preset: 'timeRotate', live: true }, 'xSpin', 'Spin', 'Kit'),
+  A('k_swing', 'expressions.quick', { preset: 'swing', live: true }, 'xSwing', 'Swing', 'Kit'),
+  A('k_wiggle', 'expressions.quick', { preset: 'wiggle', live: true }, 'xWiggle', 'Wiggle', 'Kit'),
+  A('k_stare', 'kit.stare', {}, 'kStare', 'Stare (face a layer)', 'Kit'),
+  A('k_stagger', 'motion.stagger', {}, 'stagger', 'Stagger layers', 'Kit'),
+  A('k_trimKeys', 'kit.trimToKeys', {}, 'kTrimKeys', 'Trim to keys', 'Kit'),
+  A('k_repeat', 'transform.clone', { mode: 'radial', count: 8, radius: 300, arc: 360, faceOut: true }, 'clone', 'Repeat (radial clone)', 'Kit'),
+  A('k_vignette', 'kit.vignette', {}, 'kVignette', 'Vignette', 'Kit'),
+  A('k_trash', 'kit.trash', {}, 'trash', 'Trash MOE rigs', 'Kit'),
+
   A('typewriter', 'quick.typewriter', {}, 'typewriter', 'Typewriter', 'Text'),
   A('counter', 'quick.counter', {}, 'counter', 'Number Counter', 'Text'),
 
@@ -64,11 +82,24 @@ const ACTIONS = [
 ];
 
 const DEFAULT_BAR = ['revealProject', 'revealFolder', 'purge', 'flipH', 'flipV', 'parentNull', 'precompose', 'selectSame', 'reverse', 'mirror', 'inRL', 'inLR', 'inTB', 'inBT', 'fadeIn', 'fadeOut', 'scaleUp', 'scaleDown', 'trimDraw', 'trimTravel', 'x_wiggle', 'x_loopCycle', 'x_loopPingPong', 'x_blink', 'x_timeRotate'];
-const GROUPS = ['Project', 'Layer', 'Align', 'Keys', 'Animate', 'Text', 'Expressions'];
+const GROUPS = ['Project', 'Layer', 'Kit', 'Align', 'Keys', 'Animate', 'Text', 'Expressions'];
 
-/** Fill icon/label for expression actions from the expression library. */
+/** Fill icon/label for expression actions from the expression library (kit actions keep their own). */
 function resolve(PRESETS) {
-  return ACTIONS.map((a) => (a.tool === 'expressions.quick' ? Object.assign({}, a, { icon: PRESETS[a.args.preset].icon, label: PRESETS[a.args.preset].label }) : a));
+  return ACTIONS.map((a) => {
+    if (a.tool !== 'expressions.quick') return a;
+    const p = PRESETS[a.args.preset];
+    // The preset's own numbers ride along: the form's generic defaults (e.g. Amount 30) must not
+    // replace them (Inertia's 0.06 became 30 — a wild overshoot — before v0.10).
+    const out = Object.assign({}, a, { args: Object.assign({}, p.nums, a.args) });
+    return a.group === 'Kit' ? out : Object.assign(out, { icon: p.icon, label: p.label });
+  });
 }
 
-module.exports = { ACTIONS, DEFAULT_BAR, GROUPS, resolve };
+/* Motion Kit layout: the tool grid (Motion 4 Toolbox order: layer helpers, rigs, keys, looks, clean-up). */
+const KIT_TOOLS = ['parentNull', 'k_parent', 'k_excite', 'k_jump', 'k_orbit', 'k_spin', 'k_swing', 'k_wiggle', 'k_stare', 'clone', 'reverse', 'k_stagger', 'k_trimKeys', 'separate', 'trimDraw', 'k_repeat', 'k_vignette', 'k_trash'];
+/* Alt-click variants (Motion 4 / Flow convention: the modifier gives the second most common intent). */
+const KIT_ALT = { k_parent: { reverse: true }, clone: { mode: 'mirror' } };
+const KIT_LABEL = { parentNull: 'Null', k_parent: 'Parent', k_excite: 'Excite', k_jump: 'Jump', k_orbit: 'Orbit', k_spin: 'Spin', k_swing: 'Swing', k_wiggle: 'Wiggle', k_stare: 'Stare', clone: 'Clone keys', reverse: 'Reverse', k_stagger: 'Stagger', k_trimKeys: 'Trim keys', separate: 'Separate', trimDraw: 'Trim path', k_repeat: 'Repeat', k_vignette: 'Vignette', k_trash: 'Trash' };
+
+module.exports = { ACTIONS, DEFAULT_BAR, GROUPS, resolve, KIT_TOOLS, KIT_ALT, KIT_LABEL };

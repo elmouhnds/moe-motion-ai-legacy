@@ -2,6 +2,25 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.10.0] — 2026-10-27 — Motion Kit (rebuilt after studying Motion 4 and Flow)
+The product owner judged the v0.9 tools not useful, badly placed and badly designed, and asked us to study the real tools first. The study, the critique of v0.9 and the design are in `docs/features/MOTION_KIT.md`.
+### Added
+- **Home is the motion toolkit** (Motion 4 Home): the panel opens on the ease graph, the anchor grid, align and your **pinned tools**, every control acting on the selection in one click — no tiles, no Apply bar. Wide panels put Ease on the left and Anchor / Align / Pinned tools on the right, all above the fold; docked panels show Ease, Anchor and Align on the first screen. Recent, Favorites and the rest of Home follow below.
+- **Toolbox** (sidebar, Ctrl 2): all 18 tools, **Pin to Home** (choose what Home shows) and the whole curve library.
+  - **Ease graph** (rebuilt after the owner's "better interface and control" note): **Value / Speed** switch — Speed mode works like AE's speed graph (handle sideways = influence, up / down = speed at the key, 1× = average); a **spacing chart** with a moving ball under the graph; the keys' current curve stays as a dashed **ghost** while you edit; a live label next to the handle (*Out 32 % · speed 4.83×*); the graph **zooms out to show overshoot / anticipation**; **type or paste** the numbers (`0.16, 1, 0.3, 1` or `cubic-bezier(…)`); Ctrl = snap to the grid, Shift = flat handle, double-click = reset the handle, arrows nudge the last handle (Shift ×5), Enter applies; drag the strip under the graph to resize it. A full-width value graph It **reads the selected keys' curve by itself** when the key selection changes (like Motion 4's Live Poll / Flow's Read) and names the source; drag a handle and the curve **lands on the keys when you let go** (Auto; one undo step; Shift-drag = flat handle); Out / In influence sliders; mirror handles; In / Both / Out; **Easy Ease · Linear · Hold · Copy · Paste**; 15 preset chips that **apply on click** (Shift = ease in only, Ctrl = ease out only, the matching preset lights up); *All* opens the 32-curve library; *+* saves your own curve.
+  - **Anchor**: 3 × 3 dots — click = anchor there, the layer does not move; **Alt-click = also place the layer at that point of the comp**; *Masks* uses the mask box.
+  - **Align**: left · centre · right · top · middle · bottom · distribute ↔ ↕, to the selection or the comp; the whole animation moves.
+  - **Tools** (Motion 4 Toolbox; 8 pinned on Home by default): Null · Parent chain (Alt: reverse) · Excite · Jump · Orbit · Spin · Swing · Wiggle · Stare · Clone keys (Alt: mirror) · Reverse · Stagger · Trim to keys · Separate · Trim path · Repeat (radial clone) · Vignette · Trash. Right-click = options; dimmed with the reason when the selection cannot run them; all pinnable to the Quick Bar (group *Kit*).
+- **Dockable Motion Kit panel**: *Window › Extensions › MOE Motion Kit* — the kit on its own, slim (280 px), to dock next to the Timeline. Same tools, settings and history as the main panel.
+- New tools: `kit.interp` (Linear / Hold / Bezier per side), `kit.trimToKeys`, `kit.parent` (chain in selection order), `kit.stare` (face a target layer via a Layer Control), `kit.vignette`, `kit.trash` (removes MOE-tagged expressions and MOE effects only). Ease Curve gains *ease in only / ease out only*.
+### Changed
+- **Anchor Point** no longer refuses common cases: keyframed anchors shift on every key; animated scale / rotation are compensated at the playhead (and the report says so); 3D-rotated and auto-oriented layers are measured with AE's own `toWorld` / `fromWorld` through a temporary probe (removed, selection kept); parented layers work.
+- **Align & Distribute** now moves parented layers too (the comp-space move is turned into the parent's space).
+- The v0.9 *Ease Curves* and *Anchor & Align* tile sections are gone — their tools live in the Motion Kit; pie slots point to the kit actions.
+- The two panels can share one data folder safely: the store notices when the other panel rewrote a file, and settings re-read before saving (no more overwriting each other's changes).
+### Fixed
+- Quick Bar expression buttons used the form's generic numbers instead of the preset's own (e.g. *Inertia Bounce* got Amount 30 instead of 0.06 — a wild overshoot). They now carry the preset's numbers.
+
 ## [0.9.0] — 2026-10-27 — Ease Curves, Anchor & Align (Motion-4-style tools)
 Requested by the product owner: anchor point by position, speed-graph curve control, and more Motion-4-like tools.
 ### Added

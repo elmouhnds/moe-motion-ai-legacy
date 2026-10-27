@@ -130,11 +130,15 @@ function render(app) {
       h('div', { class: 'hm-start-t' }, icon(ic, 'sm'), t),
       h('div', { class: 'hm-start-s' }, sub))))];
 
+  // v0.10 (Motion 4 Home): ease graph, anchor, align and the pinned tools come first, every time.
+  // The comp card only shows when something is wrong (not connected / no comp) — the context line has the rest.
+  const connected = s.ctx && s.ctx.comp && !s.hostError;
   return h('div', { class: 'view home' },
-    hero,
-    compCard(app, s.ctx),
-    s.ctx && s.ctx.comp ? suggestions(app, s.ctx) : null,
+    connected ? null : compCard(app, s.ctx),
+    require('./kit').homeTop(app),
+    connected ? suggestions(app, s.ctx) : null,
     returning ? cols : null,
+    hero,
     starts,
     returning ? null : cols,
     h('div', { class: 'hm-tip' }, h('span', { class: 'hm-tip-ic' }, icon('lightbulb')), h('div', {}, h('div', { class: 'hm-kicker' }, 'TIP OF THE DAY'), h('div', {}, tip))),

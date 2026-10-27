@@ -27,12 +27,21 @@ function merge(base, over) {
 
 function createSettings(store) {
   let current = merge(DEFAULTS, store.get('settings', {}));
+  let seen = store.version ? store.version('settings') : 0;
   const listeners = new Set();
+  // The other MOE panel may have saved settings: pick them up before reading or changing them.
+  const fresh = () => {
+    if (!store.version) return;
+    const v = store.version('settings');
+    if (v !== seen) { seen = v; current = merge(DEFAULTS, store.get('settings', {})); }
+  };
   return {
-    get: () => current,
+    get: () => { fresh(); return current; },
     update(patch) {
+      fresh();
       current = merge(current, patch);
       store.set('settings', current);
+      if (store.version) seen = store.version('settings');
       listeners.forEach((fn) => fn(current));
       return current;
     },

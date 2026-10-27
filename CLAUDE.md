@@ -31,14 +31,16 @@ Permanent rules for anyone (human or AI) working in this repository.
 - Effect parameters: resolve by English name first; match-name/order fallbacks only when the effect has the exact expected parameter count (`expectParams`). A host op that cannot resolve everything must remove what it added and fail with the parameter list.
 - Arabic text: never animate per character by default (letters disconnect) — use Words/Lines; set RTL + universal composer when applying Arabic fonts.
 - Never modify shared sources (e.g. `SolidSource.color`) as a side effect; use per-layer effects.
-- Text animators, layers and effects MOE creates are named (`MOE In`, `MOE Out`, `MOE Brand Fill`, `MOE Prox …`, `MOE Effector N`, `MOE Grid N`, `MOE Adapt • …`, `MOE Zoom`, `MOE Spotlight N`, `MOE Cursor N`, `MOE Glass N [Tint|Rim|Shadow]`, `MOE Trim`, `MOE Counter`, `MOE Typewriter`, `MOE Icon • …`, `MOE Shape • …`, `MOE Background` with `MOE Gradient` / `MOE Mesh` / `MOE Grain`, `MOE Palette Fill`, `MOE Clone n · <layer>`) and expressions are tagged (`// MOE Proximity`, `// MOE Grid`, `// MOE Glass`, `// MOE Expr`, `// MOE Zoom Follow`, `// MOE Counter`, `// MOE Background`) so they can be found, replaced and removed safely.
+- Text animators, layers and effects MOE creates are named (`MOE In`, `MOE Out`, `MOE Brand Fill`, `MOE Prox …`, `MOE Effector N`, `MOE Grid N`, `MOE Adapt • …`, `MOE Zoom`, `MOE Spotlight N`, `MOE Cursor N`, `MOE Glass N [Tint|Rim|Shadow]`, `MOE Trim`, `MOE Counter`, `MOE Typewriter`, `MOE Icon • …`, `MOE Shape • …`, `MOE Background` with `MOE Gradient` / `MOE Mesh` / `MOE Grain`, `MOE Palette Fill`, `MOE Clone n · <layer>`, `MOE Vignette`, `MOE Stare Target`) and expressions are tagged (`// MOE Proximity`, `// MOE Grid`, `// MOE Glass`, `// MOE Expr`, `// MOE Zoom Follow`, `// MOE Counter`, `// MOE Background`, `// MOE Stare`) — Trash (`rigs.remove`) relies on these tags and names so they can be found, replaced and removed safely.
 - Layout maths lives in pure modules (`features/grid/layouts.js`, `features/adapt/planner.js`); generated expressions must mirror it, and tests compare mock-evaluated expressions with the pure maths.
 - Never claim AI generates images or video: Claude writes prompts; generation is a separate provider.
 - Bundled third-party content keeps its licence next to it (`assets/icons/LICENSE-lucide.txt`, `assets/fonts/LICENSE-sora-OFL.txt`); regenerate icon data with `node tools/build-icons.js` from the pinned `lucide-static` dev dependency — never hand-edit `lucide.json`.
 - UI colours come from tokens; every theme × accent must pass `tools/check-contrast.js`. Artwork (`app/ui/art.js`) draws with token colours so it follows themes (fixed colours only for illustrative swatches).
 - Imported preset packs are untrusted: re-validate every preset against its tool's schema (`core/presetPacks.js`).
 - Ease maths lives in `features/curves/bezier.js` (pure, tested): a curve becomes AE temporal ease per segment (influence from the handle's time, speed from slope × average speed). Position takes one non-negative speed — never pretend an overshoot was applied there; report it.
-- Transform changes that must not move pixels (anchor) compensate position with the layer's own scale and rotation, and refuse what they cannot compensate (keyed scale / rotation, 3D rotation) instead of guessing.
+- Transform changes that must not move pixels (anchor) compensate position with the layer's own scale and rotation (2D, maths) or measure it with AE's own `toWorld` / `fromWorld` through a temporary probe (3D-rotated / auto-oriented); every Position key shifts. When scale / rotation animate, the result is exact at the playhead and the report says so — never silently.
+- Micro-tools (Motion Kit) act in one click on the selection — no tiles, no Apply step; options on right-click; modifier variants (Shift / Ctrl / Alt) instead of more buttons. Study the reference tools before designing a new one (docs/features/MOTION_KIT.md).
+- Two panels (main + Motion Kit) share one data folder: the store re-reads a document when the other panel rewrote it, and settings re-read before an update. Never cache a document forever.
 - Pixel measurement uses the documented probe pattern (temporary null + expression `sampleImage` + `valueAtTime`); the probe is removed in `finally` and the layer count is verified.
 
 ## AI / cost rules
@@ -59,6 +61,7 @@ Permanent rules for anyone (human or AI) working in this repository.
 - Run `node tools/audit-ui.js` (and `tools/audit-summary.js`) after UI changes: 0 JS errors, 0 unreachable or unnamed controls.
 - One-click entry points (pie, Home suggestions, search) go through `app/ui/actions.js` and its `ready()` check; keep the smart pie sets at 8 fixed positions (direction is the memory).
 - New sections belong to a workspace in `studio/sections.js` `WORKSPACES`.
+- Quick Bar expression actions carry their preset's own numbers (`bar.resolve`) — never let a form default replace them.
 
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).

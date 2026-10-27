@@ -14,6 +14,7 @@ const PropertyValueType = {
   MASK_INDEX: 6422, SHAPE: 6423, TEXT_DOCUMENT: 6424
 };
 const KeyframeInterpolationType = { LINEAR: 6612, BEZIER: 6613, HOLD: 6614 };
+const AutoOrientType = { NO_AUTO_ORIENT: 4212, ALONG_PATH: 4213, CAMERA_OR_POINT_OF_INTEREST: 4214, CHARACTERS_TOWARD_CAMERA: 4215 };
 const PropertyType = { PROPERTY: 6812, INDEXED_GROUP: 6813, NAMED_GROUP: 6814 };
 const ParagraphDirection = { DIRECTION_LEFT_TO_RIGHT: 1, DIRECTION_RIGHT_TO_LEFT: 2 };
 const ComposerEngine = { UNIVERSAL_TYPE_ENGINE: 1, LATIN_CJK_ENGINE: 2 };
@@ -117,6 +118,7 @@ const EFFECTS = {
   'ADBE Brightness & Contrast 2': [{ name: 'Brightness', valueType: 'OneD', value: 0 }, { name: 'Contrast', valueType: 'OneD', value: 0 }, { name: 'Use Legacy', valueType: 'OneD', value: 0 }],
   'ADBE Bevel Alpha': [{ name: 'Edge Thickness', valueType: 'OneD', value: 2 }, { name: 'Light Angle', valueType: 'OneD', value: -60 }, { name: 'Light Color', valueType: 'COLOR', value: [1, 1, 1, 1] }, { name: 'Light Intensity', valueType: 'OneD', value: 0.4 }],
   'ADBE Point Control': [{ name: 'Point', valueType: 'TwoD_SPATIAL', value: [0, 0] }],
+  'ADBE Point3D Control': [{ name: '3D Point', valueType: 'ThreeD_SPATIAL', value: [0, 0, 0] }],
   'ADBE Angle Control': [{ name: 'Angle', valueType: 'OneD', value: 0 }],
   'ADBE Layer Control': [{ name: 'Layer', valueType: 'LAYER_INDEX', value: 0 }],
   'ADBE Dropdown Control': [{ name: 'Menu', valueType: 'OneD', value: 1 }],
@@ -622,6 +624,8 @@ class MockLayer {
   get parent() { return this._parent; }
   set parent(p) { if (p === this) throw new Error('After Effects error: a layer cannot be its own parent'); this._parent = p || null; this._comp._parentSetCalls = (this._comp._parentSetCalls || 0) + 1; }
   setParentWithJump(p) { if (p === this) throw new Error('After Effects error: a layer cannot be its own parent'); this._parent = p || null; }
+  get autoOrient() { return this._autoOrient || AutoOrientType.NO_AUTO_ORIENT; }
+  set autoOrient(v) { this._autoOrient = v; }
   get threeDLayer() { return this._threeD; }
   set threeDLayer(v) {
     v = !!v;
@@ -836,7 +840,7 @@ function installAE(target, fixture, { readFile, evalCode }) {
     TextLayer: MockTextLayer, ShapeLayer: MockShapeLayer, AVLayer: MockLayer, FileSource,
     ParagraphDirection, ComposerEngine, CTScript, PREFType: { PREF_Type_MACHINE_INDEPENDENT: 0 },
     CameraLayer: MockCameraLayer, LightLayer: function LightLayer() {},
-    SolidSource, Shape, MaskMode, BlendingMode, TrackMatteType,
+    SolidSource, Shape, MaskMode, BlendingMode, TrackMatteType, AutoOrientType,
     app: {
       version: '25.0.0x00 (mock)', buildNumber: 0, buildName: 'mock', isoLanguage: 'en_US',
       project,

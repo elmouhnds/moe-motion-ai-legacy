@@ -3,10 +3,11 @@
   MOE Motion AI — CEP 12 manifest for After Effects 2025 (AEFT 25.x).
   Version range [25.0,99.9] = AE 2025 and later builds that still ship CEP.
 -->
-<ExtensionManifest Version="12.0" ExtensionBundleId="tv.madtomato.moe.motionai" ExtensionBundleVersion="0.9.0" ExtensionBundleName="MOE Motion AI"
+<ExtensionManifest Version="12.0" ExtensionBundleId="tv.madtomato.moe.motionai" ExtensionBundleVersion="0.10.0" ExtensionBundleName="MOE Motion AI"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ExtensionList>
-    <Extension Id="tv.madtomato.moe.motionai.panel" Version="0.9.0" />
+    <Extension Id="tv.madtomato.moe.motionai.panel" Version="0.10.0" />
+    <Extension Id="tv.madtomato.moe.motionai.kit" Version="0.10.0" />
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>
@@ -45,6 +46,36 @@
             <Size><Height>620</Height><Width>360</Width></Size>
             <MinSize><Height>240</Height><Width>240</Width></MinSize>
             <MaxSize><Height>2000</Height><Width>1200</Width></MaxSize>
+          </Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+    <!-- v0.10: the Motion Kit on its own, slim, to dock next to the Timeline (Motion 4 style). Same code, kit mode. -->
+    <Extension Id="tv.madtomato.moe.motionai.kit">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./kit.html</MainPath>
+          <CEFCommandLine>
+            <Parameter>--enable-nodejs</Parameter>
+            <Parameter>--mixed-context</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>true</AutoVisible>
+        </Lifecycle>
+        <UI>
+          <Type>Panel</Type>
+          <Menu>MOE Motion Kit</Menu>
+          <Icons>
+            <Icon Type="Normal">./icons/icon-normal.png</Icon>
+            <Icon Type="RollOver">./icons/icon-rollover.png</Icon>
+            <Icon Type="DarkNormal">./icons/icon-dark.png</Icon>
+            <Icon Type="DarkRollOver">./icons/icon-dark-rollover.png</Icon>
+          </Icons>
+          <Geometry>
+            <Size><Height>640</Height><Width>280</Width></Size>
+            <MinSize><Height>240</Height><Width>220</Width></MinSize>
+            <MaxSize><Height>2000</Height><Width>900</Width></MaxSize>
           </Geometry>
         </UI>
       </DispatchInfo>

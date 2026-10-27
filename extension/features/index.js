@@ -23,6 +23,7 @@ const green = require('./generate/green');
 const design = require('./design/tools');
 const curves = require('./curves/tools');
 const transform = require('./transform/tools');
+const kit = require('./kit/tools');
 
 const TOOLS = [
   smartEase, stagger, proximity.apply, proximity.centerAnchor, proximity.remove,
@@ -39,7 +40,8 @@ const TOOLS = [
   glass.apply, glass.look,
   green.greenPrompt, green.importKey,
   design.insertShape, design.background, design.colorize,
-  curves.easeCurve, transform.anchor, transform.align, transform.clone
+  curves.easeCurve, transform.anchor, transform.align, transform.clone,
+  kit.interp, kit.trimToKeys, kit.parent, kit.stare, kit.vignette, kit.trash
 ];
 
 function registerAll(registry) {

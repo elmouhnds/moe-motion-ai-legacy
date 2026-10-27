@@ -29,6 +29,7 @@ const views = {
   quick: { render: (app) => quickbar.view(app) },
   deliver: require('./views/deliver'),
   home: require('./views/home'),
+  kit: { render: (app) => require('./views/kit').renderToolbox(app) },
   shapes: require('./views/shapes')
 };
 // Studio library sections (tiles + inspector).
@@ -36,7 +37,7 @@ for (const sec of studio.SECTIONS.filter((x) => x.kind === 'library')) views[sec
 
 // Studio sidebar: creative sections, then helpers; utilities at the bottom. Diagnostics opens from Settings / search.
 const MAIN = studio.NAV.map((id) => { const x = studio.byId(id); return [x.id, x.label, x.icon]; });
-/** Ctrl 1–6: Home + the workspaces. */
+/** Ctrl 1–7: Home + the workspaces (Motion Kit first). */
 const JUMPS = ['home', ...studio.WORKSPACES.map((w) => w.id)];
 const SECONDARY = studio.UTILITY;
 const resolveView = (v) => studio.ALIAS[v] || v;
@@ -89,9 +90,10 @@ function createApp(root, services, env = {}) {
       const sec = studio.byId(id);
       return h('button', { role: 'tab', 'aria-selected': String(s.view === id), 'data-key': `wst-${id}`, onclick: () => app.go(id) }, icon(sec.icon, 'sm'), h('span', {}, sec.label));
     })) : null;
+    if (env.mode === 'kit') return renderKitPanel(s);
     const client = clientCard(s);
     const seen = services.settings.get().ui.seenVersion === services.version;
-    const appEl = h('div', { class: `app ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.navWide ? 'nav-wide' : ''} ${s.tilesCompact ? 'tiles-compact' : ''} ${(studio.byId(s.view) || {}).kind === 'library' || s.view === 'text' ? 'has-actbar' : ''}` },
+    const appEl = h('div', { class: `app ${s.kitBand || ''} ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.navWide ? 'nav-wide' : ''} ${s.tilesCompact ? 'tiles-compact' : ''} ${(studio.byId(s.view) || {}).kind === 'library' || s.view === 'text' ? 'has-actbar' : ''}` },
       h('nav', { class: 'sidebar', role: 'tablist', 'aria-label': 'Sections' },
         h('button', { class: 'sb-brand', title: `MOE Motion AI ${services.version} — About`, onclick: () => app.state.set({ modal: 'about' }) }, h('span', { class: 'brand-mark', html: art.logo(22) }), h('span', { class: 'nav-label' }, h('span', { class: 'sb-name' }, 'MOE Studio'), h('span', { class: 'sb-ver' }, services.version))),
         h('div', { class: 'sb-scroll' },
@@ -273,6 +275,29 @@ function createApp(root, services, env = {}) {
     });
     setTimeout(() => { const el = root.querySelector(`[data-tool="${tool.id}"]`); if (el) el.scrollIntoView({ block: 'nearest' }); }, 0);
   };
+
+  /* Second dockable panel (Window › Extensions › MOE Motion Kit): only the kit, like Motion 4 docked
+     next to the timeline. Same tools, same history, same settings file as the main panel. */
+  function renderKitPanel(s) {
+    const appEl = h('div', { class: `app kit-panel ${s.kitBand || ''}` },
+      h('div', { class: 'main' },
+        h('div', { class: 'hdr' },
+          h('span', { class: 'brand-mark', html: art.logo(18) }),
+          h('div', { class: 'title' }, 'Motion Kit'),
+          h('span', { class: 'spacer' }),
+          h('button', { class: 'icon-btn', title: 'Search tools (Ctrl+K)', 'aria-label': 'Search tools', onclick: () => palette.open(app) }, icon('search', 'sm'))),
+        contextStrip(s),
+        h('div', { class: 'content' }, require('./views/kit').render(app))),
+      quickbar.popover(app),
+      s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, s.toastKind ? h('span', { class: 'toast-ic' }, icon(TOAST_ICON[s.toastKind] || 'info', 'sm')) : null, h('span', {}, s.toast)) : null);
+    const content = root.querySelector('.content');
+    const top = content ? content.scrollTop : 0;
+    if (root.firstChild && root.firstChild.classList && root.firstChild.classList.contains('app')) morph(root.firstChild, appEl);
+    else { clear(root); root.appendChild(appEl); }
+    const c2 = root.querySelector('.content');
+    if (c2) c2.scrollTop = top;
+    if (!app._densityPending) { app._densityPending = true; setTimeout(() => { app._densityPending = false; app.applyDensity(); }, 0); }
+  }
 
   /* ---------- host / context ---------- */
   let ctxInFlight = null;
@@ -574,8 +599,10 @@ function createApp(root, services, env = {}) {
     // Tiles (Settings › Appearance): compact = 3–4 columns of smaller tiles; auto = compact under 520 px.
     const tiles = services.settings.get().ui.tiles || 'auto';
     const tilesCompact = tiles === 'compact' || (tiles === 'auto' && w < 520);
+    // Motion Kit layout follows the panel's own width (not the window's — they differ in the web preview).
+    const kitBand = w >= 760 ? 'kit-wide' : w < 250 ? 'kit-tiny' : w < 330 ? 'kit-narrow kit-slim' : w < 400 ? 'kit-narrow' : '';
     const st = app.state.get();
-    if (compact !== st.compact || wide !== st.wide || navWide !== st.navWide || studioWide !== st.studioWide || tilesCompact !== st.tilesCompact) app.state.set({ compact, wide, navWide, studioWide, tilesCompact });
+    if (compact !== st.compact || wide !== st.wide || navWide !== st.navWide || studioWide !== st.studioWide || tilesCompact !== st.tilesCompact || kitBand !== st.kitBand) app.state.set({ compact, wide, navWide, studioWide, tilesCompact, kitBand });
   };
 
   /* ---------- global keys & context polling ---------- */

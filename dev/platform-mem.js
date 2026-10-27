@@ -5,6 +5,8 @@
  */
 function createMemPlatform({ http, apiKey = null, system = null } = {}) {
   const files = new Map();
+  const stamps = new Map();
+  let tick = 0;
   const dataDir = '/mem/MOE Motion AI';
   let key = apiKey;
   return {
@@ -15,8 +17,9 @@ function createMemPlatform({ http, apiKey = null, system = null } = {}) {
       join: (...p) => p.join('/'),
       exists: (p) => files.has(p),
       readText: (p) => { if (!files.has(p)) throw new Error('ENOENT ' + p); return files.get(p); },
-      writeText: (p, s) => files.set(p, s),
-      writeTextAtomic: (p, s) => files.set(p, s),
+      writeText: (p, s) => { files.set(p, s); stamps.set(p, ++tick); },
+      writeTextAtomic: (p, s) => { files.set(p, s); stamps.set(p, ++tick); },
+      mtime: (p) => stamps.get(p) || 0,
       appendText: (p, s) => files.set(p, (files.get(p) || '') + s),
       readBytes: (p) => { if (!files.has(p)) throw new Error('ENOENT ' + p); return files.get(p); },
       writeBytes: (p, b) => files.set(p, b),

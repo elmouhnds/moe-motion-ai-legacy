@@ -313,6 +313,58 @@ function drawCurve(canvas, cv, now, drag) {
   c.fillStyle = dim; c.font = '9px sans-serif'; c.fillText('SPEED', g.X(0) + 4, g.speedTop + 10);
   if (t !== null && t <= 1) { c.fillStyle = acc; c.fillRect(g.X(t) - 0.5, g.speedTop, 1, g.speedH); }
 }
+/* ---------- v0.10 Motion Kit graph: full width, short (Motion 4 / Flow compact graph) ---------- */
+const KV = { lo: -0.45, hi: 1.45 };
+function kitGeom(W, H) {
+  const pad = 10, strip = 26, x0 = pad, x1 = W - pad, y0 = 8, y1 = H - strip - 12;
+  const X = (x) => x0 + x * (x1 - x0), Y = (y) => y0 + (KV.hi - y) / (KV.hi - KV.lo) * (y1 - y0);
+  const ix = (px) => (px - x0) / (x1 - x0), iy = (py) => KV.hi - (py - y0) / (y1 - y0) * (KV.hi - KV.lo);
+  return { X, Y, ix, iy, x0, x1, y0, y1, sTop: H - strip - 4, sH: strip };
+}
+function drawKitCurve(canvas, cv, now, drag) {
+  const { c, W, H } = prep(canvas);
+  const g = kitGeom(W, H);
+  const acc = css('--accent', '#ff6f59'), fg = css('--text-1', '#eee'), dim = css('--text-3', '#777'), line = css('--line-strong', 'rgba(255,255,255,.16)');
+  // 0 % and 100 % guides + quarter grid
+  c.strokeStyle = line; c.lineWidth = 1; c.setLineDash([2, 4]); c.beginPath();
+  for (const y of [0, 1]) { c.moveTo(g.x0, Math.round(g.Y(y)) + 0.5); c.lineTo(g.x1, Math.round(g.Y(y)) + 0.5); }
+  for (const x of [0.25, 0.5, 0.75]) { c.moveTo(Math.round(g.X(x)) + 0.5, g.Y(1)); c.lineTo(Math.round(g.X(x)) + 0.5, g.Y(0)); }
+  c.stroke(); c.setLineDash([]);
+  // handles
+  c.strokeStyle = dim; c.lineWidth = 1.2; c.beginPath();
+  c.moveTo(g.X(0), g.Y(0)); c.lineTo(g.X(cv.x1), g.Y(cv.y1)); c.moveTo(g.X(1), g.Y(1)); c.lineTo(g.X(cv.x2), g.Y(cv.y2)); c.stroke();
+  // curve
+  c.strokeStyle = acc; c.lineWidth = 2.5; c.lineJoin = 'round'; c.beginPath();
+  for (let i = 0; i <= 80; i++) { const p = BZ.point(cv, i / 80); const y = Math.max(KV.lo, Math.min(KV.hi, p.y)); if (i) c.lineTo(g.X(p.x), g.Y(y)); else c.moveTo(g.X(p.x), g.Y(y)); }
+  c.stroke();
+  c.fillStyle = acc; for (const [x, y] of [[0, 0], [1, 1]]) { c.beginPath(); c.arc(g.X(x), g.Y(y), 3, 0, Math.PI * 2); c.fill(); }
+  for (const [x, y, k] of [[cv.x1, cv.y1, 1], [cv.x2, cv.y2, 2]]) {
+    const yy = Math.max(KV.lo, Math.min(KV.hi, y));
+    c.fillStyle = drag === k ? acc : fg; c.beginPath(); c.arc(g.X(x), g.Y(yy), drag === k ? 7 : 6, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = acc; c.lineWidth = 2; c.stroke();
+  }
+  // playback dot
+  const t = now === null ? null : ((now / 1000) % 2) / 1.5;
+  if (t !== null && t <= 1) { const v = BZ.valueAt(cv, t); c.fillStyle = acc; c.beginPath(); c.arc(g.X(t), g.Y(Math.max(KV.lo, Math.min(KV.hi, v))), 4, 0, Math.PI * 2); c.fill(); }
+  // speed strip
+  const n = 60, sp = [];
+  for (let i = 0; i <= n; i++) sp.push(BZ.speedAt(cv, i / n));
+  const lo = Math.min(0, ...sp), hi = Math.max(1.2, ...sp);
+  const sy = (v) => g.sTop + g.sH - (v - lo) / (hi - lo) * g.sH;
+  c.strokeStyle = line; c.beginPath(); c.moveTo(g.x0, Math.round(sy(0)) + 0.5); c.lineTo(g.x1, Math.round(sy(0)) + 0.5); c.stroke();
+  c.fillStyle = css('--accent-soft', 'rgba(255,111,89,.15)'); c.strokeStyle = fg; c.lineWidth = 1.4; c.beginPath();
+  sp.forEach((v, i) => { const x = g.X(i / n), y = sy(v); if (i) c.lineTo(x, y); else c.moveTo(x, y); });
+  c.stroke(); c.lineTo(g.X(1), sy(0)); c.lineTo(g.X(0), sy(0)); c.closePath(); c.fill();
+  c.fillStyle = dim; c.font = '9px sans-serif'; c.textAlign = 'right'; c.fillText('SPEED', g.x1 - 2, g.sTop + g.sH - 3); c.textAlign = 'left';
+  // the numbers (cubic-bezier, same as CSS / Flow) in the corner of the graph
+  c.font = '10px ui-monospace, Consolas, monospace'; c.textAlign = 'right';
+  c.fillText([cv.x1, cv.y1, cv.x2, cv.y2].map((v) => (Math.round(v * 100) / 100).toString()).join(', '), g.x1, g.y0 + 9);
+  c.textAlign = 'left';
+  if (t !== null && t <= 1) { c.fillStyle = acc; c.fillRect(Math.round(g.X(t)), g.sTop, 1, g.sH); }
+  // handle positions for tests / audits
+  canvas.setAttribute('data-h', [cv.x1, cv.y1, cv.x2, cv.y2].map((v, i) => Math.round(i % 2 ? g.Y(Math.max(KV.lo, Math.min(KV.hi, v))) : g.X(v))).join(','));
+}
+
 const round3 = (v) => Math.round(v * 1000) / 1000;
 function curveEditor(args, setArgs, { h, app, ctx }) {
   const cv = BZ.normalize({ x1: args.x1 === undefined ? 0.333 : args.x1, y1: args.y1 || 0, x2: args.x2 === undefined ? 0.667 : args.x2, y2: args.y2 === undefined ? 1 : args.y2 });
@@ -393,4 +445,4 @@ const body = {
 };
 const result = { 'generate.greenPrompt': greenResult };
 
-module.exports = { body, result, animated, prep, drawPlanFrame, ROLE_COLORS };
+module.exports = { body, result, animated, prep, drawPlanFrame, ROLE_COLORS, drawCurve, curveGeom, drawKitCurve, kitGeom };

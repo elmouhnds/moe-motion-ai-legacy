@@ -88,7 +88,7 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
   <header class="pv-top">
     <div class="pv-name"><b>MOE Motion AI</b><span>v${VERSION} · live preview</span></div>
     <div class="pv-ctl"><label for="pv-w">Panel</label><div class="pv-seg" id="pv-w" role="group" aria-label="Panel width">
-      <button data-w="340">Narrow</button><button data-w="420">Docked</button><button data-w="640">Wide</button><button data-w="920">Full</button></div></div>
+      <button data-w="280" data-mode="kit" title="The Motion Kit as its own slim panel (Window › Extensions › MOE Motion Kit)">Kit panel</button><button data-w="340">Narrow</button><button data-w="420">Docked</button><button data-w="640">Wide</button><button data-w="920">Full</button></div></div>
     <div class="pv-ctl"><label for="pv-scene">Comp</label><div class="pv-seg" id="pv-scene" role="group" aria-label="Sample composition">
       <button data-scene="title">Title</button><button data-scene="layout">9 cards</button><button data-scene="studio">Text</button></div></div>
     <div class="pv-ctl"><label for="pv-theme">Theme</label><div class="pv-seg" id="pv-theme" role="group" aria-label="Panel theme">
@@ -100,10 +100,12 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
     <aside class="pv-guide" aria-label="What to try">
       <h2>Try this</h2>
       <ol>
-        <li><b>New in 0.9 — Ease Curves:</b> Animate › <i>Ease Curves</i> (with the <i>Title</i> comp, keys are selected). Drag the two handles on the graph — the speed graph under it follows — then <b>Apply Curve</b>. Try <i>Out Back</i> for an overshoot.</li>
-        <li><b>New in 0.9 — Anchor &amp; Align:</b> Layout › <i>Anchor &amp; Align</i>. Pick a point on the 3 × 3 grid and <b>Set Anchor</b> (the layers do not jump), align or distribute the selection, or select one layer and <i>Clone</i> it into a ring.</li>
+        <li><b>New in 0.10 — Home is your motion toolkit</b>: on the <i>Title</i> comp keys are selected on the <i>Title</i> comp — the graph shows their curve by itself. Drag a handle and let go: the curve lands on the keys. Click a preset chip (Shift = ease in only, Ctrl = ease out only).</li>
+        <li><b>Anchor:</b> click a dot — the anchor moves, the layer does not. <kbd>Alt</kbd>-click also puts the layer at that point of the comp. Try it on <i>9 cards</i>.</li>
+        <li><b>Pinned tools</b> (Home) and the <b>Toolbox</b> (Ctrl 2): one click runs a tool, right-click shows its options; <i>Pin to Home</i> chooses what Home shows. Try <i>Excite</i> on the selected keys, or <i>Stare</i> with two layers selected.</li>
+        <li><b>Kit panel</b> (top bar): the kit on its own, slim, as you would dock it next to the Timeline.</li>
         <li><b>Pie menu:</b> click inside the panel, then <b>hold <kbd>Q</kbd></b> (or hold the right mouse button), point toward an action and release. Tap <kbd>Q</kbd> to keep it open and press 1–8. The slices change with the selection — try the <i>Text</i> and <i>9 cards</i> comps.</li>
-        <li>The sidebar is <b>Home + five workspaces</b> (Animate · Design · Layout · Finish · Tools); each shows its sections as tabs. <kbd>Ctrl</kbd> <kbd>1</kbd>–<kbd>6</kbd> jumps between them.</li>
+        <li>The sidebar is <b>Home</b> (your motion tools), the <b>Toolbox</b> and five workspaces (Animate · Design · Layout · Finish · Tools). <kbd>Ctrl</kbd> <kbd>1</kbd>–<kbd>7</kbd> jumps between them.</li>
         <li><b>Home › For this selection</b>: the same eight actions as the pie, one click each.</li>
         <li>In a library, hover a tile and press <b>▶</b>, or use <b>Apply</b> in the bar at the bottom. <kbd>F4</kbd> repeats the last change.</li>
         <li><kbd>Ctrl</kbd> <kbd>K</kbd>, type <i>pop</i>, <kbd>Enter</kbd>: the preset is applied. Dimmed tiles tell you why they cannot run.</li>
@@ -148,14 +150,14 @@ ${texts}
 
   /* ---------- options (kept for this tab only) ---------- */
   var KEY = 'moe-preview-options';
-  var opts = { w: 420, scene: 'title', theme: 'dark' };
+  var opts = { w: 420, scene: 'title', theme: 'dark', mode: 'main' };
   try { var saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); if (saved) for (var k in saved) opts[k] = saved[k]; } catch (e) { /* storage blocked: defaults */ }
   function save() { try { sessionStorage.setItem(KEY, JSON.stringify(opts)); } catch (e) { /* ignore */ } }
   if (window.innerWidth < 560) opts.w = Math.min(opts.w, 420);
   var frame = document.getElementById('pv-frame');
   function mark() {
     frame.style.setProperty('--w', opts.w + 'px');
-    [].forEach.call(document.querySelectorAll('#pv-w button'), function (b) { b.setAttribute('aria-pressed', String(Number(b.dataset.w) === opts.w)); });
+    [].forEach.call(document.querySelectorAll('#pv-w button'), function (b) { b.setAttribute('aria-pressed', String((b.dataset.mode || 'main') === (opts.mode || 'main') && Number(b.dataset.w) === opts.w)); });
     [].forEach.call(document.querySelectorAll('#pv-scene button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.scene === opts.scene)); });
     [].forEach.call(document.querySelectorAll('#pv-theme button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.themeV === opts.theme)); });
   }
@@ -198,7 +200,7 @@ ${texts}
     };
     var mem = require('/dev/platform-mem.js');
     var platform = mem.createMemPlatform({ apiKey: 'sk-ant-preview-demo', http: require('/dev/demo-ai.js') });
-    require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform, ui: { theme: opts.theme, accent: 'tomato', splash: false, banners: true, motion: 'calm', motionV: 2, seenVersion: opts.seen ? '${VERSION}' : '' } }).then(function (app) {
+    require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform, mode: opts.mode === 'kit' ? 'kit' : undefined, ui: { theme: opts.theme, accent: 'tomato', splash: false, banners: true, motion: 'calm', motionV: 2, seenVersion: opts.seen ? '${VERSION}' : '' } }).then(function (app) {
       window.__app = app;
       opts.seen = true; save();
       var start = (location.hash || '').slice(1);
@@ -211,7 +213,12 @@ ${texts}
   }
 
   /* ---------- toolbar ---------- */
-  document.getElementById('pv-w').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; opts.w = Number(b.dataset.w); save(); mark(); });
+  document.getElementById('pv-w').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var mode = b.dataset.mode || 'main', reload = mode !== (opts.mode || 'main');
+    opts.w = Number(b.dataset.w); opts.mode = mode; save(); mark();
+    if (reload) location.reload();
+  });
   document.getElementById('pv-theme').addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b || !window.__app) return;
     opts.theme = b.dataset.themeV; save(); mark();

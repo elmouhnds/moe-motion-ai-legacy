@@ -125,6 +125,9 @@ function exprLayer(L, t) {
     get parent() { if (!L.parent) throw new Error('Expression error: layer has no parent'); return exprLayer(L.parent, t); },
     toComp: (p, tt = t) => toCompPt(L, unwrap(p), tt),
     fromComp: (p, tt = t) => fromCompPt(L, unwrap(p), tt),
+    // 2D-only mock: toWorld / fromWorld behave like toComp / fromComp (no 3D rotation, no camera).
+    toWorld: (p, tt = t) => toCompPt(L, unwrap(p), tt),
+    fromWorld: (p, tt = t) => fromCompPt(L, unwrap(p), tt),
     sourceRectAtTime: () => L.sourceRectAtTime(t, false),
     effect(name) {
       const parade = L.property('ADBE Effect Parade');

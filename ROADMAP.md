@@ -37,7 +37,12 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
-## M1.14 — Ease Curves, Anchor & Align ✅ (v0.9.0)
+## M1.15 — Motion Kit ✅ (v0.10.0)
+- [x] Study of Motion 4 / Flow / Motion Tools / anchor tools (docs/features/MOTION_KIT.md); v0.9 tile sections replaced by one compact kit; auto-read ease graph with apply-on-release; anchor grid with Alt placement; align row; 18 one-click tools; dockable kit panel
+- [ ] Confirm inside AE 2025 (TEST_REPORT.md → v0.10.0 checklist 96–106) — especially the second panel, auto-read speed, 3D anchor probe
+- Next (from the study): Motion 4 *Workflows* that stay open (Timeline scrub, Composition settings), Delay / Falloff rigs, Text Break (letters / words / lines to layers), Pin+ (puppet pins to nulls), per-modifier presets on any kit button (Motion Studio), KBar export of kit actions, curve libraries import / export (JSON)
+
+## M1.14 — Ease Curves, Anchor & Align ✅ (v0.9.0) — superseded by M1.15
 - [x] Bézier ease-curve editor with speed graph, 32 curves, read from keys; Anchor 9 points without a jump; Align & Distribute; Clone ring / fan / row / grid; section, Quick Bar group, pie slots
 - [ ] Confirm inside AE 2025 (TEST_REPORT.md → v0.9.0 checklist 87–95) — especially speeds on Position vs Scale and anchors on text layers
 - Next: per-dimension curves for separated properties in one pass, a curve that follows several keys (multi-segment "flow" across a whole move), clone along a path, align to a key layer, anchor to a custom point (click on a preview)

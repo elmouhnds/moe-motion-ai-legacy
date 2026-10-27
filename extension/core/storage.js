@@ -12,6 +12,17 @@ const SCHEMA_VERSION = 1;
 
 function createStore(fsa) {
   const cache = new Map();
+  // Two MOE panels (main + Motion Kit) share one data folder: before using a cached document,
+  // look (at most every 500 ms) whether the other panel rewrote the file since we read it.
+  const stamp = new Map(), checked = new Map(), versions = new Map();
+  const bump = (name) => versions.set(name, (versions.get(name) || 0) + 1);
+  function stale(name) {
+    if (!fsa.mtime || !cache.has(name)) return false;
+    const now = Date.now();
+    if (now - (checked.get(name) || 0) < 500) return false;
+    checked.set(name, now);
+    return fsa.mtime(file(name, 'json')) !== (stamp.get(name) || 0);
+  }
 
   function file(name, ext) {
     if (!/^[a-z][a-z0-9-]*$/.test(name)) throw new Error(`Invalid store name "${name}"`);
@@ -19,6 +30,7 @@ function createStore(fsa) {
   }
 
   function get(name, fallback) {
+    if (stale(name)) cache.delete(name);
     if (cache.has(name)) return structuredCloneSafe(cache.get(name));
     let value = fallback;
     const p = file(name, 'json');
@@ -33,13 +45,19 @@ function createStore(fsa) {
       value = fallback;
     }
     cache.set(name, value);
+    if (fsa.mtime) { stamp.set(name, fsa.mtime(p)); checked.set(name, Date.now()); }
+    bump(name);
     return structuredCloneSafe(value);
   }
 
   function set(name, value) {
     cache.set(name, structuredCloneSafe(value));
     fsa.writeTextAtomic(file(name, 'json'), JSON.stringify({ schemaVersion: SCHEMA_VERSION, data: value }, null, 2));
+    if (fsa.mtime) { stamp.set(name, fsa.mtime(file(name, 'json'))); checked.set(name, Date.now()); }
+    bump(name);
   }
+  /** Changes whenever the document was (re)loaded or written — cheap "did it change?" check. */
+  function version(name) { if (stale(name)) { cache.delete(name); get(name, undefined); } return versions.get(name) || 0; }
 
   function update(name, fallback, fn) {
     const next = fn(get(name, fallback));
@@ -70,7 +88,7 @@ function createStore(fsa) {
     if (lines.length > keep * 1.5) fsa.writeTextAtomic(p, lines.slice(-keep).join('\n') + '\n');
   }
 
-  return { get, set, update, append, tail, compact, dataDir: fsa.dataDir };
+  return { get, set, update, append, tail, compact, version, dataDir: fsa.dataDir };
 }
 
 function structuredCloneSafe(v) {

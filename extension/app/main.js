@@ -7,7 +7,7 @@ const { createServices } = require('../core/services');
 const { createApp } = require('./ui/shell');
 const theme = require('./ui/theme');
 
-async function start({ cs, root, platform, mount, ui }) {
+async function start({ cs, root, platform, mount, ui, mode }) {
   const plat = platform || require('../core/platform/node').createNodePlatform();
   const services = createServices({ platform: plat, evalScript: (script, cb) => cs.evalScript(script, cb), rootPath: root });
   // Appearance: follow AE's interface brightness unless the user picked a theme.
@@ -17,11 +17,11 @@ async function start({ cs, root, platform, mount, ui }) {
   }
   if (ui) services.settings.update({ ui }); // preview / tests: appearance overrides
   theme.apply(services.settings.get().ui);
-  const app = createApp(mount || document.getElementById('app'), services, { cs });
+  const app = createApp(mount || document.getElementById('app'), services, { cs, mode: mode || 'main' });
   app.render();
   app.applyDensity();
   app.boot();
-  services.logger.info('app', `MOE Motion AI ${services.version} starting`, plat.info);
+  services.logger.info('app', `MOE Motion AI ${services.version} starting${mode === 'kit' ? ' (Motion Kit panel)' : ''}`, plat.info);
   await app.reconnect();
   return app;
 }

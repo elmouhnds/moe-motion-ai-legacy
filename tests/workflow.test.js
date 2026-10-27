@@ -34,12 +34,12 @@ async function makeApp() {
   return { app, toasts, runs };
 }
 
-test('sidebar: Home + five workspaces cover every section once', () => {
+test('sidebar: Home + Toolbox + five workspaces cover every section once', () => {
   const ids = S.NAV;
   assert.equal(ids[0], 'home');
   assert.equal(new Set(ids).size, ids.length, 'no duplicates');
   for (const sec of S.SECTIONS) assert.ok(ids.includes(sec.id), sec.id);
-  assert.deepEqual(S.WORKSPACES.map((g) => g.label), ['Animate', 'Design', 'Layout', 'Finish', 'Tools']);
+  assert.deepEqual(S.WORKSPACES.map((g) => g.label), ['Toolbox', 'Animate', 'Design', 'Layout', 'Finish', 'Tools']);
   for (const id of ids.slice(1)) assert.ok(S.workspaceOf(id), `${id} belongs to a workspace`);
 });
 

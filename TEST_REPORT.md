@@ -1,13 +1,13 @@
 # Test Report
 
-Last run: 2026-10-27 (v0.9.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-27 (v0.10.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
 | Layer | How it was tested | Result |
 |---|---|---|
-| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 235/235 automated tests pass (incl. 10 new v0.9 tests in `tests/transform.test.js`) |
-| ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (15 files) — since v0.6.3 also: ES3 reserved words (AST), ASCII-only sources, ES5+ APIs. **Why it matters:** the host tests run the .jsx in Node (V8), which is more permissive than ExtendScript — v0.6.2 and earlier had `final:` as an object key, legal in V8, reserved in ES3 |
+| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 247/247 automated tests pass (incl. `tests/kit.test.js` and the rewritten anchor / align tests in `tests/transform.test.js`) |
+| ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (16 files) — since v0.6.3 also: ES3 reserved words (AST), ASCII-only sources, ES5+ APIs. **Why it matters:** the host tests run the .jsx in Node (V8), which is more permissive than ExtendScript — v0.6.2 and earlier had `final:` as an object key, legal in V8, reserved in ES3 |
 | Core (registry, schema, permissions, executor, storage, logger, bridge) | Unit + integration tests | Pass |
 | Claude integration | Mocked HTTPS responder: request shape, retries, refusal, truncation, 401, offline, budget; plan-schema size guard | Pass — **no real API call was made** (a mocked API does not compile the schema; that is how the v0.6.3 "grammar too large" error got through — now guarded by a size test, but only a real call proves acceptance) |
 | Panel UI | Browser preview (`dev/preview.html`) with the real UI code + real host .jsx on the mock; Playwright clicks through 49 scenarios (wide 900 px and narrow 380/280 px), incl. 19 v0.6 Premium screens; zero page/console errors | Pass — **not the CEP runtime** |
@@ -17,6 +17,7 @@ Last run: 2026-10-27 (v0.9.0), Linux cloud sandbox (Node 22.22.0). **After Effec
 | Every button (v0.6.5) | `node tools/audit-ui.js`: every button / tab / chip / tile in 19 views + 3 data variants clicked from a known state with real mouse clicks, tiles double-clicked, controls revealed by a click clicked too; layout at 340–900 px — see `docs/UX_AUDIT.md` | 2,495 interactions: 0 JS errors, 0 unreachable or unnamed controls, 0 overflow; 7 bugs found and fixed. **Preview + mock host, not After Effects** |
 | Every button (v0.7.0) | Same audit on v0.7.0 (19 views + 3 data variants; revealed controls sampled 3–4 per click) + `tests/workflow.test.js` + browser flow check of every new feature | 2,451 interactions: 0 JS errors, 0 unreachable; failed tool runs 99 → 12 (all host-time conditions with a clear message: no Position keys, no screen colour found, project not saved). Single-file web preview tested in Chromium with and without a no-eval CSP. **Preview + mock host, not After Effects** |
 | Every button (v0.8.0) | Same audit incl. the Pie menu (header button → every slice) and workspace tabs + `tests/workflow.test.js` (profile, sets, geometry, keys 1–8, centre, Esc) + browser flow: hold Q / point / release, tap Q, right-hold, Ctrl 1–6 | 2,436 interactions: 0 JS errors; 1 real overlap found and fixed (Inspector under the Apply bar); remaining failures are host-time conditions with clear messages. Pie also checked in the single-file preview under a no-eval CSP. **Preview + mock host, not After Effects** — Q / right-hold inside AE still to confirm (checklist 82–84) |
+| Every button (v0.10.0) | _filled after the audit run_ |
 | Every button (v0.9.0) | Same audit, now 22 views incl. the new *Ease Curves* and *Anchor & Align* sections + `tests/transform.test.js` (Bézier maths, anchor with scale + rotation, keyed position shift, align / distribute, ring / row clone, Ease Curve speeds + influences, restore of each; UI wiring and every new thumbnail) + browser flow: drag a curve handle, Apply Curve, Set Anchor, Clone tile | 2,831 interactions: 0 JS errors, 0 unreachable; 1 overflow found and fixed (curve row at 340 px). The one new "dead" click is the anchor picker's already-selected point (no change expected). Other failures are the known host-time conditions. **Preview + mock host, not After Effects** — checklist 87–95 |
 | Updater over HTTPS | Real Node HTTPS download from a local self-signed server (redirect, progress, SHA-256, oversize cut-off) | Pass |
 | **Inside After Effects 2025** | — | **Not run yet** |
@@ -237,7 +238,21 @@ Record results here with AE version/build from the Diagnostics view.
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
 
-### Ease Curves, Anchor & Align checklist (v0.9.0) — inside After Effects 2025
+### Motion Kit checklist (v0.10.0) — inside After Effects 2025
+96. The main panel opens on Home with the ease graph and the anchor grid on the first screen (docked ~400 px and wide). *Window › Extensions › MOE Motion Kit* opens the slim kit panel; dock it next to the Timeline at ~280 px. Change a setting in one panel (e.g. Auto off), then use the other: nothing is lost or reset.
+97. Select two keys eased by hand in the graph editor: the kit graph shows the same curve within ~1 s and names the layer › property; selecting other keys updates it. Note any delay or flicker (it reads the host once per key-selection change).
+98a. Speed mode: drag the out handle sideways and up — AE's own speed graph (Graph Editor › Speed) should show the same influence % and the same speed (× the average) as the live label; Value mode overshoot (Out Back) shows above 100 %; type `cubic-bezier(.16,1,.3,1)` + Enter.
+98. Drag a handle and release: the keys change once (one *Edit › Undo*); Shift-drag keeps the handle flat; with Auto off nothing changes until Apply.
+99. Preset chip click / Shift-click / Ctrl-click: both / in only / out only on every selected segment (graph editor).
+100. Easy Ease, Linear, Hold on In / Both / Out; Copy on one pair of keys, Paste on another layer's keys.
+101. Anchor dots on: a plain layer, a scaled + rotated layer, a parented layer, a layer with Position keys, a layer with a keyed anchor, a text layer, a shape layer, a 3D layer rotated in Y, an auto-oriented layer. Nothing should jump at the playhead; motion paths keep their shape. Record the 3D result (probe) and whether the selection stays.
+102. Alt-click the bottom-right dot: the layer's bottom-right corner sits on the comp's bottom-right corner (unparented and parented).
+103. Align / distribute on parented layers (parent scaled and rotated): edges line up in the viewer; the animation moves as a whole.
+104. Tools: Null, Parent (Alt reverse), Excite / Jump / Orbit / Spin / Swing / Wiggle (Effect Controls show MOE sliders with the preset's numbers), Stare (2 layers: the first faces the second; 1 layer: pick in Effect Controls — check that AE accepts the expression, no circular-reference error), Clone keys (Alt mirror), Trim keys, Vignette, Trash (your own expressions stay).
+105. Right-click a tool: its options open; changed options run once from there; Toolbox › Pin to Home changes the pinned row on Home; pin a kit tool to the Quick Bar.
+106. Performance with 50 selected layers: the kit stays responsive; dimmed tools explain why.
+
+### Ease Curves, Anchor & Align checklist (v0.9.0) — inside After Effects 2025 (items 91–92 superseded by 101)
 87. Ease Curve *Out Expo* on two Opacity keys (0 → 100 over 1 s): the graph editor's speed graph shows a fast start and a long tail; out influence ≈ 16 %, in influence ≈ 70 %; one *Edit › Undo MOE: Ease Curve* reverts it; History › Restore reverts it exactly.
 88. Same curve on Scale (3 dimensions) and on a joined Position (spatial, one ease): the value graph matches the curve in the panel. Record the speed units AE shows for Position (px/s) — the maths assumes speed along the path.
 89. *Out Back* on Opacity overshoots (negative / > 100 % speeds accepted); on joined Position the report says anticipation is limited to 0; on separated X/Y the overshoot works.

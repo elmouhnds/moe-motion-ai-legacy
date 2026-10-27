@@ -12,44 +12,48 @@ const M = require('./math');
 const ADDR = (id, mn) => ({ layerId: id, matchNames: ['ADBE Transform Group', mn] });
 const visual = (ctx) => (ctx.layers || []).filter((l) => !['camera', 'light'].includes(l.type) && !l.locked);
 const close = (a, b) => Math.abs(a - b) <= 0.01;
-const SKIP = { LOCKED: 'locked', ANCHOR_KEYFRAMED: 'anchor has keyframes', SCALE_OR_ROTATION_ANIMATED: 'scale or rotation is animated', ROTATED_3D: '3D layer rotated in X/Y', NO_BOUNDS: 'no visible content', PARENTED: 'parented (align works in comp space)' };
+const SKIP = { LOCKED: 'locked', NO_BOUNDS: 'no visible content', NO_ANCHOR: 'no anchor point', PARENT_3D: 'a parent is rotated in 3D' };
 const flat = (snap) => snap.parts.map((p) => (p.keys ? p.keys : [p.value]));
 
-/** Expected position snapshot after a shift (static, keyframed or separated). */
-function shiftedSnap(snap, dx, dy) {
-  return snap.parts.map((p, i) => (p.keys || [p.value]).map((v) => (snap.separated ? v + (i === 0 ? dx : dy) : [v[0] + dx, v[1] + dy].concat(v.slice(2)))));
+/** Expected position snapshot after a shift d = [dx, dy, dz] (static, keyframed, separated, 3D). */
+function shiftedSnap(snap, d) {
+  return snap.parts.map((p, i) => (p.keys || [p.value]).map((v) => (snap.separated ? v + (d[i] || 0) : v.map((x, k) => x + (d[k] || 0)))));
 }
-function sameSnap(a, b) { return JSON.stringify(a.map((x) => x.map((v) => [].concat(v).map((n) => Math.round(n * 100) / 100)))) === JSON.stringify(b.map((x) => x.map((v) => [].concat(v).map((n) => Math.round(n * 100) / 100)))); }
+const r2 = (n) => Math.round(n * 100) / 100;
+function sameSnap(a, b) { return JSON.stringify(a.map((x) => x.map((v) => [].concat(v).map(r2)))) === JSON.stringify(b.map((x) => x.map((v) => [].concat(v).map(r2)))); }
 
 /* ---------------- anchor ---------------- */
 const anchor = {
-  id: 'transform.anchor', version: '1.0.0', category: 'layout', group: 'Anchor & Align', name: 'Anchor Point',
-  description: 'Move the anchor to a corner, an edge or the centre of each layer\'s content — the layer stays where it is (works with keyframed position and separated X/Y).',
-  keywords: ['anchor', 'anchor point', 'pivot', 'center anchor', 'corner', 'bottom', 'motion 4', 'pan behind'],
-  icon: 'target',
+  id: 'transform.anchor', version: '2.0.0', category: 'layout', group: 'Anchor & Align', name: 'Anchor Point',
+  description: 'Move the anchor to a corner, an edge or the centre of each layer — the layer does not move. Keeps every keyframe (position, separated X/Y, a keyed anchor), works on scaled, rotated, parented and 3D layers. Alt: also place the layer at the same point of the comp.',
+  keywords: ['anchor', 'anchor point', 'pivot', 'center anchor', 'corner', 'bottom', 'motion 4', 'pan behind', 'centre'],
+  icon: 'anchor',
   params: {
-    point: { type: 'enum', label: 'Point', default: 'c', options: Object.keys(M.POINTS).map((v) => ({ value: v, label: M.POINT_LABEL[v] })) }
+    point: { type: 'enum', label: 'Point', default: 'c', options: Object.keys(M.POINTS).map((v) => ({ value: v, label: M.POINT_LABEL[v] })) },
+    masks: { type: 'boolean', label: 'Use masks', default: false, description: 'Take the box from the layer\'s masks instead of its content' },
+    place: { type: 'boolean', label: 'Also place in comp', default: false, description: 'Move the layer so that point sits on the same point of the comp (Alt-click in the Motion Kit)' }
   },
   requires: { comp: true, minLayers: 1 },
   permissions: ['modify.layers'], recovery: 'undo+checkpoint',
-  ai: { callable: true, hint: 'Move the anchor point to centre / a corner / an edge of the selected layers without moving them (e.g. scale from the bottom, rotate around a corner).' },
+  ai: { callable: true, hint: 'Move the anchor point to centre / a corner / an edge of the selected layers without moving them (e.g. scale from the bottom, rotate around a corner); place=true also puts the layer at that point of the comp.' },
   uses: { hostOps: ['layers.moveAnchor', 'layers.restoreAnchor'], network: false }, compatibility: { minAE: '25.0' },
   ui: { primaryLabel: 'Set Anchor' },
   prepare(args, ctx) {
     const l = visual(ctx);
     if (!l.length) return { ok: false, error: 'Select unlocked layers' };
-    return { ok: true, layers: l, preview: { summary: `Anchor → ${M.POINT_LABEL[args.point].toLowerCase()} on ${l.length} layer${l.length > 1 ? 's' : ''}`, items: l.slice(0, 6).map((x) => x.name) } };
+    return { ok: true, layers: l, preview: { summary: `Anchor → ${M.POINT_LABEL[args.point].toLowerCase()} on ${l.length} layer${l.length > 1 ? 's' : ''}${args.place ? ', placed in the comp' : ''}`, items: l.slice(0, 6).map((x) => x.name) } };
   },
   async execute({ args, ctx, prepared, host }) {
     const [fx, fy] = M.POINTS[args.point];
-    return host.call('layers.moveAnchor', { compId: ctx.comp.id, label: `MOE: Anchor ${M.POINT_LABEL[args.point]}`, layers: prepared.layers.map((x) => x.id), fx, fy });
+    return host.call('layers.moveAnchor', { compId: ctx.comp.id, label: `MOE: Anchor ${M.POINT_LABEL[args.point]}`, layers: prepared.layers.map((x) => x.id), fx, fy, masks: !!args.masks, place: !!args.place, compSize: [ctx.comp.width, ctx.comp.height] });
   },
   verify({ result }) {
     const checks = result.layers.map((l) => {
       if (l.skipped) return { ok: true, label: l.name, detail: `skipped — ${SKIP[l.skipped] || l.skipped}` };
-      const a = l.after.anchor.every((v, i) => close(v, l.target[i]));
-      const p = sameSnap(flat(l.after.pos), shiftedSnap(l.before.pos, l.delta[0], l.delta[1]));
-      return { ok: a && p, label: l.name, detail: a && p ? `anchor ${l.after.anchor.slice(0, 2).map((v) => v.toFixed(1)).join(', ')} · layer kept in place` : `anchor ${a ? 'ok' : 'wrong'}, position ${p ? 'ok' : 'wrong'}` };
+      const a = l.anchorAt.slice(0, 2).every((v, i) => close(v, l.target[i]));
+      const p = sameSnap(flat(l.after.pos), shiftedSnap(l.before.pos, l.delta));
+      const note = l.notes && l.notes.length ? ` · ${l.notes.join(' · ')}` : '';
+      return { ok: a && p, label: l.name, detail: a && p ? `anchor ${l.anchorAt.slice(0, 2).map((v) => v.toFixed(1)).join(', ')} · ${l.notes && l.notes.includes('placed in the comp') ? 'placed' : 'layer kept in place'}${note.replace(' · placed in the comp', '')}` : `anchor ${a ? 'ok' : 'wrong'}, position ${p ? 'ok' : 'wrong'}` };
     });
     return { ok: result.layers.some((l) => !l.skipped) && checks.every((c) => c.ok), checks };
   },
@@ -61,8 +65,8 @@ const anchor = {
 /* ---------------- align & distribute ---------------- */
 const ALIGN = [['left', 'Left'], ['hcenter', 'Centre ↔'], ['right', 'Right'], ['top', 'Top'], ['vcenter', 'Middle ↕'], ['bottom', 'Bottom'], ['distH', 'Distribute ↔'], ['distV', 'Distribute ↕']];
 const align = {
-  id: 'transform.align', version: '1.0.0', category: 'layout', group: 'Anchor & Align', name: 'Align & Distribute',
-  description: 'Align the selected layers by their visible edges or centres — to each other or to the comp — or space them evenly. Keyframed motion moves along with them.',
+  id: 'transform.align', version: '2.0.0', category: 'layout', group: 'Anchor & Align', name: 'Align & Distribute',
+  description: 'Align the selected layers by their visible edges or centres — to each other or to the comp — or space them evenly. The whole animation moves (every Position key), parented layers included.',
   keywords: ['align', 'distribute', 'center', 'left', 'right', 'top', 'bottom', 'spacing', 'even'],
   icon: 'layout',
   params: {
@@ -75,11 +79,11 @@ const align = {
   uses: { hostOps: ['layers.bounds', 'layers.nudge', 'layers.restorePosition'], network: false }, compatibility: { minAE: '25.0' },
   ui: { primaryLabel: 'Align' },
   prepare(args, ctx) {
-    const l = visual(ctx).filter((x) => !x.parentIndex);
+    const l = visual(ctx);
     const dist = /^dist/.test(args.mode);
-    if (dist && l.length < 3) return { ok: false, error: 'Select at least 3 unparented layers to distribute' };
+    if (dist && l.length < 3) return { ok: false, error: 'Select at least 3 layers to distribute' };
     if (!dist && args.to === 'selection' && l.length < 2) return { ok: false, error: 'Select at least 2 layers (or align to the comp)' };
-    if (!l.length) return { ok: false, error: 'Select unlocked, unparented layers' };
+    if (!l.length) return { ok: false, error: 'Select unlocked layers' };
     const label = ALIGN.find((a) => a[0] === args.mode)[1];
     return { ok: true, layers: l, preview: { summary: `${label}${dist ? '' : ` to ${args.to}`} · ${l.length} layer${l.length > 1 ? 's' : ''}`, items: [] } };
   },
@@ -93,7 +97,7 @@ const align = {
   verify({ result }) {
     if (result.already) return { ok: true, checks: [{ ok: true, label: 'Layers', detail: 'already aligned' }] };
     const checks = result.layers.map((l) => (l.skipped ? { ok: true, label: l.name, detail: `skipped — ${SKIP[l.skipped] || l.skipped}` }
-      : { ok: sameSnap(flat(l.after), shiftedSnap(l.before, l.delta[0], l.delta[1])), label: l.name, detail: `moved ${l.delta.map((v) => v.toFixed(1)).join(', ')} px` }));
+      : { ok: sameSnap(flat(l.after), shiftedSnap(l.before, l.delta)), label: l.name, detail: `moved ${l.delta.map((v) => v.toFixed(1)).join(', ')} px${l.parented ? ' (in the parent\'s space)' : ''}` }));
     return { ok: checks.every((c) => c.ok), checks };
   },
   checkpoint({ result, ctx }) { return { compId: ctx.comp.id, layers: (result.layers || []).filter((l) => !l.skipped).map((l) => ({ layerId: l.layerId, pos: l.before })) }; },

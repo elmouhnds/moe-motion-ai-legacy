@@ -40,7 +40,9 @@ function createFs(dataDir) {
     appendText: (p, s) => fs.appendFileSync(p, s, 'utf8'),
     readBytes: (p) => new Uint8Array(fs.readFileSync(p)),
     writeBytes: (p, bytes) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, Buffer.from(bytes)); },
-    remove: (p) => { if (fs.existsSync(p)) fs.unlinkSync(p); }
+    remove: (p) => { if (fs.existsSync(p)) fs.unlinkSync(p); },
+    /** Last-modified time (ms), 0 if missing — lets two MOE panels notice each other's writes. */
+    mtime: (p) => { try { return fs.statSync(p).mtimeMs; } catch (e) { return 0; } }
   };
 }
 

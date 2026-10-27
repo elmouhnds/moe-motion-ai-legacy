@@ -19,7 +19,7 @@ const path = require('path');
 const { chromium } = require(require('child_process').execSync('npm root -g').toString().trim() + '/playwright');
 
 const BASE = 'http://localhost:5173/';
-const VIEWS = ['home', 'animate', 'curves', 'text', 'layout', 'transform', 'looks', 'zoom', 'expressions', 'shapes', 'backgrounds', 'compositing', 'deliver', 'quick', 'select', 'brand', 'tools', 'favorites', 'history', 'settings', 'diagnostics'];
+const VIEWS = ['home', 'kit', 'animate', 'text', 'layout', 'looks', 'zoom', 'expressions', 'shapes', 'backgrounds', 'compositing', 'deliver', 'quick', 'select', 'brand', 'tools', 'favorites', 'history', 'settings', 'diagnostics'];
 const FIXTURE = { layout: 'layout', deliver: 'layout', zoom: 'layout', looks: 'layout', quick: 'layout', text: 'studio', brand: 'studio', select: 'studio' };
 const WIDTH = 900;
 const WORKERS = 5;

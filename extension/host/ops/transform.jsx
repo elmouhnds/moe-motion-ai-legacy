@@ -3,13 +3,14 @@
  *   keyframes.setEase    per-key, per-side, per-dimension temporal ease (speed + influence)
  *   layers.moveAnchor    put the anchor at a point of the layer's content box; the layer does not move
  *   layers.restoreAnchor anchor + position back to a snapshot
- *   layers.nudge         shift Position (static, keyframed or separated) by a comp-space delta
+ *   layers.nudge         shift Position (static, keyframed, separated; parented 2D) by a comp-space delta
  *   layers.restorePosition position back to a snapshot
  *   layers.clone         duplicate one layer N times with per-copy transform ("MOE Clone N - name")
  *   layers.unclone       remove those copies and put the source back
  * APIs used (After Effects Scripting Guide): Property.setTemporalEaseAtKey, KeyframeEase,
  * setInterpolationTypeAtKey, keyValue, setValueAtKey, setValue, AVLayer.sourceRectAtTime,
- * Layer.duplicate, Property.dimensionsSeparated.
+ * Layer.duplicate, Property.dimensionsSeparated, Property.valueAtTime, Layer.autoOrient; probe
+ * expressions use the documented layer space transforms toWorld / fromWorld.
  */
 (function (G) {
     var MOE = G.MOE, U = MOE.util, ops = MOE.ops;
@@ -75,10 +76,15 @@
         }
     };
 
-    /* ---------- position helpers (static, keyframed or separated) ---------- */
+    /* ---------- position helpers (static, keyframed or separated; 2D or 3D) ---------- */
     function posParts(tr) {
-        var pos = tr.property('ADBE Position');
-        if (pos.dimensionsSeparated) { return [{ prop: tr.property('ADBE Position_0'), dim: 0 }, { prop: tr.property('ADBE Position_1'), dim: 1 }]; }
+        var pos = tr.property('ADBE Position'), parts, z;
+        if (pos.dimensionsSeparated) {
+            parts = [{ prop: tr.property('ADBE Position_0'), dim: 0 }, { prop: tr.property('ADBE Position_1'), dim: 1 }];
+            z = tr.property('ADBE Position_2');
+            if (z) { parts.push({ prop: z, dim: 2 }); }
+            return parts;
+        }
         return [{ prop: pos, dim: -1 }];
     }
     function snapProp(prop) {
@@ -89,91 +95,206 @@
     function snapPos(tr) {
         var parts = posParts(tr), out = [], i;
         for (i = 0; i < parts.length; i++) { out.push(snapProp(parts[i].prop)); }
-        return { separated: parts.length === 2, parts: out };
+        return { separated: parts.length > 1, parts: out };
     }
-    function shifted(v, dim, dx, dy) {
-        var a;
-        if (dim === 0) { return num(v) + dx; }
-        if (dim === 1) { return num(v) + dy; }
-        a = plain(v); a[0] += dx; a[1] += dy;
+    /* d = [dx, dy] or [dx, dy, dz] */
+    function shifted(v, dim, d) {
+        var a, i;
+        if (dim >= 0) { return num(v) + num(d[dim]); }
+        a = plain(v);
+        for (i = 0; i < a.length && i < d.length; i++) { a[i] += num(d[i]); }
         return a;
     }
-    function shiftPos(tr, dx, dy) {
-        var parts = posParts(tr), i, p, k;
-        for (i = 0; i < parts.length; i++) {
-            p = parts[i].prop;
-            if (p.numKeys > 0) { for (k = 1; k <= p.numKeys; k++) { p.setValueAtKey(k, shifted(p.keyValue(k), parts[i].dim, dx, dy)); } } else { p.setValue(shifted(p.value, parts[i].dim, dx, dy)); }
-        }
+    function shiftProp(p, dim, d) {
+        var k;
+        if (p.numKeys > 0) { for (k = 1; k <= p.numKeys; k++) { p.setValueAtKey(k, shifted(p.keyValue(k), dim, d)); } } else { p.setValue(shifted(p.value, dim, d)); }
+    }
+    function shiftPos(tr, d) {
+        var parts = posParts(tr), i;
+        for (i = 0; i < parts.length; i++) { shiftProp(parts[i].prop, parts[i].dim, d); }
+    }
+    function restoreSnap(p, s) {
+        var k;
+        if (s.keys) {
+            if (p.numKeys !== s.keys.length) { U.fail('CHANGED', 'Keyframes changed since the checkpoint.'); }
+            for (k = 1; k <= p.numKeys; k++) { p.setValueAtKey(k, s.keys[k - 1]); }
+        } else { p.setValue(s.value); }
     }
     function restorePos(tr, snap) {
-        var parts = posParts(tr), i, p, s, k;
-        if ((parts.length === 2) !== !!snap.separated) { U.fail('CHANGED', 'Position was separated or joined since the checkpoint.'); }
-        for (i = 0; i < parts.length; i++) {
-            p = parts[i].prop; s = snap.parts[i];
-            if (s.keys) {
-                if (p.numKeys !== s.keys.length) { U.fail('CHANGED', 'Position keyframes changed since the checkpoint.'); }
-                for (k = 1; k <= p.numKeys; k++) { p.setValueAtKey(k, s.keys[k - 1]); }
-            } else { p.setValue(s.value); }
-        }
+        var parts = posParts(tr), i;
+        if ((parts.length > 1) !== !!snap.separated) { U.fail('CHANGED', 'Position was separated or joined since the checkpoint.'); }
+        for (i = 0; i < parts.length; i++) { restoreSnap(parts[i].prop, snap.parts[i]); }
+    }
+    function posAt(tr, t) {
+        var parts = posParts(tr), out, i;
+        if (parts.length === 1) { return plain(parts[0].prop.valueAtTime(t, false)); }
+        out = [];
+        for (i = 0; i < parts.length; i++) { out.push(num(parts[i].prop.valueAtTime(t, false))); }
+        return out;
     }
     function rotZ(tr) { return tr.property('ADBE Rotate Z'); }
     function val0(tr, mn) { var p = tr.property(mn); return p ? num(p.value) : 0; }
+    function moving(p) { return !!(p && (p.numKeys > 0 || (p.canSetExpression && p.expressionEnabled && p.expression))); }
+    function at(p, t, fb) { return p ? plain(p.valueAtTime(t, false)) : fb; }
+
+    /* 2D layer matrix (no translation): v_parent = R(rot) * S(scale) * v_local. */
+    function lin2(tr, t, v) {
+        var s = at(tr.property('ADBE Scale'), t, [100, 100]), r = num(at(rotZ(tr), t, 0)) * Math.PI / 180;
+        var x = num(v[0]) * s[0] / 100, y = num(v[1]) * s[1] / 100;
+        return [x * Math.cos(r) - y * Math.sin(r), x * Math.sin(r) + y * Math.cos(r)];
+    }
+    function inv2(tr, t, v) {
+        var s = at(tr.property('ADBE Scale'), t, [100, 100]), r = -num(at(rotZ(tr), t, 0)) * Math.PI / 180;
+        var x = num(v[0]) * Math.cos(r) - num(v[1]) * Math.sin(r), y = num(v[0]) * Math.sin(r) + num(v[1]) * Math.cos(r);
+        return [s[0] ? x * 100 / s[0] : 0, s[1] ? y * 100 / s[1] : 0];
+    }
+    function rotated3D(L, tr, t) {
+        var o;
+        if (!L.threeDLayer) { return false; }
+        o = at(tr.property('ADBE Orientation'), t, [0, 0, 0]);
+        return num(at(tr.property('ADBE Rotate X'), t, 0)) !== 0 || num(at(tr.property('ADBE Rotate Y'), t, 0)) !== 0 || o[0] !== 0 || o[1] !== 0 || o[2] !== 0;
+    }
+    function autoOriented(L) {
+        try { return typeof AutoOrientType !== 'undefined' && L.autoOrient !== AutoOrientType.NO_AUTO_ORIENT; } catch (e) { return false; }
+    }
+    /* A comp-space vector expressed in the layer's parent space (2D parents); null if a parent is 3D-rotated. */
+    function compToParentVec(L, t, v) {
+        var chain = [], P = L.parent, i, q = [num(v[0]), num(v[1])];
+        while (P) { chain.unshift(P); P = P.parent; }
+        for (i = 0; i < chain.length; i++) {
+            if (rotated3D(chain[i], chain[i].property('ADBE Transform Group'), t)) { return null; }
+            q = inv2(chain[i].property('ADBE Transform Group'), t, q);
+        }
+        return q;
+    }
+    /* A comp-space point in the layer's parent space (2D parents). */
+    function compToParentPt(L, t, c) {
+        var chain = [], P = L.parent, i, q = [num(c[0]), num(c[1])], tr, a, p, d;
+        while (P) { chain.unshift(P); P = P.parent; }
+        for (i = 0; i < chain.length; i++) {
+            tr = chain[i].property('ADBE Transform Group');
+            if (rotated3D(chain[i], tr, t)) { return null; }
+            a = at(tr.property('ADBE Anchor Point'), t, [0, 0]);
+            p = at(tr.property('ADBE Position'), t, [0, 0]);
+            if (tr.property('ADBE Position').dimensionsSeparated) { p = [num(at(tr.property('ADBE Position_0'), t, 0)), num(at(tr.property('ADBE Position_1'), t, 0))]; }
+            d = inv2(tr, t, [q[0] - p[0], q[1] - p[1]]);
+            q = [d[0] + a[0], d[1] + a[1]];
+        }
+        return q;
+    }
 
     /*
-     * args: { compId, label, layers: [id], fx: 0..1, fy: 0..1 } - fraction of the content box (sourceRectAtTime).
-     * Keeps the layer in place: Position moves by the anchor change in parent space (scale + Z rotation).
+     * Probe (3D-rotated / auto-oriented layers): AE's own toWorld / fromWorld give the parent-space
+     * change of position that keeps the layer still when its anchor goes from a0 to a1.
+     * Temporary null + 3D Point Control, read with valueAtTime(), removed in finally; the layer
+     * selection is put back (adding a layer changes it).
+     */
+    function probeDelta(comp, L, t, a0, a1) {
+        var probe = null, sel = [], i, v, fx, idx, before = comp.numLayers;
+        for (i = 0; i < comp.selectedLayers.length; i++) { sel.push(comp.selectedLayers[i]); }
+        try {
+            probe = comp.layers.addNull(comp.duration);
+            probe.name = 'MOE Probe (temporary)';
+            idx = probe.property('ADBE Effect Parade').addProperty('ADBE Point3D Control').propertyIndex;
+            fx = probe.property('ADBE Effect Parade').property(idx).property(1);
+            fx.expression = [
+                'var L = thisComp.layer(' + L.index + ');',
+                'var w0 = L.toWorld([' + a0.join(',') + ']), w1 = L.toWorld([' + a1.join(',') + ']);',
+                'var d = L.hasParent ? sub(L.parent.fromWorld(w1), L.parent.fromWorld(w0)) : sub(w1, w0);',
+                '[d[0], d[1], d.length > 2 ? d[2] : 0];'
+            ].join('\n');
+            if (fx.expressionError) { U.fail('PROBE_FAILED', String(fx.expressionError)); }
+            v = plain(fx.valueAtTime(t, false));
+        } finally {
+            if (probe) { try { probe.remove(); } catch (eRemove) { /* checked below */ } }
+            for (i = 0; i < sel.length; i++) { try { sel[i].selected = true; } catch (eSel) { /* layer gone */ } }
+        }
+        if (comp.numLayers !== before) { U.fail('PROBE_LEFT', 'The temporary probe layer could not be removed.'); }
+        return v;
+    }
+
+    /* Content box: sourceRectAtTime, or the bounds of the layer's masks (vertices + tangent handles). */
+    function maskBounds(L, t) {
+        var masks = L.property('ADBE Mask Parade'), i, j, sh, v, pts, l = Infinity, tp = Infinity, r = -Infinity, b = -Infinity;
+        if (!masks || masks.numProperties === 0) { return null; }
+        for (i = 1; i <= masks.numProperties; i++) {
+            sh = masks.property(i).property('ADBE Mask Shape').valueAtTime(t, false);
+            for (j = 0; j < sh.vertices.length; j++) {
+                v = sh.vertices[j];
+                pts = [v, [v[0] + sh.inTangents[j][0], v[1] + sh.inTangents[j][1]], [v[0] + sh.outTangents[j][0], v[1] + sh.outTangents[j][1]]];
+                for (var q = 0; q < 3; q++) { l = Math.min(l, pts[q][0]); r = Math.max(r, pts[q][0]); tp = Math.min(tp, pts[q][1]); b = Math.max(b, pts[q][1]); }
+            }
+        }
+        if (l === Infinity) { return null; }
+        return { left: l, top: tp, width: r - l, height: b - tp };
+    }
+
+    /*
+     * args: { compId, label, layers: [id], fx: 0..1, fy: 0..1, masks: bool, place: bool, compSize: [w, h] }
+     * Puts the anchor at a point of the content box without moving the layer:
+     *   - every Position key (joined, separated, 3D) shifts by the same parent-space delta;
+     *   - a keyframed anchor shifts on every key;
+     *   - scale / rotation / parenting are taken from the playhead (exact everywhere when they are
+     *     static; when they animate the layer is exact at the playhead and the result says so);
+     *   - 3D-rotated or auto-oriented layers are measured with AE's own toWorld / fromWorld.
+     * place: also move the layer so that point sits on the same point of the comp (Alt-click).
      */
     ops['layers.moveAnchor'] = {
         mutates: true,
         run: function (args) {
             var comp = U.compById(args.compId);
             return U.withUndo(args.label || 'MOE: Move Anchor', function () {
-                var out = [], i, L, tr, ap, sc, rot, rect, a0, a1, lx, ly, rad, c, s, dx, dy, before, reason, o;
+                var out = [], i, L, tr, ap, rect, a0, a1, da, dp, before, notes, probe, t = comp.time, p0, target, shift;
                 for (i = 0; i < args.layers.length; i++) {
                     L = U.findLayer(comp, { layerId: args.layers[i] });
                     tr = L.property('ADBE Transform Group');
-                    ap = tr.property('ADBE Anchor Point');
-                    sc = tr.property('ADBE Scale');
-                    rot = rotZ(tr);
-                    reason = '';
-                    if (L.locked) { reason = 'LOCKED'; } else if (ap.numKeys > 0) { reason = 'ANCHOR_KEYFRAMED'; } else if (sc.numKeys > 0 || rot.numKeys > 0) { reason = 'SCALE_OR_ROTATION_ANIMATED'; }
-                    if (!reason && L.threeDLayer) {
-                        o = tr.property('ADBE Orientation') ? plain(tr.property('ADBE Orientation').value) : [0, 0, 0];
-                        if (val0(tr, 'ADBE Rotate X') !== 0 || val0(tr, 'ADBE Rotate Y') !== 0 || o[0] !== 0 || o[1] !== 0 || o[2] !== 0) { reason = 'ROTATED_3D'; }
-                    }
-                    if (!reason) {
-                        rect = L.sourceRectAtTime(comp.time, false);
-                        if (!(rect.width > 0 || rect.height > 0)) { reason = 'NO_BOUNDS'; }
-                    }
-                    if (reason) { out.push({ layerId: L.id, name: L.name, skipped: reason }); continue; }
-                    a0 = plain(ap.value);
+                    ap = tr ? tr.property('ADBE Anchor Point') : null;
+                    if (L.locked) { out.push({ layerId: L.id, name: L.name, skipped: 'LOCKED' }); continue; }
+                    if (!ap) { out.push({ layerId: L.id, name: L.name, skipped: 'NO_ANCHOR' }); continue; }
+                    rect = args.masks ? maskBounds(L, t) : null;
+                    if (!rect) { rect = L.sourceRectAtTime(t, false); }
+                    if (!(rect.width > 0 || rect.height > 0)) { out.push({ layerId: L.id, name: L.name, skipped: 'NO_BOUNDS' }); continue; }
+                    notes = [];
+                    if (args.masks && !maskBounds(L, t)) { notes.push('no masks - used the layer content'); }
+                    a0 = plain(ap.valueAtTime(t, false));
                     a1 = [rect.left + rect.width * num(args.fx), rect.top + rect.height * num(args.fy)];
                     if (a0.length > 2) { a1.push(a0[2]); }
-                    lx = (a1[0] - a0[0]) * plain(sc.value)[0] / 100;
-                    ly = (a1[1] - a0[1]) * plain(sc.value)[1] / 100;
-                    rad = num(rot.value) * Math.PI / 180; c = Math.cos(rad); s = Math.sin(rad);
-                    dx = lx * c - ly * s; dy = lx * s + ly * c;
-                    before = { anchor: a0, pos: snapPos(tr) };
-                    ap.setValue(a1);
-                    shiftPos(tr, dx, dy);
-                    out.push({ layerId: L.id, name: L.name, target: a1, delta: [dx, dy], before: before, after: { anchor: plain(ap.value), pos: snapPos(tr) } });
+                    da = [a1[0] - a0[0], a1[1] - a0[1], 0];
+                    probe = rotated3D(L, tr, t) || autoOriented(L);
+                    if (probe) { dp = probeDelta(comp, L, t, a0, a1); notes.push('measured in 3D'); } else { dp = lin2(tr, t, da); dp.push(0); }
+                    if (moving(tr.property('ADBE Scale')) || moving(rotZ(tr)) || (probe && (moving(tr.property('ADBE Rotate X')) || moving(tr.property('ADBE Rotate Y')) || moving(tr.property('ADBE Orientation'))))) { notes.push('scale / rotation animate: exact at the playhead'); }
+                    before = { anchor: snapProp(ap), pos: snapPos(tr) };
+                    shiftProp(ap, -1, da);
+                    shiftPos(tr, dp);
+                    if (args.place) {
+                        target = compToParentPt(L, t, [num(args.compSize[0]) * num(args.fx), num(args.compSize[1]) * num(args.fy)]);
+                        if (target) {
+                            p0 = posAt(tr, t);
+                            shift = [target[0] - p0[0], target[1] - p0[1], 0];
+                            shiftPos(tr, shift);
+                            dp = [dp[0] + shift[0], dp[1] + shift[1], dp[2]];
+                            notes.push('placed in the comp');
+                        } else { notes.push('not placed: a parent is 3D-rotated'); }
+                    }
+                    out.push({ layerId: L.id, name: L.name, target: a1, delta: dp, notes: notes, before: before, after: { anchor: snapProp(ap), pos: snapPos(tr) }, anchorAt: plain(ap.valueAtTime(t, false)) });
                 }
-                return { layers: out };
+                return { layers: out, time: t };
             });
         }
     };
 
-    /* args: { compId, layers: [{ layerId, anchor, pos }] } */
+    /* args: { compId, layers: [{ layerId, anchor: snap, pos: snap }] } */
     ops['layers.restoreAnchor'] = {
         mutates: true,
         run: function (args) {
             var comp = U.compById(args.compId);
             return U.withUndo('MOE: Restore Anchor', function () {
-                var i, L, tr;
+                var i, L, tr, a;
                 for (i = 0; i < args.layers.length; i++) {
                     L = U.findLayer(comp, { layerId: args.layers[i].layerId });
                     tr = L.property('ADBE Transform Group');
-                    tr.property('ADBE Anchor Point').setValue(args.layers[i].anchor);
+                    a = args.layers[i].anchor;
+                    if (a && (a.keys || a.value !== undefined)) { restoreSnap(tr.property('ADBE Anchor Point'), a); } else { tr.property('ADBE Anchor Point').setValue(a); }
                     restorePos(tr, args.layers[i].pos);
                 }
                 return { restored: args.layers.length };
@@ -181,22 +302,30 @@
         }
     };
 
-    /* args: { compId, label, items: [{ layerId, delta: [dx, dy] }] } - unparented layers only (comp space = position space). */
+    /*
+     * args: { compId, label, items: [{ layerId, delta: [dx, dy] }] } - delta in comp space.
+     * Parented layers: the delta is turned into the parent's space (2D parents, values at the playhead).
+     * Every Position key moves, so the whole animation moves.
+     */
     ops['layers.nudge'] = {
         mutates: true,
         run: function (args) {
             var comp = U.compById(args.compId);
             return U.withUndo(args.label || 'MOE: Align', function () {
-                var out = [], i, it, L, tr, before;
+                var out = [], i, it, L, tr, before, d, t = comp.time;
                 for (i = 0; i < args.items.length; i++) {
                     it = args.items[i];
                     L = U.findLayer(comp, { layerId: it.layerId });
                     if (L.locked) { out.push({ layerId: L.id, name: L.name, skipped: 'LOCKED' }); continue; }
-                    if (L.parent) { out.push({ layerId: L.id, name: L.name, skipped: 'PARENTED' }); continue; }
+                    d = [num(it.delta[0]), num(it.delta[1])];
+                    if (L.parent) {
+                        d = compToParentVec(L, t, d);
+                        if (!d) { out.push({ layerId: L.id, name: L.name, skipped: 'PARENT_3D' }); continue; }
+                    }
                     tr = L.property('ADBE Transform Group');
                     before = snapPos(tr);
-                    shiftPos(tr, num(it.delta[0]), num(it.delta[1]));
-                    out.push({ layerId: L.id, name: L.name, delta: [num(it.delta[0]), num(it.delta[1])], before: before, after: snapPos(tr) });
+                    shiftPos(tr, [d[0], d[1], 0]);
+                    out.push({ layerId: L.id, name: L.name, delta: d, parented: !!L.parent, before: before, after: snapPos(tr) });
                 }
                 return { layers: out };
             });

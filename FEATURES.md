@@ -1,4 +1,6 @@
-# Features (v0.9.0)
+# Features (v0.10.0)
+
+**Motion Kit** (v0.10.0 — on **Home** first: ease · anchor · align · pinned tools; all tools + curve library in the **Toolbox**, Ctrl 2; also *Window › Extensions › MOE Motion Kit*): ease graph that reads the selected keys and applies on release · preset chips (click; Shift in / Ctrl out) · Easy Ease / Linear / Hold / Copy / Paste · 3 × 3 anchor (Alt: place in comp) · align / distribute row · 18 one-click tools (Null, Parent, Excite, Jump, Orbit, Spin, Swing, Wiggle, Stare, Clone keys, Reverse, Stagger, Trim to keys, Separate, Trim path, Repeat, Vignette, Trash). Study and design: docs/features/MOTION_KIT.md.
 
 Motion-4-style tools (v0.9.0): **Ease Curves** — drag a Bézier on the value graph (live speed graph), 32 curves, applied as exact speed + influence between selected keyframes, read from keys · **Anchor & Align** — anchor to 9 points without a jump, align / distribute to selection or comp, clone into ring / fan / row / grid · Quick Bar group *Align* · new pie slots.
 
@@ -16,9 +18,15 @@ Legend: **Local** = no network. **AI** = uses Claude (optional). Host = verified
 
 | Workspace | Tool (id) | Type | What it does | Undo / recovery | Host verified |
 |---|---|---|---|---|---|
+| Motion Kit | Interpolation (`kit.interp`) | Local | Linear / Hold / Bezier on the selected keys, in, out or both sides. | undo + checkpoint (exact) | ⏳ |
+| Motion Kit | Trim to Keys (`kit.trimToKeys`) | Local | Layer In / Out to its first / last keyframe. | undo + checkpoint | ⏳ |
+| Motion Kit | Parent Chain (`kit.parent`) | Local | Parents the selection in a chain (selection order; reverse), no jump. | undo + checkpoint | ⏳ |
+| Motion Kit | Stare (`kit.stare`) | Local | Rotation faces a target layer (`MOE Stare Target` Layer Control); last selected layer = target. | undo + checkpoint | ⏳ |
+| Motion Kit | Vignette (`kit.vignette`) | Local | `MOE Vignette` black solid with a feathered subtract ellipse; amount / softness / size. | layer removed | ⏳ |
+| Motion Kit | Trash Rigs (`kit.trash`) | Local | Removes MOE-tagged expressions and MOE effects from the selection; the user's own are kept. | Edit › Undo | ⏳ |
 | Animate | Ease Curve (`motion.easeCurve`) | Local | Bézier value-graph editor with live speed graph; 32 curves (expo, back, circ, punch, glide…); exact temporal ease on every segment between selected keys (per dimension, or along the path for Position); hold sides kept; read from keys; copy as CSS. | undo + checkpoint (exact eases) | ⏳ |
-| Layout | Anchor Point (`transform.anchor`) | Local | 9 points of the content box; position compensates scale + rotation (no jump); keyed position / separated X/Y shifted on every key; locked, keyframed-anchor, animated-scale/rotation and 3D-rotated layers skipped with a reason. | undo + checkpoint (exact) | ⏳ |
-| Layout | Align & Distribute (`transform.align`) | Local | Edges / centres to the selection or comp; distribute 3+ layers evenly by measured bounds; keyed positions shifted; parented layers skipped. | undo + checkpoint (exact) | ⏳ |
+| Motion Kit | Anchor Point (`transform.anchor`) | Local | 9 points of the content (or mask) box, no jump; every Position key and a keyed anchor shift; animated scale / rotation exact at the playhead; 3D-rotated / auto-oriented measured by a toWorld probe; Alt = place the layer at that point of the comp. | undo + checkpoint (exact) | ⏳ |
+| Motion Kit | Align & Distribute (`transform.align`) | Local | Edges / centres to the selection or comp; distribute 3+ layers evenly by measured bounds; the whole animation moves; parented layers moved in the parent's space. | undo + checkpoint (exact) | ⏳ |
 | Layout | Clone (`transform.clone`) | Local | Duplicate one layer into a ring (face out), fan / arc, row with rotation / scale / opacity steps, or grid (max 200). | copies deleted, source restored | ⏳ |
 | Quick | Quick Bar (`quick.*`, 14 tools) | Local | Reveal (project / folder / pre-comp), Purge cache, Duplicate comp (deep), Flip H/V, Parent to Null, Pre-compose, Separate X/Y (keeps easing), Select Same Property, Reverse keys, Mirror/Clone keys, Quick Animate (slide 4 directions in/out, fade, scale, spin; overshoot; stagger), Trim Paths (draw/erase/travel/draw+erase), Typewriter, Number Counter. Bar in every section; right-click = options. | undo + checkpoint (Pre-compose, Separate: Edit › Undo) | ⏳ |
 | Shapes & Icons | Insert Shape / Icon (`design.insertShape`) | Local | 1,899 Lucide icons as editable Bézier paths or 22 native parametric shapes; Line / Solid / Both / Duotone; Draw, Pop or Fade at the playhead; read-back of paths, stroke, fill, keys. | layer removed (undo + checkpoint) | ⏳ |

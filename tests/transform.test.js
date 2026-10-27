@@ -7,7 +7,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createTestServices } = require('./helpers/harness');
 const { TA } = require('./fixtures/layout');
-const { studioComp } = require('./fixtures/studio');
+const { studioComp, T: TS } = require('./fixtures/studio');
 const B = require('../extension/features/curves/bezier');
 const M = require('../extension/features/transform/math');
 
@@ -60,24 +60,83 @@ test('Anchor Point: 9 positions; the layer does not move (scaled + rotated); res
   assert.deepEqual(A(tp(L, 'ADBE Position').value), [800, 500]);
 });
 
-test('Anchor Point: keyframed position shifts every key; animated scale and locked layers are skipped', async () => {
+test('Anchor Point: keyframed position shifts every key; animated scale is compensated at the playhead; a keyed anchor shifts', async () => {
   const anim = TA({ pos: [400, 300] });
   anim[1] = Object.assign({}, anim[1], { keys: [{ time: 0, value: [100, 300] }, { time: 2, value: [700, 300] }] });
   const scaled = TA({ pos: [900, 300] });
   scaled[2] = Object.assign({}, scaled[2], { keys: [{ time: 0, value: [50, 50] }, { time: 1, value: [100, 100] }] });
+  const keyedAnchor = TA({ pos: [300, 800] });
+  keyedAnchor[0] = Object.assign({}, keyedAnchor[0], { keys: [{ time: 0, value: [0, 0] }, { time: 1, value: [20, 10] }] });
   const fx = studioComp([
     { name: 'Mover', selected: true, transform: anim, rect: { left: 0, top: 0, width: 200, height: 100 } },
-    { name: 'Grower', selected: true, transform: scaled, rect: { left: 0, top: 0, width: 200, height: 100 } }
+    { name: 'Grower', selected: true, transform: scaled, rect: { left: 0, top: 0, width: 200, height: 100 } },
+    { name: 'Pivot', selected: true, transform: keyedAnchor, rect: { left: 0, top: 0, width: 200, height: 100 } },
   ]);
   const { services, comp } = await createTestServices(fx);
+  comp.time = 0;
   const r = await services.executor.run('transform.anchor', { point: 'c' });
   assert.equal(r.status, 'success', JSON.stringify(r.verification));
   const P = tp(named(comp, 'Mover'), 'ADBE Position');
   assert.deepEqual(A(P.keyValue(1)), [200, 350]);
   assert.deepEqual(A(P.keyValue(2)), [800, 350]);
-  assert.match(r.verification.checks.find((c) => c.label === 'Grower').detail, /scale or rotation is animated/);
+  // Grower: scale 50 % at the playhead → position moves half the anchor change, and the report says so
+  assert.deepEqual(A(tp(named(comp, 'Grower'), 'ADBE Position').value), [950, 325]);
+  assert.match(r.verification.checks.find((c) => c.label === 'Grower').detail, /exact at the playhead/);
+  // Pivot: the anchor keys both shift by the same amount (animation kept)
+  const AP = tp(named(comp, 'Pivot'), 'ADBE Anchor Point');
+  assert.deepEqual(A(AP.keyValue(1)), [100, 50]);
+  assert.deepEqual(A(AP.keyValue(2)), [120, 60]);
   await services.executor.restore(r.checkpointId);
   assert.deepEqual(A(P.keyValue(1)), [100, 300]);
+  assert.deepEqual(A(AP.keyValue(2)), [20, 10]);
+  assert.deepEqual(A(tp(named(comp, 'Grower'), 'ADBE Position').value), [900, 300]);
+});
+
+test('Anchor Point: Alt = also place in the comp; masks box; 3D-rotated layer measured by a probe that leaves no layer and keeps the selection', async () => {
+  const fx = studioComp([
+    { name: 'Card', selected: true, transform: TA({ pos: [400, 300] }), rect: { left: 0, top: 0, width: 200, height: 100 } },
+    { name: 'Tilted', selected: false, threeD: true, transform: TS({ pos: [600, 500, 0], threeD: true }), rect: { left: 0, top: 0, width: 100, height: 100 } }
+  ]);
+  const { services, comp } = await createTestServices(fx);
+  let r = await services.executor.run('transform.anchor', { point: 'br', place: true });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  const card = named(comp, 'Card');
+  assert.deepEqual(A(tp(card, 'ADBE Anchor Point').value).slice(0, 2), [200, 100]);
+  assert.deepEqual(A(tp(card, 'ADBE Position').value).slice(0, 2), [comp.width, comp.height], 'bottom-right corner of the comp');
+  await services.executor.restore(r.checkpointId);
+  assert.deepEqual(A(tp(card, 'ADBE Position').value).slice(0, 2), [400, 300]);
+  // masks: the box comes from the mask, not the layer content
+  await services.host.call('masks.ellipse', { compId: comp.id, layerId: card.id, center: [50, 50], size: [40, 40], feather: 0 });
+  r = await services.executor.run('transform.anchor', { point: 'tl', masks: true });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  assert.deepEqual(A(tp(card, 'ADBE Anchor Point').value).slice(0, 2).map(Math.round), [30, 30]);
+  // 3D layer rotated in Y → probe path
+  const tilted = named(comp, 'Tilted');
+  tp(tilted, 'ADBE Rotate Y').setValue(30);
+  select(comp, ['Tilted']);
+  const n = comp.numLayers;
+  r = await services.executor.run('transform.anchor', { point: 'c' });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  assert.match(r.verification.checks[0].detail, /measured in 3D/);
+  assert.equal(comp.numLayers, n, 'probe removed');
+  assert.ok(tilted.selected, 'selection kept');
+});
+
+test('Align: a parented layer moves in its parent\'s space (scaled parent); whole animation moves', async () => {
+  const fx = studioComp([
+    { name: 'Parent', selected: false, transform: TA({ pos: [960, 540] }), rect: { left: 0, top: 0, width: 10, height: 10 } },
+    box('Child', [100, 0]), box('Free', [400, 300])
+  ]);
+  const { services, comp } = await createTestServices(fx);
+  const parent = named(comp, 'Parent'), child = named(comp, 'Child');
+  tp(parent, 'ADBE Scale').setValue([200, 200]);
+  child.parent = parent;
+  const ids = ['Child', 'Free'].map((n) => named(comp, n).id);
+  const r = await services.executor.run('transform.align', { mode: 'top', to: 'selection' });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  const bx = await bounds(services, comp, ids);
+  assert.ok(near(bx[0][1], bx[1][1], 0.05), `tops line up: ${bx.map(String)}`);
+  assert.match(r.verification.checks.find((c) => c.label === 'Child').detail, /parent/);
 });
 
 test('Align: left edges to the selection, centre to the comp, distribute evenly; restore', async () => {
@@ -170,31 +229,24 @@ test('Ease Curve: exact speed + influence on every selected segment (spatial and
   assert.ok(near(P.keyOutTemporalEase(1)[0].influence, before));
 });
 
-test('v0.9 UI wiring: sections, workspaces, thumbnails, Quick Bar and pie use the new tools', () => {
+test('v0.10 wiring: the Motion Kit owns the ease / anchor / align / kit tools; pie and Quick Bar reach them', () => {
   const S = require('../extension/app/ui/studio/sections');
   const { TOOLS } = require('../extension/features/index');
   const ids = new Set(TOOLS.map((t) => t.id));
-  assert.equal(S.sectionOf({ id: 'transform.clone', category: 'layout' }), 'transform');
-  assert.equal(S.sectionOf({ id: 'motion.easeCurve', category: 'motion' }), 'curves');
-  assert.equal(S.workspaceOf('curves').id, 'ws-animate');
-  assert.equal(S.workspaceOf('transform').id, 'ws-layout');
-  assert.equal(S.byId('curves').tiles.length, B.PRESETS.length);
-  // every curve tile stays inside what AE can store
-  for (const t of S.byId('curves').tiles) assert.ok(t.args.x1 >= B.X_MIN && t.args.x2 <= B.X_MAX, t.id);
-  const kinds = new Set(S.byId('transform').tiles.map((t) => t.tool));
-  assert.deepEqual([...kinds].sort(), ['transform.align', 'transform.anchor', 'transform.clone']);
-  const { DRAW } = require('../extension/app/ui/studio/thumbs');
-  for (const k of ['bezier', 'anchor', 'align', 'clone']) assert.equal(typeof DRAW[k], 'function', k);
+  for (const id of ['transform.anchor', 'transform.align', 'transform.clone', 'motion.easeCurve', 'kit.interp', 'kit.trash']) assert.equal(S.sectionOf({ id, category: 'x' }), 'kit', id);
+  assert.equal(S.workspaceOf('kit').id, 'ws-kit');
+  assert.equal(S.byId('curves'), null, 'v0.9 tile section removed');
+  assert.equal(S.byId('transform'), null, 'v0.9 tile section removed');
   const QB = require('../extension/features/quick/bar');
-  for (const a of QB.ACTIONS.filter((x) => x.group === 'Align' || /^curve/.test(x.id))) assert.ok(ids.has(a.tool), a.id);
+  for (const id of QB.KIT_TOOLS) { const a = QB.ACTIONS.find((x) => x.id === id); assert.ok(a, id); assert.ok(ids.has(a.tool), `${id} → ${a.tool}`); }
   const actions = require('../extension/app/ui/actions');
-  for (const ref of ['tile:curves/curve-outExpo', 'tile:transform/anchor-b', 'tile:transform/align-distH', 'tile:transform/cloneRing8']) assert.ok(actions.resolve(ref), ref);
+  for (const ref of ['quick:curveExpo', 'quick:anchorB', 'quick:distH', 'quick:k_repeat', 'nav:kit']) assert.ok(actions.resolve(ref), ref);
 });
 
-test('v0.9 thumbnails draw every new tile without throwing (stub canvas)', () => {
-  const S = require('../extension/app/ui/studio/sections');
-  const { DRAW } = require('../extension/app/ui/studio/thumbs');
-  const noop = () => {};
-  const c = new Proxy({}, { get: (o, k) => (k in o ? o[k] : noop), set: (o, k, v) => { o[k] = v; return true; } });
-  for (const sec of ['curves', 'transform']) for (const t of S.byId(sec).tiles) { DRAW[t.thumb.k](c, 160, 100, t.thumb, null); DRAW[t.thumb.k](c, 160, 100, t.thumb, 1234); }
+test('Motion Kit: preset matching and the keyed-property pick', () => {
+  const kit = require('../extension/app/ui/views/kit');
+  assert.equal(kit.matchPreset(B.normalize(B.PRESETS.find((p) => p.id === 'outExpo'))), 'outExpo');
+  assert.equal(kit.matchPreset({ x1: 0.5, y1: 0.2, x2: 0.4, y2: 0.9 }), null);
+  const ctx = { properties: [{ name: 'Color', valueType: 'COLOR', selectedKeys: [1, 2] }, { name: 'Opacity', valueType: 'OneD', selectedKeys: [2, 3] }] };
+  assert.deepEqual(kit.keyed(ctx).map((p) => p.name), ['Opacity']);
 });

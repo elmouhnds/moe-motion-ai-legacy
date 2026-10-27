@@ -804,3 +804,100 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 /* The side Inspector stops above the sticky Apply bar (header + selection + Quick Bar + tabs + bar + Copilot ≈ 236 px),
    so its last buttons (Restore, Dismiss) are never under the bar. */
 .app.has-actbar .st-body.wide .st-inspector { max-height: calc(100vh - 236px); }
+
+/* ---------- v0.10 Motion Kit: compact, everything one click (see docs/features/MOTION_KIT.md) ---------- */
+.view.kit { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
+.kit-block { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-raised); padding: 8px; min-width: 0; }
+.kit-h { display: flex; align-items: center; gap: 6px; min-height: 24px; margin-bottom: 6px; }
+.kit-h .spacer, .kit-row .spacer { flex: 1; }
+.kit-t { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
+.kit-src { min-width: 0; padding: 0; border: 0; background: none; font: inherit; font-size: var(--fs-sm); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-align: left; }
+.kit-src:hover { color: var(--accent); }
+.kit-src.dim, .kit-hint { color: var(--text-3); font-size: var(--fs-sm); }
+.kit-hint { margin-left: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.kit-seg { display: inline-flex; flex: none; height: 22px; padding: 1px; border-radius: var(--r); background: var(--bg-sunken); border: 1px solid var(--line); }
+.kit-seg button { min-width: 26px; padding: 0 6px; border: 0; border-radius: 3px; background: none; color: var(--text-2); font-size: 11px; cursor: pointer; }
+.kit-seg button:hover { color: var(--text); }
+.kit-seg button[aria-pressed="true"] { background: var(--bg-active); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong) inset; }
+.kit-seg.wide { display: flex; flex-wrap: wrap; height: auto; margin-bottom: 6px; }
+.kit-auto.on, .icon-btn.on { color: var(--accent); background: var(--accent-soft); }
+.kit-graph-wrap { position: relative; }
+.kit-graph:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.kit-gbar { display: flex; align-items: center; gap: 6px; margin-top: 4px; min-width: 0; }
+.kit-gmode { flex: none; height: 22px; }
+.kit-gmode button { font-size: 10.5px; min-width: 0; padding: 0 6px; }
+.kit-num { flex: 0 1 170px; min-width: 0; height: 22px; padding: 0 6px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text-2); font: 11px ui-monospace, Consolas, monospace; text-align: right; }
+.kit-num:hover, .kit-num:focus { border-color: var(--line-strong); color: var(--text); outline: none; }
+.kit-grip { flex: 1; height: 14px; min-width: 24px; border-radius: 4px; cursor: ns-resize; background: linear-gradient(var(--line-strong), var(--line-strong)) center / 28px 2px no-repeat; touch-action: none; border-radius: 4px; }
+.kit-grip:hover { background-color: var(--bg-hover); }
+.kit-match { flex: none; font-size: 10.5px; color: var(--accent); white-space: nowrap; }
+.kit-graph { display: block; width: 100%; height: 150px; border-radius: var(--r); background: var(--bg-sunken); touch-action: none; cursor: grab; }
+.kit-graph:active { cursor: grabbing; }
+.kit-row { display: flex; align-items: center; gap: 2px; margin-top: 4px; min-width: 0; }
+.kit-css { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 11px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.kit-sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+.kit-slider { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--fs-sm); color: var(--text-2); }
+.kit-slider-l { flex: none; width: 24px; }
+.kit-range { flex: 1; min-width: 0; accent-color: var(--accent); }
+.kit-range-v { flex: none; width: 32px; text-align: right; font-variant-numeric: tabular-nums; color: var(--text); }
+.kit-tools-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin-top: 8px; }
+.kit-tb { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 4px; min-width: 0; height: 28px; padding: 0 2px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text-2); font-size: 10.5px; cursor: pointer; }
+.kit-tb span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kit-tb:hover:not(:disabled) { color: var(--text); border-color: var(--line-strong); }
+.kit-tb:disabled { opacity: .45; cursor: default; }
+.kit-chips { display: flex; gap: 4px; margin-top: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+.kit-chips.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); overflow: visible; margin-top: 0; }
+.kit-chip { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; width: 58px; padding: 4px 2px 3px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text-2); cursor: pointer; }
+.kit-chips.grid .kit-chip { width: auto; }
+.kit-chip:hover { color: var(--text); border-color: var(--line-strong); }
+.kit-chip.on { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
+.kit-chip.on .kit-chip-g { color: var(--accent); }
+.kit-chip.more { justify-content: center; width: 40px; min-height: 44px; }
+.kit-chip-g { display: block; width: 28px; height: 26px; color: var(--text-3); }
+.kit-chip-g svg { display: block; width: 28px; height: 26px; }
+.kit-chip-l { max-width: 100%; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kit-lib { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+.kit-pair { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+.kit-dots { display: grid; grid-template-columns: repeat(3, 28px); grid-template-rows: repeat(3, 28px); gap: 3px; padding: 6px; border: 1px dashed var(--line-strong); border-radius: var(--r); width: max-content; }
+.kit-dot { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: none; cursor: pointer; }
+.kit-dot span { width: 9px; height: 9px; border-radius: 50%; background: var(--text-3); transition: background var(--t), box-shadow var(--t); }
+.kit-dot:hover span { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.kit-dot:active span { background: var(--text); }
+.kit-dots.off .kit-dot span { opacity: .45; }
+.kit-check { display: flex; align-items: center; gap: 5px; margin-top: 6px; font-size: var(--fs-sm); color: var(--text-2); }
+.kit-align-row { display: grid; grid-template-columns: repeat(3, minmax(28px, 1fr)); gap: 4px; }
+.kit-ib { display: grid; place-items: center; height: 28px; min-width: 28px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text-2); cursor: pointer; }
+.kit-ib:hover { color: var(--text); border-color: var(--line-strong); }
+.kit-ib.off { opacity: .45; }
+.kit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 4px; }
+.kit-tool { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 50px; min-width: 0; padding: 0 2px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text); cursor: pointer; }
+.kit-tool .svg-i { width: 18px; height: 18px; color: var(--text-2); }
+.kit-tool:hover:not(:disabled) { border-color: var(--line-strong); background: var(--bg-hover); }
+.kit-tool:hover:not(:disabled) .svg-i { color: var(--accent); }
+.kit-tool.off { opacity: .45; }
+.kit-tool.danger:hover:not(:disabled) .svg-i { color: var(--err, #ff6b6b); }
+.kit-tool:disabled { cursor: default; }
+.kit-tool-l { max-width: 100%; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* narrow docks (≤ 300 px of content): align under anchor, three tools per row */
+.kit-align .kit-h { flex-wrap: wrap; row-gap: 4px; }
+.app.kit-narrow .view.kit, .app.kit-tiny .view.kit { padding: 6px; gap: 6px; }
+.app.kit-narrow .kit-block, .app.kit-tiny .kit-block { padding: 7px; }
+.app.kit-narrow .kit-dots, .app.kit-tiny .kit-dots { grid-template-columns: repeat(3, 26px); grid-template-rows: repeat(3, 26px); padding: 4px; }
+.app.kit-narrow .kit-dot, .app.kit-tiny .kit-dot { width: 26px; height: 26px; }
+.app.kit-tiny .kit-pair { grid-template-columns: 1fr; }
+/* v0.10 Home = Motion 4 Home: the kit blocks first */
+.home-kit { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+
+/* wide panels: ease on the left, anchor + align + pinned tools on the right — all above the fold */
+.app.kit-wide .home-kit { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(250px, 1fr); align-items: start; }
+.app.kit-wide .home-kit > .kit-ease { grid-row: span 2; }
+.app.kit-wide .home-kit > .kit-pair { grid-template-columns: auto minmax(0, 1fr); }
+.app.kit-wide .home-kit > .kit-toolbox { grid-column: 2; }
+
+.kit-more { margin-left: auto; height: 22px; padding: 0 6px; font-size: var(--fs-sm); }
+.kit-tool.pin { position: relative; }
+.kit-tool.pin.on { border-color: var(--accent); background: var(--accent-soft); }
+.kit-pin-mark { position: absolute; top: 3px; right: 4px; color: var(--accent); }
+.kit-empty { padding: 4px 2px; }
+.view.kit.toolbox .kit-grid { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); }
+.app.kit-slim .kit-tb span, .app.kit-tiny .kit-tb span { display: none; }

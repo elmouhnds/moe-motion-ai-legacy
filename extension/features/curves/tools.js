@@ -19,7 +19,7 @@ function layerNameOf(ctx, address) {
 
 const easeCurve = {
   id: 'motion.easeCurve',
-  version: '1.0.0',
+  version: '1.1.0',
   category: 'motion',
   group: 'Easing',
   name: 'Ease Curve',
@@ -30,7 +30,8 @@ const easeCurve = {
     x1: { type: 'number', label: 'Out X', description: 'Outgoing handle: time (influence of the first key)', min: B.X_MIN, max: B.X_MAX, step: 0.01, default: 0.333 },
     y1: { type: 'number', label: 'Out Y', description: 'Outgoing handle: progress (speed of the first key)', min: B.Y_MIN, max: B.Y_MAX, step: 0.01, default: 0 },
     x2: { type: 'number', label: 'In X', description: 'Incoming handle: time (influence of the second key)', min: B.X_MIN, max: B.X_MAX, step: 0.01, default: 0.667 },
-    y2: { type: 'number', label: 'In Y', description: 'Incoming handle: progress (speed of the second key)', min: B.Y_MIN, max: B.Y_MAX, step: 0.01, default: 1 }
+    y2: { type: 'number', label: 'In Y', description: 'Incoming handle: progress (speed of the second key)', min: B.Y_MIN, max: B.Y_MAX, step: 0.01, default: 1 },
+    side: { type: 'enum', label: 'Apply to', default: 'both', options: [{ value: 'both', label: 'In + Out' }, { value: 'in', label: 'Ease In only' }, { value: 'out', label: 'Ease Out only' }], description: 'In = the incoming side of each segment\'s second key; Out = the outgoing side of its first key (Shift / Ctrl-click a preset in the Motion Kit)' }
   },
   requires: { comp: true, selectedKeys: 2 },
   permissions: ['modify.keyframes'],
@@ -55,7 +56,8 @@ const easeCurve = {
     }
     if (!targets.length) return { ok: false, error: skipped[0] || 'Select at least two keyframes on one property' };
     const curve = B.normalize(args);
-    return { ok: true, compId: ctx.comp.id, curve, targets, preview: { summary: `${B.css(curve)} on ${segs} segment${segs > 1 ? 's' : ''}`, items: items.concat(skipped) } };
+    const side = args.side || 'both';
+    return { ok: true, compId: ctx.comp.id, curve, side, targets, preview: { summary: `${B.css(curve)}${side === 'both' ? '' : side === 'in' ? ' (ease in)' : ' (ease out)'} on ${segs} segment${segs > 1 ? 's' : ''}`, items: items.concat(skipped) } };
   },
 
   async execute({ prepared, host }) {
@@ -72,8 +74,9 @@ const easeCurve = {
         const va = asArray(ka.value), vb = asArray(kb.value);
         const te = B.toTemporal(prepared.curve, { dt: kb.time - ka.time, dv: vb.map((v, d) => v - va[d]), spatial: t.spatial });
         if (te.clamped) clamped = true;
-        plan.set(a, Object.assign(plan.get(a) || { index: a, easeIn: null }, { easeOut: te.out }));
-        plan.set(b, Object.assign(plan.get(b) || { index: b, easeOut: null }, { easeIn: te.in }));
+        const side = prepared.side || 'both';
+        if (side !== 'in') plan.set(a, Object.assign(plan.get(a) || { index: a, easeIn: null }, { easeOut: te.out }));
+        if (side !== 'out') plan.set(b, Object.assign(plan.get(b) || { index: b, easeOut: null }, { easeIn: te.in }));
       }
       if (plan.size) targets.push({ address: t.address, keys: [...plan.values()].map((k) => Object.assign({ easeIn: null, easeOut: null }, k)) });
     }
