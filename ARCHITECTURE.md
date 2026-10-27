@@ -136,6 +136,12 @@ See `docs/features/STUDIO_v0.4.md`.
 - `chrome.js`: banners full on the first visit (`banners-seen` in the store), one-line title after.
 - `dom.morph` keeps a kept canvas's width/height (removing them clears the bitmap).
 
+## 5j. Workspaces & Pie menu (v0.8.0)
+- `studio/sections.js`: `WORKSPACES` (Home + 5) group the 15 sections; `workspaceOf(id)`; the shell renders workspace buttons, a tab row for the current workspace, remembers the last section per workspace (`ui.wsLast`), Ctrl 1–6.
+- `app/ui/actions.js`: one action vocabulary (`tile:` / `quick:` / `nav:` / `cmd:`) → `{ label, icon, run(app), ready(app) }`; `profile(ctx)` names the selection (keys / text / shapes / layers / layer / none); `SETS` are the fixed 8-slot smart sets; `slotsFor()` returns the smart set or the user's `ui.pie.mine`; `catalog()` feeds Settings.
+- `app/ui/pie.js`: the radial menu (marking-menu release, tap-to-stay, 1–8, arrows, centre = `app.repeatLast`). Pure helpers `sliceAt` / `sectorPath` are unit-tested. Readiness comes from `library.readiness`, so a slice never runs what the tool's own checks would refuse; every run still goes through `app.runTool` → executor.
+- Triggers live in the shell: Q keydown (not typing, no modifiers), right-button pointerdown on anything without its own right-click menu, the header button.
+
 ## 5g. Distribution (v0.6.1)
 - `installer/moe-motion-ai.nsi` → per-user Setup.exe; install folder = bundle id, so every version lands in the same place. `install.json` in that folder records the installer and version.
 - `core/updater.js` (pure, injected `http` / `system`) + `platform.system` (Node: HTTPS-only download, SHA-256, detached launch, `extensionInfo`). The panel never replaces its own files: it hands a verified installer to Windows, which runs after After Effects quits (`/WAITAE`).

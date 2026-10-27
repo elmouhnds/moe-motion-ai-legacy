@@ -741,3 +741,54 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 
 .ctx .comp { flex: 0 1 auto; min-width: 56px; }
 .app.has-actbar .toast { bottom: 100px; }
+
+/* ---------- v0.8 workspaces ---------- */
+.ws-tabs { display: flex; gap: 2px; padding: 4px 8px; border-bottom: 1px solid var(--line); overflow-x: auto; flex: none; scrollbar-width: none; }
+.ws-tabs::-webkit-scrollbar { display: none; }
+.ws-tabs [role="tab"] { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 28px; padding: 0 10px; border: 0; border-radius: var(--r); background: none; color: var(--text-3); font-weight: 500; cursor: pointer; white-space: nowrap; }
+.ws-tabs [role="tab"]:hover { color: var(--text); background: var(--bg-hover); }
+.ws-tabs [role="tab"][aria-selected="true"] { color: var(--text); background: var(--bg-active); box-shadow: inset 0 -2px 0 var(--accent); }
+.app.compact .ws-tabs [role="tab"] span { display: none; }
+.app.nav-wide .sb-group-h { margin-top: 12px; }
+
+/* ---------- v0.8 pie menu ---------- */
+.overlay.pie-ov { display: block; padding: 0; background: rgba(0, 0, 0, 0.18); animation: none; }
+.pie { position: absolute; width: 0; height: 0; }
+.pie-ring { position: absolute; left: -144px; top: -144px; width: 288px; height: 288px; pointer-events: none; overflow: visible; }
+.pie-disc { fill: var(--bg-raised); stroke: var(--line-strong); stroke-width: 1; opacity: 0.97; }
+.pie-hole { fill: var(--bg); stroke: var(--line); }
+.pie-hl { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1; }
+.pie-slot { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; width: 72px; height: 52px; margin: -26px 0 0 -36px; padding: 0; border: 0; border-radius: 10px; background: none; color: var(--text-2); cursor: pointer; }
+.pie-slot .svg-i { width: 20px; height: 20px; }
+.pie-l { max-width: 70px; font-size: 10.5px; line-height: 1.15; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pie-n { position: absolute; top: 1px; right: 6px; font-size: 9px; color: var(--text-3); }
+.pie-slot.hot { color: var(--text); }
+.pie-slot.hot .svg-i { color: var(--accent); }
+.pie-slot.blocked { color: var(--text-3); }
+.pie-slot.blocked .svg-i { opacity: 0.5; }
+.pie-slot.empty { color: var(--text-3); opacity: 0.6; }
+.pie-slot:focus-visible, .pie-centre:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pie-centre { position: absolute; left: -36px; top: -36px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; width: 72px; height: 72px; padding: 4px; border: 0; border-radius: 50%; background: none; color: var(--text-2); cursor: pointer; text-align: center; }
+.pie-centre.hot { color: var(--accent); }
+.pie-c-l { max-width: 64px; font-size: 10px; font-weight: 600; color: var(--text); line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.pie-c-k { max-width: 64px; font-size: 9px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (prefers-reduced-motion: no-preference) { .pie { animation: pie-in 90ms ease-out; } }
+@keyframes pie-in { from { opacity: 0; } to { opacity: 1; } }
+/* Home: suggestions for the current selection */
+.hm-suggest { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; padding: 0 12px; }
+.hm-sg { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg-raised); color: var(--text); cursor: pointer; text-align: left; }
+.hm-sg:hover { border-color: var(--accent); }
+.hm-sg.blocked { color: var(--text-3); }
+.hm-sg .svg-i { flex: none; color: var(--accent); }
+.hm-sg.blocked .svg-i { color: var(--text-3); }
+.hm-sg span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-sm); }
+.hm-sg-h { display: flex; align-items: baseline; gap: 8px; }
+.hm-sg-h .why { font-size: var(--fs-xs); }
+/* Settings › Pie menu */
+.pie-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 12px; }
+.pie-slots label { display: grid; grid-template-columns: 54px 1fr; align-items: center; gap: 6px; color: var(--text-2); font-size: var(--fs-sm); }
+.pie-slots select { min-width: 0; }
+.hm-sg-h .why { text-transform: none; letter-spacing: 0; font-weight: 400; }
+/* The side Inspector stops above the sticky Apply bar (header + selection + Quick Bar + tabs + bar + Copilot ≈ 236 px),
+   so its last buttons (Restore, Dismiss) are never under the bar. */
+.app.has-actbar .st-body.wide .st-inspector { max-height: calc(100vh - 236px); }

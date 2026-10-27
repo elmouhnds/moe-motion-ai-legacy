@@ -1,6 +1,6 @@
 # Test Report
 
-Last run: 2026-10-23 (v0.7.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-26 (v0.8.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
@@ -16,6 +16,7 @@ Last run: 2026-10-23 (v0.7.0), Linux cloud sandbox (Node 22.22.0). **After Effec
 | UI stability under AE-like load | `npm run stress`: Chromium, host answers in 250 ms, selection changes on every read, mouse resting on tiles, slow 120 ms clicks, pointer 1 px inside a tile edge — Animate, Shapes, Home, Backgrounds | Pass after v0.6.2 (before: swaps in every view, 12–14/20 clicks, 22–24 hover flips). **Not yet confirmed inside AE** — checklist 63–66 |
 | Every button (v0.6.5) | `node tools/audit-ui.js`: every button / tab / chip / tile in 19 views + 3 data variants clicked from a known state with real mouse clicks, tiles double-clicked, controls revealed by a click clicked too; layout at 340–900 px — see `docs/UX_AUDIT.md` | 2,495 interactions: 0 JS errors, 0 unreachable or unnamed controls, 0 overflow; 7 bugs found and fixed. **Preview + mock host, not After Effects** |
 | Every button (v0.7.0) | Same audit on v0.7.0 (19 views + 3 data variants; revealed controls sampled 3–4 per click) + `tests/workflow.test.js` + browser flow check of every new feature | 2,451 interactions: 0 JS errors, 0 unreachable; failed tool runs 99 → 12 (all host-time conditions with a clear message: no Position keys, no screen colour found, project not saved). Single-file web preview tested in Chromium with and without a no-eval CSP. **Preview + mock host, not After Effects** |
+| Every button (v0.8.0) | Same audit incl. the Pie menu (header button → every slice) and workspace tabs + `tests/workflow.test.js` (profile, sets, geometry, keys 1–8, centre, Esc) + browser flow: hold Q / point / release, tap Q, right-hold, Ctrl 1–6 | 2,436 interactions: 0 JS errors; 1 real overlap found and fixed (Inspector under the Apply bar); remaining failures are host-time conditions with clear messages. Pie also checked in the single-file preview under a no-eval CSP. **Preview + mock host, not After Effects** — Q / right-hold inside AE still to confirm (checklist 82–84) |
 | Updater over HTTPS | Real Node HTTPS download from a local self-signed server (redirect, progress, SHA-256, oversize cut-off) | Pass |
 | **Inside After Effects 2025** | — | **Not run yet** |
 
@@ -235,6 +236,14 @@ Record results here with AE version/build from the Diagnostics view.
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
 
+### Workspaces & Pie checklist (v0.8.0) — inside After Effects 2025
+81. Sidebar: Home + Animate · Design · Layout · Finish · Tools; tabs at the top of each workspace; a workspace reopens its last section; Ctrl 1–6.
+82. Click inside the panel, hold Q, point east, release: the eastern slice runs (with keyframes selected: Expo Ease). Note whether AE itself also reacted to Q (it should not while the panel has focus).
+83. Tap Q: the pie stays open; 1–8 runs a slice; Esc closes; the centre repeats the last change.
+84. Hold the right mouse button on an empty part of the panel, point, release. Right-click on a Quick Bar button still opens its options (not the pie).
+85. Select text layers / shape layers / several layers / nothing: the pie slices change accordingly; dimmed slices explain why.
+86. Settings › Pie menu › My pie: fill slots, "Start from the smart set", turn Q / right-hold off.
+
 ### Workflow checklist (v0.7.0) — inside After Effects 2025, panel docked ~400 px wide
 74. Animate: the action bar (preset name + Apply) is visible at the bottom without scrolling; Apply works.
 75. Hover a tile → ▶ appears without the tile moving; ▶ applies it. With no shape layer selected, Trim tiles are dimmed and ▶ shows "Select shape layers".
@@ -255,7 +264,7 @@ Record results here with AE version/build from the Diagnostics view.
 
 ### Connection checklist (v0.6.3) — inside After Effects 2025
 67. Open the panel: the strip shows the comp name (green dot), not "not connected". If not: Details → Copy report → send (the message names the host file and line).
-68. Diagnostics shows AE version, build, ExtendScript version and Host module 0.7.0.
+68. Diagnostics shows AE version, build, ExtendScript version and Host module 0.8.0.
 
 ### UI stability checklist (v0.6.2) — inside After Effects 2025
 63. Rest the mouse on icons / tiles / sidebar buttons for 10 s: nothing blinks or shakes; the pointer is steady.

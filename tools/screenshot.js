@@ -7,6 +7,13 @@ const SHOTS = [
   // v0.6.3 connection error
   ['c-hostfail', W('?view=home&fixture=layout&hostFail=1'), async (p) => { await p.waitForSelector('.ctx-err'); await p.waitForTimeout(300); }],
   ['c-hostfail-diag', W('?view=home&fixture=layout&hostFail=1'), async (p) => { await p.waitForSelector('.ctx-err'); await p.click('.ctx-btn'); await p.waitForTimeout(300); }],
+  // v0.8.0 workspaces & pie
+  ['v-pie-keys', '?view=animate&fixture=layout&w=420', async (p) => { await p.click('.content'); await p.mouse.move(230, 420); await p.keyboard.press('q'); await p.mouse.move(300, 420); await p.waitForTimeout(200); }],
+  ['v-pie-text', '?view=text&fixture=studio&w=420', async (p) => { await p.click('.content'); await p.mouse.move(230, 420); await p.keyboard.press('q'); await p.waitForTimeout(200); }],
+  ['v-pie-wide', W('?view=layout&fixture=layout'), async (p) => { await p.click('.content'); await p.mouse.move(520, 420); await p.keyboard.press('q'); await p.mouse.move(520, 340); await p.waitForTimeout(200); }],
+  ['v-workspace', W('?view=backgrounds&fixture=layout'), async (p) => { await p.waitForTimeout(400); }],
+  ['v-home-suggest', '?view=home&fixture=studio&w=420', async (p) => { await p.evaluate(() => document.querySelector('.hm-suggest').scrollIntoView()); await p.waitForTimeout(300); }],
+  ['v-settings-pie', W('?view=settings'), async (p) => { await p.click('.set-group .seg button:has-text("My pie")'); await p.evaluate(() => [...document.querySelectorAll('.section-h')].find((x) => x.textContent === 'Pie menu').scrollIntoView()); await p.waitForTimeout(300); }],
   // v0.7.0 workflow
   ['w-actbar', '?view=animate&fixture=layout&w=420', async (p) => { await p.hover('.st-cell:nth-child(2)'); await p.waitForTimeout(300); }],
   ['w-search', '?view=animate&fixture=layout&w=420', async (p) => { await p.keyboard.press('Control+k'); await p.keyboard.type('pop'); await p.waitForTimeout(300); }],

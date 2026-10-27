@@ -100,11 +100,11 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
     <aside class="pv-guide" aria-label="What to try">
       <h2>Try this</h2>
       <ol>
-        <li>Open <b>Animate</b>. Hover a tile and press <b>▶</b> — or pick a tile and press <b>Apply</b> in the bar at the bottom.</li>
-        <li>Press <kbd>F4</kbd> (click inside the panel first) to repeat the last change, or use the ↻ chip in the selection line.</li>
-        <li>Press <kbd>Ctrl</kbd> <kbd>K</kbd>, type <i>pop</i>, press <kbd>Enter</kbd>: the preset is applied.</li>
-        <li>Dimmed tiles cannot run on this selection — ▶ tells you why. Try <b>Draw On</b> (needs shape layers).</li>
-        <li>Switch <b>Comp</b> to <i>9 cards</i> and open <b>Layout &amp; Grid › Ring</b> for a radial clone.</li>
+        <li><b>Pie menu:</b> click inside the panel, then <b>hold <kbd>Q</kbd></b> (or hold the right mouse button), point toward an action and release. Tap <kbd>Q</kbd> to keep it open and press 1–8. The slices change with the selection — try the <i>Text</i> and <i>9 cards</i> comps.</li>
+        <li>The sidebar is <b>Home + five workspaces</b> (Animate · Design · Layout · Finish · Tools); each shows its sections as tabs. <kbd>Ctrl</kbd> <kbd>1</kbd>–<kbd>6</kbd> jumps between them.</li>
+        <li><b>Home › For this selection</b>: the same eight actions as the pie, one click each.</li>
+        <li>In a library, hover a tile and press <b>▶</b>, or use <b>Apply</b> in the bar at the bottom. <kbd>F4</kbd> repeats the last change.</li>
+        <li><kbd>Ctrl</kbd> <kbd>K</kbd>, type <i>pop</i>, <kbd>Enter</kbd>: the preset is applied. Dimmed tiles tell you why they cannot run.</li>
         <li>Every change is listed in <b>History</b> and can be restored.</li>
       </ol>
       <div class="pv-note" id="pv-noeval" hidden><b>Expressions are not evaluated on this page.</b> The page's security settings block running code from text, so the mock cannot read the result of an expression back. Tools driven by expressions (Grid, Proximity, Glass) still build, but report <i>partial</i> here; in After Effects they verify fully.</div>

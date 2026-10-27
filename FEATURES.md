@@ -1,4 +1,6 @@
-# Features (v0.7.0)
+# Features (v0.8.0)
+
+Navigation (v0.8.0): Home + five workspaces (Animate · Design · Layout · Finish · Tools) with section tabs · Pie menu (hold Q or the right button; smart slices by selection or My pie; centre = repeat) · Home "For this selection".
 
 Workflow (v0.7.0): sticky Apply bar in every library and Text · ▶ on every tile · tiles dimmed with the reason when the selection cannot run them · F4 / ↻ repeat last change · Ctrl K finds and applies presets (Enter) · grouped sidebar with hideable sections · Compositing as a tile library · banners shown in full once · compact tiles in narrow panels · Home puts Recent / Favorites first for returning users.
 

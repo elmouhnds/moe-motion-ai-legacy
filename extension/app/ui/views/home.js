@@ -15,7 +15,8 @@ const TIPS = [
   'Shapes & Icons: icons land as real Bézier paths, so Trim Paths, Offset Paths and Wiggle Paths all work.',
   'Turn on "Live controls" for an expression to get keyframeable sliders on the layer.',
   'Backgrounds with "Slow drift" loop forever — the gradient points move with a tagged expression.',
-  'Ctrl + 1…9 jumps between sections. Press ? for every shortcut. Hide sections you never use in Settings › Sidebar.',
+  'Ctrl + 1…6 jumps between Home and the five workspaces. Press ? for every shortcut. Hide sections you never use in Settings › Sidebar.',
+  'Hold Q, point, release: the pie menu runs the action in that direction. Its slices follow what you selected.',
   'Colorize → Blend makes a smooth colour ramp across a whole selection, in selection order.',
   'Deliver plans every aspect ratio at once; the keyframes of your animation are kept.',
   'Save any Inspector setting as your own preset — it appears as a tile under "My Presets".',
@@ -71,6 +72,20 @@ function compCard(app, ctx) {
         h('span', { class: 'chip' }, `${ctx.layers.length} selected`))));
 }
 
+/** "For this selection": the same eight actions the smart pie shows (v0.8). */
+function suggestions(app, ctx) {
+  const actions = require('../actions');
+  const kind = actions.profile(ctx);
+  const items = actions.SETS[kind].map((r) => actions.resolve(r)).filter(Boolean);
+  return [
+    h('div', { class: 'section-h hm-sg-h' }, 'For this selection', h('span', { class: 'why' }, `${actions.CONTEXT_LABEL[kind]} · hold Q for the pie`)),
+    h('div', { class: 'hm-suggest' }, items.map((a) => {
+      const rd = a.ready(app);
+      return h('button', { class: `hm-sg ${rd.ok || a.nav ? '' : 'blocked'}`, 'data-key': `sg-${a.id}`, title: rd.ok || a.nav ? `${a.label} — ${a.where}` : `${a.label} — ${rd.hint}`,
+        onclick: () => { if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else a.run(app); } }, icon(a.icon || 'bolt', 'sm'), h('span', {}, a.label));
+    }))];
+}
+
 function render(app) {
   const s = app.state.get();
   const n = chrome.counts(app);
@@ -118,6 +133,7 @@ function render(app) {
   return h('div', { class: 'view home' },
     hero,
     compCard(app, s.ctx),
+    s.ctx && s.ctx.comp ? suggestions(app, s.ctx) : null,
     returning ? cols : null,
     starts,
     returning ? null : cols,

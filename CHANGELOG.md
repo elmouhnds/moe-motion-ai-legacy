@@ -2,6 +2,20 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.8.0] — 2026-10-26 — Workspaces and Pie menu
+Requested by the product owner: a smarter, simpler arrangement for fast access, and a pie menu.
+### Added
+- **Pie menu**: hold **Q** (or the right mouse button) over the panel, point toward an action, release. Tap Q (or the header button) to keep it open; 1–8 choose, arrows + Enter, Esc closes; the centre repeats the last change. Slices that cannot run on the selection are dimmed and explain why (the tool's own readiness check). Works while the panel has keyboard focus.
+- **Smart slices**: the eight actions follow the selection — keyframes (eases, loops, reverse, mirror, stagger), text (typewriter, rise, slide, counter…), one shape (draw / travel / erase, pop, wiggle…), several shapes (draw on, grid, ring, cascade… — e.g. clone circles around a ring), several layers (cascade, grid, ring, parent to null, pre-compose…), one layer, or nothing selected (search, shapes, backgrounds, guides, Copilot…). Positions never move inside a set, so direction becomes muscle memory; opposites face each other (In ↔ Out, Draw ↔ Erase).
+- **My pie** (Settings › Pie menu): eight slots of your choice from every tile, Quick Bar action, section and command; "Start from the smart set"; Q and right-hold can be turned off.
+- **Five workspaces**: the sidebar is Home + Animate (Motion · Text · Expressions) · Design (Shapes & Icons · Backgrounds · Looks & Glass · Brand) · Layout (Layout & Grid · Zoom & Focus · Deliver) · Finish (Compositing) · Tools (Quick Bar · Select · My Tools) — 6 buttons instead of 15. Sections show as tabs at the top; each workspace reopens the section used last. Ctrl 1–6 = Home + workspaces.
+- **Home › For this selection**: the same eight actions as the smart pie, as one-click buttons.
+### Changed
+- Section "Animate" is now **Motion** (inside the Animate workspace); "Tools" is **My Tools** (inside Tools).
+- `npm run stress` scrolls a target into view before clicking it (Home is taller now).
+### Fixed
+- With the side Inspector (wide panel), its last buttons (Restore, Dismiss) could sit under the sticky Apply bar; the Inspector now stops above the bar (found by the click audit).
+
 ## [0.7.0] — 2026-10-23 — Faster workflow (UX audit recommendations)
 All twelve recommendations of `docs/UX_AUDIT.md`, approved by the product owner.
 ### Added

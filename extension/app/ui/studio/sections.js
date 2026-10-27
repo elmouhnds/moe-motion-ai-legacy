@@ -102,7 +102,7 @@ const BACKGROUNDS = PAL.PALETTES.map((p) => T(`bg-${p.id}`, p.name, 'design.back
  */
 const SECTIONS = [
   { id: 'home', label: 'Home', icon: 'home', kind: 'view' },
-  { id: 'animate', label: 'Animate', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Trim', 'Ease', 'Keys', 'Proximity'], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
+  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Trim', 'Ease', 'Keys', 'Proximity'], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },
   { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true },
   { id: 'shapes', label: 'Shapes & Icons', icon: 'shapes', kind: 'view' },
@@ -115,23 +115,27 @@ const SECTIONS = [
   { id: 'compositing', label: 'Compositing', icon: 'layers', kind: 'library', tiles: COMPOSITING, filters: ['All', 'Analyze', 'Color', 'Key', 'Green screen'], tools: (t) => t.category === 'compositing' && !/^glass\./.test(t.id) },
   { id: 'quick', label: 'Quick Bar', icon: 'bolt', kind: 'view' },
   { id: 'select', label: 'Select', icon: 'cursor', kind: 'view' },
-  { id: 'tools', label: 'Tools', icon: 'tools', kind: 'view' }
+  { id: 'tools', label: 'My Tools', icon: 'tools', kind: 'view' }
 ];
 /**
- * Sidebar groups (v0.7, from the UX audit): sections by creative purpose, Home first.
- * Ctrl+1…9 follows this order. Users can hide sections in Settings › Appearance.
+ * Workspaces (v0.8): the sidebar shows Home + five workspaces instead of fifteen sections; each
+ * workspace shows its sections as tabs. Ctrl 1–6 = Home + the workspaces. Users can hide
+ * sections in Settings › Sidebar (a workspace with nothing left disappears).
  */
-const GROUPS = [
-  { id: 'animate', label: 'Animate', items: ['animate', 'text', 'expressions'] },
-  { id: 'design', label: 'Design', items: ['shapes', 'backgrounds', 'looks', 'brand'] },
-  { id: 'layout', label: 'Layout', items: ['layout', 'zoom', 'deliver'] },
-  { id: 'finish', label: 'Finish', items: ['compositing'] },
-  { id: 'utilities', label: 'Utilities', items: ['quick', 'select', 'tools'] }
+const WORKSPACES = [
+  { id: 'ws-animate', label: 'Animate', icon: 'motion', items: ['animate', 'text', 'expressions'] },
+  { id: 'ws-design', label: 'Design', icon: 'palette', items: ['shapes', 'backgrounds', 'looks', 'brand'] },
+  { id: 'ws-layout', label: 'Layout', icon: 'grid', items: ['layout', 'zoom', 'deliver'] },
+  { id: 'ws-finish', label: 'Finish', icon: 'layers', items: ['compositing'] },
+  { id: 'ws-tools', label: 'Tools', icon: 'tools', items: ['quick', 'select', 'tools'] }
 ];
+/** v0.7 name for the same grouping. */
+const GROUPS = WORKSPACES;
 /** Kept for callers of v0.5–0.6: the utility sections that used to sit under the separator. */
 const SECONDARY = SECTIONS.filter((x) => ['quick', 'select', 'brand', 'tools'].includes(x.id));
-/** Navigation order: Home, then the groups. */
-const NAV = ['home', ...GROUPS.flatMap((g) => g.items)];
+/** Every section in workspace order: Home, then the workspaces' sections. */
+const NAV = ['home', ...WORKSPACES.flatMap((g) => g.items)];
+const workspaceOf = (sectionId) => WORKSPACES.find((w) => w.items.includes(sectionId)) || null;
 const UTILITY = [['favorites', 'Favorites', 'star'], ['history', 'History', 'history'], ['settings', 'Settings', 'gear']];
 
 /** Old view ids (v0.3/0.4) → Studio sections. */
@@ -164,4 +168,4 @@ for (const sec of SECTIONS) for (const t of sec.tiles || []) if (NEW_TILES.has(t
 
 const byId = (id) => SECTIONS.find((s) => s.id === id) || null;
 
-module.exports = { SECTIONS, SECONDARY, GROUPS, NAV, UTILITY, ALIAS, sectionOf, byId };
+module.exports = { SECTIONS, SECONDARY, WORKSPACES, GROUPS, NAV, UTILITY, ALIAS, sectionOf, byId, workspaceOf };

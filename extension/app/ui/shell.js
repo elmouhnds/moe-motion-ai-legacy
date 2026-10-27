@@ -36,6 +36,8 @@ for (const sec of studio.SECTIONS.filter((x) => x.kind === 'library')) views[sec
 
 // Studio sidebar: creative sections, then helpers; utilities at the bottom. Diagnostics opens from Settings / search.
 const MAIN = studio.NAV.map((id) => { const x = studio.byId(id); return [x.id, x.label, x.icon]; });
+/** Ctrl 1–6: Home + the workspaces. */
+const JUMPS = ['home', ...studio.WORKSPACES.map((w) => w.id)];
 const SECONDARY = studio.UTILITY;
 const resolveView = (v) => studio.ALIAS[v] || v;
 const TOAST_ICON = { ok: 'check', err: 'x', warn: 'pulse', info: 'info' };
@@ -80,6 +82,13 @@ function createApp(root, services, env = {}) {
     const isSection = (id) => s.view === id || (id === 'settings' && s.view === 'diagnostics');
     const navBtn = ([id, label, ic]) => h('button', { class: 'nav-btn', role: 'tab', 'aria-selected': String(isSection(id)), title: label, 'aria-label': label, onclick: () => app.go(id) }, icon(ic), h('span', { class: 'nav-label' }, label));
     const current = [...MAIN, ...SECONDARY, ['diagnostics', 'Diagnostics']].find(([id]) => id === s.view) || MAIN[0];
+    const ws = studio.workspaceOf(s.view);
+    const visibleItems = (w) => w.items.filter((id) => !hiddenSections.includes(id) || s.view === id);
+    const wsBtn = (w) => h('button', { class: 'nav-btn', role: 'tab', 'aria-selected': String(ws === w), title: `${w.label} — ${w.items.map((id) => studio.byId(id).label).join(' · ')}`, 'aria-label': w.label, onclick: () => app.goWorkspace(w.id) }, icon(w.icon), h('span', { class: 'nav-label' }, w.label));
+    const tabs = ws && visibleItems(ws).length > 1 ? h('div', { class: 'ws-tabs', role: 'tablist', 'aria-label': `${ws.label} sections` }, visibleItems(ws).map((id) => {
+      const sec = studio.byId(id);
+      return h('button', { role: 'tab', 'aria-selected': String(s.view === id), 'data-key': `wst-${id}`, onclick: () => app.go(id) }, icon(sec.icon, 'sm'), h('span', {}, sec.label));
+    })) : null;
     const client = clientCard(s);
     const seen = services.settings.get().ui.seenVersion === services.version;
     const appEl = h('div', { class: `app ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.navWide ? 'nav-wide' : ''} ${s.tilesCompact ? 'tiles-compact' : ''} ${(studio.byId(s.view) || {}).kind === 'library' || s.view === 'text' ? 'has-actbar' : ''}` },
@@ -87,27 +96,24 @@ function createApp(root, services, env = {}) {
         h('button', { class: 'sb-brand', title: `MOE Motion AI ${services.version} — About`, onclick: () => app.state.set({ modal: 'about' }) }, h('span', { class: 'brand-mark', html: art.logo(22) }), h('span', { class: 'nav-label' }, h('span', { class: 'sb-name' }, 'MOE Studio'), h('span', { class: 'sb-ver' }, services.version))),
         h('div', { class: 'sb-scroll' },
           navBtn(MAIN[0]),
-          studio.GROUPS.map((g) => {
-            const items = g.items.filter((id) => !hiddenSections.includes(id) || s.view === id);
-            if (!items.length) return null;
-            return h('div', { class: 'sb-group', role: 'group', 'aria-label': g.label, 'data-key': `g-${g.id}` },
-              h('div', { class: 'sb-group-h', 'aria-hidden': 'true' }, h('span', { class: 'nav-label' }, g.label)),
-              items.map((id) => navBtn(MAIN.find((m) => m[0] === id))));
-          })),
+          h('div', { class: 'sb-group-h', 'aria-hidden': 'true' }, h('span', { class: 'nav-label' }, 'Workspaces')),
+          studio.WORKSPACES.filter((w) => visibleItems(w).length).map(wsBtn)),
         h('span', { class: 'spacer' }),
         client,
         h('div', { class: 'sb-utility' }, SECONDARY.map(navBtn))),
       h('div', { class: 'main' },
         h('div', { class: 'hdr' },
-          current[2] ? h('span', { class: 'hdr-ic' }, icon(current[2], 'sm')) : null,
-          h('div', { class: 'title' }, current[1]),
+          h('span', { class: 'hdr-ic' }, icon(ws ? ws.icon : current[2] || 'home', 'sm')),
+          h('div', { class: 'title' }, ws ? ws.label : current[1]),
           h('span', { class: 'spacer' }),
           ['available', 'ready'].includes(s.update.phase) ? h('button', { class: 'hdr-update', title: `Update to ${s.update.info.version}`, onclick: () => app.go('settings') }, icon('download', 'sm'), h('span', { class: 'label' }, s.update.info.version)) : null,
           h('button', { class: `icon-btn hdr-new ${seen ? '' : 'dot'}`, title: "What's new", 'aria-label': "What's new", onclick: () => app.state.set({ modal: 'whatsnew' }) }, icon('gift', 'sm')),
           h('button', { class: 'icon-btn', title: 'Shortcuts (?)', 'aria-label': 'Keyboard shortcuts', onclick: () => app.state.set({ modal: 'shortcuts' }) }, icon('keyboard', 'sm')),
+          h('button', { class: 'icon-btn hdr-pie', title: 'Pie menu (hold Q, or hold the right mouse button)', 'aria-label': 'Pie menu', onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(); app.openPie(r.left + r.width / 2, r.bottom + 120, { mode: 'click' }); } }, icon('pie', 'sm')),
           h('button', { class: 'search-btn', title: 'Search tools (Ctrl+K)', onclick: () => palette.open(app) }, icon('search', 'sm'), h('span', { class: 'label' }, 'Search'), h('span', { class: 'kbd' }, 'Ctrl K'))),
         contextStrip(s),
         quickbar.strip(app),
+        tabs,
         h('div', { class: 'content' }, chrome.banner(app, s.view), (views[s.view] || views.home).render(app)),
         copilot.render(app)),
       quickbar.popover(app),
@@ -225,8 +231,22 @@ function createApp(root, services, env = {}) {
     const prev = app.state.get().view;
     if (prev && prev !== view) chrome.markBannerSeen(app, prev);
     app.state.set({ view });
-    if (MAIN.some(([id]) => id === view)) services.settings.update({ ui: { workspace: view } });
+    if (studio.NAV.includes(view)) services.settings.update({ ui: { workspace: view } });
+    const w = studio.workspaceOf(view);
+    if (w) services.settings.update({ ui: { wsLast: Object.assign({}, services.settings.get().ui.wsLast, { [w.id]: view }) } });
     if (view === 'settings') app.loadKeyStatus();
+  };
+  /** Pie menu (v0.8) at a screen point; hold = 'key' | 'mouse' | null. */
+  app.openPie = (x, y, { hold = null } = {}) => require('./pie').open(app, x, y, { hold });
+  /** Open a workspace on the section used last there (or its first visible section). */
+  app.goWorkspace = (wsId) => {
+    const w = studio.WORKSPACES.find((x) => x.id === wsId);
+    if (!w) return;
+    const ui = services.settings.get().ui;
+    const hidden = ui.hiddenSections || [];
+    const items = w.items.filter((id) => !hidden.includes(id));
+    const last = (ui.wsLast || {})[wsId];
+    app.go(items.includes(last) ? last : (items[0] || w.items[0]));
   };
   /** Fill a tool's settings (e.g. from an analysis or an AI suggestion) and open it — nothing runs. */
   app.prefillTool = (toolId, args) => {
@@ -568,9 +588,14 @@ function createApp(root, services, env = {}) {
     else if (e.key === '?' && !typing) { e.preventDefault(); app.state.set({ modal: 'shortcuts' }); }
     else if ((e.ctrlKey || e.metaKey) && /^Digit[1-9]$/.test(e.code)) {
       const hidden = services.settings.get().ui.hiddenSections || [];
-      const sec = MAIN.filter(([id]) => !hidden.includes(id))[Number(e.code.slice(5)) - 1];
-      if (sec) { e.preventDefault(); app.go(sec[0]); }
+      const visible = JUMPS.filter((id) => id === 'home' || studio.WORKSPACES.find((w) => w.id === id).items.some((x) => !hidden.includes(x)));
+      const target = visible[Number(e.code.slice(5)) - 1];
+      if (target) { e.preventDefault(); if (target === 'home') app.go('home'); else app.goWorkspace(target); }
     } else if (e.key === 'F4' && !e.ctrlKey && !e.altKey) { e.preventDefault(); app.repeatLast(); }
+    else if ((e.key === 'q' || e.key === 'Q') && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat && !app.paletteOpen && !app.state.get().modal) {
+      const pieUi = services.settings.get().ui.pie || {};
+      if (pieUi.holdQ !== false && !require('./pie').isOpen()) { e.preventDefault(); app.openPie(mouse.x, mouse.y, { hold: 'key' }); }
+    }
   });
   // AE sends no selection-change events to panels: re-read on focus / hover,
   // and poll lightly only while the pointer is over the panel.
@@ -579,7 +604,19 @@ function createApp(root, services, env = {}) {
   // the last 20 s, never while a button is pressed or right after an interaction, and slower
   // when After Effects answers slowly (each read runs on AE's main thread).
   let lastPointer = 0, lastInput = 0;
-  document.addEventListener('pointermove', () => { lastPointer = Date.now(); }, { passive: true, capture: true });
+  const mouse = { x: 200, y: 200 };
+  document.addEventListener('pointermove', (e) => { lastPointer = Date.now(); mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true, capture: true });
+  // Right button held on the panel (not on a control with its own right-click menu, not in a field) → pie.
+  document.addEventListener('pointerdown', (e) => {
+    if (e.button !== 2 || require('./pie').isOpen()) return;
+    const pieUi = services.settings.get().ui.pie || {};
+    if (pieUi.rightHold === false) return;
+    for (let n = e.target; n && n !== document; n = n.parentNode) {
+      if (n.__oncontextmenu || /^(INPUT|TEXTAREA|SELECT)$/.test(n.tagName || '') || (n.classList && n.classList.contains('overlay'))) return;
+    }
+    e.preventDefault();
+    app.openPie(e.clientX, e.clientY, { hold: 'mouse' });
+  }, true);
   document.addEventListener('pointerdown', () => { lastPointer = lastInput = Date.now(); }, true);
   document.addEventListener('keydown', () => { lastInput = Date.now(); }, true);
   let lastFocusRead = 0;

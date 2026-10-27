@@ -51,6 +51,8 @@ function render(app) {
           h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(on), 'aria-label': `Show ${sec.label} in the sidebar`, onclick: () => updUi({ hiddenSections: on ? hiddenSections.concat(id) : hiddenSections.filter((x) => x !== id) }) }));
       }))),
 
+    pieSection(app, st),
+
     h('div', { class: 'section-h' }, 'My Presets'),
     h('div', { class: 'set-group' },
       h('div', { class: 'why' }, `${presets.length} preset${presets.length === 1 ? '' : 's'} saved. Packs are plain JSON (format "moe-presets") — share them with your team.`),
@@ -90,6 +92,33 @@ function render(app) {
       h('button', { class: 'btn ghost', onclick: () => app.state.set({ modal: 'about' }) }, icon('info', 'sm'), 'About'),
       h('button', { class: 'btn ghost', onclick: () => app.state.set({ modal: 'whatsnew' }) }, icon('gift', 'sm'), "What's new")));
 }
+/* ---------- Pie menu (v0.8) ---------- */
+const SLOT_NAMES = ['1 · N', '2 · NE', '3 · E', '4 · SE', '5 · S', '6 · SW', '7 · W', '8 · NW'];
+function pieSection(app, st) {
+  const actions = require('../actions');
+  const pie = Object.assign({ mode: 'smart', mine: [], holdQ: true, rightHold: true }, st.ui.pie);
+  const setPie = (patch) => { app.services.settings.update({ ui: { pie: Object.assign({}, pie, patch) } }); app.render(); };
+  const cat = actions.catalog();
+  const groups = [...new Set(cat.map((c) => c.group))];
+  const mine = Array.from({ length: 8 }, (_, i) => pie.mine[i] || '');
+  return [
+    h('div', { class: 'section-h' }, 'Pie menu'),
+    h('div', { class: 'set-group' },
+      h('div', { class: 'why', style: { marginBottom: '6px' } }, 'Hold Q (or the right mouse button) over the panel, point toward an action and release. Tap Q to keep it open; 1–8 choose; the centre repeats your last change. The panel needs focus — click it once.'),
+      h('div', { class: 'field' }, h('label', {}, 'Slices'), seg([['smart', 'Smart'], ['mine', 'My pie']], pie.mode, (v) => setPie({ mode: v }))),
+      h('div', { class: 'why', style: { margin: '-2px 0 6px 84px' } }, pie.mode === 'smart' ? 'Smart: the eight actions follow what is selected — keyframes, text, shapes, one layer, several layers or nothing.' : 'My pie: the same eight actions every time, in the order below.'),
+      h('div', { class: 'field' }, h('label', {}, 'Hold Q'), h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(pie.holdQ !== false), 'aria-label': 'Open the pie with the Q key', onclick: () => setPie({ holdQ: pie.holdQ === false }) })),
+      h('div', { class: 'field' }, h('label', {}, 'Right hold'), h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(pie.rightHold !== false), 'aria-label': 'Open the pie by holding the right mouse button', onclick: () => setPie({ rightHold: pie.rightHold === false }) })),
+      pie.mode === 'mine' ? [
+        h('div', { class: 'pie-slots' }, mine.map((ref, i) => h('label', {}, h('span', {}, SLOT_NAMES[i]),
+          h('select', { 'aria-label': `Pie slot ${i + 1}`, onchange: (e) => { const next = mine.slice(); next[i] = e.target.value; setPie({ mine: next }); } },
+            h('option', { value: '', selected: !ref }, '— empty —'),
+            groups.map((g) => h('optgroup', { label: g }, cat.filter((c) => c.group === g).map((c) => h('option', { value: c.ref, selected: c.ref === ref }, c.label)))))))),
+        h('div', { class: 'actions', style: { marginTop: '8px' } },
+          h('button', { class: 'btn ghost', title: 'Copy the smart slices for the current selection into My pie', onclick: () => setPie({ mine: actions.slotsFor(app.state.get().ctx, { mode: 'smart' }) }) }, icon('wand', 'sm'), 'Start from the smart set'),
+          h('button', { class: 'btn ghost', onclick: () => { const r = document.querySelector('.hdr-pie'); const b = r ? r.getBoundingClientRect() : { left: 200, width: 0, bottom: 100 }; app.openPie(b.left + b.width / 2, b.bottom + 140); } }, icon('pie', 'sm'), 'Try it'))] : null)];
+}
+
 /* ---------- Updates ---------- */
 const KIND = {
   installer: ['Installed with the MOE installer', 'Updates replace this copy in place.'],

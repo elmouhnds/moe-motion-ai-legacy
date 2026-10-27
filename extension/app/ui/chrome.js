@@ -80,6 +80,9 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['pie', 'Pie menu', 'Hold Q (or the right mouse button), point and release. Eight actions that follow your selection — keyframes, text, shapes, layers — and the centre repeats your last change.'],
+  ['layers', 'Five workspaces', 'The sidebar is now Home + Animate · Design · Layout · Finish · Tools, each with its sections as tabs. Ctrl 1–6 jumps between them.'],
+  ['wand', 'For this selection', 'Home shows the actions that fit what you selected, one click each.'],
   ['play', 'Apply bar & ▶ on every tile', 'The selected preset and Apply stay pinned at the bottom of every library. Hover a tile and press ▶ to apply it in one click.'],
   ['repeat', 'Repeat last (F4)', 'Applied something you like? Select the next layers and press F4 — or the ↻ chip in the selection line.'],
   ['search', 'Search applies presets', 'Ctrl K now finds presets too: type "pop", press Enter, done. Shift+Enter only opens it.'],
@@ -100,7 +103,9 @@ const WHATS_NEW = [
 const SHORTCUTS = [
   [['Ctrl', 'K'], 'Search every tool'],
   [['Ctrl', 'Space'], 'Ask the Copilot'],
-  [['Ctrl', '1…9'], 'Jump to section 1–9'],
+  [['Ctrl', '1…6'], 'Home and the five workspaces'],
+  [['Q', 'hold'], 'Pie menu: point and release (tap Q to keep it open, 1–8 to choose)'],
+  [['Right button', 'hold'], 'Pie menu with the mouse'],
   [['?'], 'Show this sheet'],
   [['Esc'], 'Close sheets and dialogs'],
   [['F4'], 'Repeat the last change on the current selection'],

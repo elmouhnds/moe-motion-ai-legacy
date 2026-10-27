@@ -55,6 +55,8 @@ Permanent rules for anyone (human or AI) working in this repository.
 - Library sections end with the sticky action bar (`library.actionBar`); tiles show readiness from the tool's own `requires` + `prepare` — never a separate rule list.
 - A run the user may want again passes `{ label }` to `app.runTool` so F4 / ↻ can name it.
 - Run `node tools/audit-ui.js` (and `tools/audit-summary.js`) after UI changes: 0 JS errors, 0 unreachable or unnamed controls.
+- One-click entry points (pie, Home suggestions, search) go through `app/ui/actions.js` and its `ready()` check; keep the smart pie sets at 8 fixed positions (direction is the memory).
+- New sections belong to a workspace in `studio/sections.js` `WORKSPACES`.
 
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).

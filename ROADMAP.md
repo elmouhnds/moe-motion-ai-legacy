@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.13 — Workspaces & Pie menu ✅ (v0.8.0)
+- [x] Home + five workspaces with section tabs; Pie menu (Q / right-hold / header), smart slices by selection, My pie; Home suggestions
+- [ ] Confirm inside AE 2025 (TEST_REPORT.md → v0.8.0 checklist 81–86) — especially Q and right-hold while the panel has focus
+- Next: a global shortcut outside the panel needs a script or KBar-style launcher that sends a CEP event to the panel (PlugPlugExternalObject `CSXSEvent`) — to be verified in AE before promising it
+
 ## M1.12 — Faster workflow ✅ (v0.7.0)
 - [x] All 12 UX audit recommendations (action bar, ▶, readiness, F4 repeat, preset search, grouped sidebar + hide, Compositing library, banners once, compact tiles, 24 px targets, Home for returning users, Quick Bar editor)
 - [ ] Confirm inside AE 2025 (TEST_REPORT.md → v0.7.0 checklist 74–80)

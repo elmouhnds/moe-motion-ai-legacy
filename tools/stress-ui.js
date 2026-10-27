@@ -28,7 +28,7 @@ const VIEWS = [['animate', '.st-tile'], ['shapes', '.sh-tile'], ['home', '.hm-st
     await page.goto(`${BASE}?view=${view}${Q}`);
     await page.waitForSelector('.ctx .dot.live', { timeout: 8000 });
     await page.waitForTimeout(600);
-    const rect = (i) => page.evaluate(([s, k]) => { const r = document.querySelectorAll(s)[k].getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; }, [sel, i]);
+    const rect = (i) => page.evaluate(([s, k]) => { const el = document.querySelectorAll(s)[k]; const c = el.closest('.content'); const r0 = el.getBoundingClientRect(); if (c && (r0.bottom > c.getBoundingClientRect().bottom || r0.top < c.getBoundingClientRect().top)) el.scrollIntoView({ block: 'center' }); const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; }, [sel, i]);
     const box = await rect(2);
     const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
     await page.mouse.move(cx, cy);

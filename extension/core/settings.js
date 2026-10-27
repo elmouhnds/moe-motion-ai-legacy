@@ -14,7 +14,7 @@ const DEFAULTS = {
   permissions: Object.assign({}, DEFAULT_POLICY),
   limits: { maxLayers: 200, maxProps: 200 },
   updates: { feedUrl: '', autoCheck: true, lastCheck: '' },
-  ui: { density: 'auto', workspace: 'home', theme: 'auto', accent: 'tomato', motion: 'calm', motionV: 2, headings: 'display', banners: true, splash: true, seenVersion: '', tiles: 'auto', hiddenSections: [] }
+  ui: { density: 'auto', workspace: 'home', theme: 'auto', accent: 'tomato', motion: 'calm', motionV: 2, headings: 'display', banners: true, splash: true, seenVersion: '', tiles: 'auto', hiddenSections: [], wsLast: {}, pie: { mode: 'smart', mine: [], holdQ: true, rightHold: true } }
 };
 
 function merge(base, over) {
