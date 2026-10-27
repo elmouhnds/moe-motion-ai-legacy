@@ -823,10 +823,10 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .kit-auto.on, .icon-btn.on { color: var(--accent); background: var(--accent-soft); }
 .kit-graph-wrap { position: relative; }
 .kit-graph:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.kit-gbar { display: flex; align-items: center; gap: 6px; margin-top: 4px; min-width: 0; }
+.kit-gbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; min-width: 0; }
 .kit-gmode { flex: none; height: 22px; }
 .kit-gmode button { font-size: 10.5px; min-width: 0; padding: 0 6px; }
-.kit-num { flex: 0 1 170px; min-width: 0; height: 22px; padding: 0 6px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text-2); font: 11px ui-monospace, Consolas, monospace; text-align: right; }
+.kit-num { flex: 1 0 150px; max-width: 220px; min-width: 0; margin-left: auto; height: 22px; padding: 0 6px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text-2); font: 11px ui-monospace, Consolas, monospace; text-align: right; }
 .kit-num:hover, .kit-num:focus { border-color: var(--line-strong); color: var(--text); outline: none; }
 .kit-grip { flex: 1; height: 14px; min-width: 24px; border-radius: 4px; cursor: ns-resize; background: linear-gradient(var(--line-strong), var(--line-strong)) center / 28px 2px no-repeat; touch-action: none; border-radius: 4px; }
 .kit-grip:hover { background-color: var(--bg-hover); }
@@ -901,3 +901,16 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .kit-empty { padding: 4px 2px; }
 .view.kit.toolbox .kit-grid { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); }
 .app.kit-slim .kit-tb span, .app.kit-tiny .kit-tb span { display: none; }
+/* v0.10 speed graph: overview, velocity fields, pass-through; 24 px targets in the kit */
+.kit-overview { display: block; width: 100%; height: 46px; margin-bottom: 4px; border-radius: var(--r); background: var(--bg-sunken); }
+.kit-velocity { display: grid; grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 1fr) auto minmax(0, 1.4fr) minmax(0, 1fr); align-items: center; gap: 4px 6px; margin-top: 6px; font-size: var(--fs-sm); color: var(--text-2); }
+.kit-vfield { display: flex; align-items: center; min-width: 0; height: 24px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); }
+.kit-vfield:focus-within { border-color: var(--accent); }
+.kit-vel { flex: 1; min-width: 0; width: 100%; height: 22px; padding: 0 4px; border: 0; background: none; color: var(--text); font: 11.5px ui-monospace, Consolas, monospace; text-align: right; outline: none; }
+.kit-vunit { flex: none; padding: 0 5px 0 2px; font-size: 10px; color: var(--text-3); white-space: nowrap; }
+.app.kit-narrow .kit-velocity, .app.kit-tiny .kit-velocity { grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 1fr); }
+.kit-thru { flex: none; height: 24px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text-2); font-size: 11px; cursor: pointer; }
+.kit-thru.on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.kit-seg { height: 24px; }
+.kit-seg button { min-width: 28px; }
+.kit-gmode { height: 24px; }

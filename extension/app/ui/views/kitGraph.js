@@ -62,6 +62,12 @@ function handles(cv, mode, g) {
   return [{ k: 1, x: g.X(cv.x1), y: g.Y(cv.y1), ax: g.X(0), ay: g.Y(0) }, { k: 2, x: g.X(cv.x2), y: g.Y(cv.y2), ax: g.X(1), ay: g.Y(1) }];
 }
 
+/** "1250 px/s", "45 °/s", "12.5 %/s" — AE's Graph Editor units. */
+function fmtSpeed(v, unit) {
+  const a = Math.abs(v), n = a >= 100 ? v.toFixed(0) : a >= 10 ? v.toFixed(1) : v.toFixed(2);
+  return `${n} ${unit || 'units'}/s`;
+}
+
 /* ---------- drawing ---------- */
 const css = (name, fb) => (typeof getComputedStyle === 'function' ? getComputedStyle(document.documentElement).getPropertyValue(name).trim() : '') || fb;
 function prep(canvas) {
@@ -76,7 +82,7 @@ function prep(canvas) {
 function samePt(a, b) { return a && b && ['x1', 'y1', 'x2', 'y2'].every((k) => Math.abs(a[k] - b[k]) < 0.004); }
 
 /**
- * st: { cv, ghost, mode, range, drag (0|1|2), sel (1|2), now (ms | null) }
+ * st: { cv, ghost, mode, range, drag (0|1|2), sel (1|2), now (ms | null), avg (units/s of the segment), unit }
  */
 function draw(canvas, st) {
   const { c, W, H } = prep(canvas);
@@ -92,7 +98,7 @@ function draw(canvas, st) {
   c.fillStyle = dim; c.font = '9px sans-serif';
   if (mode === 'speed') {
     c.strokeStyle = line; c.beginPath(); c.moveTo(g.x0, Math.round(g.Y(0)) + 0.5); c.lineTo(g.x1, Math.round(g.Y(0)) + 0.5); c.stroke();
-    c.fillText('avg', g.x0 + 2, g.Y(1) - 3);
+    c.fillText(st.avg ? `avg ${fmtSpeed(st.avg, st.unit)}` : 'avg', g.x0 + 2, g.Y(1) - 3);
   } else { c.fillText('100%', g.x0 + 2, g.Y(1) - 3); }
   const path = (curve, fn) => { c.beginPath(); for (let i = 0; i <= 90; i++) { const t = i / 90; const p = fn(curve, t); if (i) c.lineTo(g.X(p[0]), g.Y(clamp(p[1], range.lo, range.hi))); else c.moveTo(g.X(p[0]), g.Y(clamp(p[1], range.lo, range.hi))); } };
   const valueFn = (curve, t) => { const p = BZ.point(curve, t); return [p.x, p.y]; };
@@ -120,7 +126,7 @@ function draw(canvas, st) {
   if (k) {
     const s = keySpeeds(cv);
     const inf = k === 1 ? cv.x1 * 100 : (1 - cv.x2) * 100, sp = k === 1 ? s.out : s.in;
-    const txt = `${k === 1 ? 'Out' : 'In'} ${inf.toFixed(0)}% · speed ${sp.toFixed(2)}×`;
+    const txt = `${k === 1 ? 'Out' : 'In'} ${inf.toFixed(0)}% · ${st.avg ? fmtSpeed(sp * st.avg, st.unit) : `speed ${sp.toFixed(2)}×`}`;
     const p = hs[k - 1];
     c.font = '11px sans-serif'; const w = c.measureText(txt).width + 10;
     const bx = clamp(p.x - w / 2, 2, W - w - 2), by = p.y > g.y0 + 26 ? p.y - 26 : p.y + 12;
@@ -147,12 +153,13 @@ function draw(canvas, st) {
  */
 function widget(opts) {
   const S = { cv: Object.assign({}, opts.get()), drag: 0, sel: opts.sel || 1, nudge: 0, range: null };
+  const units = () => (opts.units ? opts.units() : {});
   const mode = opts.mode === 'speed' ? 'speed' : 'value';
   const canvas = h('canvas', { class: 'kit-graph', tabindex: '0', role: 'application', 'aria-label': `Ease graph (${mode}) — drag a handle; arrows nudge; Enter applies`, title: 'Drag a handle (Shift: flat · Ctrl: snap) · double-click: reset it\nArrows nudge the last handle (Shift ×5) · Enter: apply' });
   canvas.setAttribute('data-fresh', '');
   canvas.style.height = `${opts.height || 150}px`;
   let timer = null;
-  const paint = (now = null) => draw(canvas, { cv: S.cv, ghost: opts.ghost(), mode, range: S.range, drag: S.drag, sel: S.sel, nudge: S.nudge, now });
+  const paint = (now = null) => draw(canvas, Object.assign({ cv: S.cv, ghost: opts.ghost(), mode, range: S.range, drag: S.drag, sel: S.sel, nudge: S.nudge, now }, units()));
   const at = (e) => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, W: r.width, H: r.height }; };
   const near = (p) => { const g = geom(p.W, p.H, S.range || (mode === 'speed' ? speedRange(S.cv) : valueRange(S.cv))); const hs = handles(S.cv, mode, g); const d = hs.map((q) => Math.hypot(p.x - q.x, p.y - q.y)); const k = d[0] <= d[1] ? 1 : 2; return { k, d: Math.min(d[0], d[1]), g }; };
   const mirror = (c, k) => (opts.link ? (k === 1 ? Object.assign(c, { x2: r3(1 - c.x1), y2: r3(1 - c.y1) }) : Object.assign(c, { x1: r3(1 - c.x2), y1: r3(1 - c.y2) })) : c);
@@ -217,4 +224,33 @@ function widget(opts) {
   return { canvas, grip, paint, state: S, set(cv) { S.cv = Object.assign({}, cv); paint(); } };
 }
 
-module.exports = { keySpeeds, fromSpeed, valueRange, speedRange, parseCurve, geom, handles, draw, widget };
+/**
+ * Overview of the whole selected animation (all segments, real speed over real time). The segment
+ * being edited (the first) shows the new curve; the others show what is on the keys now.
+ * segs: [{ t0, t1, avg, curve, hold }], cv: the curve being edited (applied to every segment).
+ */
+function overviewSamples(segs, cv, applyAll) {
+  const out = [];
+  segs.forEach((s, i) => {
+    const curve = applyAll || i === 0 ? cv : s.curve;
+    for (let j = 0; j <= 24; j++) { const u = j / 24; out.push({ t: s.t0 + u * (s.t1 - s.t0), v: s.hold ? 0 : BZ.speedAt(curve, u) * s.avg, seg: i }); }
+  });
+  return out;
+}
+function drawOverview(canvas, segs, cv, unit) {
+  const { c, W, H } = prep(canvas);
+  if (!segs || segs.length < 2) return;
+  const pts = overviewSamples(segs, cv, true);
+  const t0 = segs[0].t0, t1 = segs[segs.length - 1].t1, vmax = Math.max(1e-6, ...pts.map((p) => Math.abs(p.v)));
+  const X = (t) => 8 + (t - t0) / (t1 - t0) * (W - 16), Y = (v) => H - 6 - Math.max(0, v) / vmax * (H - 22); // top 16 px: labels
+  const acc = css('--accent', '#ff6f59'), dim = css('--text-3', '#777'), line = css('--line-strong', 'rgba(255,255,255,.16)'), soft = css('--accent-soft', 'rgba(255,111,89,.15)');
+  c.strokeStyle = line; c.lineWidth = 1; c.beginPath(); c.moveTo(8, H - 5.5); c.lineTo(W - 8, H - 5.5);
+  segs.forEach((s) => { c.moveTo(Math.round(X(s.t0)) + 0.5, 15); c.lineTo(Math.round(X(s.t0)) + 0.5, H - 5); });
+  c.moveTo(Math.round(X(t1)) + 0.5, 15); c.lineTo(Math.round(X(t1)) + 0.5, H - 5); c.stroke();
+  c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(X(p.t), Y(p.v)) : c.moveTo(X(p.t), Y(p.v)))); c.lineTo(X(t1), Y(0)); c.lineTo(X(t0), Y(0)); c.closePath(); c.fillStyle = soft; c.fill();
+  c.strokeStyle = acc; c.lineWidth = 1.6; c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(X(p.t), Y(p.v)) : c.moveTo(X(p.t), Y(p.v)))); c.stroke();
+  c.fillStyle = dim; c.font = '9px sans-serif'; c.fillText(`peak ${fmtSpeed(vmax, unit)}`, 10, 11);
+  c.textAlign = 'right'; c.fillText(`${segs.length} segments · ${(t1 - t0).toFixed(2)} s`, W - 10, 11); c.textAlign = 'left';
+}
+
+module.exports = { keySpeeds, fromSpeed, valueRange, speedRange, parseCurve, geom, handles, draw, widget, fmtSpeed, overviewSamples, drawOverview };

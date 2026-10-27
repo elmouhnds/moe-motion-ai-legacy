@@ -31,6 +31,7 @@ const easeCurve = {
     y1: { type: 'number', label: 'Out Y', description: 'Outgoing handle: progress (speed of the first key)', min: B.Y_MIN, max: B.Y_MAX, step: 0.01, default: 0 },
     x2: { type: 'number', label: 'In X', description: 'Incoming handle: time (influence of the second key)', min: B.X_MIN, max: B.X_MAX, step: 0.01, default: 0.667 },
     y2: { type: 'number', label: 'In Y', description: 'Incoming handle: progress (speed of the second key)', min: B.Y_MIN, max: B.Y_MAX, step: 0.01, default: 1 },
+    through: { type: 'boolean', label: 'Pass through middle keys', default: false, description: 'With 3+ keys, the speed flows through the middle keys (no stop) — like EaseCopy pass-through' },
     side: { type: 'enum', label: 'Apply to', default: 'both', options: [{ value: 'both', label: 'In + Out' }, { value: 'in', label: 'Ease In only' }, { value: 'out', label: 'Ease Out only' }], description: 'In = the incoming side of each segment\'s second key; Out = the outgoing side of its first key (Shift / Ctrl-click a preset in the Motion Kit)' }
   },
   requires: { comp: true, selectedKeys: 2 },
@@ -57,7 +58,7 @@ const easeCurve = {
     if (!targets.length) return { ok: false, error: skipped[0] || 'Select at least two keyframes on one property' };
     const curve = B.normalize(args);
     const side = args.side || 'both';
-    return { ok: true, compId: ctx.comp.id, curve, side, targets, preview: { summary: `${B.css(curve)}${side === 'both' ? '' : side === 'in' ? ' (ease in)' : ' (ease out)'} on ${segs} segment${segs > 1 ? 's' : ''}`, items: items.concat(skipped) } };
+    return { ok: true, compId: ctx.comp.id, curve, side, through: !!args.through, targets, preview: { summary: `${B.css(curve)}${side === 'both' ? '' : side === 'in' ? ' (ease in)' : ' (ease out)'} on ${segs} segment${segs > 1 ? 's' : ''}`, items: items.concat(skipped) } };
   },
 
   async execute({ prepared, host }) {
@@ -77,6 +78,18 @@ const easeCurve = {
         const side = prepared.side || 'both';
         if (side !== 'in') plan.set(a, Object.assign(plan.get(a) || { index: a, easeIn: null }, { easeOut: te.out }));
         if (side !== 'out') plan.set(b, Object.assign(plan.get(b) || { index: b, easeOut: null }, { easeIn: te.in }));
+      }
+      // Pass-through: a key between two shaped segments keeps moving — both sides get the speed of the
+      // line from the key before to the key after (per dimension; along the path for Position).
+      if (prepared.through) {
+        for (let j = 1; j + 1 < t.keys.length; j++) {
+          const kp = byIndex.get(t.keys[j - 1]), kn = byIndex.get(t.keys[j + 1]), k = plan.get(t.keys[j]);
+          if (!kp || !kn || !k || !k.easeIn || !k.easeOut || kn.time <= kp.time) continue;
+          const vp = asArray(kp.value), vn = asArray(kn.value), span = kn.time - kp.time;
+          const sp = t.spatial ? [Math.hypot(...vn.map((v, d) => v - vp[d])) / span] : vn.map((v, d) => (v - vp[d]) / span);
+          k.easeIn = k.easeIn.map((e, d) => ({ speed: sp[d], influence: e.influence }));
+          k.easeOut = k.easeOut.map((e, d) => ({ speed: sp[d], influence: e.influence }));
+        }
       }
       if (plan.size) targets.push({ address: t.address, keys: [...plan.values()].map((k) => Object.assign({ easeIn: null, easeOut: null }, k)) });
     }

@@ -1,4 +1,6 @@
-# Features (v0.10.0)
+# Features (v0.11.0)
+
+**Delay** (v0.11.0): Cinema 4D MoGraph Delay for layers — Spring / Blend / Offset on a layer's own animation, or followers trailing the first selected layer, live sliders. **Speed graph**: real units (px/s, °/s, %/s), velocity fields (AE Keyframe Velocity), whole-animation overview, pass-through middle keys.
 
 **Motion Kit** (v0.10.0 — on **Home** first: ease · anchor · align · pinned tools; all tools + curve library in the **Toolbox**, Ctrl 2; also *Window › Extensions › MOE Motion Kit*): ease graph that reads the selected keys and applies on release · preset chips (click; Shift in / Ctrl out) · Easy Ease / Linear / Hold / Copy / Paste · 3 × 3 anchor (Alt: place in comp) · align / distribute row · 18 one-click tools (Null, Parent, Excite, Jump, Orbit, Spin, Swing, Wiggle, Stare, Clone keys, Reverse, Stagger, Trim to keys, Separate, Trim path, Repeat, Vignette, Trash). Study and design: docs/features/MOTION_KIT.md.
 
@@ -18,6 +20,7 @@ Legend: **Local** = no network. **AI** = uses Claude (optional). Host = verified
 
 | Workspace | Tool (id) | Type | What it does | Undo / recovery | Host verified |
 |---|---|---|---|---|---|
+| Motion Kit | Delay (`kit.delay`) | Local | C4D MoGraph Delay: Spring (overshoot + settle), Blend (smooth lag), Offset (time delay) on the layer's own Position / Rotation / Scale animation, or followers performing the first selected layer's motion, each later; `MOE Delay …` sliders (live). | undo + checkpoint (expressions + controls) | ⏳ |
 | Motion Kit | Interpolation (`kit.interp`) | Local | Linear / Hold / Bezier on the selected keys, in, out or both sides. | undo + checkpoint (exact) | ⏳ |
 | Motion Kit | Trim to Keys (`kit.trimToKeys`) | Local | Layer In / Out to its first / last keyframe. | undo + checkpoint | ⏳ |
 | Motion Kit | Parent Chain (`kit.parent`) | Local | Parents the selection in a chain (selection order; reverse), no jump. | undo + checkpoint | ⏳ |

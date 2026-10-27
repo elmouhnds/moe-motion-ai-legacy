@@ -68,6 +68,7 @@ const ACTIONS = [
   A('k_swing', 'expressions.quick', { preset: 'swing', live: true }, 'xSwing', 'Swing', 'Kit'),
   A('k_wiggle', 'expressions.quick', { preset: 'wiggle', live: true }, 'xWiggle', 'Wiggle', 'Kit'),
   A('k_stare', 'kit.stare', {}, 'kStare', 'Stare (face a layer)', 'Kit'),
+  A('k_delay', 'kit.delay', { mode: 'spring' }, 'kDelay', 'Delay (MoGraph)', 'Kit'),
   A('k_stagger', 'motion.stagger', {}, 'stagger', 'Stagger layers', 'Kit'),
   A('k_trimKeys', 'kit.trimToKeys', {}, 'kTrimKeys', 'Trim to keys', 'Kit'),
   A('k_repeat', 'transform.clone', { mode: 'radial', count: 8, radius: 300, arc: 360, faceOut: true }, 'clone', 'Repeat (radial clone)', 'Kit'),
@@ -97,9 +98,9 @@ function resolve(PRESETS) {
 }
 
 /* Motion Kit layout: the tool grid (Motion 4 Toolbox order: layer helpers, rigs, keys, looks, clean-up). */
-const KIT_TOOLS = ['parentNull', 'k_parent', 'k_excite', 'k_jump', 'k_orbit', 'k_spin', 'k_swing', 'k_wiggle', 'k_stare', 'clone', 'reverse', 'k_stagger', 'k_trimKeys', 'separate', 'trimDraw', 'k_repeat', 'k_vignette', 'k_trash'];
+const KIT_TOOLS = ['parentNull', 'k_parent', 'k_excite', 'k_delay', 'k_jump', 'k_orbit', 'k_spin', 'k_swing', 'k_wiggle', 'k_stare', 'clone', 'reverse', 'k_stagger', 'k_trimKeys', 'separate', 'trimDraw', 'k_repeat', 'k_vignette', 'k_trash'];
 /* Alt-click variants (Motion 4 / Flow convention: the modifier gives the second most common intent). */
-const KIT_ALT = { k_parent: { reverse: true }, clone: { mode: 'mirror' } };
-const KIT_LABEL = { parentNull: 'Null', k_parent: 'Parent', k_excite: 'Excite', k_jump: 'Jump', k_orbit: 'Orbit', k_spin: 'Spin', k_swing: 'Swing', k_wiggle: 'Wiggle', k_stare: 'Stare', clone: 'Clone keys', reverse: 'Reverse', k_stagger: 'Stagger', k_trimKeys: 'Trim keys', separate: 'Separate', trimDraw: 'Trim path', k_repeat: 'Repeat', k_vignette: 'Vignette', k_trash: 'Trash' };
+const KIT_ALT = { k_parent: { reverse: true }, clone: { mode: 'mirror' }, k_delay: { mode: 'blend' } };
+const KIT_LABEL = { parentNull: 'Null', k_parent: 'Parent', k_excite: 'Excite', k_delay: 'Delay', k_jump: 'Jump', k_orbit: 'Orbit', k_spin: 'Spin', k_swing: 'Swing', k_wiggle: 'Wiggle', k_stare: 'Stare', clone: 'Clone keys', reverse: 'Reverse', k_stagger: 'Stagger', k_trimKeys: 'Trim keys', separate: 'Separate', trimDraw: 'Trim path', k_repeat: 'Repeat', k_vignette: 'Vignette', k_trash: 'Trash' };
 
 module.exports = { ACTIONS, DEFAULT_BAR, GROUPS, resolve, KIT_TOOLS, KIT_ALT, KIT_LABEL };

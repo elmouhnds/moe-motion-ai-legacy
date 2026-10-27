@@ -447,7 +447,7 @@
         run: function (args) {
             var comp = U.compById(args.compId), out = [], i, r, t = args.time === undefined ? comp.time : num(args.time);
             for (i = 0; i < args.items.length; i++) {
-                try { r = U.resolveProperty(comp, args.items[i].address); out.push({ value: plain(r.prop.valueAtTime(t, false)), error: String(r.prop.expressionError || '') }); }
+                try { r = U.resolveProperty(comp, args.items[i].address); out.push({ value: plain(r.prop.valueAtTime(t, false)), error: String(r.prop.expressionError || ''), numKeys: r.prop.numKeys || 0 }); }
                 catch (e) { out.push({ value: null, error: String(e.message) }); }
             }
             return { time: t, items: out };

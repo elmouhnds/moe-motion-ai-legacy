@@ -80,6 +80,8 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['kDelay', 'Delay — like C4D MoGraph', 'Spring (overshoot and settle), Blend (smooth lag) or Offset (time delay). One layer: its own move gets follow-through. Several: the others trail the first selected, each later. Live sliders in Effect Controls.'],
+  ['easeCurve', 'Speed graph in real units', 'px/s, °/s, %/s like the Graph Editor; type exact speed + influence (Keyframe Velocity); an overview of the whole selected animation; Pass-through keeps the speed flowing through middle keys.'],
   ['kExcite', 'Home = your motion tools', 'Rebuilt after studying Motion 4 and Flow: Home now opens on the ease graph, the anchor grid, align and your pinned tools — every control acts on the selection in one click. All 18 tools and the curve library are in the Toolbox (Ctrl 2).'],
   ['easeCurve', 'Ease graph that reads your keys', 'Select keys: the graph shows their curve. Drag a handle and the curve lands on the keys when you let go. Presets apply on click (Shift = ease in, Ctrl = ease out). Easy Ease · Linear · Hold · Copy · Paste.'],
   ['anchor', 'Anchor in one click', '3 × 3 dots: click = anchor there, nothing moves — keyframes, scale, rotation, parenting and 3D included. Alt-click also puts the layer at that point of the comp.'],

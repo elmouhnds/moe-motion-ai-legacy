@@ -1,6 +1,6 @@
 # Test Report
 
-Last run: 2026-10-27 (v0.10.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-27 (v0.11.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
@@ -17,7 +17,7 @@ Last run: 2026-10-27 (v0.10.0), Linux cloud sandbox (Node 22.22.0). **After Effe
 | Every button (v0.6.5) | `node tools/audit-ui.js`: every button / tab / chip / tile in 19 views + 3 data variants clicked from a known state with real mouse clicks, tiles double-clicked, controls revealed by a click clicked too; layout at 340–900 px — see `docs/UX_AUDIT.md` | 2,495 interactions: 0 JS errors, 0 unreachable or unnamed controls, 0 overflow; 7 bugs found and fixed. **Preview + mock host, not After Effects** |
 | Every button (v0.7.0) | Same audit on v0.7.0 (19 views + 3 data variants; revealed controls sampled 3–4 per click) + `tests/workflow.test.js` + browser flow check of every new feature | 2,451 interactions: 0 JS errors, 0 unreachable; failed tool runs 99 → 12 (all host-time conditions with a clear message: no Position keys, no screen colour found, project not saved). Single-file web preview tested in Chromium with and without a no-eval CSP. **Preview + mock host, not After Effects** |
 | Every button (v0.8.0) | Same audit incl. the Pie menu (header button → every slice) and workspace tabs + `tests/workflow.test.js` (profile, sets, geometry, keys 1–8, centre, Esc) + browser flow: hold Q / point / release, tap Q, right-hold, Ctrl 1–6 | 2,436 interactions: 0 JS errors; 1 real overlap found and fixed (Inspector under the Apply bar); remaining failures are host-time conditions with clear messages. Pie also checked in the single-file preview under a no-eval CSP. **Preview + mock host, not After Effects** — Q / right-hold inside AE still to confirm (checklist 82–84) |
-| Every button (v0.10.0) | _filled after the audit run_ |
+| Every button (v0.10.0) | Same audit, 23 views incl. Home (kit blocks) and the Toolbox | 3,112 interactions: 0 JS errors, 0 unreachable, 0 overflow. Found: kit segmented controls under 24 px and a silent click on the source line with no keys — both fixed in 0.11.0. **Preview + mock host, not After Effects** |
 | Every button (v0.9.0) | Same audit, now 22 views incl. the new *Ease Curves* and *Anchor & Align* sections + `tests/transform.test.js` (Bézier maths, anchor with scale + rotation, keyed position shift, align / distribute, ring / row clone, Ease Curve speeds + influences, restore of each; UI wiring and every new thumbnail) + browser flow: drag a curve handle, Apply Curve, Set Anchor, Clone tile | 2,831 interactions: 0 JS errors, 0 unreachable; 1 overflow found and fixed (curve row at 340 px). The one new "dead" click is the anchor picker's already-selected point (no change expected). Other failures are the known host-time conditions. **Preview + mock host, not After Effects** — checklist 87–95 |
 | Updater over HTTPS | Real Node HTTPS download from a local self-signed server (redirect, progress, SHA-256, oversize cut-off) | Pass |
 | **Inside After Effects 2025** | — | **Not run yet** |
@@ -237,6 +237,14 @@ Record results here with AE version/build from the Diagnostics view.
 12. Disconnect network → local tools still work; AI shows "Cannot reach the Claude API".
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
+
+### Delay + speed graph checklist (v0.11.0) — inside After Effects 2025
+107. Delay (Spring) on one layer with a Position move: it overshoots and settles; scrubbing stays smooth; AE accepts the expression on both the JavaScript and the Legacy ExtendScript engine (Project Settings › Expressions).
+108. Delay with 1 leader + 10 followers (Offset 3 frames): each follower 3 frames later than the one before; render a RAM preview and note the time per frame (the expression simulates up to 300 frames per evaluation).
+109. Change the MOE Delay sliders on the leader (Strength / Delay / Stiffness / Damping): every follower updates; keyframe a slider.
+110. Trash on the leader and followers: expressions and MOE Delay effects gone; your own effects stay.
+111. Speed mode on Position keys: the velocity fields (px/s and %) equal AE's *Keyframe Velocity* dialog for the same keys; on Rotation (°/s) and Opacity (%/s) too.
+112. Select 3 keys, turn Pass-through on, apply Out Expo: the middle key has the same speed in and out (Graph Editor › Speed shows no drop to 0).
 
 ### Motion Kit checklist (v0.10.0) — inside After Effects 2025
 96. The main panel opens on Home with the ease graph and the anchor grid on the first screen (docked ~400 px and wide). *Window › Extensions › MOE Motion Kit* opens the slim kit panel; dock it next to the Timeline at ~280 px. Change a setting in one panel (e.g. Auto off), then use the other: nothing is lost or reset.

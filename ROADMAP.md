@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.16 — Delay + speed graph ✅ (v0.11.0)
+- [x] C4D MoGraph-style Delay (spring / blend / offset; own animation or followers); speed graph in real units, velocity fields, whole-animation overview, pass-through
+- [ ] Confirm inside AE 2025 (TEST_REPORT.md → v0.11.0 checklist 107–112) — Delay scrub speed with 20+ followers, units vs AE's Graph Editor
+- Next: Delay with a falloff field (strength by distance from a null, like MoGraph fields), Delay on any keyed property (not only transform), per-dimension speed fields for separated / non-spatial multi-dimension properties, click a segment in the overview to select its keys in AE
+
 ## M1.15 — Motion Kit ✅ (v0.10.0)
 - [x] Study of Motion 4 / Flow / Motion Tools / anchor tools (docs/features/MOTION_KIT.md); v0.9 tile sections replaced by one compact kit; auto-read ease graph with apply-on-release; anchor grid with Alt placement; align row; 18 one-click tools; dockable kit panel
 - [ ] Confirm inside AE 2025 (TEST_REPORT.md → v0.10.0 checklist 96–106) — especially the second panel, auto-read speed, 3D anchor probe

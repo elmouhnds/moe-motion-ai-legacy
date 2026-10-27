@@ -184,3 +184,91 @@ test('Ease graph maths: speed handles round-trip, ranges grow for overshoot, num
   assert.equal(KG.parseCurve('ease'), null);
   assert.equal(KG.parseCurve('1, 2, 3'), null);
 });
+
+test('Delay (C4D MoGraph): Spring on a layer\'s own move overshoots and settles; the expression matches the reference maths', async () => {
+  const D = require('../extension/features/kit/delay');
+  const t = TA({ pos: [100, 300] });
+  t[1] = Object.assign({}, t[1], { keys: [{ time: 0.4, value: [100, 300] }, { time: 0.8, value: [500, 300] }] });
+  const { services, comp } = await createTestServices(studioComp([{ name: 'Ball', selected: true, transform: t, rect: { left: -20, top: -20, width: 40, height: 40 } }]));
+  const r = await services.executor.run('kit.delay', { mode: 'spring', position: true, rotation: true, scale: true });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  const P = tp(named(comp, 'Ball'), 'ADBE Position');
+  assert.match(P.expression, /MOE Delay/);
+  assert.equal(tp(named(comp, 'Ball'), 'ADBE Rotate Z').expression, '', 'rotation has no keys → untouched');
+  const fx = named(comp, 'Ball').property('ADBE Effect Parade');
+  assert.ok(['MOE Delay Stiffness', 'MOE Delay Damping', 'MOE Delay Leader', 'MOE Delay Order'].every((n) => fx._children.some((e) => e.name === n)));
+  const pre = (tt) => P.valueAtTime(tt, true)[0];
+  const ref = (tt) => D.simulate('spring', pre, tt, { fd: comp.frameDuration, stiffness: 140, damping: 9, frames: 3, order: 0 });
+  const xs = [0.8, 0.9, 1.0, 1.2, 2.5].map((tt) => P.valueAtTime(tt, false)[0]);
+  [0.8, 0.9, 1.0, 1.2, 2.5].forEach((tt, i) => assert.ok(Math.abs(xs[i] - ref(tt)) < 0.01, `t=${tt}: ${xs[i]} vs ${ref(tt)}`));
+  assert.ok(Math.max(...[0.9, 1, 1.1, 1.2].map((tt) => P.valueAtTime(tt, false)[0])) > 500, 'springs past the target');
+  assert.ok(Math.abs(xs[4] - 500) < 1, 'settles');
+  await services.executor.restore(r.checkpointId);
+  assert.equal(P.expression, '');
+});
+
+test('Delay: followers perform the leader\'s move, each one more delayed (Offset); Blend lags; Trash removes the rig', async () => {
+  const D = require('../extension/features/kit/delay');
+  const lead = TA({ pos: [100, 100] });
+  lead[1] = Object.assign({}, lead[1], { keys: [{ time: 0, value: [100, 100] }, { time: 1, value: [300, 100] }] });
+  const fx = studioComp([
+    { name: 'Lead', selected: true, transform: lead, rect: { left: 0, top: 0, width: 10, height: 10 } },
+    { name: 'F1', selected: true, transform: TA({ pos: [100, 200] }), rect: { left: 0, top: 0, width: 10, height: 10 } },
+    { name: 'F2', selected: true, transform: TA({ pos: [100, 300] }), rect: { left: 0, top: 0, width: 10, height: 10 } }
+  ]);
+  const { services, comp } = await createTestServices(fx);
+  let r = await services.executor.run('kit.delay', { mode: 'offset', frames: 5, position: true, rotation: false, scale: false });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  const fd = comp.frameDuration;
+  const x = (n, tt) => tp(named(comp, n), 'ADBE Position').valueAtTime(tt, false);
+  const lx = (tt) => tp(named(comp, 'Lead'), 'ADBE Position').valueAtTime(tt, false)[0];
+  assert.ok(Math.abs(x('F1', 0.5)[0] - lx(0.5 - 5 * fd)) < 1e-6, 'F1 is 5 frames behind');
+  assert.ok(Math.abs(x('F2', 0.5)[0] - lx(0.5 - 10 * fd)) < 1e-6, 'F2 is 10 frames behind');
+  assert.equal(x('F2', 0.5)[1], 300, 'keeps its own place');
+  assert.ok(named(comp, 'Lead').property('ADBE Effect Parade')._children.some((e) => e.name === 'MOE Delay Frames'), 'controls live on the leader');
+  await services.executor.restore(r.checkpointId);
+  r = await services.executor.run('kit.delay', { mode: 'blend', strength: 80, frames: 0, position: true, rotation: false, scale: false });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  const ref = D.simulate('blend', (tt) => 100 + (lx(tt) - 100), 0.6, { fd, strength: 80, frames: 0, order: 1 });
+  assert.ok(Math.abs(x('F1', 0.6)[0] - ref) < 0.01 && x('F1', 0.6)[0] < lx(0.6), 'lags behind the leader');
+  select(comp, ['Lead', 'F1', 'F2']);
+  r = await services.executor.run('kit.trash', {});
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  assert.equal(tp(named(comp, 'F1'), 'ADBE Position').expression, '');
+  assert.equal(named(comp, 'Lead').property('ADBE Effect Parade').numProperties, 0);
+});
+
+test('Delay: refuses when nothing moves, with a clear reason', async () => {
+  const { services } = await createTestServices(studioComp([{ name: 'Still', selected: true, transform: TA({ pos: [10, 10] }), rect: { left: 0, top: 0, width: 10, height: 10 } }]));
+  const r = await services.executor.run('kit.delay', {});
+  assert.notEqual(r.status, 'success');
+  assert.match((r.errors || []).join(' '), /animate first/);
+});
+
+test('Ease Curve pass-through: with 3 keys the middle key keeps moving (speed of the line between its neighbours)', async () => {
+  const { services, comp } = await createTestServices(studioComp([keyed('Ball')]));
+  const P = tp(named(comp, 'Ball'), 'ADBE Position');
+  let r = await services.executor.run('motion.easeCurve', { x1: 0.16, y1: 1, x2: 0.3, y2: 1, through: false });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  assert.ok(Math.abs(P.keyInTemporalEase(2)[0].speed) < 1e-6, 'without pass-through the middle key stops');
+  await services.executor.restore(r.checkpointId);
+  r = await services.executor.run('motion.easeCurve', { x1: 0.16, y1: 1, x2: 0.3, y2: 1, through: true });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  // keys: (100,100) @0.5 → (500,100) @1.5 → (500,400) @2.5 — line from key 1 to key 3: |(400,300)| / 2 s = 250 px/s
+  assert.ok(Math.abs(P.keyInTemporalEase(2)[0].speed - 250) < 1e-6 && Math.abs(P.keyOutTemporalEase(2)[0].speed - 250) < 1e-6, `${P.keyInTemporalEase(2)[0].speed}`);
+  assert.ok(Math.abs(P.keyOutTemporalEase(2)[0].influence - 16) < 0.01, 'influence still from the curve');
+  assert.ok(Math.abs(P.keyInTemporalEase(3)[0].speed) < 1e-6, 'the last key still lands at rest');
+});
+
+test('Speed overview: real units over real time, the edited curve on every segment', () => {
+  const KG = require('../extension/app/ui/views/kitGraph');
+  const B = require('../extension/features/curves/bezier');
+  const lin = B.normalize({ x1: 0.333, y1: 0.333, x2: 0.667, y2: 0.667 });
+  const segs = [{ t0: 0, t1: 1, avg: 400, curve: lin }, { t0: 1, t1: 3, avg: 100, curve: lin }];
+  const pts = KG.overviewSamples(segs, lin, true);
+  assert.equal(pts[0].t, 0); assert.equal(pts[pts.length - 1].t, 3);
+  assert.ok(pts.filter((p) => p.seg === 0).every((p) => Math.abs(p.v - 400) < 1), 'linear = constant 400 px/s');
+  assert.ok(pts.filter((p) => p.seg === 1).every((p) => Math.abs(p.v - 100) < 1));
+  assert.equal(KG.fmtSpeed(1250, 'px'), '1250 px/s');
+  assert.equal(KG.fmtSpeed(12.345, '%'), '12.3 %/s');
+});

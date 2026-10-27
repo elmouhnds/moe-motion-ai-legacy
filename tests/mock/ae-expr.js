@@ -180,7 +180,8 @@ function evaluate(prop, t, extra = {}) {
   };
   const scope = Object.assign({}, vec, {
     thisComp, thisLayer, time: t, value: prop.valueAtTime(t, true), index: layer.index,
-    thisProperty: { numKeys: prop.numKeys, value: prop.valueAtTime(t, true) },
+    // AE: a property's own valueAtTime() inside its expression returns the pre-expression value.
+    thisProperty: { numKeys: prop.numKeys, value: prop.valueAtTime(t, true), valueAtTime: (tt) => prop.valueAtTime(tt, true) },
     effect: thisLayer.effect, transform: thisLayer.transform, toComp: thisLayer.toComp, fromComp: thisLayer.fromComp,
     hasParent: thisLayer.hasParent, mask: thisLayer.mask, content: thisLayer.content, sourceRectAtTime: thisLayer.sourceRectAtTime,
     width: layer.width, height: layer.height, inPoint: layer.inPoint, outPoint: layer.outPoint

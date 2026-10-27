@@ -31,8 +31,8 @@ const DEFAULT_CURVE = BZ.normalize(BZ.PRESETS.find((p) => p.id === 'easyEase'));
 const K = { curve: Object.assign({}, DEFAULT_CURVE), ghost: null, sig: null, src: null, reading: false, lib: false, libTag: 'All', graph: null };
 
 /** Tools pinned to Home (Motion 4 "Pin Tools"); edited in the Toolbox. */
-const DEFAULT_PINS = ['parentNull', 'k_parent', 'k_excite', 'k_jump', 'k_wiggle', 'k_stare', 'k_trimKeys', 'k_trash'];
-const prefs = (app) => Object.assign({ auto: true, side: 'both', to: 'selection', masks: false, link: false, clip: null, pins: DEFAULT_PINS, graph: 'value', graphH: 150 }, app.services.settings.get().ui.kit || {});
+const DEFAULT_PINS = ['parentNull', 'k_parent', 'k_excite', 'k_delay', 'k_jump', 'k_wiggle', 'k_stare', 'k_trash'];
+const prefs = (app) => Object.assign({ auto: true, side: 'both', to: 'selection', masks: false, link: false, clip: null, pins: DEFAULT_PINS, graph: 'value', graphH: 150, through: false }, app.services.settings.get().ui.kit || {});
 const setPref = (app, patch) => { app.services.settings.update({ ui: { kit: Object.assign(prefs(app), patch) } }); app.render(); };
 const r3 = (v) => Math.round(v * 1000) / 1000;
 const ctxOf = (app) => app.state.get().ctx;
@@ -50,29 +50,53 @@ function matchPreset(cv, user) {
 const userCurves = (app) => app.services.store.get('kit-curves', []);
 
 /** Read the curve of the selected keys whenever the key selection changes (no button needed). */
+/** Unit of a property's speed, as AE's Graph Editor shows it. */
+function unitOf(p) {
+  const mn = (p.address.matchNames || []).slice(-1)[0] || '';
+  if (/^ADBE Position/.test(mn) || /^ADBE Anchor Point/.test(mn)) return 'px';
+  if (/^ADBE Rotate|^ADBE Orientation/.test(mn)) return '°';
+  if (/^ADBE Scale$|^ADBE Opacity$/.test(mn)) return '%';
+  return '';
+}
+/** Segments between the selected keys: time, value change, average speed, the curve that is on them. */
+function segmentsOf(keys, spatial) {
+  const out = [];
+  for (let i = 0; i + 1 < keys.length; i++) {
+    const ka = keys[i], kb = keys[i + 1];
+    const va = [].concat(ka.value), vb = [].concat(kb.value);
+    const dt = kb.time - ka.time, dv = vb.map((v, d) => v - va[d]);
+    const di = Math.max(0, dv.findIndex((d) => Math.abs(d) > 1e-9));
+    const avg = dt > 0 ? (spatial ? Math.hypot(...dv) : Math.abs(dv[di])) / dt : 0;
+    const hold = ka.outInterp === 'HOLD', linear = ka.outInterp === 'LINEAR' && kb.inInterp === 'LINEAR';
+    const got = BZ.fromTemporal(ka.easeOut, kb.easeIn, { dt, dv, spatial });
+    const curve = linear ? BZ.normalize({ x1: 0.333, y1: 0.333, x2: 0.667, y2: 0.667 }) : { x1: r3(got.x1), y1: r3(got.y1), x2: r3(got.x2), y2: r3(got.y2) };
+    out.push({ a: ka.index, b: kb.index, t0: ka.time, t1: kb.time, dt, dv, avg, hold, linear, curve });
+  }
+  return out;
+}
+
+/** Read the curve of the selected keys whenever the key selection changes (no button needed). */
 function autoRead(app, force) {
   const ctx = ctxOf(app);
   const p = keyed(ctx)[0];
   const sig = p ? JSON.stringify([p.address.layerId, p.address.matchNames, p.selectedKeys]) : '';
   if (!force && sig === K.sig) return;
   K.sig = sig;
-  if (!p) { K.src = null; return; }
-  const keys = [...new Set(p.selectedKeys)].sort((a, b) => a - b).slice(0, 2);
+  if (!p) { K.src = null; K.segs = null; K.unit = null; return; }
+  const keys = [...new Set(p.selectedKeys)].sort((a, b) => a - b).slice(0, 12);
   const layer = ((ctx.layers || []).find((l) => l.id === p.address.layerId) || {}).name || 'Layer';
   setTimeout(async () => {
     if (K.reading || app.services.executor.running) { K.sig = null; return; }
     K.reading = true;
     try {
       const r = await app.services.host.call('keyframes.read', { compId: ctx.comp.id, targets: [{ address: p.address, keys }] });
-      const [ka, kb] = r.targets[0].keys;
-      const va = [].concat(ka.value), vb = [].concat(kb.value);
-      const got = BZ.fromTemporal(ka.easeOut, kb.easeIn, { dt: kb.time - ka.time, dv: vb.map((v, d) => v - va[d]), spatial: /_SPATIAL$/.test(p.valueType) });
+      const segs = segmentsOf(r.targets[0].keys, /_SPATIAL$/.test(p.valueType));
+      const s0 = segs[0];
+      K.segs = segs; K.unit = unitOf(p); K.nKeys = keys.length;
       K.ghost = null;
-      if (ka.outInterp === 'HOLD') K.src = `${layer} › ${p.name}: hold`;
-      else if (ka.outInterp === 'LINEAR' && kb.inInterp === 'LINEAR') { K.curve = BZ.normalize({ x1: 0.333, y1: 0.333, x2: 0.667, y2: 0.667 }); K.src = `${layer} › ${p.name}: linear`; }
-      else { K.curve = { x1: r3(got.x1), y1: r3(got.y1), x2: r3(got.x2), y2: r3(got.y2) }; K.src = `${layer} › ${p.name} · keys ${keys.join('–')}`; }
-      K.ghost = Object.assign({}, K.curve);
-    } catch (e) { K.src = null; } finally { K.reading = false; app.scheduleRender(); }
+      if (s0.hold) K.src = `${layer} › ${p.name}: hold`;
+      else { K.curve = Object.assign({}, s0.curve); K.ghost = Object.assign({}, K.curve); K.src = `${layer} › ${p.name}${s0.linear ? ': linear' : ` · keys ${keys[0]}–${keys[keys.length - 1]}`}`; }
+    } catch (e) { K.src = null; K.segs = null; } finally { K.reading = false; app.scheduleRender(); }
   }, 0);
 }
 
@@ -84,7 +108,7 @@ function applyCurve(app, cv, side, label) {
   K.curve = Object.assign({}, cv);
   if (!keyed(ctxOf(app)).length) { app.toast('Curve set — select two or more keyframes to apply it', 3200, 'info'); app.render(); return null; }
   // After applying, read the keys again (the line above the graph then names what is on them).
-  return Promise.resolve(run(app, 'motion.easeCurve', Object.assign({}, BZ.normalize(cv), { side }), label || 'Ease Curve')).then((r) => { K.sig = null; app.scheduleRender(); return r; });
+  return Promise.resolve(run(app, 'motion.easeCurve', Object.assign({}, BZ.normalize(cv), { side, through: !!prefs(app).through }), label || 'Ease Curve')).then((r) => { K.sig = null; app.scheduleRender(); return r; });
 }
 const sideOf = (e, p) => (e && e.shiftKey ? 'in' : e && (e.ctrlKey || e.metaKey) ? 'out' : p.side);
 
@@ -108,8 +132,9 @@ function graph(app) {
   const pr = prefs(app);
   const w = KG.widget({
     get: () => K.curve, ghost: () => K.ghost, mode: pr.graph, height: pr.graphH, link: pr.link, autoApply: pr.auto,
+    units: () => (K.segs && K.segs[0] && K.segs[0].avg ? { avg: K.segs[0].avg, unit: K.unit } : {}),
     onCommit: (cv) => { K.curve = cv; if (pr.auto) applyCurve(app, cv, pr.side, 'Ease Curve'); else app.render(); },
-    onLive: (cv) => { const el = document.querySelector('.kit-num'); if (el && document.activeElement !== el) el.value = nums(cv); },
+    onLive: (cv) => { const el = document.querySelector('.kit-num'); if (el && document.activeElement !== el) el.value = nums(cv); const ov = document.querySelector('.kit-overview'); if (ov) KG.drawOverview(ov, K.segs, cv, K.unit); },
     onHeight: (px) => setPref(app, { graphH: Math.round(px) })
   });
   K.graph = w;
@@ -124,10 +149,20 @@ function graph(app) {
     if (pr.auto) applyCurve(app, cv, pr.side, 'Ease Curve'); else app.render();
   });
   const mode = (m, l, t) => h('button', { 'aria-pressed': String(pr.graph === m), title: t, onclick: () => setPref(app, { graph: m }) }, l);
+  // Whole selected animation (3+ keys): real speed over real time, with the new curve on every segment.
+  let ov = null;
+  if (K.segs && K.segs.length > 1) {
+    ov = h('canvas', { class: 'kit-overview', role: 'img', 'aria-label': 'Speed of the whole selected animation', title: 'Speed of the whole selected animation with this curve on every segment (real time, real units)' });
+    ov.setAttribute('data-fresh', '');
+    setTimeout(() => KG.drawOverview(ov, K.segs, K.curve, K.unit), 0);
+  }
+  const thru = K.nKeys > 2 ? h('button', { class: `kit-thru ${pr.through ? 'on' : ''}`, 'aria-pressed': String(!!pr.through), title: 'Pass through middle keys: the speed flows through the keys between the first and the last (no stop at each key)', onclick: () => setPref(app, { through: !pr.through }) }, 'Pass-through') : null;
   return h('div', { class: 'kit-graph-wrap' },
+    ov,
     w.canvas,
     h('div', { class: 'kit-gbar' },
       h('div', { class: 'kit-seg kit-gmode', role: 'group', 'aria-label': 'Graph' }, mode('value', 'Value', 'Value graph: progress over time (like CSS / Flow)'), mode('speed', 'Speed', 'Speed graph: drag a handle sideways for influence, up / down for the speed at that key (like AE\'s speed graph)')),
+      thru,
       w.grip,
       num));
 }
@@ -151,6 +186,29 @@ function slider(app, label, which) {
   return h('label', { class: 'kit-slider', title: `${label} influence — how long the ${which === 'out' ? 'first key holds back' : 'second key settles'}` }, h('span', { class: 'kit-slider-l' }, label), input, out);
 }
 
+/** AE's Keyframe Velocity dialog, in the kit: exact speed (real units) and influence for each side. */
+function velocity(app) {
+  const pr = prefs(app);
+  const avg = K.segs && K.segs[0] ? K.segs[0].avg : 0, unit = K.unit;
+  const sp = KG.keySpeeds(K.curve);
+  const field = (label, value, suffix, on) => {
+    const input = h('input', { class: 'kit-vel', value, inputmode: 'decimal', spellcheck: 'false', 'aria-label': label, title: `${label} — Enter applies` });
+    input.addEventListener('focus', () => input.select());
+    input.addEventListener('keydown', (e) => { if (e.key !== 'Enter') return; const v = Number(String(input.value).replace(',', '.')); if (!Number.isFinite(v)) { app.toast('Type a number', 2400, 'warn'); return; } const cv = on(v); K.curve = cv; if (K.graph) K.graph.set(cv); if (pr.auto) applyCurve(app, cv, pr.side, label); else app.render(); });
+    return h('label', { class: 'kit-vfield' }, input, h('span', { class: 'kit-vunit' }, suffix));
+  };
+  const spd = (rel) => (avg ? String(Math.round(rel * avg * 10) / 10) : String(Math.round(rel * 100) / 100));
+  const toRel = (v) => (avg ? v / avg : v);
+  const unitTxt = avg ? `${unit || 'units'}/s` : '× avg';
+  return h('div', { class: 'kit-velocity', role: 'group', 'aria-label': 'Keyframe velocity' },
+    h('span', { class: 'kit-slider-l' }, 'Out'),
+    field('Outgoing speed', spd(sp.out), unitTxt, (v) => KG.fromSpeed(K.curve, 1, K.curve.x1, toRel(v))),
+    field('Outgoing influence', String(Math.round(K.curve.x1 * 100)), '%', (v) => KG.fromSpeed(K.curve, 1, v / 100, sp.out)),
+    h('span', { class: 'kit-slider-l' }, 'In'),
+    field('Incoming speed', spd(sp.in), unitTxt, (v) => KG.fromSpeed(K.curve, 2, K.curve.x2, toRel(v))),
+    field('Incoming influence', String(Math.round((1 - K.curve.x2) * 100)), '%', (v) => KG.fromSpeed(K.curve, 2, 1 - v / 100, sp.in)));
+}
+
 function easeBlock(app) {
   const pr = prefs(app);
   const ctx = ctxOf(app);
@@ -164,7 +222,7 @@ function easeBlock(app) {
   return h('section', { class: 'kit-block kit-ease', 'aria-label': 'Ease' },
     h('div', { class: 'kit-h' },
       h('span', { class: 'kit-t' }, 'Ease'),
-      h('button', { class: `kit-src ${K.src ? '' : 'dim'}`, title: `${K.src || 'No curve read'} — click to read the selected keys again`, onclick: () => autoRead(app, true) }, K.src || (nKeys ? 'select 2+ keys on one property' : 'no keys selected')),
+      h('button', { class: `kit-src ${K.src ? '' : 'dim'}`, title: `${K.src || 'No curve read'} — click to read the selected keys again`, onclick: () => (keyed(ctxOf(app)).length ? autoRead(app, true) : app.toast('Select two or more keyframes on one property — the graph then shows their curve', 3500, 'info')) }, K.src || (nKeys ? 'select 2+ keys on one property' : 'no keys selected')),
       match ? h('span', { class: 'kit-match', title: 'The curve matches this preset' }, `≈ ${(BZ.PRESETS.concat(userCurves(app)).find((p) => p.id === match) || {}).label || ''}`) : null,
       h('span', { class: 'spacer' }),
       h('div', { class: 'kit-seg', role: 'group', 'aria-label': 'Apply to' }, seg('in', 'In', 'Ease in only (incoming side)'), seg('both', 'Both', 'In and out'), seg('out', 'Out', 'Ease out only (outgoing side)')),
@@ -172,7 +230,7 @@ function easeBlock(app) {
       h('button', { class: `icon-btn kit-auto ${pr.auto ? 'on' : ''}`, 'aria-pressed': String(pr.auto), title: pr.auto ? 'Auto on: graph edits land on the selected keys when you let go' : 'Auto off: shape the curve, then press Apply', 'aria-label': 'Auto apply', onclick: () => setPref(app, { auto: !pr.auto }) }, icon('kAuto', 'sm'))),
     h('div', { class: 'kit-graph-wrap' }, graph(app)),
     pr.auto ? null : h('div', { class: 'kit-row' }, h('span', { class: 'spacer' }), h('button', { class: 'btn primary sm', onclick: () => applyCurve(app, K.curve, pr.side, 'Ease Curve') }, icon('play', 'xs'), 'Apply curve')),
-    h('div', { class: 'kit-sliders' }, slider(app, 'Out', 'out'), slider(app, 'In', 'in')),
+    pr.graph === 'speed' ? velocity(app) : h('div', { class: 'kit-sliders' }, slider(app, 'Out', 'out'), slider(app, 'In', 'in')),
     h('div', { class: 'kit-tools-row' },
       tool('easeCurve', 'Easy', 'Easy Ease (F9): speed 0, 33 % influence on both sides', () => run(app, 'motion.smartEase', { influenceIn: 33.33, influenceOut: 33.33 }, 'Easy Ease')),
       tool('kLinear', 'Linear', `Linear keys (${pr.side})`, () => run(app, 'kit.interp', { mode: 'linear', side: pr.side }, 'Linear')),
@@ -241,7 +299,7 @@ function toolButton(app, id, pinMode) {
   }
   return h('button', {
     class: `kit-tool ${rd.ok ? '' : 'off'} ${id === 'k_trash' ? 'danger' : ''}`, 'data-key': `kt-${id}`, disabled: !!s.running, 'aria-label': BAR.KIT_LABEL[id] || a.label,
-    title: `${a.label}${alt ? `\nAlt-click: ${id === 'clone' ? 'mirror keys' : 'reverse order'}` : ''}\nRight-click: options${rd.ok ? '' : `\n— ${rd.hint}`}`,
+    title: `${a.label}${alt ? `\nAlt-click: ${{ clone: 'mirror keys', k_delay: 'Blend (smooth lag) instead of Spring' }[id] || 'reverse order'}` : ''}\nRight-click: options${rd.ok ? '' : `\n— ${rd.hint}`}`,
     onclick: (e) => (e.altKey && alt ? quickbar.run(app, Object.assign({}, a, { args: Object.assign({}, a.args, alt) })) : rd.ok ? quickbar.run(app, a) : app.toast(`${a.label}: ${rd.hint}`, 4000, 'warn')),
     oncontextmenu: (e) => { e.preventDefault(); quickbar.openOptions(app, a); }
   }, icon(a.icon || 'bolt'), h('span', { class: 'kit-tool-l' }, BAR.KIT_LABEL[id] || a.label));

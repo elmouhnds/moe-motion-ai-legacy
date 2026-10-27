@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.11.0] — 2026-10-27 — Delay (C4D MoGraph) and a deeper speed graph
+Requested by the product owner: improve the speed graph further, and a Delay like Cinema 4D's MoGraph.
+### Added
+- **Delay** (`kit.delay`, kit button + pinned on Home): the Cinema 4D MoGraph Delay effector for layers. **Spring** (overshoots and settles — Stiffness, Damping), **Blend** (smooth lag — Strength), **Offset** (pure time delay). One layer: its *own* keyframed Position / Rotation / Scale gets the delay (instant follow-through on any move). Several layers: the first selected leads and the others perform its motion on top of their own place and animation, each **Delay** frames × its order later — like clones under a Delay effector. Live, keyframeable `MOE Delay …` sliders in Effect Controls (on the leader, or on each layer); expressions tagged `// MOE Delay`; Trash removes the rig; Alt-click = Blend. The expression simulates frame by frame over a short window (≤ 300 frames) and is checked against a reference implementation in the tests.
+- **Speed graph, real units**: the average line, the live label and new **velocity fields** show AE's Graph Editor units (px/s for Position, °/s for Rotation, %/s for Scale / Opacity) — type the outgoing / incoming speed and influence like AE's *Keyframe Velocity* dialog, Enter applies.
+- **Whole-animation overview** (3+ keys): the speed of the entire selected animation over real time, with the new curve on every segment — see stops and jumps before applying.
+- **Pass-through** (3+ keys): the speed flows through the middle keys (both sides get the speed of the line between the neighbours) instead of stopping at each key.
+### Changed
+- Kit segmented controls are 24 px tall (minimum target); clicking the source line with no keys selected explains what to select (found by the 0.10.0 click audit: 3,112 clicks, 0 JS errors).
+
 ## [0.10.0] — 2026-10-27 — Motion Kit (rebuilt after studying Motion 4 and Flow)
 The product owner judged the v0.9 tools not useful, badly placed and badly designed, and asked us to study the real tools first. The study, the critique of v0.9 and the design are in `docs/features/MOTION_KIT.md`.
 ### Added
