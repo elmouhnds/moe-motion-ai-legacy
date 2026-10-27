@@ -49,5 +49,11 @@ module.exports = {
   xPopIn: '<rect x="5" y="5" width="6" height="6" rx="1"/><path d="M2.5 2.5l2 2M13.5 2.5l-2 2M2.5 13.5l2-2M13.5 13.5l-2-2" opacity=".6"/>',
   xSlideIn: '<rect x="8" y="5" width="6" height="6" rx="1"/><path d="M1.5 8H7M4.5 5.5L7 8l-2.5 2.5"/>',
   /* ease library */
-  easeCurve: '<path d="M2 14C9 14 7 2 14 2"/><circle cx="2" cy="14" r="1" fill="currentColor"/><circle cx="14" cy="2" r="1" fill="currentColor"/>'
+  easeCurve: '<path d="M2 14C9 14 7 2 14 2"/><circle cx="2" cy="14" r="1" fill="currentColor"/><circle cx="14" cy="2" r="1" fill="currentColor"/>',
+  /* v0.9 anchor & align */
+  anchor: '<rect x="2.5" y="2.5" width="11" height="11" rx="1" opacity=".5"/><circle cx="8" cy="8" r="2"/><path d="M8 4v2M8 10v2M4 8h2M10 8h2"/>',
+  alignLeft: '<path d="M2.5 2v12"/><rect x="4.5" y="4" width="8" height="3" rx=".6"/><rect x="4.5" y="9" width="5" height="3" rx=".6"/>',
+  alignCenter: '<path d="M8 2v12"/><rect x="3" y="4" width="10" height="3" rx=".6"/><rect x="4.5" y="9" width="7" height="3" rx=".6"/>',
+  distribute: '<path d="M2 2v12M14 2v12" opacity=".5"/><rect x="4" y="5" width="2.5" height="6" rx=".6"/><rect x="9.5" y="5" width="2.5" height="6" rx=".6"/>',
+  clone: '<circle cx="8" cy="3" r="1.4"/><circle cx="13" cy="8" r="1.4"/><circle cx="8" cy="13" r="1.4"/><circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4" opacity=".5"/>'
 };

@@ -100,6 +100,8 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
     <aside class="pv-guide" aria-label="What to try">
       <h2>Try this</h2>
       <ol>
+        <li><b>New in 0.9 — Ease Curves:</b> Animate › <i>Ease Curves</i> (with the <i>Title</i> comp, keys are selected). Drag the two handles on the graph — the speed graph under it follows — then <b>Apply Curve</b>. Try <i>Out Back</i> for an overshoot.</li>
+        <li><b>New in 0.9 — Anchor &amp; Align:</b> Layout › <i>Anchor &amp; Align</i>. Pick a point on the 3 × 3 grid and <b>Set Anchor</b> (the layers do not jump), align or distribute the selection, or select one layer and <i>Clone</i> it into a ring.</li>
         <li><b>Pie menu:</b> click inside the panel, then <b>hold <kbd>Q</kbd></b> (or hold the right mouse button), point toward an action and release. Tap <kbd>Q</kbd> to keep it open and press 1–8. The slices change with the selection — try the <i>Text</i> and <i>9 cards</i> comps.</li>
         <li>The sidebar is <b>Home + five workspaces</b> (Animate · Design · Layout · Finish · Tools); each shows its sections as tabs. <kbd>Ctrl</kbd> <kbd>1</kbd>–<kbd>6</kbd> jumps between them.</li>
         <li><b>Home › For this selection</b>: the same eight actions as the pie, one click each.</li>

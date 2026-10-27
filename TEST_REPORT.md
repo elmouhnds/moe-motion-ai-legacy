@@ -1,13 +1,13 @@
 # Test Report
 
-Last run: 2026-10-26 (v0.8.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-27 (v0.9.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
 | Layer | How it was tested | Result |
 |---|---|---|
-| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 217/217 automated tests pass (172 behaviour + 34 UI module loads) |
-| ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (14 files) — since v0.6.3 also: ES3 reserved words (AST), ASCII-only sources, ES5+ APIs. **Why it matters:** the host tests run the .jsx in Node (V8), which is more permissive than ExtendScript — v0.6.2 and earlier had `final:` as an object key, legal in V8, reserved in ES3 |
+| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 235/235 automated tests pass (incl. 10 new v0.9 tests in `tests/transform.test.js`) |
+| ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (15 files) — since v0.6.3 also: ES3 reserved words (AST), ASCII-only sources, ES5+ APIs. **Why it matters:** the host tests run the .jsx in Node (V8), which is more permissive than ExtendScript — v0.6.2 and earlier had `final:` as an object key, legal in V8, reserved in ES3 |
 | Core (registry, schema, permissions, executor, storage, logger, bridge) | Unit + integration tests | Pass |
 | Claude integration | Mocked HTTPS responder: request shape, retries, refusal, truncation, 401, offline, budget; plan-schema size guard | Pass — **no real API call was made** (a mocked API does not compile the schema; that is how the v0.6.3 "grammar too large" error got through — now guarded by a size test, but only a real call proves acceptance) |
 | Panel UI | Browser preview (`dev/preview.html`) with the real UI code + real host .jsx on the mock; Playwright clicks through 49 scenarios (wide 900 px and narrow 380/280 px), incl. 19 v0.6 Premium screens; zero page/console errors | Pass — **not the CEP runtime** |
@@ -17,6 +17,7 @@ Last run: 2026-10-26 (v0.8.0), Linux cloud sandbox (Node 22.22.0). **After Effec
 | Every button (v0.6.5) | `node tools/audit-ui.js`: every button / tab / chip / tile in 19 views + 3 data variants clicked from a known state with real mouse clicks, tiles double-clicked, controls revealed by a click clicked too; layout at 340–900 px — see `docs/UX_AUDIT.md` | 2,495 interactions: 0 JS errors, 0 unreachable or unnamed controls, 0 overflow; 7 bugs found and fixed. **Preview + mock host, not After Effects** |
 | Every button (v0.7.0) | Same audit on v0.7.0 (19 views + 3 data variants; revealed controls sampled 3–4 per click) + `tests/workflow.test.js` + browser flow check of every new feature | 2,451 interactions: 0 JS errors, 0 unreachable; failed tool runs 99 → 12 (all host-time conditions with a clear message: no Position keys, no screen colour found, project not saved). Single-file web preview tested in Chromium with and without a no-eval CSP. **Preview + mock host, not After Effects** |
 | Every button (v0.8.0) | Same audit incl. the Pie menu (header button → every slice) and workspace tabs + `tests/workflow.test.js` (profile, sets, geometry, keys 1–8, centre, Esc) + browser flow: hold Q / point / release, tap Q, right-hold, Ctrl 1–6 | 2,436 interactions: 0 JS errors; 1 real overlap found and fixed (Inspector under the Apply bar); remaining failures are host-time conditions with clear messages. Pie also checked in the single-file preview under a no-eval CSP. **Preview + mock host, not After Effects** — Q / right-hold inside AE still to confirm (checklist 82–84) |
+| Every button (v0.9.0) | Same audit, now 22 views incl. the new *Ease Curves* and *Anchor & Align* sections + `tests/transform.test.js` (Bézier maths, anchor with scale + rotation, keyed position shift, align / distribute, ring / row clone, Ease Curve speeds + influences, restore of each; UI wiring and every new thumbnail) + browser flow: drag a curve handle, Apply Curve, Set Anchor, Clone tile | 2,831 interactions: 0 JS errors, 0 unreachable; 1 overflow found and fixed (curve row at 340 px). The one new "dead" click is the anchor picker's already-selected point (no change expected). Other failures are the known host-time conditions. **Preview + mock host, not After Effects** — checklist 87–95 |
 | Updater over HTTPS | Real Node HTTPS download from a local self-signed server (redirect, progress, SHA-256, oversize cut-off) | Pass |
 | **Inside After Effects 2025** | — | **Not run yet** |
 
@@ -236,9 +237,20 @@ Record results here with AE version/build from the Diagnostics view.
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
 
+### Ease Curves, Anchor & Align checklist (v0.9.0) — inside After Effects 2025
+87. Ease Curve *Out Expo* on two Opacity keys (0 → 100 over 1 s): the graph editor's speed graph shows a fast start and a long tail; out influence ≈ 16 %, in influence ≈ 70 %; one *Edit › Undo MOE: Ease Curve* reverts it; History › Restore reverts it exactly.
+88. Same curve on Scale (3 dimensions) and on a joined Position (spatial, one ease): the value graph matches the curve in the panel. Record the speed units AE shows for Position (px/s) — the maths assumes speed along the path.
+89. *Out Back* on Opacity overshoots (negative / > 100 % speeds accepted); on joined Position the report says anticipation is limited to 0; on separated X/Y the overshoot works.
+90. *Read from keys* on keys eased by hand in the graph editor gives back a curve that, applied again, leaves the eases unchanged (within 0.1 %).
+91. Anchor *Bottom* on a scaled (e.g. 50 %) and rotated (30°) solid, a text layer, a shape layer: nothing moves on screen; the anchor sits on the bottom edge. Text: the box comes from `sourceRectAtTime` at the current time — check with a text that changes length over time.
+92. Anchor on a layer with Position keys (joined and separated): every key shifts by the same amount; the motion path keeps its shape. A keyframed anchor, a locked layer and a layer with keyed Scale are skipped with a reason.
+93. Align left / centre / distribute on 3–5 layers of different sizes (incl. a scaled one): edges / centres line up in the comp viewer; parented layers are skipped; Undo in one step.
+94. Clone *Ring × 8* on a shape layer: 7 copies named `MOE Clone n · …`, facing out; Restore deletes exactly those copies and puts the source back. Clone on a keyed layer is refused with a reason.
+95. Quick Bar *Align* group and the new pie slots (keys → E Out Expo, W Out Back; one layer → SW Anchor bottom) run the same tools.
+
 ### Workspaces & Pie checklist (v0.8.0) — inside After Effects 2025
 81. Sidebar: Home + Animate · Design · Layout · Finish · Tools; tabs at the top of each workspace; a workspace reopens its last section; Ctrl 1–6.
-82. Click inside the panel, hold Q, point east, release: the eastern slice runs (with keyframes selected: Expo Ease). Note whether AE itself also reacted to Q (it should not while the panel has focus).
+82. Click inside the panel, hold Q, point east, release: the eastern slice runs (with keyframes selected: Out Expo curve since v0.9). Note whether AE itself also reacted to Q (it should not while the panel has focus).
 83. Tap Q: the pie stays open; 1–8 runs a slice; Esc closes; the centre repeats the last change.
 84. Hold the right mouse button on an empty part of the panel, point, release. Right-click on a Quick Bar button still opens its options (not the pie).
 85. Select text layers / shape layers / several layers / nothing: the pie slices change accordingly; dimmed slices explain why.
@@ -264,7 +276,7 @@ Record results here with AE version/build from the Diagnostics view.
 
 ### Connection checklist (v0.6.3) — inside After Effects 2025
 67. Open the panel: the strip shows the comp name (green dot), not "not connected". If not: Details → Copy report → send (the message names the host file and line).
-68. Diagnostics shows AE version, build, ExtendScript version and Host module 0.8.0.
+68. Diagnostics shows AE version, build, ExtendScript version and Host module 0.9.0.
 
 ### UI stability checklist (v0.6.2) — inside After Effects 2025
 63. Rest the mouse on icons / tiles / sidebar buttons for 10 s: nothing blinks or shakes; the pointer is steady.

@@ -15,12 +15,12 @@
 const studio = require('./studio/sections');
 
 const SETS = {
-  keys: ['tile:animate/easeSmooth', 'tile:animate/easeSnappy', 'tile:animate/easeExpo', 'quick:x_loopCycle', 'quick:reverse', 'quick:x_loopPingPong', 'quick:mirror', 'tile:animate/stagger'],
+  keys: ['tile:animate/easeSmooth', 'tile:animate/easeSnappy', 'tile:curves/curve-outExpo', 'quick:x_loopCycle', 'quick:reverse', 'quick:x_loopPingPong', 'tile:curves/curve-outBack', 'tile:animate/stagger'],
   text: ['quick:typewriter', 'tile:animate/riseIn', 'quick:inRL', 'quick:counter', 'tile:animate/fadeOut', 'nav:brand', 'nav:text', 'tile:animate/popIn'],
-  shapes: ['quick:trimDraw', 'quick:trimTravel', 'tile:animate/popIn', 'quick:x_wiggle', 'quick:trimErase', 'nav:shapes', 'tile:animate/spinIn', 'tile:animate/fadeIn'],
-  shapesMany: ['quick:trimDraw', 'tile:layout/grid', 'tile:layout/ring', 'quick:x_wiggle', 'quick:trimErase', 'quick:parentNull', 'tile:animate/cascadeIn', 'tile:animate/popIn'],
-  layers: ['tile:animate/cascadeIn', 'tile:layout/grid', 'tile:layout/ring', 'quick:parentNull', 'tile:animate/stagger', 'quick:precompose', 'quick:centerAnchor', 'tile:animate/fadeIn'],
-  layer: ['tile:animate/fadeIn', 'tile:animate/popIn', 'quick:inRL', 'quick:x_wiggle', 'tile:animate/fadeOut', 'quick:parentNull', 'quick:flipH', 'tile:zoom/punch'],
+  shapes: ['quick:trimDraw', 'quick:trimTravel', 'tile:animate/popIn', 'quick:x_wiggle', 'quick:trimErase', 'tile:transform/cloneRing8', 'tile:animate/spinIn', 'tile:animate/fadeIn'],
+  shapesMany: ['quick:trimDraw', 'tile:layout/grid', 'tile:layout/ring', 'quick:x_wiggle', 'quick:trimErase', 'tile:transform/align-distH', 'tile:animate/cascadeIn', 'tile:animate/popIn'],
+  layers: ['tile:animate/cascadeIn', 'tile:layout/grid', 'tile:layout/ring', 'quick:parentNull', 'tile:animate/stagger', 'tile:transform/align-distH', 'tile:transform/align-vcenter', 'tile:animate/fadeIn'],
+  layer: ['tile:animate/fadeIn', 'tile:animate/popIn', 'quick:inRL', 'quick:x_wiggle', 'tile:animate/fadeOut', 'tile:transform/anchor-b', 'quick:flipH', 'tile:zoom/punch'],
   none: ['cmd:search', 'nav:shapes', 'nav:backgrounds', 'tile:layout/g12', 'cmd:copilot', 'tile:layout/safe', 'nav:text', 'nav:animate']
 };
 const CONTEXT_LABEL = { keys: 'Keyframes', text: 'Text layers', shapes: 'Shape layer', shapesMany: 'Several shapes', layers: 'Several layers', layer: 'One layer', none: 'Nothing selected' };
@@ -48,7 +48,7 @@ function slotsFor(ctx, pieSettings) {
 const TILE_ICON = { fadeIn: 'fadeIn', fadeOut: 'fadeOut', popIn: 'scaleUp', gentlePop: 'scaleUp', scaleOut: 'scaleDown', popOut: 'scaleDown', spinIn: 'spin', spinOut: 'spin', riseIn: 'moveBT', dropIn: 'moveTB', cascadeIn: 'stagger', cascadeFade: 'stagger', stagger: 'stagger', reverse: 'reverse', mirror: 'mirror', grid: 'grid', honey: 'grid', ring: 'target', fan: 'target', spiral: 'target', g12: 'guides', thirds: 'guides', safe: 'guides', punch: 'zoom', smooth: 'zoom', spot: 'zoom', inRL: 'moveRL', inLR: 'moveLR', inTB: 'moveTB', inBT: 'moveBT' };
 
 /** Shorter names for slices and chips (the full name stays in the tooltip / Quick Bar). */
-const SHORT = { reverse: 'Reverse Keys', mirror: 'Mirror Keys', clone: 'Clone Keys', selectSame: 'Select Same', revealProject: 'Reveal', revealFolder: 'Open Folder', dupComp: 'Dup Comp', parentNull: 'Parent Null', centerAnchor: 'Center Anchor', separate: 'Separate XY', trimDraw: 'Draw On', trimErase: 'Erase', trimTravel: 'Travel', trimBoth: 'Draw + Erase', scaleUp: 'Pop In', scaleDown: 'Scale Out', counter: 'Counter' };
+const SHORT = { reverse: 'Reverse Keys', mirror: 'Mirror Keys', clone: 'Clone Keys', selectSame: 'Select Same', revealProject: 'Reveal', revealFolder: 'Open Folder', dupComp: 'Dup Comp', parentNull: 'Parent Null', centerAnchor: 'Center Anchor', separate: 'Separate XY', trimDraw: 'Draw On', trimErase: 'Erase', trimTravel: 'Travel', trimBoth: 'Draw + Erase', scaleUp: 'Pop In', scaleDown: 'Scale Out', counter: 'Counter', anchorB: 'Anchor Bottom', anchorC: 'Anchor Centre', anchorTL: 'Anchor TL', alignH: 'Align H', alignV: 'Align V', distH: 'Distribute H', distV: 'Distribute V', compCentre: 'Comp Centre', curveExpo: 'Out Expo', curveBack: 'Out Back' };
 
 /** Resolve a reference to { id, label, icon, run(app), ready(app) } — null if it no longer exists. */
 function resolve(ref) {
@@ -60,7 +60,7 @@ function resolve(ref) {
     const tile = sec && (sec.tiles || []).find((t) => t.id === tileId);
     if (!tile) return null;
     const lib = () => require('./studio/library');
-    return { id: ref, label: tile.label, icon: TILE_ICON[tile.id] || (/^ease/.test(tile.id) ? 'easeCurve' : tile.thumb && tile.thumb.k === 'icon' ? tile.thumb.icon : sec.icon), where: sec.label,
+    return { id: ref, label: tile.label, icon: TILE_ICON[tile.id] || (/^(ease|curve-)/.test(tile.id) ? 'easeCurve' : /^anchor-/.test(tile.id) ? 'anchor' : /^align-dist/.test(tile.id) ? 'distribute' : /^align/.test(tile.id) ? 'alignCenter' : /^clone/.test(tile.id) ? 'clone' : tile.thumb && tile.thumb.k === 'icon' ? tile.thumb.icon : sec.icon), where: sec.label,
       run: (app) => lib().applyNow(app, tile, sec), ready: (app) => lib().readiness(app, tile) };
   }
   if (kind === 'quick') {

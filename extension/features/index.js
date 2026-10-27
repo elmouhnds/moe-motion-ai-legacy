@@ -21,6 +21,8 @@ const quick = require('./quick/tools');
 const exprQuick = require('./expressions/quick');
 const green = require('./generate/green');
 const design = require('./design/tools');
+const curves = require('./curves/tools');
+const transform = require('./transform/tools');
 
 const TOOLS = [
   smartEase, stagger, proximity.apply, proximity.centerAnchor, proximity.remove,
@@ -36,7 +38,8 @@ const TOOLS = [
   ...compositing,
   glass.apply, glass.look,
   green.greenPrompt, green.importKey,
-  design.insertShape, design.background, design.colorize
+  design.insertShape, design.background, design.colorize,
+  curves.easeCurve, transform.anchor, transform.align, transform.clone
 ];
 
 function registerAll(registry) {

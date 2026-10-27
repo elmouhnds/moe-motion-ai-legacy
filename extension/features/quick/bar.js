@@ -43,6 +43,19 @@ const ACTIONS = [
   A('trimTravel', 'quick.trimPaths', { mode: 'travel' }, 'xOffset', 'Trim: Travel (start + end)', 'Animate'),
   A('trimBoth', 'quick.trimPaths', { mode: 'drawErase' }, 'mirror', 'Trim: Draw then Erase', 'Animate'),
 
+  // v0.9 Anchor & Align (Motion-4-style one-clickers)
+  A('anchorTL', 'transform.anchor', { point: 'tl' }, 'anchor', 'Anchor → Top Left', 'Align'),
+  A('anchorC', 'transform.anchor', { point: 'c' }, 'anchor', 'Anchor → Centre', 'Align'),
+  A('anchorB', 'transform.anchor', { point: 'b' }, 'anchor', 'Anchor → Bottom', 'Align'),
+  A('alignLeft', 'transform.align', { mode: 'left', to: 'selection' }, 'alignLeft', 'Align Left', 'Align'),
+  A('alignH', 'transform.align', { mode: 'hcenter', to: 'selection' }, 'alignCenter', 'Align Centres (H)', 'Align'),
+  A('alignV', 'transform.align', { mode: 'vcenter', to: 'selection' }, 'alignCenter', 'Align Centres (V)', 'Align'),
+  A('compCentre', 'transform.align', { mode: 'hcenter', to: 'comp' }, 'target', 'Centre in Comp (H)', 'Align'),
+  A('distH', 'transform.align', { mode: 'distH', to: 'selection' }, 'distribute', 'Distribute Horizontally', 'Align'),
+  A('distV', 'transform.align', { mode: 'distV', to: 'selection' }, 'distribute', 'Distribute Vertically', 'Align'),
+  A('curveExpo', 'motion.easeCurve', { x1: 0.16, y1: 1, x2: 0.3, y2: 1 }, 'easeCurve', 'Curve: Out Expo', 'Keys'),
+  A('curveBack', 'motion.easeCurve', { x1: 0.34, y1: 1.56, x2: 0.64, y2: 1 }, 'easeCurve', 'Curve: Out Back (overshoot)', 'Keys'),
+
   A('typewriter', 'quick.typewriter', {}, 'typewriter', 'Typewriter', 'Text'),
   A('counter', 'quick.counter', {}, 'counter', 'Number Counter', 'Text'),
 
@@ -51,7 +64,7 @@ const ACTIONS = [
 ];
 
 const DEFAULT_BAR = ['revealProject', 'revealFolder', 'purge', 'flipH', 'flipV', 'parentNull', 'precompose', 'selectSame', 'reverse', 'mirror', 'inRL', 'inLR', 'inTB', 'inBT', 'fadeIn', 'fadeOut', 'scaleUp', 'scaleDown', 'trimDraw', 'trimTravel', 'x_wiggle', 'x_loopCycle', 'x_loopPingPong', 'x_blink', 'x_timeRotate'];
-const GROUPS = ['Project', 'Layer', 'Keys', 'Animate', 'Text', 'Expressions'];
+const GROUPS = ['Project', 'Layer', 'Align', 'Keys', 'Animate', 'Text', 'Expressions'];
 
 /** Fill icon/label for expression actions from the expression library. */
 function resolve(PRESETS) {

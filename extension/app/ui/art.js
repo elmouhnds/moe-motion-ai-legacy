@@ -46,6 +46,23 @@ ${[[18, 74], [110, 22], [204, 30]].map(([x, y]) => `<path d="M${x} ${y - 6}l6 6-
 <rect x="-14" y="-10" width="28" height="20" rx="5" fill="${A}"><animateMotion dur="3.2s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;0.8;1" calcMode="spline" keySplines="0.6 0 0.2 1;0 0 1 1" path="M18 74 C 60 74, 70 22, 110 22 S 170 70, 204 30"/></rect>
 <path d="M150 84h50" stroke="${A}" stroke-width="3" stroke-linecap="round" opacity=".5"/>`);
   },
+  curves() {
+    // value graph with handles + a ball riding the curve (out-back)
+    const path = 'M40 82 C 82 82, 92 6, 180 18';
+    return wrap(220, 96, `<path d="M40 18h140M40 82h140" stroke="${LN}" stroke-dasharray="3 4"/>
+<path d="M40 82L82 82M180 18L92 6" stroke="${T3}" stroke-width="1.4"/>
+<path d="${path}" fill="none" stroke="${A}" stroke-width="3" stroke-linecap="round"/>
+<circle cx="82" cy="82" r="5" fill="${T2}"/><circle cx="92" cy="6" r="5" fill="${T2}"/>
+<circle r="5" fill="${A}"><animateMotion dur="2.6s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;0.7;1" calcMode="linear" path="${path}"/></circle>`);
+  },
+  transform() {
+    // a card rotating around its bottom anchor + the 3 × 3 picker
+    let dots = '';
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) { const on = r === 2 && c === 1; dots += `<circle cx="${150 + c * 18}" cy="${30 + r * 18}" r="${on ? 5 : 3.5}" fill="${on ? A : T3}"/>`; }
+    return wrap(220, 96, `<g><rect x="46" y="20" width="56" height="56" rx="8" fill="${SOFT}" stroke="${A}" stroke-width="1.6"/><animateTransform attributeName="transform" type="rotate" values="-14 74 76;14 74 76;-14 74 76" dur="3.2s" repeatCount="indefinite" ${spline}/></g>
+<circle cx="74" cy="76" r="5" fill="none" stroke="${A}" stroke-width="2"/><path d="M66 76h16M74 68v16" stroke="${A}" stroke-width="1.6"/>
+<rect x="138" y="18" width="60" height="60" rx="8" fill="none" stroke="${LN}" stroke-dasharray="3 4"/>${dots}`);
+  },
   text() {
     return wrap(220, 96, `<text x="40" y="70" font-family="var(--display)" font-weight="700" font-size="58" fill="${T2}">A</text>
 <text x="86" y="70" font-family="var(--display)" font-weight="700" font-size="58" fill="${A}">a<animate attributeName="y" values="80;70;70" dur="2.6s" repeatCount="indefinite" keyTimes="0;0.35;1"/><animate attributeName="opacity" values="0;1;1" dur="2.6s" repeatCount="indefinite" keyTimes="0;0.35;1"/></text>

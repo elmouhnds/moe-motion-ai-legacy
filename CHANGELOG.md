@@ -2,6 +2,21 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.9.0] — 2026-10-27 — Ease Curves, Anchor & Align (Motion-4-style tools)
+Requested by the product owner: anchor point by position, speed-graph curve control, and more Motion-4-like tools.
+### Added
+- **Ease Curve** (`motion.easeCurve`, new section *Animate › Ease Curves*): a value-graph editor with two draggable Bézier handles and a live speed graph underneath. The curve is turned into exact AE temporal ease on every segment between selected keyframes (out influence = x1·100 %, out speed = y1/x1 × average speed; in influence = (1−x2)·100 %, in speed = (1−y2)/(1−x2) × average speed), per dimension for Scale / Rotation / Opacity, along the path for Position. Hold sides are kept. **Read from keys** loads the curve already on two keyframes; the CSS `cubic-bezier()` can be copied. 32 preset curves: Basic, In / Out / In-Out (sine → expo, circ, back), and Motion (snap, glide, punch, swoosh, settle). Verified by reading every key's ease back; restore puts the previous eases back exactly.
+- **Anchor Point** (`transform.anchor`): move the anchor to any of 9 points of the layer's content box (3 × 3 picker and 9 tiles) without a visual jump — position compensates for scale and rotation; keyed position (incl. separated X/Y) is shifted on every key. Skips locked layers, a keyframed anchor, animated scale / rotation and 3D-rotated layers, each with a reason.
+- **Align & Distribute** (`transform.align`): left / centre / right / top / middle / bottom to the selection or the comp, distribute horizontally / vertically (3+ layers) by measured bounds; keyed positions shift on every key. Parented layers are skipped.
+- **Clone** (`transform.clone`): duplicate one layer into a ring (facing out or not), a fan / arc, a row with rotation / scale / opacity steps, or a grid. Copies are named `MOE Clone n · <layer>`; restore deletes them and puts the source back.
+- Section **Anchor & Align** in the Layout workspace (24 tiles), Quick Bar group **Align** (anchor TL / centre / bottom, align, distribute, centre in comp) and two curve buttons (Out Expo, Out Back).
+- Pie: keyframes → Out Expo curve and Out Back (overshoot) curve; one shape → Clone ring; several shapes / layers → Distribute H, Centre V; one layer → Anchor bottom.
+- `keyframes.read` now returns each key's value (needed to turn a curve into speeds).
+### Changed
+- "Select at most 1 layers" now reads "Select only one layer".
+### Notes
+- Position cannot store a negative speed in AE, so back / anticipation curves on a joined Position are limited to 0 speed (the report says so). Separate X/Y first for a full back curve.
+
 ## [0.8.0] — 2026-10-26 — Workspaces and Pie menu
 Requested by the product owner: a smarter, simpler arrangement for fast access, and a pie menu.
 ### Added

@@ -8,6 +8,8 @@
 const { PRESETS: EXPR } = require('../../../features/expressions/quick');
 const { LOOKS } = require('../../../features/glass/tools');
 const PAL = require('../../../features/design/palettes');
+const BZ = require('../../../features/curves/bezier');
+const TM = require('../../../features/transform/math');
 
 const T = (id, label, tool, args, thumb, tags, badge) => ({ id, label, tool, args: args || {}, thumb, tags: tags || [], badge });
 
@@ -96,13 +98,34 @@ const COMPOSITING = COMP_TOOLS.map((t) => Object.assign(T(`c-${t.id}`, t.name, t
 
 const BACKGROUNDS = PAL.PALETTES.map((p) => T(`bg-${p.id}`, p.name, 'design.background', { palette: p.id, style: 'linear', from: 0, to: 2 }, { k: 'bg', palette: p.id, style: 'linear' }, p.tags));
 
+// v0.9 Ease Curves: every preset is the same tool with its own Bézier numbers.
+// Tiles carry the numbers AE can store (handles kept inside 0.01–0.99 in time).
+const CURVES = BZ.PRESETS.map((p) => Object.assign(T(`curve-${p.id}`, p.label, 'motion.easeCurve', BZ.normalize(p),
+  { k: 'bezier', x1: p.x1, y1: p.y1, x2: p.x2, y2: p.y2 }, [p.tag]), { hint: BZ.css(p) }));
+
+// v0.9 Anchor & Align (Motion-4-style): 9 anchor points, align / distribute, clone layouts.
+const ANCHOR_ORDER = ['tl', 't', 'tr', 'l', 'c', 'r', 'bl', 'b', 'br'];
+const ALIGN_TILES = [['left', 'Align Left'], ['hcenter', 'Centre H'], ['right', 'Align Right'], ['top', 'Align Top'], ['vcenter', 'Centre V'], ['bottom', 'Align Bottom'], ['distH', 'Distribute H'], ['distV', 'Distribute V']];
+const TRANSFORM = [
+  ...ANCHOR_ORDER.map((p) => T(`anchor-${p}`, `Anchor ${TM.POINT_LABEL[p]}`, 'transform.anchor', { point: p }, { k: 'anchor', p }, ['Anchor'])),
+  ...ALIGN_TILES.map(([m, label]) => T(`align-${m}`, label, 'transform.align', { mode: m, to: 'selection' }, { k: 'align', mode: m }, [/^dist/.test(m) ? 'Distribute' : 'Align'])),
+  T('alignCompCentre', 'Centre in Comp', 'transform.align', { mode: 'hcenter', to: 'comp' }, { k: 'align', mode: 'hcenter' }, ['Align']),
+  T('cloneRing8', 'Ring × 8', 'transform.clone', { mode: 'radial', count: 8, radius: 300, arc: 360, faceOut: true }, { k: 'clone', mode: 'radial', n: 8 }, ['Clone']),
+  T('cloneRing12', 'Ring × 12', 'transform.clone', { mode: 'radial', count: 12, radius: 360, arc: 360, faceOut: true }, { k: 'clone', mode: 'radial', n: 12 }, ['Clone']),
+  T('cloneFan', 'Fan × 5', 'transform.clone', { mode: 'radial', count: 5, radius: 320, arc: 120, startAngle: -60, faceOut: true }, { k: 'clone', mode: 'radial', n: 5, arc: 120 }, ['Clone']),
+  T('cloneRow', 'Row × 5', 'transform.clone', { mode: 'linear', count: 5, stepX: 220, stepY: 0 }, { k: 'clone', mode: 'linear', n: 5 }, ['Clone']),
+  T('cloneTrail', 'Fading Trail', 'transform.clone', { mode: 'linear', count: 6, stepX: 140, stepY: 0, scaleStep: -10, opacityStep: 15 }, { k: 'clone', mode: 'linear', n: 6, scale: -10, fade: 15 }, ['Clone']),
+  T('cloneGrid', 'Grid 4 × 3', 'transform.clone', { mode: 'grid', count: 12, columns: 4, stepX: 240, stepY: 200 }, { k: 'clone', mode: 'grid', n: 12, cols: 4 }, ['Clone'])
+];
+
 /**
  * kind: 'library' (tiles + inspector) | 'view' (custom view id) | 'category' (classic tool list)
  * categories: tool categories / ids listed under "All tools".
  */
 const SECTIONS = [
   { id: 'home', label: 'Home', icon: 'home', kind: 'view' },
-  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Trim', 'Ease', 'Keys', 'Proximity'], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
+  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Trim', 'Ease', 'Keys', 'Proximity'], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) && t.id !== 'motion.easeCurve' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
+  { id: 'curves', label: 'Ease Curves', icon: 'easeCurve', kind: 'library', tiles: CURVES, filters: ['All', ...BZ.TAGS], tools: (t) => /^motion\.(easeCurve|smartEase)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },
   { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true },
   { id: 'shapes', label: 'Shapes & Icons', icon: 'shapes', kind: 'view' },
@@ -110,6 +133,7 @@ const SECTIONS = [
   { id: 'looks', label: 'Looks & Glass', icon: 'glass', kind: 'library', tiles: LOOK_TILES, filters: ['All', 'Clear', 'Frosted', 'Liquid', 'Tinted'], tools: (t) => /^glass\./.test(t.id) },
   { id: 'brand', label: 'Brand', icon: 'brand', kind: 'view' },
   { id: 'layout', label: 'Layout & Grid', icon: 'grid', kind: 'library', tiles: LAYOUT, filters: ['All', 'Grid', 'Radial', 'Path', '3D', 'Animated', 'Guides', 'Cells'], tools: (t) => /^grid\./.test(t.id) },
+  { id: 'transform', label: 'Anchor & Align', icon: 'anchor', kind: 'library', tiles: TRANSFORM, filters: ['All', 'Anchor', 'Align', 'Distribute', 'Clone'], tools: (t) => /^transform\./.test(t.id) },
   { id: 'zoom', label: 'Zoom & Focus', icon: 'zoom', kind: 'library', tiles: ZOOM, filters: ['All', 'Zoom', 'Focus', 'Cursor'], tools: (t) => /^zoom\./.test(t.id) },
   { id: 'deliver', label: 'Deliver', icon: 'resize', kind: 'view' },
   { id: 'compositing', label: 'Compositing', icon: 'layers', kind: 'library', tiles: COMPOSITING, filters: ['All', 'Analyze', 'Color', 'Key', 'Green screen'], tools: (t) => t.category === 'compositing' && !/^glass\./.test(t.id) },
@@ -123,9 +147,9 @@ const SECTIONS = [
  * sections in Settings › Sidebar (a workspace with nothing left disappears).
  */
 const WORKSPACES = [
-  { id: 'ws-animate', label: 'Animate', icon: 'motion', items: ['animate', 'text', 'expressions'] },
+  { id: 'ws-animate', label: 'Animate', icon: 'motion', items: ['animate', 'curves', 'text', 'expressions'] },
   { id: 'ws-design', label: 'Design', icon: 'palette', items: ['shapes', 'backgrounds', 'looks', 'brand'] },
-  { id: 'ws-layout', label: 'Layout', icon: 'grid', items: ['layout', 'zoom', 'deliver'] },
+  { id: 'ws-layout', label: 'Layout', icon: 'grid', items: ['layout', 'transform', 'zoom', 'deliver'] },
   { id: 'ws-finish', label: 'Finish', icon: 'layers', items: ['compositing'] },
   { id: 'ws-tools', label: 'Tools', icon: 'tools', items: ['quick', 'select', 'tools'] }
 ];
@@ -145,6 +169,8 @@ const ALIAS = { motion: 'animate', diagnostics: 'diagnostics' };
 function sectionOf(tool) {
   const id = tool.id;
   if (/^zoom\./.test(id)) return 'zoom';
+  if (/^transform\./.test(id)) return 'transform';
+  if (id === 'motion.easeCurve') return 'curves';
   if (/^glass\./.test(id)) return 'looks';
   if (/^adapt\./.test(id)) return 'deliver';
   if (id === 'design.insertShape') return 'shapes';
@@ -162,7 +188,7 @@ function sectionOf(tool) {
 }
 
 /* v0.6 tiles get a NEW corner badge. */
-const NEW_TILES = new Set(['riseIn', 'dropIn', 'cascadeIn', 'cascadeFade', 'gentlePop', 'spinOut', 'popOut', 'easeGentle', 'easeExpo', 'easeDecel', 'easeHard', 'easeAccel', 'easeLaunch',
+const NEW_TILES = new Set([...CURVES.map((t) => t.id), ...TRANSFORM.map((t) => t.id), 'riseIn', 'dropIn', 'cascadeIn', 'cascadeFade', 'gentlePop', 'spinOut', 'popOut', 'easeGentle', 'easeExpo', 'easeDecel', 'easeHard', 'easeAccel', 'easeLaunch',
   ...['bounceBack', 'squash', 'orbit', 'swing', 'heartbeat', 'breathe', 'wiggleRot', 'wiggleScale', 'organic', 'loopWiggle', 'drift', 'clock', 'faceMotion', 'scatter', 'popIn', 'slideIn'].map((x) => `x-${x}`)]);
 for (const sec of SECTIONS) for (const t of sec.tiles || []) if (NEW_TILES.has(t.id)) t.isNew = true;
 

@@ -258,6 +258,73 @@ const EXPR_FN = {
   slideIn: (u) => { const x = Math.min((u % 2) / 0.8, 1); return -1 + 1.7 * (1 - Math.pow(1 - x, 3)); }
 };
 
+/* ---------- v0.9: curves, anchor, align, clone ---------- */
+const BZ = require('../../../features/curves/bezier');
+const TM = require('../../../features/transform/math');
+Object.assign(DRAW, {
+  /** Value curve + a ball travelling with that ease (left → right). */
+  bezier(c, W, H, th, t) {
+    const pad = 10, gw = W - pad * 2, gh = H - 30;
+    const top = 8 + gh * 0.18, h = gh * 0.64; // y 0…1 inside, room for overshoot above / below
+    const X = (x) => pad + x * gw, Y = (y) => top + h - y * h;
+    c.strokeStyle = DIM; c.lineWidth = 1; c.setLineDash([2, 3]);
+    c.beginPath(); c.moveTo(X(0), Y(0)); c.lineTo(X(1), Y(0)); c.moveTo(X(0), Y(1)); c.lineTo(X(1), Y(1)); c.stroke(); c.setLineDash([]);
+    c.strokeStyle = ACC; c.lineWidth = 2; c.beginPath();
+    for (let i = 0; i <= 40; i++) { const p = BZ.point(th, i / 40); if (i) c.lineTo(X(p.x), Y(p.y)); else c.moveTo(X(p.x), Y(p.y)); }
+    c.stroke();
+    const k = phase(t, 1.2, 2.6);
+    const v = BZ.valueAt(th, k);
+    c.fillStyle = FG; c.beginPath(); c.arc(pad + 6 + v * (gw - 12), H - 11, 5, 0, Math.PI * 2); c.fill();
+    c.fillStyle = ACC; c.beginPath(); c.arc(X(k), Y(v), 3, 0, Math.PI * 2); c.fill();
+  },
+  anchor(c, W, H, th, t) {
+    const bw = W * 0.42, bh = H * 0.44, x = (W - bw) / 2 + W * 0.04, y = (H - bh) / 2 + H * 0.06; // clear of the NEW badge
+    const [fx, fy] = TM.POINTS[th.p];
+    const ax = x + bw * fx, ay = y + bh * fy;
+    const a = Math.sin(phase(t, 1.2, 2.6) * Math.PI) * 0.35;
+    c.save(); c.translate(ax, ay); c.rotate(a); c.translate(-ax, -ay);
+    c.fillStyle = DIM; rrect(c, x, y, bw, bh, 4); c.fill(); c.restore();
+    c.strokeStyle = ACC; c.lineWidth = 1.5;
+    c.beginPath(); c.arc(ax, ay, 5, 0, Math.PI * 2); c.moveTo(ax - 9, ay); c.lineTo(ax + 9, ay); c.moveTo(ax, ay - 9); c.lineTo(ax, ay + 9); c.stroke();
+  },
+  align(c, W, H, th, t) {
+    const p = eOut(phase(t));
+    const rows = [[0.18, 0.3], [0.42, 0.5], [0.3, 0.38]];
+    const vert = /^(top|vcenter|bottom|distV)$/.test(th.mode);
+    c.strokeStyle = ACC; c.lineWidth = 1.5; c.setLineDash([3, 3]); c.beginPath();
+    const guide = { left: [W * 0.2, 0], hcenter: [W * 0.5, 0], right: [W * 0.8, 0], top: [0, H * 0.2], vcenter: [0, H * 0.5], bottom: [0, H * 0.8] }[th.mode];
+    if (guide) { if (guide[0]) { c.moveTo(guide[0], 4); c.lineTo(guide[0], H - 4); } else { c.moveTo(4, guide[1]); c.lineTo(W - 4, guide[1]); } }
+    c.stroke(); c.setLineDash([]);
+    rows.forEach(([a, len], i) => {
+      const n = rows.length;
+      if (!vert) {
+        const w = W * len, y = H * (0.2 + i * 0.26), from = W * a;
+        const to = { left: W * 0.2, hcenter: W * 0.5 - w / 2, right: W * 0.8 - w, distH: W * (0.12 + i * 0.3) }[th.mode];
+        c.fillStyle = FG; rrect(c, from + (to - from) * p, y, th.mode === 'distH' ? W * 0.16 : w, H * 0.16, 3); c.fill();
+      } else {
+        const h = H * len * 0.9, x = W * (0.2 + i * 0.25), from = H * a;
+        const to = { top: H * 0.2, vcenter: H * 0.5 - h / 2, bottom: H * 0.8 - h, distV: H * (0.1 + i * 0.28) }[th.mode];
+        c.fillStyle = FG; rrect(c, x, from + (to - from) * p, W * 0.14, th.mode === 'distV' ? H * 0.16 : h, 3); c.fill();
+      }
+      return n;
+    });
+  },
+  clone(c, W, H, th, t) {
+    const n = th.n || 8, p = phase(t, 1.2, 2.8), shown = Math.max(1, Math.ceil(p * n));
+    const lay = th.mode === 'radial'
+      ? TM.cloneLayout({ mode: 'radial', count: n, radius: Math.min(W, H) * 0.32, arc: th.arc || 360, center: [W / 2, H / 2 + (th.arc && th.arc < 360 ? H * 0.12 : 0)], startAngle: th.arc && th.arc < 360 ? -th.arc / 2 : 0, faceOut: true })
+      : TM.cloneLayout({ mode: th.mode, count: n, origin: [W * 0.16, th.mode === 'grid' ? H * 0.24 : H / 2], step: [W * 0.68 / (n - 1), 0], spacing: [W * 0.2, H * 0.24], columns: th.cols || 4, scaleStep: th.scale || 0, opacityStep: th.fade || 0 });
+    const items = lay.source ? [lay.source, ...lay.copies] : [{ position: [W * 0.16, th.mode === 'grid' ? H * 0.24 : H / 2], rotation: 0, scale: 1, opacity: 100 }, ...lay.copies];
+    items.slice(0, shown).forEach((it, i) => {
+      const r = 5 * (it.scale || 1);
+      c.globalAlpha = (it.opacity === undefined ? 100 : it.opacity) / 100;
+      c.fillStyle = i === 0 ? ACC : FG;
+      c.beginPath(); c.arc(it.position[0], it.position[1], Math.max(1.5, r), 0, Math.PI * 2); c.fill();
+    });
+    c.globalAlpha = 1;
+  }
+});
+
 /** Draw one thumbnail frame. */
 function draw(c, W, H, thumb, t) {
   theme();

@@ -1,4 +1,6 @@
-# Features (v0.8.0)
+# Features (v0.9.0)
+
+Motion-4-style tools (v0.9.0): **Ease Curves** — drag a Bézier on the value graph (live speed graph), 32 curves, applied as exact speed + influence between selected keyframes, read from keys · **Anchor & Align** — anchor to 9 points without a jump, align / distribute to selection or comp, clone into ring / fan / row / grid · Quick Bar group *Align* · new pie slots.
 
 Navigation (v0.8.0): Home + five workspaces (Animate · Design · Layout · Finish · Tools) with section tabs · Pie menu (hold Q or the right button; smart slices by selection or My pie; centre = repeat) · Home "For this selection".
 
@@ -8,12 +10,16 @@ Install & updates: Windows Setup.exe (in place, no admin) + Settings › Updates
 
 Interface: Studio (labelled sidebar, visual libraries + Inspector, Deliver board) — CHANGELOG 0.5.0. Premium content, Home, artwork and appearance — CHANGELOG 0.6.0.
 
-Library content: 37 Animate tiles (incl. 8 ease curves) · 33 one-click expressions · 15 layouts · 7 glass looks · 8 zooms · 27 text presets · 1,899 icons · 22 native shapes · 32 palettes · your own presets ("Mine").
+Library content: 32 ease curves · 24 Anchor & Align tiles · 37 Animate tiles (incl. 8 ease presets) · 33 one-click expressions · 15 layouts · 7 glass looks · 8 zooms · 27 text presets · 1,899 icons · 22 native shapes · 32 palettes · your own presets ("Mine").
 
 Legend: **Local** = no network. **AI** = uses Claude (optional). Host = verified in AE? (see TEST_REPORT.md)
 
 | Workspace | Tool (id) | Type | What it does | Undo / recovery | Host verified |
 |---|---|---|---|---|---|
+| Animate | Ease Curve (`motion.easeCurve`) | Local | Bézier value-graph editor with live speed graph; 32 curves (expo, back, circ, punch, glide…); exact temporal ease on every segment between selected keys (per dimension, or along the path for Position); hold sides kept; read from keys; copy as CSS. | undo + checkpoint (exact eases) | ⏳ |
+| Layout | Anchor Point (`transform.anchor`) | Local | 9 points of the content box; position compensates scale + rotation (no jump); keyed position / separated X/Y shifted on every key; locked, keyframed-anchor, animated-scale/rotation and 3D-rotated layers skipped with a reason. | undo + checkpoint (exact) | ⏳ |
+| Layout | Align & Distribute (`transform.align`) | Local | Edges / centres to the selection or comp; distribute 3+ layers evenly by measured bounds; keyed positions shifted; parented layers skipped. | undo + checkpoint (exact) | ⏳ |
+| Layout | Clone (`transform.clone`) | Local | Duplicate one layer into a ring (face out), fan / arc, row with rotation / scale / opacity steps, or grid (max 200). | copies deleted, source restored | ⏳ |
 | Quick | Quick Bar (`quick.*`, 14 tools) | Local | Reveal (project / folder / pre-comp), Purge cache, Duplicate comp (deep), Flip H/V, Parent to Null, Pre-compose, Separate X/Y (keeps easing), Select Same Property, Reverse keys, Mirror/Clone keys, Quick Animate (slide 4 directions in/out, fade, scale, spin; overshoot; stagger), Trim Paths (draw/erase/travel/draw+erase), Typewriter, Number Counter. Bar in every section; right-click = options. | undo + checkpoint (Pre-compose, Separate: Edit › Undo) | ⏳ |
 | Shapes & Icons | Insert Shape / Icon (`design.insertShape`) | Local | 1,899 Lucide icons as editable Bézier paths or 22 native parametric shapes; Line / Solid / Both / Duotone; Draw, Pop or Fade at the playhead; read-back of paths, stroke, fill, keys. | layer removed (undo + checkpoint) | ⏳ |
 | Backgrounds | Background (`design.background`) | Local | Palette → linear / radial Gradient Ramp, 4-Colour mesh or flat `MOE Background` at the bottom; grain (Noise); slow drift expressions. | layer removed (undo + checkpoint) | ⏳ |

@@ -10,7 +10,7 @@
     if (!root) { throw new Error('MOE_ROOT is not set'); }
 
     G.MOE = G.MOE || {};
-    G.MOE.version = '0.8.0';
+    G.MOE.version = '0.9.0';
     G.MOE.ops = {};
 
     var files = [
@@ -26,7 +26,8 @@
         'ops/layout.jsx',
         'ops/fx.jsx',
         'ops/quick.jsx',
-        'ops/design.jsx'
+        'ops/design.jsx',
+        'ops/transform.jsx'
     ];
     for (var i = 0; i < files.length; i++) {
         var f = new File(root + '/host/' + files[i]);

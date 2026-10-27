@@ -7,6 +7,15 @@ const SHOTS = [
   // v0.6.3 connection error
   ['c-hostfail', W('?view=home&fixture=layout&hostFail=1'), async (p) => { await p.waitForSelector('.ctx-err'); await p.waitForTimeout(300); }],
   ['c-hostfail-diag', W('?view=home&fixture=layout&hostFail=1'), async (p) => { await p.waitForSelector('.ctx-err'); await p.click('.ctx-btn'); await p.waitForTimeout(300); }],
+  // v0.9.0 Ease Curves, Anchor & Align
+  ['n-curves', W('?view=curves&fixture=layout'), async (p) => { await p.waitForTimeout(600); }],
+  ['n-curves-back', W('?view=curves&fixture=layout'), async (p) => { await p.click('.chip-btn:has-text("Out")'); await p.click('.st-cell:has-text("Out Back") .st-tile'); await p.waitForTimeout(600); }],
+  ['n-curves-drag', W('?view=curves&fixture=layout'), async (p) => { const b = await p.locator('.curve-canvas').boundingBox(); await p.locator('.curve-canvas').scrollIntoViewIfNeeded(); const c = await p.locator('.curve-canvas').boundingBox(); const s = Math.min(c.width - 28, c.height * 0.68 - 28); const ox = c.x + (c.width - s) / 2; const Y = (y) => c.y + 14 + (1.7 - y) / 2.4 * (c.height * 0.68 - 28); await p.mouse.move(ox + 0.333 * s, Y(0)); await p.mouse.down(); await p.mouse.move(ox + 0.1 * s, Y(1.3), { steps: 6 }); await p.mouse.up(); await p.waitForTimeout(400); void b; }],
+  ['n-curves-apply', W('?view=curves'), async (p) => { await p.click('.st-actbar .btn.primary'); await p.waitForSelector('.toast'); await p.waitForTimeout(300); }],
+  ['n-transform', W('?view=transform&fixture=layout'), async (p) => { await p.waitForTimeout(600); }],
+  ['n-anchor', W('?view=transform&fixture=layout'), async (p) => { await p.click('.st-cell:nth-child(9) .st-tile'); await p.waitForTimeout(300); await p.click('.st-actbar .btn.primary'); await p.waitForSelector('.toast'); await p.waitForTimeout(300); }],
+  ['n-clone', W('?view=transform&fixture=layout'), async (p) => { await p.click('.chip-btn:has-text("Clone")'); await p.click('.st-cell:nth-child(1) .st-tile'); await p.waitForTimeout(600); }],
+  ['n-narrow-curves', '?view=curves&fixture=layout&w=420', async (p) => { await p.waitForTimeout(500); }],
   // v0.8.0 workspaces & pie
   ['v-pie-keys', '?view=animate&fixture=layout&w=420', async (p) => { await p.click('.content'); await p.mouse.move(230, 420); await p.keyboard.press('q'); await p.mouse.move(300, 420); await p.waitForTimeout(200); }],
   ['v-pie-text', '?view=text&fixture=studio&w=420', async (p) => { await p.click('.content'); await p.mouse.move(230, 420); await p.keyboard.press('q'); await p.waitForTimeout(200); }],

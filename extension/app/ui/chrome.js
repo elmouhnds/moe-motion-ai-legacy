@@ -17,13 +17,15 @@ function counts(app) {
   return {
     tools: app.services.registry.list().filter((t) => !(t.ui && t.ui.hidden)).length,
     animate: anim.filter((t) => !t.tags.includes('Ease')).length, ease: anim.filter((t) => t.tags.includes('Ease')).length,
-    layout: by('layout'), looks: by('looks'), zoom: by('zoom'), expressions: by('expressions'),
+    layout: by('layout'), curves: by('curves'), transform: by('transform'), looks: by('looks'), zoom: by('zoom'), expressions: by('expressions'),
     icons: lib.count(), shapes: lib.PRIMITIVES.length, palettes: by('backgrounds'), text: PRESETS.length
   };
 }
 
 const COPY = {
   animate: (n) => ({ kicker: 'ANIMATE', title: 'Motion in one click', pitch: 'Slides, pops, fades, draw-ons, eases and proximity — keyed from the playhead, always restorable.', stats: [[n.animate, 'animations'], [n.ease, 'ease curves']], tip: 'Press ▶ on a tile to apply it straight away.' }),
+  curves: (n) => ({ kicker: 'EASE CURVES', title: 'Shape the speed graph', pitch: 'Drag a Bézier like in the graph editor, or pick expo, back, punch and glide — exact speed and influence on every selected keyframe pair.', stats: [[n.curves, 'curves']], tip: 'Read from keys loads the curve already on two keyframes.' }),
+  transform: (n) => ({ kicker: 'ANCHOR & ALIGN', title: 'Anchor, align, clone', pitch: 'Move the anchor to any of 9 points without a jump, align or distribute layers, and clone a layer into rings, fans, rows and grids.', stats: [[n.transform, 'one-click tools']] }),
   text: (n) => ({ kicker: 'TEXT', title: 'Type that moves well', pitch: 'Signature text animators with Arabic-safe defaults (words / lines, RTL).', stats: [[n.text, 'text presets']] }),
   layout: (n) => ({ kicker: 'LAYOUT & GRID', title: 'Live grids & layouts', pitch: 'Grid, radial, spiral, path and 3D arrangements driven by one null — plus guides and cells.', stats: [[n.layout, 'layouts']] }),
   looks: (n) => ({ kicker: 'LOOKS & GLASS', title: 'Liquid & frosted glass', pitch: 'Editable glass built from native effects: lens, frost, tint, rim light and shadow.', stats: [[n.looks, 'glass looks']] }),
@@ -80,6 +82,10 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['easeCurve', 'Ease Curves (speed graph)', 'Drag a Bézier like in the graph editor and apply it between every pair of selected keyframes — exact speed and influence. 32 curves: expo, back / overshoot, punch, glide, snap… Read from keys loads an existing curve.'],
+  ['anchor', 'Anchor point, 9 positions', 'Move the anchor to a corner, edge or centre without the layer jumping — scaled, rotated and Position-keyed layers included.'],
+  ['alignCenter', 'Align & distribute', 'Line layers up by their edges or centres, to the selection or the comp, and space three or more evenly.'],
+  ['clone', 'Clone into rings, rows, grids', 'Duplicate one layer around a ring or fan (facing out), along a row with scale and fade steps, or into a grid. Restorable in one click.'],
   ['pie', 'Pie menu', 'Hold Q (or the right mouse button), point and release. Eight actions that follow your selection — keyframes, text, shapes, layers — and the centre repeats your last change.'],
   ['layers', 'Five workspaces', 'The sidebar is now Home + Animate · Design · Layout · Finish · Tools, each with its sections as tabs. Ctrl 1–6 jumps between them.'],
   ['wand', 'For this selection', 'Home shows the actions that fit what you selected, one click each.'],
@@ -145,7 +151,7 @@ function sheet(app, kind) {
     h('div', { class: `sheet sheet-${kind}`, role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
       h('div', { class: 'sheet-h' }, h('span', { class: 'sheet-title' }, title), h('span', { class: 'spacer' }), h('button', { class: 'icon-btn', 'aria-label': 'Close', onclick: close }, icon('x', 'sm'))),
       h('div', { class: 'sheet-b' }, body),
-      kind === 'whatsnew' ? h('div', { class: 'sheet-f' }, h('button', { class: 'btn primary', onclick: () => { close(); app.go('shapes'); } }, icon('shapes', 'sm'), 'Try Shapes & Icons'), h('button', { class: 'btn ghost', onclick: close }, 'Later')) : null));
+      kind === 'whatsnew' ? h('div', { class: 'sheet-f' }, h('button', { class: 'btn primary', onclick: () => { close(); app.go('curves'); } }, icon('easeCurve', 'sm'), 'Try Ease Curves'), h('button', { class: 'btn ghost', onclick: close }, 'Later')) : null));
   return overlay;
 }
 

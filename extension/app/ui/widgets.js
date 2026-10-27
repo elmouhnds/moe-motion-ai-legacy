@@ -9,6 +9,8 @@ const { icon } = require('./dom');
 const L = require('../../features/grid/layouts');
 const GT = require('../../features/grid/tools');
 const AT = require('../../features/adapt/tools');
+const BZ = require('../../features/curves/bezier');
+const TM = require('../../features/transform/math');
 
 /* ---------- shared canvas loop (stops when canvases unmount) ---------- */
 const live = new Set();
@@ -254,7 +256,133 @@ function filePicker(args, setArgs, { h }) {
     h('span', { class: 'why' }, args.path ? args.path.split(/[\\/]/).pop() : 'PNG / EXR / MOV / MP4 on green'));
 }
 
+/* ---------- v0.9 Ease Curve editor (value graph + speed graph) ---------- */
+/*
+ * Drag the two handles. While the pointer is down the panel does not re-render (shell defers
+ * renders during a press), so the drag draws straight onto this canvas and only commits the
+ * numbers with setArgs on pointer-up.
+ */
+const VIEW = { yLo: -0.7, yHi: 1.7 };
+function curveGeom(W, H) {
+  const pad = 14, graphH = Math.round(H * 0.68);
+  const side = Math.min(W - 2 * pad, graphH - 2 * pad);
+  const ox = (W - side) / 2, top = pad;
+  const span = VIEW.yHi - VIEW.yLo;
+  const X = (x) => ox + x * side, Y = (y) => top + (VIEW.yHi - y) / span * (graphH - 2 * pad);
+  const ix = (px) => (px - ox) / side, iy = (py) => VIEW.yHi - (py - top) / (graphH - 2 * pad) * span;
+  return { pad, graphH, side, ox, X, Y, ix, iy, speedTop: graphH + 6, speedH: H - graphH - 12 };
+}
+function drawCurve(canvas, cv, now, drag) {
+  const { c, W, H } = prep(canvas);
+  const g = curveGeom(W, H);
+  const acc = css('--accent', '#ff6f59'), fg = css('--text-1', '#eee'), dim = css('--text-3', '#777'), sunk = css('--bg-sunken', '#111');
+  c.fillStyle = sunk; c.fillRect(g.X(0), g.Y(VIEW.yHi), g.side, g.Y(VIEW.yLo) - g.Y(VIEW.yHi));
+  c.strokeStyle = dim; c.lineWidth = 1; c.setLineDash([2, 3]); c.beginPath();
+  for (const y of [0, 1]) { c.moveTo(g.X(0), g.Y(y)); c.lineTo(g.X(1), g.Y(y)); }
+  for (const x of [0, 1]) { c.moveTo(g.X(x), g.Y(VIEW.yLo)); c.lineTo(g.X(x), g.Y(VIEW.yHi)); }
+  c.stroke(); c.setLineDash([]);
+  // handles
+  c.strokeStyle = dim; c.lineWidth = 1.2; c.beginPath();
+  c.moveTo(g.X(0), g.Y(0)); c.lineTo(g.X(cv.x1), g.Y(cv.y1)); c.moveTo(g.X(1), g.Y(1)); c.lineTo(g.X(cv.x2), g.Y(cv.y2)); c.stroke();
+  // curve
+  c.strokeStyle = acc; c.lineWidth = 2.5; c.beginPath();
+  for (let i = 0; i <= 60; i++) { const p = BZ.point(cv, i / 60); if (i) c.lineTo(g.X(p.x), g.Y(p.y)); else c.moveTo(g.X(p.x), g.Y(p.y)); }
+  c.stroke();
+  for (const [x, y, k] of [[cv.x1, cv.y1, 1], [cv.x2, cv.y2, 2]]) {
+    c.fillStyle = drag === k ? acc : fg; c.beginPath(); c.arc(g.X(x), g.Y(y), drag === k ? 7 : 6, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = acc; c.lineWidth = 2; c.stroke();
+  }
+  // moving dot (value) on the curve + playhead
+  const t = now === null ? null : ((now / 1000) % 2.2) / 1.6;
+  if (t !== null && t <= 1) {
+    const v = BZ.valueAt(cv, t);
+    c.fillStyle = acc; c.beginPath(); c.arc(g.X(t), g.Y(v), 4, 0, Math.PI * 2); c.fill();
+    c.fillStyle = fg; c.beginPath(); c.arc(g.X(1) + 10, g.Y(v), 4, 0, Math.PI * 2); c.fill();
+  }
+  // speed graph strip
+  const n = 48, sp = [];
+  for (let i = 0; i <= n; i++) sp.push(BZ.speedAt(cv, i / n));
+  const max = Math.max(1.2, ...sp.map(Math.abs));
+  const base = g.speedTop + g.speedH * (Math.min(...sp) < 0 ? 0.6 : 1);
+  const sy = (v) => base - v / max * (g.speedH * (Math.min(...sp) < 0 ? 0.6 : 1) - 2);
+  c.fillStyle = sunk; c.fillRect(g.X(0), g.speedTop, g.side, g.speedH);
+  c.strokeStyle = dim; c.lineWidth = 1; c.beginPath(); c.moveTo(g.X(0), base); c.lineTo(g.X(1), base); c.stroke();
+  c.strokeStyle = fg; c.lineWidth = 1.5; c.beginPath();
+  sp.forEach((v, i) => { const x = g.X(i / n), y = sy(v); if (i) c.lineTo(x, y); else c.moveTo(x, y); });
+  c.stroke();
+  c.fillStyle = dim; c.font = '9px sans-serif'; c.fillText('SPEED', g.X(0) + 4, g.speedTop + 10);
+  if (t !== null && t <= 1) { c.fillStyle = acc; c.fillRect(g.X(t) - 0.5, g.speedTop, 1, g.speedH); }
+}
+const round3 = (v) => Math.round(v * 1000) / 1000;
+function curveEditor(args, setArgs, { h, app, ctx }) {
+  const cv = BZ.normalize({ x1: args.x1 === undefined ? 0.333 : args.x1, y1: args.y1 || 0, x2: args.x2 === undefined ? 0.667 : args.x2, y2: args.y2 === undefined ? 1 : args.y2 });
+  let drag = 0;
+  const label = h('code', { class: 'curve-css' }, BZ.css(cv));
+  const canvas = h('canvas', { class: 'curve-canvas', 'aria-label': 'Ease curve: drag the two handles', role: 'img' });
+  const pick = (e) => {
+    const r = canvas.getBoundingClientRect();
+    const g = curveGeom(r.width, r.height);
+    return { g, x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+  const redraw = () => { label.textContent = BZ.css(cv); drawCurve(canvas, cv, null, drag); };
+  const down = (e) => {
+    const { g, x, y } = pick(e);
+    const d1 = Math.hypot(x - g.X(cv.x1), y - g.Y(cv.y1)), d2 = Math.hypot(x - g.X(cv.x2), y - g.Y(cv.y2));
+    drag = d1 <= d2 ? 1 : 2;
+    if (Math.min(d1, d2) > 28) { drag = 0; return; }
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) { /* old CEP */ }
+    e.preventDefault(); redraw();
+  };
+  const move = (e) => {
+    if (!drag) return;
+    const { g, x, y } = pick(e);
+    const nx = Math.min(BZ.X_MAX, Math.max(BZ.X_MIN, g.ix(x))), ny = Math.min(BZ.Y_MAX, Math.max(BZ.Y_MIN, g.iy(y)));
+    if (drag === 1) { cv.x1 = round3(nx); cv.y1 = round3(ny); } else { cv.x2 = round3(nx); cv.y2 = round3(ny); }
+    redraw();
+  };
+  const up = () => { if (!drag) return; drag = 0; setArgs(Object.assign({}, args, { x1: cv.x1, y1: cv.y1, x2: cv.x2, y2: cv.y2 })); };
+  canvas.addEventListener('pointerdown', down);
+  canvas.addEventListener('pointermove', move);
+  canvas.addEventListener('pointerup', up);
+  canvas.addEventListener('pointercancel', up);
+  canvas.setAttribute('data-fresh', '');
+  animated(canvas, (now) => drawCurve(canvas, cv, drag ? null : now, drag));
+
+  const readKeys = async () => {
+    const p = ((ctx && ctx.properties) || []).find((q) => (q.selectedKeys || []).length >= 2);
+    if (!p) { app.toast('Select two keyframes first'); return; }
+    const keys = [...new Set(p.selectedKeys)].sort((a, b) => a - b).slice(0, 2);
+    try {
+      const r = await app.services.host.call('keyframes.read', { compId: ctx.comp.id, targets: [{ address: p.address, keys }] });
+      const [ka, kb] = r.targets[0].keys;
+      const va = Array.isArray(ka.value) ? ka.value : [ka.value], vb = Array.isArray(kb.value) ? kb.value : [kb.value];
+      const got = BZ.fromTemporal(ka.easeOut, kb.easeIn, { dt: kb.time - ka.time, dv: vb.map((v, d) => v - va[d]), spatial: /_SPATIAL$/.test(p.valueType) });
+      setArgs(Object.assign({}, args, { x1: round3(got.x1), y1: round3(got.y1), x2: round3(got.x2), y2: round3(got.y2) }));
+      app.toast(`Read ${p.name}: ${BZ.css(got)}`);
+    } catch (err) { app.toast(`Could not read the keys: ${err.message || err}`); }
+  };
+  const copyCss = () => { try { navigator.clipboard.writeText(BZ.css(cv)); app.toast('Copied'); } catch (_) { app.toast(BZ.css(cv)); } };
+  const hasKeys = ((ctx && ctx.properties) || []).some((q) => (q.selectedKeys || []).length >= 2);
+  return h('div', { class: 'field stack curve-ed' },
+    h('label', {}, 'Value graph · drag the handles'),
+    canvas,
+    h('div', { class: 'curve-row' }, label, h('span', { class: 'spacer' }),
+      h('button', { class: 'btn ghost sm', title: 'Copy as CSS cubic-bezier', 'aria-label': 'Copy curve', onclick: copyCss }, icon('copy', 'sm')),
+      h('button', { class: 'btn ghost sm', disabled: !hasKeys, title: hasKeys ? 'Load the curve of the first two selected keyframes' : 'Select two keyframes to read their curve', onclick: readKeys }, icon('import', 'sm'), 'Read from keys')));
+}
+
+/* ---------- v0.9 Anchor point picker (3 × 3) ---------- */
+function anchorPicker(args, setArgs, { h }) {
+  const order = ['tl', 't', 'tr', 'l', 'c', 'r', 'bl', 'b', 'br'];
+  const cur = args.point || 'c';
+  return h('div', { class: 'field stack' }, h('label', {}, `Anchor point · ${TM.POINT_LABEL[cur]}`),
+    h('div', { class: 'anchor-pick', role: 'radiogroup', 'aria-label': 'Anchor point' },
+      order.map((p) => h('button', { class: `ap-dot ${p === cur ? 'on' : ''}`, role: 'radio', 'aria-checked': String(p === cur), 'aria-label': TM.POINT_LABEL[p], title: TM.POINT_LABEL[p], 'data-key': p, onclick: () => setArgs(Object.assign({}, args, { point: p })) }, h('span')))));
+}
+
 const body = {
+  'motion.easeCurve': curveEditor,
+  'transform.anchor': anchorPicker,
   'grid.build': gridPreview,
   'grid.guides': guidesPreview,
   'grid.placeInCells': guidesPreview,

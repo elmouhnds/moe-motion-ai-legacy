@@ -154,6 +154,13 @@
         }
     };
 
+    /* Key value as plain numbers (arrays for multi-dimensional); null for non-numeric values. */
+    function keyVal(v) {
+        var a, i;
+        if (typeof v === 'number') { return v; }
+        if (v && typeof v === 'object' && v.length !== undefined) { a = []; for (i = 0; i < v.length; i++) { a.push(Number(v[i])); } return a; }
+        return null;
+    }
     ops['keyframes.read'] = {
         mutates: false,
         run: function (args) {
@@ -171,7 +178,8 @@
                         inInterp: U.interpName(prop.keyInInterpolationType(k)),
                         outInterp: U.interpName(prop.keyOutInterpolationType(k)),
                         easeIn: U.easeToPlain(prop.keyInTemporalEase(k)),
-                        easeOut: U.easeToPlain(prop.keyOutTemporalEase(k))
+                        easeOut: U.easeToPlain(prop.keyOutTemporalEase(k)),
+                        value: keyVal(prop.keyValue(k))
                     });
                 }
                 out.push({ address: args.targets[t].address, keys: keys });

@@ -142,6 +142,12 @@ See `docs/features/STUDIO_v0.4.md`.
 - `app/ui/pie.js`: the radial menu (marking-menu release, tap-to-stay, 1–8, arrows, centre = `app.repeatLast`). Pure helpers `sliceAt` / `sectorPath` are unit-tested. Readiness comes from `library.readiness`, so a slice never runs what the tool's own checks would refuse; every run still goes through `app.runTool` → executor.
 - Triggers live in the shell: Q keydown (not typing, no modifiers), right-button pointerdown on anything without its own right-click menu, the header button.
 
+## 5k. Ease Curves, Anchor & Align (v0.9.0)
+- `features/curves/bezier.js` (pure, tested): presets, `point` / `valueAt` / `speedAt`, `toTemporal(curve, { dt, dv, spatial })` → AE `KeyframeEase` speed + influence per side, `fromTemporal` (read a curve back), `segments(keys)`. `features/curves/tools.js`: `keyframes.read` (values + eases) → `toTemporal` per segment → `keyframes.setEase`; verify compares what was sent with what AE reports; restore = `keyframes.restoreEase`.
+- `features/transform/math.js` (pure): the 9 anchor points, `align()` deltas from bounds, `cloneLayout()` (radial / linear / grid). `features/transform/tools.js`: Anchor, Align, Clone.
+- Host `ops/transform.jsx`: `keyframes.setEase`, `layers.moveAnchor` / `restoreAnchor` (Δposition = R(rot)·S(scale)·Δanchor, position keys shifted; keyframed anchors skipped), `layers.nudge` / `restorePosition`, `layers.clone` / `unclone` (copies named `MOE Clone n · …`). One undo group per op; every op returns before / after snapshots.
+- UI: `widgets.body['motion.easeCurve']` (canvas editor — drags draw directly, `setArgs` on pointer-up because the shell defers renders during a press), `widgets.body['transform.anchor']` (3 × 3 picker), thumbnails `bezier` / `anchor` / `align` / `clone`, sections `curves` (Animate) and `transform` (Layout).
+
 ## 5g. Distribution (v0.6.1)
 - `installer/moe-motion-ai.nsi` → per-user Setup.exe; install folder = bundle id, so every version lands in the same place. `install.json` in that folder records the installer and version.
 - `core/updater.js` (pure, injected `http` / `system`) + `platform.system` (Node: HTTPS-only download, SHA-256, detached launch, `extensionInfo`). The panel never replaces its own files: it hands a verified installer to Windows, which runs after After Effects quits (`/WAITAE`).

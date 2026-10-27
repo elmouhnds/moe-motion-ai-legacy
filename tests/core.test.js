@@ -26,7 +26,7 @@ test('registry rejects incomplete or unsafe definitions', () => {
 
 test('search ranks name matches first', () => {
   const r = registerAll(new Registry());
-  assert.equal(r.search('ease')[0].id, 'motion.smartEase');
+  assert.deepEqual(r.search('ease').slice(0, 2).map((t) => t.id).sort(), ['motion.easeCurve', 'motion.smartEase']);
   assert.equal(r.search('cascade')[0].id, 'motion.stagger');
   assert.equal(r.search('expr fix')[0].id, 'expressions.assist');
   assert.equal(r.search('zzzz').length, 0);

@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.14 — Ease Curves, Anchor & Align ✅ (v0.9.0)
+- [x] Bézier ease-curve editor with speed graph, 32 curves, read from keys; Anchor 9 points without a jump; Align & Distribute; Clone ring / fan / row / grid; section, Quick Bar group, pie slots
+- [ ] Confirm inside AE 2025 (TEST_REPORT.md → v0.9.0 checklist 87–95) — especially speeds on Position vs Scale and anchors on text layers
+- Next: per-dimension curves for separated properties in one pass, a curve that follows several keys (multi-segment "flow" across a whole move), clone along a path, align to a key layer, anchor to a custom point (click on a preview)
+
 ## M1.13 — Workspaces & Pie menu ✅ (v0.8.0)
 - [x] Home + five workspaces with section tabs; Pie menu (Q / right-hold / header), smart slices by selection, My pie; Home suggestions
 - [ ] Confirm inside AE 2025 (TEST_REPORT.md → v0.8.0 checklist 81–86) — especially Q and right-hold while the panel has focus
@@ -66,7 +71,7 @@
 - Next: code-signing certificate (removes the SmartScreen warning; then a signed ZXP for Adobe's installer too), Ed25519 signature on the feed in addition to SHA-256, macOS .pkg if AE on Mac is ever needed, a hosted feed (GitHub Releases) once the repo has a remote
 
 ## M2 — Motion Director depth
-- Visual ease graph editor (bezier handles → speed/influence), read current ease from selection
+- ~~Visual ease graph editor (bezier handles → speed/influence), read current ease from selection~~ → v0.9.0
 - Keyframe timing tools: retime, scale around playhead, snap keys to whole frames, reverse
 - Overshoot / bounce generator (baked keys and expression variants)
 - Copy / paste motion (ease + relative timing) between properties and layers

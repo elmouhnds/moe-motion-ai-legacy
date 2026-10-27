@@ -38,7 +38,7 @@ function evaluate(requires, ctx) {
     if (r.minLayers && s.layers < r.minLayers) {
       reasons.push(r.minLayers === 1 ? 'Select a layer' : `Select at least ${r.minLayers} layers`);
     }
-    if (r.maxLayers && s.layers > r.maxLayers) reasons.push(`Select at most ${r.maxLayers} layers`);
+    if (r.maxLayers && s.layers > r.maxLayers) reasons.push(r.maxLayers === 1 ? 'Select only one layer' : `Select at most ${r.maxLayers} layers`);
     if (r.minProperties && s.properties < r.minProperties) reasons.push('Select a property');
     if (r.keyframedProperties && s.keyframedProperties < r.keyframedProperties) reasons.push('Select a keyframed property');
     if (r.selectedKeys && s.selectedKeys < r.selectedKeys) reasons.push('Select keyframes');
