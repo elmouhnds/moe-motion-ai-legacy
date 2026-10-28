@@ -5,7 +5,7 @@
  *
  *   { key: { type: 'number'|'integer'|'string'|'text'|'boolean'|'enum'|'layer',
  *            label, description, default, min, max, step, unit,
- *            options: [{ value, label }], maxLength, required, advanced } }
+ *            options: [{ value, label }], aliases: { oldValue: value }, maxLength, required, advanced } }
  */
 
 const TYPES = new Set(['number', 'integer', 'string', 'text', 'boolean', 'enum', 'layer']);
@@ -51,6 +51,8 @@ function validateValue(key, p, raw) {
       if (raw === 'true' || raw === 'false') return { value: raw === 'true' };
       return { error: `${p.label} must be true or false` };
     case 'enum':
+      // aliases: old values saved by an earlier version (e.g. a renamed mode) map to the new one
+      if (p.aliases && Object.prototype.hasOwnProperty.call(p.aliases, raw)) return { value: p.aliases[raw] };
       if (!p.options.some((o) => o.value === raw)) {
         return { error: `${p.label} must be one of: ${p.options.map((o) => o.value).join(', ')}` };
       }

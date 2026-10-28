@@ -1,12 +1,12 @@
 # Test Report
 
-Last run: 2026-10-27 (v0.11.1), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-28 (v0.12.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
 | Layer | How it was tested | Result |
 |---|---|---|
-| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 256/256 automated tests pass (incl. `tests/kit.test.js` and the rewritten anchor / align tests in `tests/transform.test.js`) |
+| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 258/258 automated tests pass (incl. `tests/kit.test.js` and the rewritten anchor / align tests in `tests/transform.test.js`) |
 | ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (16 files) — since v0.6.3 also: ES3 reserved words (AST), ASCII-only sources, ES5+ APIs. **Why it matters:** the host tests run the .jsx in Node (V8), which is more permissive than ExtendScript — v0.6.2 and earlier had `final:` as an object key, legal in V8, reserved in ES3 |
 | Core (registry, schema, permissions, executor, storage, logger, bridge) | Unit + integration tests | Pass |
 | Claude integration | Mocked HTTPS responder: request shape, retries, refusal, truncation, 401, offline, budget; plan-schema size guard | Pass — **no real API call was made** (a mocked API does not compile the schema; that is how the v0.6.3 "grammar too large" error got through — now guarded by a size test, but only a real call proves acceptance) |
@@ -237,6 +237,12 @@ Record results here with AE version/build from the Diagnostics view.
 12. Disconnect network → local tools still work; AI shows "Cannot reach the Claude API".
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
+
+### Delay = C4D checklist (v0.12.0) — inside After Effects 2025
+114. Even / Blend / Spring on one layer with a fast Position jump: Even = a straight ramp, Blend = fast then slow, Spring = overshoot and settle. Both expression engines (Project Settings › Expressions).
+115. Leader + 10 followers, Field on: **MOE Delay Field** appears at the comp centre with Radius / Falloff / Invert; layers near it lag, far ones do not. Move the null over the layers (keyframe it): the delay sweeps with it. Scale the null: the field grows. Invert: swaps.
+116. Check every follower's *MOE Delay Leader* still points at the leader and the leader's *MOE Delay Field* points at the null (the null went on top of the stack). Point *MOE Delay Field* at your own layer (no MOE sliders): it still works with default radius 200 / falloff 300.
+117. Edit › Undo / History › Restore after a run that created the null: the null is gone. Trash: rig gone, null stays. Scrub / RAM preview speed with 20+ layers and Field on.
 
 ### Free drag checklist (v0.11.1) — inside After Effects 2025
 113. Select two Position keys. On the kit graph press in the **middle** (not on a handle) and drag right: both influences grow together; drag up: the curve gets steeper. Press in the **right third** and drag up: the end overshoots (Value mode) — AE reports it is not possible on Position (one speed) and says so. Speed mode: start / end drags change only that key's speed; compare with Graph Editor › Speed. One *Edit › Undo* per drag. Note whether the drag feels too fast / slow at ~400 px panel width.

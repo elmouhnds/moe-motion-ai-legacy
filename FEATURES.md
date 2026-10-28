@@ -1,4 +1,6 @@
-# Features (v0.11.1)
+# Features (v0.12.0)
+
+**Delay = Cinema 4D** (v0.12.0): Even · Blend · Spring like C4D's MoGraph Delay effector, plus **Field (null)** — a null sets each layer's delay by distance (radius, falloff, invert; move it to sweep, scale it to grow).
 
 **Free drag on the ease graph** (v0.11.1): press anywhere and drag, like Motion 4 — left = start (ease out), right = end (ease in), middle = both mirrored; sideways = influence, up / down = shape or speed; Shift fine, Ctrl snap; handles still grab directly.
 

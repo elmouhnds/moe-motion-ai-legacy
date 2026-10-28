@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.17 — Delay matches C4D ✅ (v0.12.0)
+- [x] Even / Blend / Spring (C4D modes); Field null (radius, falloff, invert, scale) blending each layer's delay by distance; Offset folded into Strength 0 + frames; enum aliases for saved options
+- [ ] Confirm inside AE 2025 (TEST_REPORT.md → items 114–117) — scrub speed with a field and 20+ layers, both expression engines
+- Next: box / linear field shapes (C4D field types), field on Delay *frames* (ripple: more time offset farther away), a field gizmo drawn in the comp (shape layer circle linked to the radius)
+
 ## M1.16b — Free drag on the ease graph ✅ (v0.11.1)
 - [x] Motion 4-style zone drag (start / both / end) in Value and Speed mode, relative to the press, hover hints, live sliders + velocity fields
 - [ ] Confirm feel inside AE 2025 (TEST_REPORT.md → item 113)

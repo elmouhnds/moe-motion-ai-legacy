@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['kDelay', 'Delay = C4D: Even · Blend · Spring + Field', 'The three modes of Cinema 4D\'s Delay effector. Turn on Field (right-click Delay): a null sets how much delay each layer gets by its distance — move the null to sweep the effect, scale it to grow the field.'],
   ['easeCurve', 'Shape the curve from anywhere', 'Like Motion 4: press anywhere on the graph and drag — no need to catch a handle. Left = the start (ease out), right = the end (ease in), middle = both together. Sideways = how long it eases, up / down = shape or speed. Shift = fine, Ctrl = snap.'],
   ['kDelay', 'Delay — like C4D MoGraph', 'Spring (overshoot and settle), Blend (smooth lag) or Offset (time delay). One layer: its own move gets follow-through. Several: the others trail the first selected, each later. Live sliders in Effect Controls.'],
   ['easeCurve', 'Speed graph in real units', 'px/s, °/s, %/s like the Graph Editor; type exact speed + influence (Keyframe Velocity); an overview of the whole selected animation; Pass-through keeps the speed flowing through middle keys.'],

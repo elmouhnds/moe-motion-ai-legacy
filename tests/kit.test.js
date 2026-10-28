@@ -207,7 +207,7 @@ test('Delay (C4D MoGraph): Spring on a layer\'s own move overshoots and settles;
   assert.equal(P.expression, '');
 });
 
-test('Delay: followers perform the leader\'s move, each one more delayed (Offset); Blend lags; Trash removes the rig', async () => {
+test('Delay: followers perform the leader\'s move, each one more delayed (Even 0 % = pure offset); Blend lags; Trash removes the rig', async () => {
   const D = require('../extension/features/kit/delay');
   const lead = TA({ pos: [100, 100] });
   lead[1] = Object.assign({}, lead[1], { keys: [{ time: 0, value: [100, 100] }, { time: 1, value: [300, 100] }] });
@@ -217,7 +217,7 @@ test('Delay: followers perform the leader\'s move, each one more delayed (Offset
     { name: 'F2', selected: true, transform: TA({ pos: [100, 300] }), rect: { left: 0, top: 0, width: 10, height: 10 } }
   ]);
   const { services, comp } = await createTestServices(fx);
-  let r = await services.executor.run('kit.delay', { mode: 'offset', frames: 5, position: true, rotation: false, scale: false });
+  let r = await services.executor.run('kit.delay', { mode: 'even', strength: 0, frames: 5, position: true, rotation: false, scale: false });
   assert.equal(r.status, 'success', JSON.stringify(r.verification));
   const fd = comp.frameDuration;
   const x = (n, tt) => tp(named(comp, n), 'ADBE Position').valueAtTime(tt, false);
@@ -236,6 +236,82 @@ test('Delay: followers perform the leader\'s move, each one more delayed (Offset
   assert.equal(r.status, 'success', JSON.stringify(r.verification));
   assert.equal(tp(named(comp, 'F1'), 'ADBE Position').expression, '');
   assert.equal(named(comp, 'Lead').property('ADBE Effect Parade').numProperties, 0);
+});
+
+test('Delay Even (C4D): a jump becomes an even ramp; Blend moves fast first then settles; old "offset" options still run', async () => {
+  const D = require('../extension/features/kit/delay');
+  const t = TA({ pos: [0, 0] });
+  t[1] = Object.assign({}, t[1], { keys: [{ time: 1, value: [0, 0] }, { time: 1 + 1 / 25, value: [100, 0] }] });
+  const { services, comp } = await createTestServices(studioComp([{ name: 'Box', selected: true, transform: t, rect: { left: 0, top: 0, width: 10, height: 10 } }]));
+  const r = await services.executor.run('kit.delay', { mode: 'even', strength: 80, position: true, rotation: false, scale: false });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  const fd = comp.frameDuration, P = tp(named(comp, 'Box'), 'ADBE Position');
+  const n = D.evenWindow(0.8);
+  assert.equal(n, 9, 'window: same average lag as Blend 80 %');
+  const xs = []; for (let i = 0; i <= n + 1; i++) xs.push(P.valueAtTime(1 + 1 / 25 + i * fd, false)[0]);
+  const steps = xs.slice(1, n).map((v, i) => v - xs[i]);
+  assert.ok(steps.every((s) => Math.abs(s - steps[0]) < 1e-6) && steps[0] > 0, `even steps: ${steps}`);
+  assert.ok(Math.abs(xs[xs.length - 1] - 100) < 1e-6, 'arrives');
+  const pre = (tt) => P.valueAtTime(tt, true)[0];
+  [1.1, 1.2, 1.3].forEach((tt) => assert.ok(Math.abs(P.valueAtTime(tt, false)[0] - D.simulate('even', pre, tt, { fd, strength: 80, frames: 3, order: 0 })) < 1e-6));
+  // Blend: the first frame covers the biggest part of the gap (fast, then settles)
+  const b = (k) => D.simulate('blend', pre, 1 + 1 / 25 + k * fd, { fd, strength: 80, frames: 0, order: 0 });
+  assert.ok(b(1) - b(0) > b(2) - b(1) && b(2) - b(1) > b(3) - b(2), 'blend decelerates');
+  // an option saved by 0.11 ("Offset") maps to Even instead of failing validation
+  const v = require('../extension/core/schema').validateArgs(D.delay.params, { mode: 'offset' });
+  assert.equal(v.value.mode, 'even');
+});
+
+test('Delay Field (C4D field): a null sets each layer\'s delay by distance; moving it sweeps the effect; Undo removes the created null', async () => {
+  const D = require('../extension/features/kit/delay');
+  const lead = TA({ pos: [100, 100] });
+  lead[1] = Object.assign({}, lead[1], { keys: [{ time: 0, value: [100, 100] }, { time: 1, value: [300, 100] }] });
+  const sq = { left: 0, top: 0, width: 10, height: 10 };
+  const { services, comp } = await createTestServices(studioComp([
+    { name: 'Lead', selected: true, transform: lead, rect: sq },
+    { name: 'Near', selected: true, transform: TA({ pos: [960, 540] }), rect: sq },
+    { name: 'Far', selected: true, transform: TA({ pos: [1900, 1060] }), rect: sq }
+  ]));
+  const before = comp.numLayers;
+  const r = await services.executor.run('kit.delay', { mode: 'blend', strength: 80, frames: 0, field: true, position: true, rotation: false, scale: false });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  assert.equal(comp.numLayers, before + 1);
+  const F = named(comp, 'MOE Delay Field');
+  assert.ok(F, 'field null created');
+  const ffx = F.property('ADBE Effect Parade')._children.map((e) => e.name);
+  assert.ok(['MOE Delay Field Radius', 'MOE Delay Field Falloff', 'MOE Delay Field Invert'].every((n) => ffx.includes(n)), ffx.join());
+  // the leader's Layer Controls still point at the right layers after the null went on top
+  const lead2 = named(comp, 'Lead');
+  const ctl = (L, n) => L.property('ADBE Effect Parade')._children.find((e) => e.name === n);
+  assert.equal(ctl(named(comp, 'Near'), 'MOE Delay Leader').property(1).value, lead2.index, 'leader index follows the shift');
+  assert.equal(ctl(lead2, 'MOE Delay Field').property(1).value, F.index, 'field picked');
+  const fd = comp.frameDuration, lx = (tt) => tp(lead2, 'ADBE Position').valueAtTime(tt, false)[0];
+  const x = (n, tt) => tp(named(comp, n), 'ADBE Position').valueAtTime(tt, false)[0];
+  // Near sits on the field (comp centre): full delay. Far is beyond radius + falloff: no delay at all.
+  const full = D.simulate('blend', (tt) => 960 + (lx(tt) - 100), 0.5, { fd, strength: 80, frames: 0, order: 1 });
+  assert.ok(Math.abs(x('Near', 0.5) - full) < 0.01, `near = full delay ${x('Near', 0.5)} vs ${full}`);
+  assert.ok(Math.abs(x('Far', 0.5) - (1900 + lx(0.5) - 100)) < 1e-6, 'far = no delay');
+  // a layer in the falloff gets a partial blend, exactly the pure weight
+  const m = Math.min(comp.width, comp.height), d = Math.hypot(1900 - 960, 1060 - 540);
+  assert.equal(D.fieldWeight(d, { radius: Math.round(m * 0.2), falloff: Math.round(m * 0.3) }), 0);
+  assert.equal(D.fieldWeight(0, {}), 1);
+  const wMid = D.fieldWeight(250, { radius: 200, falloff: 300 });
+  assert.ok(wMid > 0 && wMid < 1 && Math.abs(D.fieldWeight(250, { radius: 200, falloff: 300, invert: true }) - (1 - wMid)) < 1e-12);
+  assert.ok(Math.abs(D.fieldWeight(500, { radius: 200, falloff: 300, scale: 200 }) - D.fieldWeight(250, { radius: 200, falloff: 300 })) < 1e-12, 'scaling the null scales the field');
+  // move the field onto Far: now Far is delayed and Near is not
+  tp(F, 'ADBE Position').setValue([1900, 1060]);
+  const farFull = D.simulate('blend', (tt) => 1900 + (lx(tt) - 100), 0.5, { fd, strength: 80, frames: 0, order: 2 });
+  assert.ok(Math.abs(x('Far', 0.5) - farFull) < 0.01, 'field moved → far delayed');
+  assert.ok(Math.abs(x('Near', 0.5) - (960 + lx(0.5) - 100)) < 1e-6, 'near no longer delayed');
+  // run again: the field null is reused, not duplicated
+  select(comp, ['Lead', 'Near', 'Far']);
+  const r2 = await services.executor.run('kit.delay', { mode: 'spring', field: true, position: true, rotation: false, scale: false });
+  assert.equal(r2.status, 'success', JSON.stringify(r2.verification));
+  assert.equal(comp._layers.filter((l) => l.name === 'MOE Delay Field').length, 1);
+  await services.executor.restore(r2.checkpointId);
+  await services.executor.restore(r.checkpointId);
+  assert.equal(comp.numLayers, before, 'created field null removed on restore');
+  assert.equal(tp(named(comp, 'Near'), 'ADBE Position').expression, '');
 });
 
 test('Delay: refuses when nothing moves, with a clear reason', async () => {

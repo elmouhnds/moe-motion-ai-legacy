@@ -2,6 +2,22 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.12.0] — 2026-10-28 — Delay matches Cinema 4D: Even · Blend · Spring + Field
+Requested by the product owner after comparing with C4D's MoGraph Delay effector.
+### Changed
+- **Delay modes are now C4D's: Even · Blend · Spring** (was Spring · Blend · Offset).
+  - **Even** (new): follows at an even speed — a moving average over a window, so a jump becomes a straight ramp. Strength sets the window (same average lag as Blend at the same Strength: 70 % ≈ 6 frames, 80 % = 9).
+  - **Blend**: fast first, then settles slowly (unchanged maths).
+  - **Spring**: overshoots and settles (unchanged).
+  - **Offset is gone as a mode**: Even or Blend with Strength 0 plus *Delay* frames gives the same pure time offset. Options saved by 0.11 with "Offset" open as Even instead of failing (new enum `aliases` in the parameter schema).
+### Added
+- **Field (null)** — like a field on a C4D effector. Right-click Delay → *Field (null)*: creates (or reuses) a null **MOE Delay Field** at the comp centre with **MOE Delay Field Radius / Falloff / Invert**. Each layer's delay is blended with its undelayed motion by its weight: full inside the radius, smoothly none beyond radius + falloff (comp XY distance, every frame). Move the null to sweep the effect across the layers; scale the null to scale the field; keyframe the sliders. The **MOE Delay Field** Layer Control on the leader / each layer picks the field layer — any layer works, empty = no field.
+- Undo / Restore removes a field null the run created; Trash removes the rig but never deletes a layer (delete the null yourself).
+### Fixed
+- The Delay frames unit no longer clips in the options sheet ("fr").
+### Tests
+- New: Even ramp (equal steps, arrives), Blend decelerates, "offset" alias; Field near / far / falloff weights, invert, null scale, moving the null swaps who is delayed, Layer Controls still point at the right layers after the null is added on top, the null is reused not duplicated, restore removes it. 258 tests pass. Preview: Delay with Field ran on the Title comp (6 properties, null created), no JS errors. **Not yet run inside After Effects.**
+
 ## [0.11.1] — 2026-10-27 — Free drag on the ease graph (Motion 4)
 Requested by the product owner: "I don't want to control it from two sticks — I want to control it freely with the mouse in the middle of the graph, like Motion 4."
 ### Changed
