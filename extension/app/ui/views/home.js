@@ -86,6 +86,49 @@ function suggestions(app, ctx) {
     }))];
 }
 
+/* ---------- Smart Home (v0.15) ---------- */
+const KIND_ICON = { keys: 'easeCurve', layer: 'layers', layers: 'layers', text: 'type', shapes: 'shapes', shapesMany: 'shapes', none: 'spark' };
+/** One line under the focus title: what exactly is selected. */
+function detailOf(ctx, kind) {
+  if (!ctx || !ctx.comp) return '';
+  const names = (ctx.layers || []).map((l) => l.name);
+  const list = names.length > 2 ? `${names.slice(0, 2).join(', ')} +${names.length - 2}` : names.join(', ');
+  if (kind === 'keys') { const n = (ctx.properties || []).reduce((a, p) => a + (p.selectedKeys || []).length, 0); return `${n} key${n === 1 ? '' : 's'}${list ? ` · ${list}` : ''}`; }
+  if (kind === 'none') return `${ctx.comp.name} · select a layer or keys and this card changes`;
+  return list;
+}
+function focusRows(app, kind) {
+  const A = require('../actions');
+  return (A.FOCUS[kind] || []).map(([title, refs]) => {
+    const items = refs.map((r) => A.resolve(r)).filter(Boolean);
+    return h('div', { class: 'focus-row', 'data-key': `fr-${kind}-${title}` },
+      h('div', { class: 'focus-row-h' }, title),
+      h('div', { class: 'focus-acts' }, items.map((a) => {
+        const rd = a.ready(app);
+        return h('button', { class: `focus-act ${rd.ok || a.nav ? '' : 'off'}`, 'data-key': `fa-${a.id}`, title: rd.ok || a.nav ? `${a.label} — ${a.where}` : `${a.label} — ${rd.hint}`,
+          onclick: () => { if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else a.run(app); } }, icon(a.icon || 'bolt', 'sm'), h('span', {}, a.label));
+      })));
+  });
+}
+function smartRender(app, s) {
+  const A = require('../actions');
+  const kit = require('./kit');
+  const kind = A.profile(s.ctx);
+  const head = h('div', { class: 'focus-h' },
+    h('span', { class: 'focus-ic' }, icon(KIND_ICON[kind] || 'spark', 'sm')),
+    h('div', { class: 'focus-t' }, h('div', { class: 'focus-k' }, A.CONTEXT_LABEL[kind]), h('div', { class: 'focus-d' }, detailOf(s.ctx, kind))));
+  const reg = app.services.registry;
+  const recent = [];
+  for (const e of app.services.executor.history(60)) { if (recent.length >= 8) break; if (!recent.some((r) => r.toolId === e.toolId) && reg.get(e.toolId)) recent.push(e); }
+  const fresh = !recent.length && !app.services.favorites.list().length;
+  return [
+    kit.smartHome(app, kind, focusRows(app, kind), head),
+    kind === 'none' && fresh ? [h('div', { class: 'section-h' }, 'Start with'), h('div', { class: 'hm-starts' }, STARTS.map(([id, t, sub, ic]) => h('button', { class: 'hm-start', onclick: () => app.go(id) }, h('div', { class: 'hm-start-art', html: art.art(id) }), h('div', { class: 'hm-start-t' }, icon(ic, 'sm'), t), h('div', { class: 'hm-start-s' }, sub))))] : null,
+    recent.length ? h('section', { class: 'home-recent', 'aria-label': 'Recent' }, h('div', { class: 'home-more-h' }, 'Recent'),
+      h('div', { class: 'home-recent-row' }, recent.map((e) => { const t = reg.get(e.toolId); return h('button', { class: 'kit-ib', title: `${t.name} — ${relTime(e.t)}`, 'aria-label': t.name, onclick: () => app.openTool(t) }, icon(t.icon || 'tools', 'sm')); }))) : null
+  ];
+}
+
 function render(app) {
   const s = app.state.get();
   const n = chrome.counts(app);
@@ -133,6 +176,18 @@ function render(app) {
   // v0.10 (Motion 4 Home): ease graph, anchor, align and the pinned tools come first, every time.
   // The comp card only shows when something is wrong (not connected / no comp) — the context line has the rest.
   const connected = s.ctx && s.ctx.comp && !s.hostError;
+  const kitP = require('./kit').prefs(app);
+  const smart = kitP.homeLayout !== 'fixed';
+  const layoutBtn = h('button', { class: 'btn ghost', title: smart ? 'Smart: the top of Home follows what you select. Click for Fixed (always the same order).' : 'Fixed: always the same order. Click for Smart (follows your selection).', onclick: () => require('./kit').setPref(app, { homeLayout: smart ? 'fixed' : 'smart' }) }, icon('layout', 'sm'), smart ? 'Layout: smart' : 'Layout: fixed');
+  if (smart) {
+    return h('div', { class: 'view home' },
+      connected ? null : compCard(app, s.ctx),
+      smartRender(app, s),
+      h('div', { class: 'hm-foot' },
+        layoutBtn,
+        h('button', { class: 'btn ghost', onclick: () => app.state.set({ modal: 'shortcuts' }) }, icon('keyboard', 'sm'), 'Shortcuts'),
+        h('button', { class: 'btn ghost', title: tip, onclick: () => app.toast(tip, 7000, 'info') }, icon('lightbulb', 'sm'), 'Tip')));
+  }
   return h('div', { class: 'view home' },
     connected ? null : compCard(app, s.ctx),
     require('./kit').homeTop(app),
@@ -143,6 +198,7 @@ function render(app) {
     returning ? null : cols,
     h('div', { class: 'hm-tip' }, h('span', { class: 'hm-tip-ic' }, icon('lightbulb')), h('div', {}, h('div', { class: 'hm-kicker' }, 'TIP OF THE DAY'), h('div', {}, tip))),
     h('div', { class: 'hm-foot' },
+      layoutBtn,
       h('button', { class: 'btn ghost', onclick: () => app.state.set({ modal: 'shortcuts' }) }, icon('keyboard', 'sm'), 'Shortcuts'),
       h('button', { class: 'btn ghost', onclick: () => app.state.set({ modal: 'about' }) }, icon('info', 'sm'), 'About')));
 }

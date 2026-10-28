@@ -15,7 +15,7 @@ const { chromium } = require(require('child_process').execSync('npm root -g').to
 
 const BASE = 'http://localhost:5173/';
 const Q = '&fixture=layout&w=900&hostDelay=250&ctxChurn=1';
-const VIEWS = [['animate', '.st-tile'], ['shapes', '.sh-tile'], ['home', '.hm-start'], ['backgrounds', '.st-tile'], ['kit', '.kit-tool']];
+const VIEWS = [['animate', '.st-tile'], ['shapes', '.sh-tile'], ['home', '.focus-act'], ['backgrounds', '.st-tile'], ['kit', '.kit-tool']];
 
 (async () => {
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' }).catch(() => chromium.launch());
@@ -47,16 +47,17 @@ const VIEWS = [['animate', '.st-tile'], ['shapes', '.sh-tile'], ['home', '.hm-st
     let ok = 0;
     // Kit buttons run a tool instead of selecting a tile: count clicks that reach a live button and either start a run
     // or (dimmed tool) explain why in a warning — both mean the click registered.
-    if (view === 'kit') await page.evaluate(([s]) => { window.__kc = 0; document.addEventListener('click', (e) => { const el = e.target.closest(s); if (el && el.isConnected) window.__kc++; }, true); const run = window.__app.runTool, toast = window.__app.toast; window.__runs = 0; window.__app.runTool = (...a) => { window.__runs++; return run(...a); }; window.__app.toast = (...a) => { if (a[2] === 'warn') window.__runs++; return toast(...a); }; }, [sel]);
+    if (view === 'kit' || view === 'home') await page.evaluate(([s]) => { window.__kc = 0; document.addEventListener('click', (e) => { const el = e.target.closest(s); if (el && el.isConnected) window.__kc++; }, true); const run = window.__app.runTool, toast = window.__app.toast; window.__runs = 0; window.__app.runTool = (...a) => { window.__runs++; return run(...a); }; window.__app.toast = (...a) => { if (a[2] === 'warn') window.__runs++; return toast(...a); }; const go = window.__app.go; window.__app.go = (...a) => { window.__runs++; return go(...a); }; }, [sel]);
     for (let i = 0; i < 20; i++) {
-      if (view === 'kit') { await page.waitForFunction(() => !window.__app.state.get().running, null, { timeout: 5000 }).catch(() => {}); await page.waitForTimeout(60); }
+      if (view === 'kit' || view === 'home') { await page.waitForFunction(() => !window.__app.state.get().running, null, { timeout: 5000 }).catch(() => {}); await page.waitForTimeout(60); }
       const b = await rect(i % 2 ? 3 : 4);
       await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
       await page.mouse.down();
       await page.waitForTimeout(120);
       await page.mouse.up();
       await page.waitForTimeout(view === 'home' ? 0 : 150);
-      if (view === 'home') { ok += (await page.evaluate(() => window.__app.state.get().view)) !== 'home' ? 1 : 0; await page.evaluate(() => window.__app.go('home')); await page.waitForTimeout(150); continue; }
+      // Smart Home (v0.15): focus-card buttons run a tool, warn why not, or open a section — all count as registered
+      if (view === 'home') { const c = await page.evaluate(() => [window.__kc, window.__runs]); ok += c[0] === i + 1 && c[1] === i + 1 ? 1 : 0; if (await page.evaluate(() => window.__app.state.get().view !== 'home')) { await page.evaluate(() => window.__app.state.set({ view: 'home' })); await page.waitForTimeout(150); } continue; }
       if (view === 'kit') { const c = await page.evaluate(() => [window.__kc, window.__runs]); ok += c[0] === i + 1 && c[1] === i + 1 ? 1 : 0; continue; }
       const on = await page.evaluate(([s, idx]) => { const el = document.querySelectorAll(s)[idx]; return !!el && (el.classList.contains('on') || el.getAttribute('aria-pressed') === 'true'); }, [sel, i % 2 ? 3 : 4]);
       if (on) ok++;

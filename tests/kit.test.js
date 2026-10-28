@@ -433,3 +433,39 @@ test('overview per segment: only the selected segment shows the edited curve; se
   assert.equal(KG.segmentAt(segs, 0.5), 1); assert.equal(KG.segmentAt(segs, 2.2), 2); assert.equal(KG.segmentAt(segs, 9), 2); assert.equal(KG.segmentAt(segs, -1), 1);
   const g = KG.ovGeom(216, segs); assert.equal(g.T(g.X(1.5)), 1.5);
 });
+
+test('Smart Home: every focus row resolves, no action twice in one card, the right blocks are in focus', () => {
+  const A = require('../extension/app/ui/actions');
+  const kinds = ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany', 'none'];
+  for (const k of kinds) {
+    assert.ok(A.FOCUS[k] && A.FOCUS_BLOCKS[k], `focus for ${k}`);
+    const refs = A.FOCUS[k].flatMap(([, r]) => r);
+    assert.equal(new Set(refs).size, refs.length, `${k}: no duplicates`);
+    refs.forEach((r) => assert.ok(A.resolve(r), `${k}: ${r} resolves`));
+    assert.ok(A.CONTEXT_LABEL[k]);
+  }
+  assert.deepEqual(A.FOCUS_BLOCKS.keys, ['ease']);
+  assert.ok(!A.FOCUS.shapesMany.flatMap(([, r]) => r).some((r) => /dist[HV]$/.test(r)), 'distribute only in the Align block');
+  // profile → kind
+  const ctx = (layers, keys) => ({ comp: { id: 1 }, layers, properties: keys ? [{ selectedKeys: [1, 2] }] : [] });
+  assert.equal(A.profile(ctx([{ type: 'shape' }], true)), 'keys');
+  assert.equal(A.profile(ctx([{ type: 'text' }, { type: 'text' }])), 'text');
+  assert.equal(A.profile(ctx([{ type: 'av' }, { type: 'shape' }])), 'layers');
+  assert.equal(A.profile(ctx([])), 'none');
+});
+
+test('Smart Home folds: focus open by default, others folded; what you open is remembered per kind; Fixed uses its own folds', () => {
+  const { isFolded } = require('../extension/app/ui/views/kit');
+  const keys = { ctx: 'keys', focus: ['ease', 'pinned'] }, layer = { ctx: 'layer', focus: ['anchorAlign', 'pinned'] };
+  assert.equal(isFolded({}, keys, 'ease'), false);
+  assert.equal(isFolded({}, keys, 'anchor'), true);
+  assert.equal(isFolded({}, layer, 'anchor'), false, 'anchorAlign covers anchor');
+  assert.equal(isFolded({}, layer, 'align'), false);
+  assert.equal(isFolded({}, layer, 'ease'), true);
+  const pr = { ctxOpen: { keys: { anchor: true } } };
+  assert.equal(isFolded(pr, keys, 'anchor'), false, 'opened while on keys');
+  assert.equal(isFolded(pr, layer, 'ease'), true, 'other kinds unaffected');
+  assert.equal(isFolded({ ctxOpen: { keys: { ease: false } } }, keys, 'ease'), true, 'the focus can be folded too');
+  assert.equal(isFolded({ fold: { ease: true } }, null, 'ease'), true, 'Fixed layout');
+  assert.equal(isFolded({ fold: { ease: true } }, keys, 'ease'), false, 'Smart ignores Fixed folds');
+});

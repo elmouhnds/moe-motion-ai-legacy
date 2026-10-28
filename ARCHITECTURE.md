@@ -149,6 +149,10 @@ See `docs/features/STUDIO_v0.4.md`.
 - Host: `ops/kit.jsx` (`keyframes.setInterp`, `layers.trimToKeys` / `restoreTiming`, `rigs.find` / `rigs.remove`); `ops/transform.jsx` anchor rewritten (2D maths R·S·Δa; 3D / auto-orient through a toWorld / fromWorld probe with selection restore; keyed anchor; mask box; Alt placement via the parent chain), `layers.nudge` handles parented layers (comp → parent space, 2D parents).
 - Second CEP extension `tv.madtomato.moe.motionai.kit` (`kit.html` → `main.start({ mode: 'kit' })` → `shell.renderKitPanel`). Both panels share `%APPDATA%\MOE Motion AI`: `core/storage.js` re-reads a document whose file changed (mtime, checked ≤ 2×/s per document; `version(name)`), `core/settings.js` re-reads before `get` / `update`.
 
+## 5r. Smart Home (v0.15.0)
+- `app/ui/actions.js`: `FOCUS[kind]` = curated rows of action references (same `tile:` / `quick:` / `nav:` / `cmd:` refs as the pie, resolved by `resolve()` with its `ready()`), `FOCUS_BLOCKS[kind]` = kit blocks in focus (`ease` / `anchorAlign`). `profile(ctx)` gives the kind.
+- `views/home.js` `smartRender()` → `kit.smartHome(app, kind, rows, head)`; `kit.smartHome` sets `K.scope = { ctx, focus }` while it builds, so `folded()` → pure `isFolded(prefs, scope, id)` (focus open by default; `prefs.ctxOpen[kind][id]` remembers the user's choice per kind; Fixed layout keeps `prefs.fold`). Zones are always in the same order; only the focus card's inside changes. `prefs.homeLayout`: smart | fixed.
+
 ## 5q. Per-segment curves + tidier panel (v0.14.0)
 - `views/kit.js`: `K.seg` (0 = all, n = segment n) kept while the same keys are selected (`K.keysSig`); `curSeg()` feeds units / velocity; `selectSeg()` loads that segment's curve and ghost; `segStrip()`; overview click → `KG.segmentAt(segs, ovGeom(W).T(x))`. `applyCurve` sends `segment`. `motion.easeCurve` `prepare` slices the selected keys to `[seg − 1, seg]`.
 - `kitGraph.js`: `overviewSamples(segs, cv, sel)`, `drawOverview(…, sel)` (selected band, others dimmed with their own curves), `segmentAt`, `ovGeom`.

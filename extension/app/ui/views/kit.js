@@ -39,10 +39,24 @@ const DEFAULT_PINS = ['parentNull', 'k_parent', 'k_excite', 'k_delay', 'k_jump',
 const prefs = (app) => Object.assign({ auto: true, side: 'both', to: 'selection', masks: false, link: false, clip: null, pins: DEFAULT_PINS, graph: 'both', graphH: 150, through: false, gap: null }, app.services.settings.get().ui.kit || {});
 const setPref = (app, patch) => { app.services.settings.update({ ui: { kit: Object.assign(prefs(app), patch) } }); app.render(); };
 /* v0.14: every block folds from its title (remembered per panel) — keep only what you use open. */
-const folded = (app, id) => !!(prefs(app).fold || {})[id];
+// v0.15 Smart Home: while Home renders, K.scope = { ctx, focus } — a block is open by default when it
+// is the focus for this kind of selection, and what you open / fold is remembered per kind (ctxOpen).
+/** Pure rule: is block `id` folded, given the kit prefs and the Home scope (null = Fixed layout)? */
+function isFolded(pr, sc, id) {
+  if (!sc) return !!(pr.fold || {})[id];
+  const o = ((pr.ctxOpen || {})[sc.ctx] || {})[id];
+  const inFocus = sc.focus.includes(id) || ((id === 'anchor' || id === 'align') && sc.focus.includes('anchorAlign'));
+  return o === undefined ? !inFocus : !o;
+}
+const folded = (app, id) => isFolded(prefs(app), K.scope, id);
 function foldTitle(app, id, label) {
-  const f = folded(app, id);
-  return h('button', { class: `kit-t kit-fold ${f ? 'folded' : ''}`, 'aria-expanded': String(!f), 'data-key': `fold-${id}`, title: f ? `Show ${label}` : `Fold ${label} (remembered)`, onclick: () => setPref(app, { fold: Object.assign({}, prefs(app).fold || {}, { [id]: !f }) }) }, icon('chev', 'xs'), h('span', {}, label));
+  const f = folded(app, id), sc = K.scope;
+  const toggle = () => {
+    const pr = prefs(app);
+    if (sc) setPref(app, { ctxOpen: Object.assign({}, pr.ctxOpen || {}, { [sc.ctx]: Object.assign({}, (pr.ctxOpen || {})[sc.ctx] || {}, { [id]: f }) }) });
+    else setPref(app, { fold: Object.assign({}, pr.fold || {}, { [id]: !f }) });
+  };
+  return h('button', { class: `kit-t kit-fold ${f ? 'folded' : ''}`, 'aria-expanded': String(!f), 'data-key': `fold-${id}`, title: f ? `Show ${label}` : `Fold ${label} (remembered${sc ? ' for this kind of selection' : ''})`, onclick: toggle }, icon('chev', 'xs'), h('span', {}, label));
 }
 const r3 = (v) => Math.round(v * 1000) / 1000;
 const ctxOf = (app) => app.state.get().ctx;
@@ -460,13 +474,42 @@ function render(app) {
     toolsBlock(app, { foldId: 'kitTools' }));
 }
 
-/** Home (Motion 4 Home): ease + anchor + align always first, then the tools you pinned. */
+/** Home, Fixed layout (v0.10–0.14): ease + anchor + align always first, then the tools you pinned. */
 function homeTop(app) {
   const pr = prefs(app);
   return h('div', { class: 'kit home-kit' },
     easeBlock(app),
     h('div', { class: 'kit-pair' }, anchorBlock(app), alignBlock(app)),
-    toolsBlock(app, { ids: pr.pins.filter((id) => BAR.KIT_TOOLS.includes(id)), title: 'Pinned tools', foldId: 'pinned', right: h('button', { class: 'btn ghost sm kit-more', title: 'All tools and the pin list (Ctrl 2)', onclick: () => app.go('kit') }, 'Toolbox', icon('chev', 'xs')) }));
+    pinnedBlock(app));
+}
+function pinnedBlock(app) {
+  const pr = prefs(app);
+  return toolsBlock(app, { ids: pr.pins.filter((id) => BAR.KIT_TOOLS.includes(id)), title: 'Your tools', foldId: 'pinned', right: h('button', { class: 'btn ghost sm kit-more', title: 'All tools and the pin list (Ctrl 2)', onclick: () => app.go('kit') }, 'Toolbox', icon('chev', 'xs')) });
+}
+
+/**
+ * Smart Home (v0.15, docs/features/SMART_HOME.md): the selection decides the focus card; zones keep
+ * their order — Focus → Your tools → More (folded) — and folds are remembered per kind of selection.
+ * rows(kind) renders the curated action rows (built by home.js from actions.FOCUS).
+ */
+function smartHome(app, kind, rows, head) {
+  const A = require('../actions');
+  const focus = (A.FOCUS_BLOCKS[kind] || []).concat(['pinned']);
+  K.scope = { ctx: kind, focus };
+  try {
+    const easeIn = focus.includes('ease'), aaIn = focus.includes('anchorAlign');
+    const more = [];
+    if (!easeIn) more.push(easeBlock(app));
+    if (!aaIn) more.push(h('div', { class: 'kit-pair', 'data-key': 'more-aa' }, anchorBlock(app), alignBlock(app)));
+    return h('div', { class: 'kit home-kit smart', 'data-ctx': kind },
+      h('section', { class: 'kit-block home-focus', 'data-key': `focus-${kind}`, 'aria-label': 'For this selection' },
+        head,
+        easeIn ? easeBlock(app) : null,
+        rows,
+        aaIn ? h('div', { class: 'kit-pair', 'data-key': 'focus-aa' }, anchorBlock(app), alignBlock(app)) : null),
+      pinnedBlock(app),
+      more.length ? h('div', { class: 'home-more', 'data-key': 'more' }, h('div', { class: 'home-more-h' }, 'More'), more) : null);
+  } finally { K.scope = null; }
 }
 
 /** Toolbox (sidebar, Ctrl 2): every tool, the pin list for Home, the whole curve library. */
@@ -479,4 +522,4 @@ function renderToolbox(app) {
       curveLibrary(app, match)));
 }
 
-module.exports = { render, homeTop, renderToolbox, matchPreset, keyed, K, DEFAULT_PINS };
+module.exports = { render, homeTop, smartHome, renderToolbox, matchPreset, keyed, K, DEFAULT_PINS, prefs, setPref, isFolded };

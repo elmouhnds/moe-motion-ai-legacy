@@ -2,6 +2,23 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.15.0] — 2026-10-28 — Smart Home: the selection decides what comes first
+The product owner rejected the v0.14 arrangement as "not smart in distribution and organisation". Study and rules: `docs/features/SMART_HOME.md` (AE's own Properties panel follows the selection; contextual-toolbar guidance: only what is useful now, no duplicates, stable layout).
+### Changed
+- **Home is built around what you selected.** One **focus card** at the top names the selection (*Keyframes · 7 keys · Title, Subtitle +2*, *Text layers · Headline EN, Headline AR* …) and holds only the tools that fit it:
+  - **Keyframes** → the Ease graphs (segments, presets) · **Keys** (reverse, mirror, clone, stagger, trim) · **Loop** (cycle, ping-pong, offset, in-out).
+  - **One layer** → **Animate in** · **Animate out** · **Rig** (Excite, Wiggle, Swing, Spin, Orbit, Float) · Anchor + Align.
+  - **Several layers** → **Animate in, one after another** · **Arrange** (grid, ring, honeycomb, spiral, fan) · **Link** (null, parent, delay, stare) · Anchor + Align.
+  - **Text** → **Text in** (typewriter, rise, cascade, fade, counter) · **Text tools** (Text, Brand) · Anchor + Align.
+  - **Shape / shapes** → **Draw** (on, erase, travel, both) · **Motion** or **Arrange** · Anchor + Align.
+  - **Nothing selected** → **Create** (shapes & icons, backgrounds, text, guides, safe areas) · **Find** (search, Copilot, Toolbox), and the *Start with* cards for new users.
+- **Stable zones**: Focus → **Your tools** (pinned) → **More** (the blocks that are not in focus, folded, with a one-line summary) → **Recent** (one row of icons). Only the inside of the focus card changes.
+- **Each action appears once on Home** — the old "For this selection" list, the greeting card, the Start-with cards (except for new users with nothing selected) and the tip card are gone from Home (the tip is a button in the footer; the pie keeps its own 8 slices).
+- **Folds are remembered per kind of selection**: open Anchor while on keyframes and it stays open for keyframes only.
+- **Home › Layout: smart / fixed** (footer): *fixed* gives the v0.14 order back.
+### Tests
+- New: every focus row resolves with no duplicates and distribute only in Align; `profile` kinds; the fold rule (focus open, others folded, remembered per kind, the focus can be folded, Fixed keeps its own folds). 266 tests pass. Preview (Playwright): Title (keys), 9 cards (several shapes), Text (text) at 340 / 420 px; Smart ↔ Fixed; open a block under More — no JS errors. *(The web preview reloads when you switch its demo comp, so remembered folds reset there; in the panel they are saved.)* **Not yet run inside After Effects.**
+
 ## [0.14.1] — 2026-10-28 — Layout fixes from the button audit
 ### Fixed
 - Home at ~340 px: the Ease header (now with the fold arrow) pushed the Auto button 6 px past the panel edge. The source name shrinks first and the In / Both / Out · mirror · Auto controls drop to a second line when there is no room.

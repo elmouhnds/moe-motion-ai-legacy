@@ -23,6 +23,24 @@ const SETS = {
   layer: ['tile:animate/fadeIn', 'tile:animate/popIn', 'quick:inRL', 'quick:x_wiggle', 'tile:animate/fadeOut', 'quick:anchorB', 'quick:flipH', 'tile:zoom/punch'],
   none: ['cmd:search', 'nav:shapes', 'nav:backgrounds', 'tile:layout/g12', 'cmd:copilot', 'tile:layout/safe', 'nav:text', 'nav:kit']
 };
+/**
+ * Smart Home (v0.15): what the focus card offers for each kind of selection — curated rows, each
+ * action in one row only (docs/features/SMART_HOME.md). Same references as SETS (tile: / quick: /
+ * nav: / cmd:), so readiness and running go through resolve() exactly like the pie.
+ */
+const LINK = ['quick:parentNull', 'quick:k_parent', 'quick:k_delay', 'quick:k_stare'];
+const ARRANGE = ['tile:layout/grid', 'tile:layout/ring', 'tile:layout/honey', 'tile:layout/spiral', 'tile:layout/fan']; // distribute lives in the Align block right below
+const FOCUS = {
+  keys: [['Keys', ['quick:reverse', 'quick:mirror', 'quick:clone', 'quick:k_stagger', 'quick:k_trimKeys']], ['Loop', ['quick:x_loopCycle', 'quick:x_loopPingPong', 'quick:x_loopOffset', 'quick:x_loopInOut']]],
+  layer: [['Animate in', ['quick:inRL', 'quick:inLR', 'quick:inBT', 'tile:animate/fadeIn', 'tile:animate/popIn', 'tile:animate/riseIn', 'tile:animate/spinIn']], ['Animate out', ['quick:outRL', 'quick:outLR', 'tile:animate/fadeOut', 'tile:animate/popOut', 'tile:animate/scaleOut', 'tile:animate/spinOut']], ['Rig', ['quick:k_excite', 'quick:k_wiggle', 'quick:k_swing', 'quick:k_spin', 'quick:k_orbit', 'quick:x_float']]],
+  layers: [['Animate in, one after another', ['tile:animate/cascadeIn', 'tile:animate/cascadeFade', 'tile:animate/stagger', 'quick:inRL', 'tile:animate/popIn']], ['Arrange', ARRANGE], ['Link', LINK]],
+  text: [['Text in', ['quick:typewriter', 'tile:animate/riseIn', 'tile:animate/cascadeIn', 'tile:animate/fadeIn', 'quick:counter']], ['Text tools', ['nav:text', 'nav:brand']]],
+  shapes: [['Draw', ['quick:trimDraw', 'quick:trimErase', 'quick:trimTravel', 'quick:trimBoth']], ['Motion', ['quick:k_repeat', 'quick:x_wiggle', 'tile:animate/popIn', 'tile:animate/spinIn', 'quick:k_excite']]],
+  shapesMany: [['Draw', ['quick:trimDraw', 'quick:trimErase', 'quick:trimTravel', 'quick:trimBoth']], ['Arrange', ARRANGE], ['Animate in, one after another', ['tile:animate/cascadeIn', 'tile:animate/stagger', 'tile:animate/popIn']]],
+  none: [['Create', ['nav:shapes', 'nav:backgrounds', 'nav:text', 'tile:layout/g12', 'tile:layout/safe']], ['Find', ['cmd:search', 'cmd:copilot', 'nav:kit']]]
+};
+/** Which kit blocks are the focus for each kind of selection (the rest go under "More", folded). */
+const FOCUS_BLOCKS = { keys: ['ease'], layer: ['anchorAlign'], layers: ['anchorAlign'], text: ['anchorAlign'], shapes: ['anchorAlign'], shapesMany: ['anchorAlign'], none: [] };
 const CONTEXT_LABEL = { keys: 'Keyframes', text: 'Text layers', shapes: 'Shape layer', shapesMany: 'Several shapes', layers: 'Several layers', layer: 'One layer', none: 'Nothing selected' };
 
 /** What is selected, in one word (pure). */
@@ -98,4 +116,4 @@ function catalog() {
   return out;
 }
 
-module.exports = { SETS, CONTEXT_LABEL, profile, slotsFor, resolve, catalog };
+module.exports = { SETS, FOCUS, FOCUS_BLOCKS, CONTEXT_LABEL, profile, slotsFor, resolve, catalog };

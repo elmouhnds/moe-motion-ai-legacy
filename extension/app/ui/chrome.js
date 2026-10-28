@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['spark', 'Home follows your selection', 'The top card shows what you selected and only the tools that fit it: keys → the ease graphs, keys and loops; a layer → animate in / out, rigs, anchor and align; text → text in; shapes → draw-on and arrange; nothing → create. The rest waits under More, folded — and stays the way you leave it for each kind of selection. Home › Layout: fixed brings the old order back.'],
   ['easeCurve', 'A curve for each segment', 'Select 3+ keys: the strip under the overview shows every segment as its curve. Click one (or click it in the overview) and the graph edits only that segment — each segment keeps its own ease. All = one curve on every segment.'],
   ['grid', 'Tidier panel', 'Every Home block folds from its title (remembered). The Toolbox groups tools: Motion rigs · Keyframes · Layers · Clean up. The Quick Bar fits one row, with +N for the rest; “Tools” is now Utilities.'],
   ['easeCurve', 'Value + Speed graphs together', 'Both graphs at once, both draggable — drag one and the other follows; hover shows the same moment on both. Alt + wheel fine-tunes. Presets are now just pictures of their curves; + saves without a name; Flip plays an ease backwards.'],

@@ -1,12 +1,12 @@
 # Test Report
 
-Last run: 2026-10-28 (v0.14.1), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-28 (v0.15.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
 | Layer | How it was tested | Result |
 |---|---|---|
-| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 264/264 automated tests pass (incl. `tests/kit.test.js` and the rewritten anchor / align tests in `tests/transform.test.js`) |
+| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 266/266 automated tests pass (incl. `tests/kit.test.js` and the rewritten anchor / align tests in `tests/transform.test.js`) |
 | ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (16 files) — since v0.6.3 also: ES3 reserved words (AST), ASCII-only sources, ES5+ APIs. **Why it matters:** the host tests run the .jsx in Node (V8), which is more permissive than ExtendScript — v0.6.2 and earlier had `final:` as an object key, legal in V8, reserved in ES3 |
 | Core (registry, schema, permissions, executor, storage, logger, bridge) | Unit + integration tests | Pass |
 | Claude integration | Mocked HTTPS responder: request shape, retries, refusal, truncation, 401, offline, budget; plan-schema size guard | Pass — **no real API call was made** (a mocked API does not compile the schema; that is how the v0.6.3 "grammar too large" error got through — now guarded by a size test, but only a real call proves acceptance) |
@@ -17,6 +17,7 @@ Last run: 2026-10-28 (v0.14.1), Linux cloud sandbox (Node 22.22.0). **After Effe
 | Every button (v0.6.5) | `node tools/audit-ui.js`: every button / tab / chip / tile in 19 views + 3 data variants clicked from a known state with real mouse clicks, tiles double-clicked, controls revealed by a click clicked too; layout at 340–900 px — see `docs/UX_AUDIT.md` | 2,495 interactions: 0 JS errors, 0 unreachable or unnamed controls, 0 overflow; 7 bugs found and fixed. **Preview + mock host, not After Effects** |
 | Every button (v0.7.0) | Same audit on v0.7.0 (19 views + 3 data variants; revealed controls sampled 3–4 per click) + `tests/workflow.test.js` + browser flow check of every new feature | 2,451 interactions: 0 JS errors, 0 unreachable; failed tool runs 99 → 12 (all host-time conditions with a clear message: no Position keys, no screen colour found, project not saved). Single-file web preview tested in Chromium with and without a no-eval CSP. **Preview + mock host, not After Effects** |
 | Every button (v0.8.0) | Same audit incl. the Pie menu (header button → every slice) and workspace tabs + `tests/workflow.test.js` (profile, sets, geometry, keys 1–8, centre, Esc) + browser flow: hold Q / point / release, tap Q, right-hold, Ctrl 1–6 | 2,436 interactions: 0 JS errors; 1 real overlap found and fixed (Inspector under the Apply bar); remaining failures are host-time conditions with clear messages. Pie also checked in the single-file preview under a no-eval CSP. **Preview + mock host, not After Effects** — Q / right-hold inside AE still to confirm (checklist 82–84) |
+| Every button (v0.15.0) | `node tools/audit-ui.js home kit` on the Smart Home | 449 interactions (Home 322, Kit 127): 0 JS errors, 0 unnamed controls, 0 overflow at 340 / 420 / 600 / 900 px. Expected refusals: *Open Folder* (unsaved project); *Grid / Ring / Honeycomb / Spiral / Fan* from the focus card refuse because the fixture's Title layer carries the user's own Rotation expression (the message offers *Replace existing*). `npm run stress` now clicks the focus-card buttons on Home: 20/20. **Preview + mock host, not After Effects** |
 | Every button (v0.14.1) | `node tools/audit-ui.js home kit` after per-segment curves, folding blocks, grouped Toolbox and the Quick Bar Fit mode | 448 interactions (Home 321, Kit 127): 0 JS errors, 0 unnamed controls; found a 6 px overflow at 340 px (Ease header) and the +N pop-up covering its button — both fixed in 0.14.1, overflow re-measured 0 at 340 / 420 / 600 / 900 px. Expected refusals as in v0.13. **Preview + mock host, not After Effects** |
 | Every button (v0.13.0) | `node tools/audit-ui.js home kit` after the graphs / presets / Align rework | 435 interactions (Home 308, Kit 127): 0 JS errors, 0 unreachable or unnamed controls, 0 overflow. 4 flagged, all expected: *Open Folder* refuses on an unsaved project, *Grid* / *Ring* refuse layers that already carry the user's own expressions, *Refresh selection* with nothing changed shows no visible effect. Small targets left: segmented buttons 20 px high (Both / Value / Speed, Sel / Key / Comp), as before. **Preview + mock host, not After Effects** |
 | Every button (v0.10.0) | Same audit, 23 views incl. Home (kit blocks) and the Toolbox | 3,112 interactions: 0 JS errors, 0 unreachable, 0 overflow. Found: kit segmented controls under 24 px and a silent click on the source line with no keys — both fixed in 0.11.0. **Preview + mock host, not After Effects** |
@@ -239,6 +240,11 @@ Record results here with AE version/build from the Diagnostics view.
 12. Disconnect network → local tools still work; AI shows "Cannot reach the Claude API".
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
+
+### Smart Home checklist (v0.15.0) — inside After Effects 2025
+125. Select in turn: two keyframes, one solid, three layers, a text layer, a shape layer, nothing. The focus card's title and rows change each time within ~1 s (note the delay — MOE reads on its light poll and when the panel gets focus). Nothing below the card jumps.
+126. On keyframes open *More › Anchor*; select a layer, then keyframes again: Anchor is open only for keyframes. Restart AE: still so.
+127. Home footer *Layout: fixed*: the v0.14 order (Ease, Anchor/Align, Your tools); back to *smart*.
 
 ### Per-segment + panel checklist (v0.14.0) — inside After Effects 2025
 122. Select 4 Position keys: the strip shows All · 1 · 2 · 3 with the curve on each. Click 2, drag the graph: Graph Editor › Speed shows the change only between keys 2 and 3 (one Undo). Click segment 3 in the overview, apply Out Expo: segments 1 and 2 keep theirs. Select other keys: back to All.

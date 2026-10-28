@@ -871,6 +871,27 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .kit-chip-g svg { display: block; width: 24px; height: 22px; }
 .kit-libgroup { display: grid; grid-template-columns: 54px minmax(0, 1fr); align-items: start; gap: 6px; margin-top: 6px; }
 .kit-libtag { font-size: 10px; color: var(--text-3); padding-top: 7px; text-transform: uppercase; letter-spacing: .04em; }
+/* v0.15: Smart Home — focus card follows the selection; zones keep their order */
+.home-kit.smart { display: flex; flex-direction: column; gap: 10px; }
+.home-focus { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+.home-focus .kit-block { border: 0; padding: 0; margin: 0; background: none; box-shadow: none; }
+.home-focus > .kit-pair { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.focus-h { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; min-width: 0; }
+.focus-ic { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: var(--r); background: var(--accent-soft); color: var(--accent); }
+.focus-t { min-width: 0; }
+.focus-k { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text); }
+.focus-d { font-size: var(--fs-sm); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.focus-row { margin-top: 8px; }
+.focus-row-h { margin-bottom: 4px; font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--text-3); }
+.focus-acts { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 4px; }
+.focus-act { display: flex; align-items: center; gap: 6px; min-width: 0; height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text-2); font: inherit; font-size: var(--fs-sm); cursor: pointer; text-align: left; }
+.focus-act span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.focus-act:hover { color: var(--text); border-color: var(--line-strong); }
+.focus-act.off { opacity: .5; }
+.home-more { display: flex; flex-direction: column; gap: 8px; }
+.home-more-h { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); margin: 2px 0 0 2px; }
+.home-recent { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.home-recent-row { display: flex; flex-wrap: wrap; gap: 4px; }
 /* v0.14: foldable blocks + grouped toolbox */
 .kit-fold { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
 .kit-fold .svg-i { transform: rotate(90deg); color: var(--text-3); }

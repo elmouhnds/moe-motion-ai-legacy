@@ -1,4 +1,6 @@
-# Features (v0.14.1)
+# Features (v0.15.0)
+
+**Smart Home** (v0.15.0): the selection decides the focus card (keys → ease + keys + loops; layer → animate in/out + rigs + anchor/align; layers → cascade + arrange + link; text → text in; shapes → draw + arrange; nothing → create); stable zones Focus → Your tools → More → Recent; folds remembered per kind of selection; Layout: fixed for the old order.
 
 **A curve for each segment** (v0.14.0): with 3+ keys, pick a segment in the strip or the overview and the graphs edit only it; All = one curve everywhere. **Tidier panel**: foldable kit blocks, grouped Toolbox, Quick Bar that fits one row with +N, *Utilities* instead of *Tools*.
 

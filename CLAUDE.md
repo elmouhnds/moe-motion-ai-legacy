@@ -62,6 +62,7 @@ Permanent rules for anyone (human or AI) working in this repository.
 - Run `node tools/audit-ui.js` (and `tools/audit-summary.js`) after UI changes: 0 JS errors, 0 unreachable or unnamed controls.
 - One-click entry points (pie, Home suggestions, search) go through `app/ui/actions.js` and its `ready()` check; keep the smart pie sets at 8 fixed positions (direction is the memory).
 - New sections belong to a workspace in `studio/sections.js` `WORKSPACES`.
+- Home is selection-driven (docs/features/SMART_HOME.md): new everyday actions go into `actions.FOCUS[kind]` for the kinds they fit — once per card, never duplicated between rows; zones keep their order (Focus → Your tools → More → Recent).
 - Quick Bar expression actions carry their preset's own numbers (`bar.resolve`) — never let a form default replace them.
 
 ## Testing rules
