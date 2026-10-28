@@ -1,4 +1,6 @@
-# Features (v0.15.0)
+# Features (v0.16.0)
+
+**Panel layouts** (v0.16.0): Settings › Panel layout — Current · **Hub** (screens + fixed Home + *For this* strip) · **Command Bar** (menus by object, highlighted for the selection + your bars) · **Workspace** (context bar + four stable task tabs + your bar). Every tool keeps one place; context areas only copy (docs/features/UI_LAYOUTS.md).
 
 **Smart Home** (v0.15.0): the selection decides the focus card (keys → ease + keys + loops; layer → animate in/out + rigs + anchor/align; layers → cascade + arrange + link; text → text in; shapes → draw + arrange; nothing → create); stable zones Focus → Your tools → More → Recent; folds remembered per kind of selection; Layout: fixed for the old order.
 

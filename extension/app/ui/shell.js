@@ -91,6 +91,8 @@ function createApp(root, services, env = {}) {
       return h('button', { role: 'tab', 'aria-selected': String(s.view === id), 'data-key': `wst-${id}`, onclick: () => app.go(id) }, icon(sec.icon, 'sm'), h('span', {}, sec.label));
     })) : null;
     if (env.mode === 'kit') return renderKitPanel(s);
+    const layout = require('./layouts').layoutOf(app);
+    if (layout !== 'studio') return renderLayout(s, layout, kept);
     const client = clientCard(s);
     const seen = services.settings.get().ui.seenVersion === services.version;
     const appEl = h('div', { class: `app ${s.kitBand || ''} ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.navWide ? 'nav-wide' : ''} ${s.tilesCompact ? 'tiles-compact' : ''} ${(studio.byId(s.view) || {}).kind === 'library' || s.view === 'text' ? 'has-actbar' : ''}` },
@@ -276,6 +278,35 @@ function createApp(root, services, env = {}) {
     });
     setTimeout(() => { const el = root.querySelector(`[data-tool="${tool.id}"]`); if (el) el.scrollIntoView({ block: 'nearest' }); }, 0);
   };
+
+  /* v0.16: the three proposal layouts (app/ui/layouts.js) — same views, other organisation. */
+  function renderLayout(s, layout, kept) {
+    const L = require('./layouts');
+    const body = (id) => [chrome.banner(app, id), (views[id] || views.home).render(app)];
+    const p = L.build(app, s, layout, body);
+    const appEl = h('div', { class: `app layout-${layout} ${s.kitBand || ''} ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.tilesCompact ? 'tiles-compact' : ''} ${(studio.byId(s.view) || {}).kind === 'library' || s.view === 'text' ? 'has-actbar' : ''}` },
+      h('div', { class: 'main' },
+        p.header,
+        contextStrip(s),
+        layout === 'hub' ? quickbar.strip(app) : null,
+        p.top,
+        h('div', { class: 'content' }, p.content),
+        p.bottom || null,
+        copilot.render(app)),
+      p.overlay || null,
+      quickbar.popover(app),
+      quickbar.restPopover(app),
+      s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, s.toastKind ? h('span', { class: 'toast-ic' }, icon(TOAST_ICON[s.toastKind] || 'info', 'sm')) : null, h('span', {}, s.toast)) : null,
+      s.modal ? chrome.sheet(app, s.modal) : null);
+    const content = root.querySelector('.content');
+    const top = content ? content.scrollTop : 0;
+    if (root.firstChild && root.firstChild.classList && root.firstChild.classList.contains('app')) morph(root.firstChild, appEl);
+    else { clear(root); root.appendChild(appEl); }
+    const c2 = root.querySelector('.content');
+    if (c2 && content) c2.scrollTop = top;
+    if (!app._densityPending) { app._densityPending = true; setTimeout(() => { app._densityPending = false; app.applyDensity(); }, 0); }
+    if (kept) { const el = root.querySelector(`[data-fk="${kept.fk}"]`); if (el) { el.value = kept.value; el.focus(); try { el.setSelectionRange(kept.a, kept.b); } catch (e) { /* not a text field */ } } }
+  }
 
   /* Second dockable panel (Window › Extensions › MOE Motion Kit): only the kit, like Motion 4 docked
      next to the timeline. Same tools, same history, same settings file as the main panel. */
@@ -617,6 +648,7 @@ function createApp(root, services, env = {}) {
     else if (e.key === '/' && !typing && !app.paletteOpen) { e.preventDefault(); palette.open(app); }
     else if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); app.openCopilot(); }
     else if (e.key === 'Escape' && app.state.get().modal) { e.preventDefault(); app.state.set({ modal: null }); }
+    else if (e.key === 'Escape' && app.state.get().layMenu) { e.preventDefault(); app.state.set({ layMenu: null }); }
     else if (e.key === '?' && !typing) { e.preventDefault(); app.state.set({ modal: 'shortcuts' }); }
     else if ((e.ctrlKey || e.metaKey) && /^Digit[1-9]$/.test(e.code)) {
       const hidden = services.settings.get().ui.hiddenSections || [];

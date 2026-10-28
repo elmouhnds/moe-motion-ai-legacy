@@ -2,6 +2,23 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.16.0] — 2026-10-28 — Three panel layouts you can try
+After the study of the big AE tools (Motion 4, MoBar, KBar, Motion Tools Pro, Duik, AE's Properties panel / Quick Apply) the product owner asked for a live preview of each of the three proposals. They are real layouts of the same panel, not mock-ups. Design and rules: `docs/features/UI_LAYOUTS.md`.
+### Added
+- **Settings › Appearance › Panel layout**: *Current* (v0.15, default) · **Hub** · **Command Bar** · **Workspace**.
+  - **Hub** (Motion 4 style): screens in a top row (Home · Ease · Toolbox · Library · Design · Finish); a Home that never changes (Ease, Anchor + Align, your tools, Recent); a slim *For this* strip that copies six actions for the selection.
+  - **Command Bar** (MoBar + KBar style): menus by object (Keys · Layer · Text · Shape · Comp · Design · Layout · Finish · AI) — the one that fits the selection is highlighted, nothing moves; three named bars you edit; Ease and Toolbox as panels below.
+  - **Workspace** (AE Properties style, made stable): a context bar with the 8 actions for the selection; four task tabs with a fixed order (Animate · Design · Layout · Finish); sections open inside their tab with a crumb back; your pinned tools at the bottom.
+- In all three, every tool keeps **one** place; context areas only copy. Every section is reachable in every layout.
+- Web preview: a **Layout** switch and links `#p1` / `#p2` / `#p3` / `#current`, with a short guide for each.
+### Fixed (found while checking the layouts)
+- Command Bar menus on the right half opened past the panel edge — they now open towards the left. **Esc** closes an open menu.
+- At docked widths (340–420 px) crowded tab rows, the menu row and the context bar overflowed or cut words; they now fit (icons only where needed, two-line labels, 4 small tiles per row below 400 px).
+- The Command Bar had no way to the Motion presets library — added to the **Layer** menu (caught by the new reachability test).
+### Tests
+- New `tests/layouts.test.js`: every section reachable in each layout, each Workspace section owned by one tab, every menu action resolves (no duplicates), every bar button is a real quick action, a highlighted menu for each kind of selection. 270 tests pass.
+- Preview (Playwright): 3 layouts × 3 demo comps × 340 / 420 / 640 px — no row overflow, no button outside the panel, no JS errors; every tab, sub-tab, card (and its crumb back) and menu clicked (122 clicks). Button audit on Home in each layout — see TEST_REPORT. **Preview + mock host, not After Effects.**
+
 ## [0.15.0] — 2026-10-28 — Smart Home: the selection decides what comes first
 The product owner rejected the v0.14 arrangement as "not smart in distribution and organisation". Study and rules: `docs/features/SMART_HOME.md` (AE's own Properties panel follows the selection; contextual-toolbar guidance: only what is useful now, no duplicates, stable layout).
 ### Changed

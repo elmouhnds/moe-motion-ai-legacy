@@ -522,4 +522,6 @@ function renderToolbox(app) {
       curveLibrary(app, match)));
 }
 
-module.exports = { render, homeTop, smartHome, renderToolbox, matchPreset, keyed, K, DEFAULT_PINS, prefs, setPref, isFolded };
+module.exports = { render, homeTop, smartHome, renderToolbox, matchPreset, keyed, K, DEFAULT_PINS, prefs, setPref, isFolded,
+  // v0.16 layouts (app/ui/layouts.js) build their screens from the same blocks
+  easeBlock, anchorBlock, alignBlock, toolsBlock, pinnedBlock, curveLibrary, toolButton };

@@ -31,6 +31,8 @@ function render(app) {
     updatesSection(app, st),
     h('div', { class: 'section-h' }, 'Appearance'),
     h('div', { class: 'set-group' },
+      h('div', { class: 'field', title: 'Try the three layout proposals (docs/features/UI_LAYOUTS.md). Every tool stays reachable in each.' }, h('label', {}, 'Panel layout'),
+        seg([['studio', 'Current'], ['hub', 'Hub'], ['bar', 'Command Bar'], ['workspace', 'Workspace']], require('../layouts').layoutOf(app), (v) => { app.services.settings.update({ ui: { layout: v } }); app.state.set({ layMenu: null }); app.render(); })),
       h('div', { class: 'field' }, h('label', {}, 'Theme'), seg(theme.THEMES, st.ui.theme || 'auto', (v) => updUi({ theme: v }))),
       h('div', { class: 'field' }, h('label', {}, 'Accent'), h('div', { class: 'accent-row', role: 'radiogroup', 'aria-label': 'Accent colour' },
         theme.ACCENTS.map(([id, label, hex]) => h('button', { class: `accent-sw ${(st.ui.accent || 'tomato') === id ? 'on' : ''}`, role: 'radio', 'aria-checked': String((st.ui.accent || 'tomato') === id), title: label, 'aria-label': label, style: { background: hex }, onclick: () => updUi({ accent: id }) })))),

@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.21 — Three panel layouts ✅ (v0.16.0)
+- [x] Hub · Command Bar · Workspace as real layouts of the same panel (`app/ui/layouts.js`), Settings › Panel layout, preview links #p1 #p2 #p3
+- [ ] Owner picks one (or a mix) after trying them in AE 2025 (TEST_REPORT.md → items 128–130)
+- Next: make the chosen layout the default and remove the others; Command Bar: edit bars in place (drag), menus at the mouse (MoBar-style hotkey); Workspace: remember the tab per selection kind
+
 ## M1.20 — Smart Home ✅ (v0.15.0)
 - [x] Focus card per selection kind (`actions.FOCUS`, `FOCUS_BLOCKS`), stable zones, per-kind folds, Smart / Fixed
 - [ ] Confirm inside AE 2025 (TEST_REPORT.md → items 125–127): how fast the card follows a selection change (it reads on the light poll / panel focus — AE has no selection event)

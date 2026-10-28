@@ -80,6 +80,9 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
 .pv-guide kbd { padding: 1px 5px; border: 1px solid var(--pv-line); border-bottom-width: 2px; border-radius: 4px; background: var(--pv-surface); font: 11px ui-monospace, Consolas, monospace; }
 .pv-note { padding: 10px 12px; border: 1px solid var(--pv-line); border-radius: 8px; background: var(--pv-surface); color: var(--pv-dim); font-size: 12px; }
 .pv-note b { color: var(--pv-text); }
+.pv-lguide[hidden] { display: none; }
+.pv-lguide { display: flex; flex-direction: column; gap: 10px; }
+.pv-layout .pv-seg button[aria-pressed="true"] { color: var(--pv-accent); }
 .pv-err { padding: 12px; color: #ff8b7a; font: 12px ui-monospace, monospace; white-space: pre-wrap; }
 @media (max-width: 520px) { .pv-frame { height: 640px; } }
 </style>
@@ -89,6 +92,8 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
     <div class="pv-name"><b>MOE Motion AI</b><span>v${VERSION} · live preview</span></div>
     <div class="pv-ctl"><label for="pv-w">Panel</label><div class="pv-seg" id="pv-w" role="group" aria-label="Panel width">
       <button data-w="280" data-mode="kit" title="The Motion Kit as its own slim panel (Window › Extensions › MOE Motion Kit)">Kit panel</button><button data-w="340">Narrow</button><button data-w="420">Docked</button><button data-w="640">Wide</button><button data-w="920">Full</button></div></div>
+    <div class="pv-ctl pv-layout"><label for="pv-layout">Layout</label><div class="pv-seg" id="pv-layout" role="group" aria-label="Panel layout (the three proposals)">
+      <button data-layout="hub" title="Proposal 1 — fixed Home + screens (Motion 4 style)">1 · Hub</button><button data-layout="bar" title="Proposal 2 — menus by object + your bars (MoBar / KBar style)">2 · Command Bar</button><button data-layout="workspace" title="Proposal 3 — context bar + task tabs (AE Properties style)">3 · Workspace</button><button data-layout="studio" title="The current v0.15 layout (sidebar + workspaces)">Current</button></div></div>
     <div class="pv-ctl"><label for="pv-scene">Comp</label><div class="pv-seg" id="pv-scene" role="group" aria-label="Sample composition">
       <button data-scene="title">Title</button><button data-scene="layout">9 cards</button><button data-scene="studio">Text</button></div></div>
     <div class="pv-ctl"><label for="pv-theme">Theme</label><div class="pv-seg" id="pv-theme" role="group" aria-label="Panel theme">
@@ -98,7 +103,20 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
   <div class="pv-body">
     <div class="pv-frame" id="pv-frame"><div id="app"></div></div>
     <aside class="pv-guide" aria-label="What to try">
-      <h2>Try this</h2>
+      <div class="pv-lguide" data-for="hub"><h2>Proposal 1 · Hub</h2><ol>
+        <li><b>Home is fixed</b>: the ease graphs, Anchor, Align and <i>Your tools</i> are always in the same place, whatever you select.</li>
+        <li>The orange <b>For this</b> strip under the screens <b>copies</b> six actions for the selection — switch the <i>Comp</i> above (Title = keys, 9 cards = layers, Text = text) and only the strip changes.</li>
+        <li>Screens: <b>Ease</b> (big editor + curve library), <b>Toolbox</b> (tools by what they do), <b>Library</b> / <b>Design</b> / <b>Finish</b> (sections as sub-tabs). History and Settings are in the header.</li></ol></div>
+      <div class="pv-lguide" data-for="bar"><h2>Proposal 2 · Command Bar</h2><ol>
+        <li>The first row is <b>menus by object</b>: Keys · Layer · Text · Shape · Comp · Design · Layout · Finish · AI. The one that fits your selection is <b>highlighted orange</b> — click it to open its tools.</li>
+        <li>Under it, <b>your bars</b> (Animate · Rig · Layer): one click runs, right-click opens options; <i>Edit bars</i> changes them.</li>
+        <li>The area below is a <b>panel</b>: Ease (with Anchor + Align) or Toolbox; a section you open from a menu appears as its own tab. <kbd>Ctrl</kbd> <kbd>K</kbd> searches everything.</li></ol></div>
+      <div class="pv-lguide" data-for="workspace"><h2>Proposal 3 · Workspace</h2><ol>
+        <li>The top <b>For this</b> bar <b>copies</b> the eight actions for what you selected (the same eight as the pie, same order) — change the <i>Comp</i> above and watch only this bar change. × hides it.</li>
+        <li>Four <b>task tabs</b>, each with a fixed order: <b>Animate</b> (ease, anchor + align, rigs, keyframes, then Motion presets · Text · Expressions), <b>Design</b>, <b>Layout</b>, <b>Finish</b>. A card opens its section in place; the crumb takes you back.</li>
+        <li><b>Your tools</b> stay at the bottom with <kbd>F4</kbd> (repeat) and ★ to choose them.</li></ol></div>
+      <div class="pv-lguide" data-for="studio">
+      <h2>Current layout (v0.15)</h2>
       <ol>
         <li><b>New in 0.10 — Home is your motion toolkit</b>: on the <i>Title</i> comp keys are selected on the <i>Title</i> comp — the graph shows their curve by itself. Drag a handle and let go: the curve lands on the keys. Click a preset chip (Shift = ease in only, Ctrl = ease out only).</li>
         <li><b>Anchor:</b> click a dot — the anchor moves, the layer does not. <kbd>Alt</kbd>-click also puts the layer at that point of the comp. Try it on <i>9 cards</i>.</li>
@@ -110,7 +128,7 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
         <li>In a library, hover a tile and press <b>▶</b>, or use <b>Apply</b> in the bar at the bottom. <kbd>F4</kbd> repeats the last change.</li>
         <li><kbd>Ctrl</kbd> <kbd>K</kbd>, type <i>pop</i>, <kbd>Enter</kbd>: the preset is applied. Dimmed tiles tell you why they cannot run.</li>
         <li>Every change is listed in <b>History</b> and can be restored.</li>
-      </ol>
+      </ol></div>
       <div class="pv-note" id="pv-noeval" hidden><b>Expressions are not evaluated on this page.</b> The page's security settings block running code from text, so the mock cannot read the result of an expression back. Tools driven by expressions (Grid, Proximity, Glass) still build, but report <i>partial</i> here; in After Effects they verify fully.</div>
       <div class="pv-note"><b>Simulated After Effects.</b> This is the real panel code and the real host scripts running against a small mock project in your browser. Nothing reaches a real project, and Reset starts over. Copilot answers are canned demo replies (no API key).</div>
     </aside>
@@ -150,9 +168,12 @@ ${texts}
 
   /* ---------- options (kept for this tab only) ---------- */
   var KEY = 'moe-preview-options';
-  var opts = { w: 420, scene: 'title', theme: 'dark', mode: 'main' };
+  var opts = { w: 420, scene: 'title', theme: 'dark', mode: 'main', layout: 'hub' };
+  var HASH = { p1: 'hub', p2: 'bar', p3: 'workspace', current: 'studio' };
   try { var saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); if (saved) for (var k in saved) opts[k] = saved[k]; } catch (e) { /* storage blocked: defaults */ }
   function save() { try { sessionStorage.setItem(KEY, JSON.stringify(opts)); } catch (e) { /* ignore */ } }
+  var h0 = (location.hash || '').slice(1);
+  if (HASH[h0]) opts.layout = HASH[h0];
   if (window.innerWidth < 560) opts.w = Math.min(opts.w, 420);
   var frame = document.getElementById('pv-frame');
   function mark() {
@@ -160,6 +181,8 @@ ${texts}
     [].forEach.call(document.querySelectorAll('#pv-w button'), function (b) { b.setAttribute('aria-pressed', String((b.dataset.mode || 'main') === (opts.mode || 'main') && Number(b.dataset.w) === opts.w)); });
     [].forEach.call(document.querySelectorAll('#pv-scene button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.scene === opts.scene)); });
     [].forEach.call(document.querySelectorAll('#pv-theme button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.themeV === opts.theme)); });
+    [].forEach.call(document.querySelectorAll('#pv-layout button'), function (b) { b.setAttribute('aria-pressed', String(b.dataset.layout === opts.layout)); });
+    [].forEach.call(document.querySelectorAll('.pv-lguide'), function (g) { g.hidden = g.dataset.for !== opts.layout; });
   }
   mark();
   // Search, dialogs and popovers are attached to <body> by the panel; here they belong inside the
@@ -200,12 +223,13 @@ ${texts}
     };
     var mem = require('/dev/platform-mem.js');
     var platform = mem.createMemPlatform({ apiKey: 'sk-ant-preview-demo', http: require('/dev/demo-ai.js') });
-    require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform, mode: opts.mode === 'kit' ? 'kit' : undefined, ui: { theme: opts.theme, accent: 'tomato', splash: false, banners: true, motion: 'calm', motionV: 2, seenVersion: opts.seen ? '${VERSION}' : '' } }).then(function (app) {
+    require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform, mode: opts.mode === 'kit' ? 'kit' : undefined, ui: { layout: opts.layout, theme: opts.theme, accent: 'tomato', splash: false, banners: true, motion: 'calm', motionV: 2, seenVersion: opts.seen ? '${VERSION}' : '' } }).then(function (app) {
       window.__app = app;
       opts.seen = true; save();
       var start = (location.hash || '').slice(1);
       var studio = require('/extension/app/ui/studio/sections.js');
       if (start && studio.byId(start)) app.go(start);
+      window.addEventListener('hashchange', function () { var l = HASH[(location.hash || '').slice(1)]; if (l && l !== opts.layout) setLayout(l); });
     });
   } catch (e) {
     document.getElementById('app').innerHTML = '<div class="pv-err"></div>';
@@ -224,6 +248,15 @@ ${texts}
     opts.theme = b.dataset.themeV; save(); mark();
     window.__app.services.settings.update({ ui: { theme: opts.theme } }); window.__app.applyAppearance(); window.__app.render();
   });
+  function setLayout(l) {
+    opts.layout = l; save(); mark();
+    if (!window.__app) return;
+    window.__app.services.settings.update({ ui: { layout: l } });
+    window.__app.state.set({ layMenu: null });
+    window.__app.go('home'); window.__app.render();
+    try { history.replaceState(null, '', '#' + ({ hub: 'p1', bar: 'p2', workspace: 'p3', studio: 'current' })[l]); } catch (e) { /* sandboxed */ }
+  }
+  document.getElementById('pv-layout').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setLayout(b.dataset.layout); });
   document.getElementById('pv-scene').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; opts.scene = b.dataset.scene; save(); location.reload(); });
   document.getElementById('pv-reset').addEventListener('click', function () { location.reload(); });
 }());

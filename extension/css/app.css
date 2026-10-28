@@ -986,3 +986,92 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .kit-seg { height: 24px; }
 .kit-seg button { min-width: 28px; }
 .kit-gmode { height: 24px; }
+
+/* ===== v0.16 layouts (app/ui/layouts.js): Hub · Command Bar · Workspace ===== */
+.lay-logo { display: grid; place-items: center; width: 26px; height: 26px; margin-right: 4px; padding: 0; border: 0; border-radius: var(--r); background: none; cursor: pointer; flex: none; }
+.lay-logo:hover { background: var(--bg-hover); }
+.lay-hdr .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.lay-hdr .icon-btn[aria-pressed="true"] { color: var(--accent); }
+/* tab rows: screens (top level) and sections inside a screen */
+.lay-tabs { display: flex; gap: 2px; padding: 0 6px; border-bottom: 1px solid var(--line); flex: none; overflow-x: auto; scrollbar-width: none; }
+.lay-tabs::-webkit-scrollbar { display: none; }
+.lay-tabs button { display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 9px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--text-3); font: inherit; font-size: var(--fs-sm); white-space: nowrap; cursor: pointer; }
+.lay-tabs button:hover { color: var(--text); }
+.lay-tabs button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); }
+.lay-tabs.lay-sub button { height: 28px; font-size: 11.5px; }
+.lay-tabs.lay-sub { background: var(--bg-sunken); }
+.app.kit-narrow .lay-screens button span, .app.kit-tiny .lay-screens button span { display: none; }
+.app.kit-narrow .lay-screens button[aria-selected="true"] span { display: inline; }
+/* Hub: the slim "for this selection" strip — copies, never moves anything */
+.lay-strip { display: flex; align-items: center; gap: 4px; padding: 5px 8px; border-bottom: 1px solid var(--line); background: linear-gradient(var(--accent-soft), transparent); flex: none; overflow-x: auto; scrollbar-width: none; }
+.lay-strip::-webkit-scrollbar { display: none; }
+.lay-strip-l { flex: none; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); margin-right: 2px; }
+.lay-chip { display: inline-flex; align-items: center; gap: 5px; flex: none; height: 24px; padding: 0 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg-raised); color: var(--text-2); font: inherit; font-size: 11px; white-space: nowrap; cursor: pointer; }
+.lay-chip:hover { color: var(--text); border-color: var(--accent); }
+.lay-chip.off, .lay-act.off { opacity: .5; }
+/* action buttons (menus, context bar) */
+.lay-acts { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 4px; }
+.lay-acts.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.app.kit-narrow .lay-acts.four, .app.kit-tiny .lay-acts.four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lay-act { display: flex; align-items: center; gap: 6px; min-width: 0; height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text-2); font: inherit; font-size: var(--fs-sm); text-align: left; cursor: pointer; }
+.lay-act span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lay-act:hover { color: var(--text); border-color: var(--line-strong); }
+.lay-page { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
+.lay-h { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); margin: 2px 0 4px 2px; }
+.lay-icons { display: flex; flex-wrap: wrap; gap: 3px; min-width: 0; }
+.lay-recent { display: flex; flex-direction: column; }
+/* section cards (Workspace) */
+.lay-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.lay-card { display: grid; grid-template-rows: auto auto auto; gap: 3px; padding: 0 0 9px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-raised); color: var(--text); font: inherit; text-align: left; overflow: hidden; cursor: pointer; }
+.lay-card:hover { border-color: var(--accent); }
+.lay-card-art { display: block; height: 64px; background: var(--bg-sunken); overflow: hidden; }
+.lay-card-art svg { display: block; width: 100%; height: 100%; }
+.lay-card-t { display: flex; align-items: center; gap: 6px; padding: 4px 10px 0; font-weight: 600; font-size: var(--fs-sm); }
+.lay-card-s { padding: 0 10px; color: var(--text-3); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lay-crumb { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--line); font-size: var(--fs-sm); color: var(--text-2); background: var(--bg-sunken); }
+.lay-crumb .btn .svg-i { transform: rotate(180deg); }
+.lay-crumb-sep { color: var(--text-3); }
+/* Workspace: the context bar and your bar at the bottom */
+.lay-ctxbar { display: flex; flex-direction: column; gap: 6px; padding: 7px 8px 8px; border-bottom: 1px solid var(--line); background: linear-gradient(var(--accent-soft), transparent); flex: none; }
+.lay-ctxbar-h { display: flex; align-items: center; gap: 6px; min-height: 18px; }
+.lay-ctxbar-k { font-size: 11px; color: var(--text-2); }
+.lay-foot { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border-top: 1px solid var(--line); background: var(--bg-sunken); flex: none; min-width: 0; }
+.lay-foot .lay-icons { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+/* Command Bar: menus by object, your bars, panels */
+.lay-menus { display: flex; gap: 0; padding: 0 4px; border-bottom: 1px solid var(--line); flex: none; overflow-x: auto; scrollbar-width: none; }
+.lay-menus::-webkit-scrollbar { display: none; }
+.lay-menu { display: inline-flex; align-items: center; gap: 3px; height: 30px; padding: 0 8px; border: 0; background: none; color: var(--text-2); font: inherit; font-size: var(--fs-sm); white-space: nowrap; cursor: pointer; }
+.lay-menu .svg-i { transform: rotate(90deg); opacity: .6; }
+.lay-menu:hover, .lay-menu[aria-expanded="true"] { color: var(--text); background: var(--bg-hover); }
+.lay-menu.hint { color: var(--accent); }
+.lay-drop { position: fixed; display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid var(--line-strong); border-radius: var(--r-lg); background: var(--bg-raised); box-shadow: 0 10px 30px rgba(0,0,0,.35); max-height: 70vh; overflow: auto; min-width: 220px; }
+.lay-drop-open { display: flex; flex-wrap: wrap; gap: 4px; padding-top: 6px; border-top: 1px solid var(--line); }
+.lay-drop-open:first-child { padding-top: 0; border-top: 0; }
+.lay-bars { display: flex; flex-direction: column; gap: 2px; padding: 5px 8px; border-bottom: 1px solid var(--line); flex: none; }
+.lay-barrow { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.lay-bar-n { flex: none; width: 46px; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3); }
+.lay-barrow .lay-icons { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.lay-bar-edit { margin-top: 2px; }
+.lay-panels { background: var(--bg-sunken); }
+.lay-group .kit-grid { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
+/* fit at docked widths: crowded tab rows keep the icon only on the open tab, menus share the row,
+   context actions wrap to two lines instead of cutting words */
+.lay-tabs.many button { flex: 1 1 auto; justify-content: center; padding: 0 6px; }
+.app:not(.kit-wide):not(.kit-narrow):not(.kit-tiny) .lay-tabs.many button:not([aria-selected="true"]) .svg-i { display: none; }
+.app.kit-narrow .lay-tabs.many button, .app.kit-tiny .lay-tabs.many button { min-width: 30px; }
+.lay-strip { flex-wrap: wrap; row-gap: 4px; }
+.lay-menus { flex-wrap: wrap; justify-content: space-between; }
+.lay-menu { flex: 1 1 auto; justify-content: center; padding: 0 5px; }
+.app:not(.kit-wide) .lay-menu .svg-i { display: none; }
+.lay-acts.four .lay-act { height: auto; min-height: 32px; padding: 3px 6px; font-size: 11px; line-height: 1.15; }
+.lay-acts.four .lay-act span { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.lay-card-s { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.app.kit-narrow .lay-menu, .app.kit-tiny .lay-menu { padding: 0 3px; font-size: 11.5px; }
+/* narrow: the context bar becomes 4 small tiles per row (icon over a short label) */
+.app.kit-narrow .lay-acts.four, .app.kit-tiny .lay-acts.four { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; }
+.app.kit-narrow .lay-acts.four .lay-act, .app.kit-tiny .lay-acts.four .lay-act { flex-direction: column; justify-content: center; gap: 2px; min-height: 42px; padding: 3px 2px; font-size: 10px; text-align: center; }
+.app.kit-narrow .lay-strip, .app.kit-tiny .lay-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.app.kit-narrow .lay-strip-l, .app.kit-tiny .lay-strip-l { grid-column: 1 / -1; }
+.app.kit-narrow .lay-chip, .app.kit-tiny .lay-chip { min-width: 0; padding: 0 6px; }
+.lay-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.lay-menu { min-width: 28px; }

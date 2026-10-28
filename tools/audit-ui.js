@@ -31,6 +31,10 @@ const OUT = path.resolve(__dirname, '../dev/audit');
 const VARIANTS = {
   seed: { qs: '&seedBrand=1' },
   runs: { setup: async () => { const a = window.__app; const d = (id) => require('/extension/core/schema.js').defaults(a.services.registry.get(id).params || {}); await a.runTool('motion.smartEase', d('motion.smartEase')); await a.runTool('expressions.quick', Object.assign(d('expressions.quick'), { preset: 'wiggle' })); } },
+  // v0.16 layout proposals: the same panel arranged as Hub / Command Bar / Workspace
+  hub: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'hub' } }); a.render(); } },
+  bar: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'bar' } }); a.render(); } },
+  workspace: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'workspace' } }); a.render(); } },
   pins: { setup: async () => { const f = window.__app.services.favorites; ['motion.smartEase', 'quick.animate', 'grid.build'].forEach((id) => f.toggle(id)); window.__app.render(); } }
 };
 const split = (v) => { const [view, variant] = v.split('@'); return { view, variant: VARIANTS[variant] || {} }; };

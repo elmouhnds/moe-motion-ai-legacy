@@ -63,6 +63,7 @@ Permanent rules for anyone (human or AI) working in this repository.
 - One-click entry points (pie, Home suggestions, search) go through `app/ui/actions.js` and its `ready()` check; keep the smart pie sets at 8 fixed positions (direction is the memory).
 - New sections belong to a workspace in `studio/sections.js` `WORKSPACES`.
 - Home is selection-driven (docs/features/SMART_HOME.md): new everyday actions go into `actions.FOCUS[kind]` for the kinds they fit — once per card, never duplicated between rows; zones keep their order (Focus → Your tools → More → Recent).
+- Panel layouts (docs/features/UI_LAYOUTS.md, `app/ui/layouts.js`): every tool keeps ONE place per layout; context areas (Hub strip, highlighted menu, Workspace context bar) only copy. A new section must be reachable in every layout — `tests/layouts.test.js` checks it.
 - Quick Bar expression actions carry their preset's own numbers (`bar.resolve`) — never let a form default replace them.
 
 ## Testing rules
