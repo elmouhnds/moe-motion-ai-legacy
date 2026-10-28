@@ -124,3 +124,18 @@ test('morph keeps a kept canvas drawn (width/height are not stripped, which woul
   assert.equal(a.firstChild.getAttribute('width'), '240');
   assert.equal(a.firstChild.getAttribute('height'), '148');
 });
+
+test('morph: an old data-fresh element is replaced, never patched into a different element (v0.13 graph grip bug)', () => {
+  const root = document.createElement('div');
+  const grip = h('div', { class: 'grip' }); grip.setAttribute('data-fresh', '');
+  let grabbed = 0;
+  grip.addEventListener('pointerdown', () => { grabbed++; });
+  root.appendChild(h('div', {}, h('div', { class: 'seg' }), grip));
+  // next render: the same positions now hold two plain cells
+  morph(root.firstChild, h('div', {}, h('div', { class: 'cell' }), h('div', { class: 'cell' })));
+  const cells = root.firstChild.children;
+  assert.equal(cells[1].className, 'cell');
+  assert.notEqual(cells[1], grip, 'the grip element was replaced, not reused');
+  cells[1].dispatchEvent(new window.Event('pointerdown'));
+  assert.equal(grabbed, 0, 'the cell does not carry the old grip listener');
+});

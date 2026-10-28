@@ -384,3 +384,20 @@ test('kit graph: free drag (Motion 4) — zone decides what moves, relative to t
   assert.ok(neg.out >= 0 && neg.in >= 0);
   assert.ok(KG.ZONE_HINT.value.both && KG.ZONE_HINT.speed.out);
 });
+
+test('kit graph v0.13: flip plays the ease backwards; Alt+wheel = 1 % influence per notch in the zone', () => {
+  const KG = require('../extension/app/ui/views/kitGraph');
+  const BZ = require('../extension/features/curves/bezier');
+  const out = { x1: 0.16, y1: 1, x2: 0.3, y2: 1 };
+  const f = KG.flipCurve(out);
+  assert.deepEqual(f, { x1: 0.7, y1: 0, x2: 0.84, y2: 0 });
+  [0.2, 0.5, 0.8].forEach((t) => assert.ok(Math.abs(BZ.valueAt(f, t) - (1 - BZ.valueAt(out, 1 - t))) < 1e-3, 'mirror in time'));
+  assert.deepEqual(KG.flipCurve(f), out, 'flip twice = same');
+  const c0 = { x1: 0.33, y1: 0, x2: 0.67, y2: 1 };
+  const w = KG.wheelStep(c0, 'in', 3, false, 'value');
+  assert.ok(Math.abs(w.x2 - 0.70) < 1e-9 && w.x1 === 0.33, JSON.stringify(w));
+  const v = KG.wheelStep(c0, 'out', 2, true, 'value');
+  assert.ok(Math.abs(v.y1 - 0.04) < 1e-9 && v.x1 === 0.33, JSON.stringify(v));
+  const s = KG.keySpeeds(KG.wheelStep(c0, 'both', 4, true, 'speed'));
+  assert.ok(Math.abs(s.out - 0.2) < 0.01 && Math.abs(s.in - 0.2) < 0.01, JSON.stringify(s));
+});

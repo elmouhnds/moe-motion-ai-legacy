@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.18 — Graphs together, icon presets, Align+ ✅ (v0.13.0)
+- [x] Value + Speed graphs at once (synced drag + hover), Alt+wheel, Flip, icon-only presets with undo, grouped library; Align rows, Key layer, Space evenly + fixed gap; morph fix for old data-fresh elements
+- [ ] Confirm inside AE 2025 (TEST_REPORT.md → items 118–121)
+- Next (suggested): per-segment curves on 3+ keys (click a segment in the overview to edit it alone); separate X / Y / Z curves for multi-dimension properties; drag a preset onto a key in the overview; align to a guide / to the playhead layer's path; distribute along a path or circle; match size (width / height) in Align; preset packs import / export as one file; Quick Bar buttons for saved curves
+
 ## M1.17 — Delay matches C4D ✅ (v0.12.0)
 - [x] Even / Blend / Spring (C4D modes); Field null (radius, falloff, invert, scale) blending each layer's delay by distance; Offset folded into Strength 0 + frames; enum aliases for saved options
 - [ ] Confirm inside AE 2025 (TEST_REPORT.md → items 114–117) — scrub speed with a field and 20+ layers, both expression engines

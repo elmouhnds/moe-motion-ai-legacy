@@ -250,3 +250,31 @@ test('Motion Kit: preset matching and the keyed-property pick', () => {
   const ctx = { properties: [{ name: 'Color', valueType: 'COLOR', selectedKeys: [1, 2] }, { name: 'Opacity', valueType: 'OneD', selectedKeys: [2, 3] }] };
   assert.deepEqual(kit.keyed(ctx).map((p) => p.name), ['Opacity']);
 });
+
+test('Align v0.13: to the key layer (first selected stays), space evenly (equal edge gaps), fixed gap; restore', async () => {
+  const fx = studioComp([box('A', [300, 200]), box('B', [600, 420]), box('C', [1500, 700])]);
+  const { services, comp } = await createTestServices(fx);
+  const ids = ['A', 'B', 'C'].map((n) => named(comp, n).id);
+  let bx = await bounds(services, comp, ids);
+  const a0 = bx[0].slice();
+  let r = await services.executor.run('transform.align', { mode: 'right', to: 'key' });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  bx = await bounds(services, comp, ids);
+  assert.deepEqual(bx[0].map((v) => Math.round(v)), a0.map((v) => Math.round(v)), 'the key layer did not move');
+  bx.forEach((b) => assert.ok(near(b[2], a0[2], 0.05), `right edges on the key: ${b}`));
+  await services.executor.restore(r.checkpointId);
+  r = await services.executor.run('transform.align', { mode: 'spaceH', to: 'selection' });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  bx = (await bounds(services, comp, ids)).slice().sort((p, q) => p[0] - q[0]);
+  const gaps = [bx[1][0] - bx[0][2], bx[2][0] - bx[1][2]];
+  assert.ok(near(gaps[0], gaps[1], 0.05), `equal gaps ${gaps}`);
+  assert.ok(near(bx[0][0], 250, 0.05) && near(bx[2][2], 1550, 0.05), 'first and last stay');
+  r = await services.executor.run('transform.align', { mode: 'spaceV', to: 'selection', fixedGap: true, gap: 20 });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  bx = (await bounds(services, comp, ids)).slice().sort((p, q) => p[1] - q[1]);
+  assert.ok(near(bx[1][1] - bx[0][3], 20, 0.05) && near(bx[2][1] - bx[1][3], 20, 0.05), 'gap 20 px');
+  // fixed gap needs only 2 layers; auto spacing needs 3
+  const M2 = M.align([{ layerId: 1, box: [0, 0, 10, 10] }, { layerId: 2, box: [50, 0, 60, 10] }], 'spaceH', 'selection', { width: 100, height: 100 }, { gap: 5 });
+  assert.deepEqual(M2, [{ layerId: 2, delta: [-35, 0] }]);
+  assert.deepEqual(M.align([{ layerId: 1, box: [0, 0, 10, 10] }, { layerId: 2, box: [50, 0, 60, 10] }], 'spaceH', 'selection', { width: 100, height: 100 }), []);
+});

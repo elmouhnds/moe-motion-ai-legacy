@@ -80,6 +80,8 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['easeCurve', 'Value + Speed graphs together', 'Both graphs at once, both draggable — drag one and the other follows; hover shows the same moment on both. Alt + wheel fine-tunes. Presets are now just pictures of their curves; + saves without a name; Flip plays an ease backwards.'],
+  ['alignCenter', 'Align, better', 'Two rows (↔ and ↕): align edges / centres, distribute centres, or Space evenly (equal gaps — or a fixed gap in px). Align to the selection, the key layer (first selected stays) or the comp; Alt-click = comp, Shift-click = key layer.'],
   ['kDelay', 'Delay = C4D: Even · Blend · Spring + Field', 'The three modes of Cinema 4D\'s Delay effector. Turn on Field (right-click Delay): a null sets how much delay each layer gets by its distance — move the null to sweep the effect, scale it to grow the field.'],
   ['easeCurve', 'Shape the curve from anywhere', 'Like Motion 4: press anywhere on the graph and drag — no need to catch a handle. Left = the start (ease out), right = the end (ease in), middle = both together. Sideways = how long it eases, up / down = shape or speed. Shift = fine, Ctrl = snap.'],
   ['kDelay', 'Delay — like C4D MoGraph', 'Spring (overshoot and settle), Blend (smooth lag) or Offset (time delay). One layer: its own move gets follow-through. Several: the others trail the first selected, each later. Live sliders in Effect Controls.'],

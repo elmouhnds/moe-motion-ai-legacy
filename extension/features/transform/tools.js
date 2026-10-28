@@ -63,15 +63,17 @@ const anchor = {
 };
 
 /* ---------------- align & distribute ---------------- */
-const ALIGN = [['left', 'Left'], ['hcenter', 'Centre ↔'], ['right', 'Right'], ['top', 'Top'], ['vcenter', 'Middle ↕'], ['bottom', 'Bottom'], ['distH', 'Distribute ↔'], ['distV', 'Distribute ↕']];
+const ALIGN = [['left', 'Left'], ['hcenter', 'Centre ↔'], ['right', 'Right'], ['top', 'Top'], ['vcenter', 'Middle ↕'], ['bottom', 'Bottom'], ['distH', 'Distribute centres ↔'], ['distV', 'Distribute centres ↕'], ['spaceH', 'Space evenly ↔'], ['spaceV', 'Space evenly ↕']];
 const align = {
   id: 'transform.align', version: '2.0.0', category: 'layout', group: 'Anchor & Align', name: 'Align & Distribute',
-  description: 'Align the selected layers by their visible edges or centres — to each other or to the comp — or space them evenly. The whole animation moves (every Position key), parented layers included.',
+  description: 'Align the selected layers by their visible edges or centres — to the selection, to a key layer (the first selected stays) or to the comp — distribute their centres, or space them with equal (or fixed) gaps. The whole animation moves (every Position key), parented layers included.',
   keywords: ['align', 'distribute', 'center', 'left', 'right', 'top', 'bottom', 'spacing', 'even'],
   icon: 'layout',
   params: {
     mode: { type: 'enum', label: 'Align', default: 'hcenter', options: ALIGN.map(([value, label]) => ({ value, label })) },
-    to: { type: 'enum', label: 'To', default: 'selection', options: [{ value: 'selection', label: 'Selection' }, { value: 'comp', label: 'Comp' }] }
+    to: { type: 'enum', label: 'To', default: 'selection', options: [{ value: 'selection', label: 'Selection' }, { value: 'key', label: 'Key layer (first selected)' }, { value: 'comp', label: 'Comp' }] },
+    gap: { type: 'number', label: 'Gap', min: -5000, max: 5000, step: 1, default: 20, unit: 'px', showIf: (a) => /^space/.test(a.mode) && a.fixedGap, description: 'Fixed gap between the layers' },
+    fixedGap: { type: 'boolean', label: 'Fixed gap', default: false, showIf: (a) => /^space/.test(a.mode), description: 'Off: equal gaps across the current span (the first and the last stay)' }
   },
   requires: { comp: true, minLayers: 1 },
   permissions: ['modify.layers'], recovery: 'undo+checkpoint',
@@ -80,17 +82,20 @@ const align = {
   ui: { primaryLabel: 'Align' },
   prepare(args, ctx) {
     const l = visual(ctx);
-    const dist = /^dist/.test(args.mode);
-    if (dist && l.length < 3) return { ok: false, error: 'Select at least 3 layers to distribute' };
-    if (!dist && args.to === 'selection' && l.length < 2) return { ok: false, error: 'Select at least 2 layers (or align to the comp)' };
+    const dist = /^(dist|space)/.test(args.mode);
+    const need = /^space/.test(args.mode) && args.fixedGap ? 2 : 3;
+    if (dist && l.length < need) return { ok: false, error: `Select at least ${need} layers to ${need === 2 ? 'space' : 'distribute'}` };
+    if (!dist && args.to !== 'comp' && l.length < 2) return { ok: false, error: `Select at least 2 layers (or align to the comp)` };
     if (!l.length) return { ok: false, error: 'Select unlocked layers' };
     const label = ALIGN.find((a) => a[0] === args.mode)[1];
-    return { ok: true, layers: l, preview: { summary: `${label}${dist ? '' : ` to ${args.to}`} · ${l.length} layer${l.length > 1 ? 's' : ''}`, items: [] } };
+    return { ok: true, layers: l, preview: { summary: `${label}${dist ? (/^space/.test(args.mode) && args.fixedGap ? ` · gap ${args.gap} px` : '') : ` to ${args.to === 'key' ? `${l[0].name} (key)` : args.to}`} · ${l.length} layer${l.length > 1 ? 's' : ''}`, items: [] } };
   },
   async execute({ args, ctx, prepared, host }) {
     const b = await host.call('layers.bounds', { compId: ctx.comp.id, layerIds: prepared.layers.map((x) => x.id), times: [ctx.comp.time] });
-    const boxes = b.layers.filter((x) => x.boxes && x.boxes[0]).map((x) => ({ layerId: x.layerId, box: x.boxes[0] }));
-    const moves = M.align(boxes, args.mode, args.to, ctx.comp);
+    // keep the selection order (the key layer is the first selected)
+    const byId = new Map(b.layers.filter((x) => x.boxes && x.boxes[0]).map((x) => [x.layerId, x.boxes[0]]));
+    const boxes = prepared.layers.filter((x) => byId.has(x.id)).map((x) => ({ layerId: x.id, box: byId.get(x.id) }));
+    const moves = M.align(boxes, args.mode, args.to, ctx.comp, { gap: args.fixedGap ? args.gap : null });
     if (!moves.length) return { layers: [], already: true };
     return host.call('layers.nudge', { compId: ctx.comp.id, label: 'MOE: Align', items: moves });
   },

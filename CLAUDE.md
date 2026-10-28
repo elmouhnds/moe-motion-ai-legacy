@@ -53,7 +53,7 @@ Permanent rules for anyone (human or AI) working in this repository.
 
 ## UI rules (v0.6.2 — learned from the flicker / dead-click report)
 - Render through `app.scheduleRender()` / state changes; the shell **morphs** the DOM in place (`dom.morph`). Never clear and rebuild the root. Give list items and canvases a stable `data-key`.
-- Event handlers go through `h(..., { onclick })` so morph can swap them; direct `addEventListener` only on inputs / textareas / selects (those are rebuilt) or elements marked `data-fresh`.
+- Event handlers go through `h(..., { onclick })` so morph can swap them; direct `addEventListener` only on inputs / textareas / selects (those are rebuilt) or elements marked `data-fresh` (morph replaces an element when the old OR the new one is `data-fresh` — never reuse one for a different element).
 - No hover / active style may move or resize an element (no transform, margin, padding, size, flex changes) — it makes elements tremble under a resting pointer. Use colour, border, shadow, brightness.
 - Anything that calls the host in the background must be throttled, adaptive to the host's answer time, and paused during pointer presses; AE runs ExtendScript on its main thread.
 - `npm run stress` must pass before a release.

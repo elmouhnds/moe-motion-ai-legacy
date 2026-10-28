@@ -11,14 +11,19 @@ const POINT_LABEL = { tl: 'Top left', t: 'Top', tr: 'Top right', l: 'Left', c: '
 
 /**
  * Align / distribute in comp space.
- * boxes: [{ layerId, box: [left, top, right, bottom] }]; mode: left|hcenter|right|top|vcenter|bottom|distH|distV;
- * to: 'selection' | 'comp'; comp: { width, height } → [{ layerId, delta: [dx, dy] }] (only layers that move).
+ * boxes: [{ layerId, box: [left, top, right, bottom] }] (selection order); mode: left|hcenter|right|
+ * top|vcenter|bottom|distH|distV (centres evenly)|spaceH|spaceV (equal gaps between edges);
+ * to: 'selection' | 'comp' | 'key' (the first box is the key object: it stays, the others align to it);
+ * opts.gap: fixed gap in px for spaceH / spaceV (null = even gaps across the current span);
+ * comp: { width, height } → [{ layerId, delta: [dx, dy] }] (only layers that move).
  */
-function align(boxes, mode, to, comp) {
+function align(boxes, mode, to, comp, opts = {}) {
   if (!boxes.length) return [];
+  if (mode === 'spaceH' || mode === 'spaceV') return space(boxes, mode === 'spaceH', opts.gap);
   const L = Math.min(...boxes.map((b) => b.box[0])), T = Math.min(...boxes.map((b) => b.box[1]));
   const R = Math.max(...boxes.map((b) => b.box[2])), Bt = Math.max(...boxes.map((b) => b.box[3]));
-  const ref = to === 'comp' ? { l: 0, t: 0, r: comp.width, b: comp.height } : { l: L, t: T, r: R, b: Bt };
+  const k = boxes[0].box;
+  const ref = to === 'comp' ? { l: 0, t: 0, r: comp.width, b: comp.height } : to === 'key' ? { l: k[0], t: k[1], r: k[2], b: k[3] } : { l: L, t: T, r: R, b: Bt };
   const cx = (b) => (b[0] + b[2]) / 2, cy = (b) => (b[1] + b[3]) / 2;
   let out;
   if (mode === 'distH' || mode === 'distV') {
@@ -40,6 +45,21 @@ function align(boxes, mode, to, comp) {
   return out.filter((o) => Math.abs(o.delta[0]) > 1e-6 || Math.abs(o.delta[1]) > 1e-6).map((o) => ({ layerId: o.layerId, delta: [round(o.delta[0]), round(o.delta[1])] }));
 }
 const round = (v) => Math.round(v * 1000) / 1000;
+
+/** Equal gaps between the layers' edges (Illustrator "Distribute Spacing"): the first and the last stay
+ *  (auto), or the first stays and every gap is `gap` px (fixed). Sorted by position along the axis. */
+function space(boxes, horizontal, gap) {
+  const a = horizontal ? 0 : 1, b = horizontal ? 2 : 3;
+  const sorted = boxes.slice().sort((p, q) => p.box[a] - q.box[a]);
+  const fixed = gap !== null && gap !== undefined && Number.isFinite(Number(gap));
+  if (sorted.length < (fixed ? 2 : 3)) return [];
+  const size = (x) => x.box[b] - x.box[a];
+  const span = Math.max(...sorted.map((x) => x.box[b])) - sorted[0].box[a];
+  const g = fixed ? Number(gap) : (span - sorted.reduce((n, x) => n + size(x), 0)) / (sorted.length - 1);
+  let at = sorted[0].box[a];
+  const out = sorted.map((x) => { const d = at - x.box[a]; at += size(x) + g; return { layerId: x.layerId, delta: horizontal ? [d, 0] : [0, d] }; });
+  return out.filter((o) => Math.abs(o.delta[0]) > 1e-6 || Math.abs(o.delta[1]) > 1e-6).map((o) => ({ layerId: o.layerId, delta: [round(o.delta[0]), round(o.delta[1])] }));
+}
 
 /**
  * Clone layout: `count` items in total (the source is item 0).

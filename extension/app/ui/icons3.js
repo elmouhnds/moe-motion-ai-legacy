@@ -61,6 +61,9 @@ module.exports = {
   alignMiddle: '<path d="M2 8h12"/><rect x="4" y="3" width="3" height="10" rx=".6"/><rect x="9" y="4.5" width="3" height="7" rx=".6"/>',
   alignBottom: '<path d="M2 13.5h12"/><rect x="4" y="3.5" width="3" height="8" rx=".6"/><rect x="9" y="6.5" width="3" height="5" rx=".6"/>',
   distributeV: '<path d="M2 2h12M2 14h12" opacity=".5"/><rect x="5" y="4" width="6" height="2.5" rx=".6"/><rect x="5" y="9.5" width="6" height="2.5" rx=".6"/>',
+  /* v0.13: equal gaps between edges */
+  spaceH: '<rect x="1.5" y="4" width="3.5" height="8" rx=".6"/><rect x="11" y="4" width="3.5" height="8" rx=".6"/><path d="M6.5 8h3M6.5 6v4M9.5 6v4"/>',
+  spaceV: '<rect x="4" y="1.5" width="8" height="3.5" rx=".6"/><rect x="4" y="11" width="8" height="3.5" rx=".6"/><path d="M8 6.5v3M6 6.5h4M6 9.5h4"/>',
   /* v0.10 Motion Kit */
   kDelay: '<circle cx="3" cy="8" r="1.8" fill="currentColor"/><circle cx="8" cy="8" r="1.6" opacity=".65"/><circle cx="12.5" cy="8" r="1.3" opacity=".35"/><path d="M3 4.5c3 0 4 2 6 2s3-2 5-2" opacity=".5"/>',
   kLinear: '<path d="M2 13L14 3"/><circle cx="2" cy="13" r="1.3" fill="currentColor"/><circle cx="14" cy="3" r="1.3" fill="currentColor"/>',

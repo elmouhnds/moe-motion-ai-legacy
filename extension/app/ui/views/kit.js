@@ -22,9 +22,11 @@ const library = require('../studio/library');
 
 const NUMERIC = /^(OneD|TwoD|ThreeD|TwoD_SPATIAL|ThreeD_SPATIAL)$/;
 const CHIPS = ['easyEase', 'outCubic', 'outExpo', 'outBack', 'inOutCubic', 'inOutExpo', 'inOutBack', 'inCubic', 'inExpo', 'snap', 'punch', 'glide', 'settle', 'swoosh', 'linear'];
-const ALIGN = [['left', 'alignLeft', 'Align left'], ['hcenter', 'alignCenter', 'Align centres ↔'], ['right', 'alignRight', 'Align right'], ['top', 'alignTop', 'Align top'], ['vcenter', 'alignMiddle', 'Align middles ↕'], ['bottom', 'alignBottom', 'Align bottom'], ['distH', 'distribute', 'Distribute ↔ (3+ layers)'], ['distV', 'distributeV', 'Distribute ↕ (3+ layers)']];
+const ALIGN_ROWS = [
+  { axis: '↔', align: [['left', 'alignLeft', 'Align left edges'], ['hcenter', 'alignCenter', 'Align centres ↔'], ['right', 'alignRight', 'Align right edges']], spread: [['distH', 'distribute', 'Distribute centres ↔ (3+ layers)'], ['spaceH', 'spaceH', 'Space evenly ↔ — equal gaps between edges']] },
+  { axis: '↕', align: [['top', 'alignTop', 'Align top edges'], ['vcenter', 'alignMiddle', 'Align middles ↕'], ['bottom', 'alignBottom', 'Align bottom edges']], spread: [['distV', 'distributeV', 'Distribute centres ↕ (3+ layers)'], ['spaceV', 'spaceV', 'Space evenly ↕ — equal gaps between edges']] }
+];
 const ORDER = ['tl', 't', 'tr', 'l', 'c', 'r', 'bl', 'b', 'br'];
-const CHIP_LABEL = { easyEase: 'Easy', inOutCubic: 'InOut Cub', inOutExpo: 'InOut Exp', inOutBack: 'InOut Back', outCubic: 'Out Cubic' };
 const DEFAULT_CURVE = BZ.normalize(BZ.PRESETS.find((p) => p.id === 'easyEase'));
 
 /* Transient kit state (one panel = one kit). The graph keeps its curve between renders. */
@@ -32,7 +34,7 @@ const K = { curve: Object.assign({}, DEFAULT_CURVE), ghost: null, sig: null, src
 
 /** Tools pinned to Home (Motion 4 "Pin Tools"); edited in the Toolbox. */
 const DEFAULT_PINS = ['parentNull', 'k_parent', 'k_excite', 'k_delay', 'k_jump', 'k_wiggle', 'k_stare', 'k_trash'];
-const prefs = (app) => Object.assign({ auto: true, side: 'both', to: 'selection', masks: false, link: false, clip: null, pins: DEFAULT_PINS, graph: 'value', graphH: 150, through: false }, app.services.settings.get().ui.kit || {});
+const prefs = (app) => Object.assign({ auto: true, side: 'both', to: 'selection', masks: false, link: false, clip: null, pins: DEFAULT_PINS, graph: 'both', graphH: 150, through: false, gap: null }, app.services.settings.get().ui.kit || {});
 const setPref = (app, patch) => { app.services.settings.update({ ui: { kit: Object.assign(prefs(app), patch) } }); app.render(); };
 const r3 = (v) => Math.round(v * 1000) / 1000;
 const ctxOf = (app) => app.state.get().ctx;
@@ -113,48 +115,100 @@ function applyCurve(app, cv, side, label) {
 const sideOf = (e, p) => (e && e.shiftKey ? 'in' : e && (e.ctrlKey || e.metaKey) ? 'out' : p.side);
 
 /* ---------- ease block ---------- */
+/** Small picture of a curve (fits overshoot / anticipation), used as the preset's only face. */
 function curveSvg(cv) {
+  let lo = 0, hi = 1;
   const pts = [];
-  for (let i = 0; i <= 24; i++) { const q = BZ.point(cv, i / 24); pts.push(`${(2 + q.x * 24).toFixed(1)},${(22 - q.y * 18).toFixed(1)}`); }
-  return `<svg viewBox="0 0 28 26" aria-hidden="true"><path d="M2 22H26M2 4H26" stroke="currentColor" opacity=".2" fill="none"/><polyline points="${pts.join(' ')}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+  for (let i = 0; i <= 24; i++) { const q = BZ.point(cv, i / 24); pts.push(q); lo = Math.min(lo, q.y); hi = Math.max(hi, q.y); }
+  const Y = (y) => 19 - (y - lo) / (hi - lo) * 16;
+  const line = pts.map((q) => `${(2 + q.x * 20).toFixed(1)},${Y(q.y).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 24 22" aria-hidden="true"><path d="M2 ${Y(0).toFixed(1)}H22M2 ${Y(1).toFixed(1)}H22" stroke="currentColor" opacity=".18" fill="none"/><polyline points="${line}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
+/** A preset = only the picture of its curve (name in the tooltip). */
 function chip(app, p, active, user) {
   const pr = prefs(app);
+  const cv = BZ.normalize(p);
   return h('button', {
-    class: `kit-chip ${active ? 'on' : ''}`, 'data-key': `chip-${p.id}`, 'aria-pressed': String(!!active),
-    title: `${p.label} — ${BZ.css(BZ.normalize(p))}\nClick: apply (${pr.side === 'both' ? 'in + out' : pr.side}) · Shift: ease in only · Ctrl: ease out only${user ? ' · Right-click: delete' : ''}`,
-    onclick: (e) => applyCurve(app, BZ.normalize(p), sideOf(e, pr), p.label),
-    oncontextmenu: user ? (e) => { e.preventDefault(); app.services.store.set('kit-curves', userCurves(app).filter((x) => x.id !== p.id)); app.render(); } : undefined
-  }, h('span', { class: 'kit-chip-g', html: curveSvg(BZ.normalize(p)) }), h('span', { class: 'kit-chip-l' }, CHIP_LABEL[p.id] || p.label.replace(/^In-Out /, 'InOut ')));
+    class: `kit-chip ${active ? 'on' : ''} ${user ? 'mine' : ''}`, 'data-key': `chip-${p.id}`, 'aria-pressed': String(!!active), 'aria-label': user ? `My curve ${BZ.css(cv)}` : p.label,
+    title: `${user ? 'My curve' : p.label} — ${BZ.css(cv)}\nClick: apply (${pr.side === 'both' ? 'in + out' : pr.side}) · Shift: ease in only · Ctrl: ease out only · Alt: load into the graph only${user ? ' · Right-click: remove' : ''}`,
+    onclick: (e) => { if (e.altKey) { K.curve = Object.assign({}, cv); if (K.graph) K.graph.set(cv); app.render(); return; } applyCurve(app, cv, sideOf(e, pr), user ? 'My curve' : p.label); },
+    oncontextmenu: user ? (e) => { e.preventDefault(); removeCurve(app, p); } : undefined
+  }, h('span', { class: 'kit-chip-g', html: curveSvg(cv) }));
+}
+/** Save the curve in the graph — no name needed; the same curve is never saved twice. */
+function saveCurve(app) {
+  const cv = BZ.normalize(K.curve);
+  const dup = matchPreset(cv, userCurves(app));
+  if (dup) { app.toast(`Already a preset: ${(BZ.PRESETS.concat(userCurves(app)).find((p) => p.id === dup) || {}).label || BZ.css(cv)}`, 2600, 'info'); return; }
+  app.services.store.set('kit-curves', userCurves(app).concat([Object.assign({ id: `u${Date.now().toString(36)}`, label: BZ.css(cv), tag: 'Mine' }, { x1: r3(cv.x1), y1: r3(cv.y1), x2: r3(cv.x2), y2: r3(cv.y2) })]));
+  app.toast(`Saved ${BZ.css(cv)}`, 2000, 'ok');
+  app.render();
+}
+/** Remove a saved curve; an Undo chip stays for 8 s (never a silent delete). */
+function removeCurve(app, p) {
+  const list = userCurves(app), at = list.findIndex((x) => x.id === p.id);
+  if (at < 0) return;
+  app.services.store.set('kit-curves', list.filter((x) => x.id !== p.id));
+  clearTimeout(K.undoTimer);
+  K.undoCurve = { p, at };
+  K.undoTimer = setTimeout(() => { K.undoCurve = null; app.scheduleRender(); }, 8000);
+  app.toast('Curve removed — the ↶ chip brings it back', 3000, 'info');
+  app.render();
+}
+function undoChip(app) {
+  if (!K.undoCurve) return null;
+  return h('button', { class: 'kit-chip more undo', title: 'Bring back the curve you removed', 'aria-label': 'Undo remove curve', onclick: () => {
+    const { p, at } = K.undoCurve, list = userCurves(app).slice();
+    list.splice(Math.min(at, list.length), 0, p);
+    app.services.store.set('kit-curves', list); K.undoCurve = null; clearTimeout(K.undoTimer); app.render();
+  } }, icon('undo', 'sm'));
 }
 
+/** Live sync of everything that shows the curve (sliders, velocity fields, numbers, overview). */
+function syncLive(cv) {
+  const el = document.querySelector('.kit-num'); if (el && document.activeElement !== el) el.value = nums(cv);
+  const ov = document.querySelector('.kit-overview'); if (ov) KG.drawOverview(ov, K.segs, cv, K.unit);
+  [['out', cv.x1 * 100], ['in', (1 - cv.x2) * 100]].forEach(([side, v]) => { const r = document.querySelector(`.kit-range[data-side="${side}"]`); if (r) { r.value = Math.round(v); const t = r.nextSibling; if (t) t.textContent = `${Math.round(v)}%`; } });
+  const avg = K.segs && K.segs[0] ? K.segs[0].avg : 0, sp = KG.keySpeeds(cv), spd = (rel) => (avg ? String(Math.round(rel * avg * 10) / 10) : String(Math.round(rel * 100) / 100));
+  [['Outgoing speed', spd(sp.out)], ['Outgoing influence', String(Math.round(cv.x1 * 100))], ['Incoming speed', spd(sp.in)], ['Incoming influence', String(Math.round((1 - cv.x2) * 100))]].forEach(([l, v]) => { const f = document.querySelector(`.kit-vel[data-vel="${l}"]`); if (f && document.activeElement !== f) f.value = v; });
+}
+
+/**
+ * Value and Speed graphs (v0.13: shown together by default, both editable). A drag on one moves
+ * the other live; hovering one shows the same moment on the other.
+ */
 function graph(app) {
   const pr = prefs(app);
-  const w = KG.widget({
-    get: () => K.curve, ghost: () => K.ghost, mode: pr.graph, height: pr.graphH, link: pr.link, autoApply: pr.auto,
-    units: () => (K.segs && K.segs[0] && K.segs[0].avg ? { avg: K.segs[0].avg, unit: K.unit } : {}),
-    onCommit: (cv) => { K.curve = cv; if (pr.auto) applyCurve(app, cv, pr.side, 'Ease Curve'); else app.render(); },
-    onLive: (cv) => { const el = document.querySelector('.kit-num'); if (el && document.activeElement !== el) el.value = nums(cv); const ov = document.querySelector('.kit-overview'); if (ov) KG.drawOverview(ov, K.segs, cv, K.unit);
-      // sliders follow the drag live
-      [['out', cv.x1 * 100], ['in', (1 - cv.x2) * 100]].forEach(([side, v]) => { const r = document.querySelector(`.kit-range[data-side="${side}"]`); if (r) { r.value = Math.round(v); const t = r.nextSibling; if (t) t.textContent = `${Math.round(v)}%`; } });
-      // Keyframe Velocity fields too (not the one being typed in)
-      const avg = K.segs && K.segs[0] ? K.segs[0].avg : 0, sp = KG.keySpeeds(cv), spd = (rel) => (avg ? String(Math.round(rel * avg * 10) / 10) : String(Math.round(rel * 100) / 100));
-      [['Outgoing speed', spd(sp.out)], ['Outgoing influence', String(Math.round(cv.x1 * 100))], ['Incoming speed', spd(sp.in)], ['Incoming influence', String(Math.round((1 - cv.x2) * 100))]].forEach(([l, v]) => { const f = document.querySelector(`.kit-vel[data-vel="${l}"]`); if (f && document.activeElement !== f) f.value = v; });
-    },
-    onHeight: (px) => setPref(app, { graphH: Math.round(px) })
-  });
-  K.graph = w;
-  W.animated(w.canvas, (now) => w.paint(w.state.drag || w.state.nudge ? null : now));
+  const view = pr.graph === 'value' || pr.graph === 'speed' ? pr.graph : 'both';
+  const both = view === 'both';
+  const ws = [];
+  const make = (mode, height, track, label) => {
+    const w = KG.widget({
+      get: () => K.curve, ghost: () => K.ghost, mode, height, link: pr.link, autoApply: pr.auto, track, label,
+      units: () => (K.segs && K.segs[0] && K.segs[0].avg ? { avg: K.segs[0].avg, unit: K.unit } : {}),
+      onCommit: (cv) => { K.curve = cv; ws.forEach((o) => o !== w && o.set(cv)); if (pr.auto) applyCurve(app, cv, pr.side, 'Ease Curve'); else app.render(); },
+      onLive: (cv) => { ws.forEach((o) => o !== w && o.set(cv)); syncLive(cv); },
+      onHover: (u) => ws.forEach((o) => o !== w && o.hover(u)),
+      onHeight: (px) => setPref(app, { graphH: Math.round(px) })
+    });
+    W.animated(w.canvas, (now) => w.paint(w.state.drag || w.state.nudge ? null : now));
+    ws.push(w);
+    return w;
+  };
+  const wv = view !== 'speed' ? make('value', pr.graphH, true, both ? 'VALUE' : null) : null;
+  const wsp = view !== 'value' ? make('speed', both ? Math.max(90, Math.round(pr.graphH * 0.8)) : pr.graphH, !both, both ? 'SPEED' : null) : null;
+  K.graph = { set: (cv) => ws.forEach((o) => o.set(cv)) };
+  const grip = (wv || wsp).grip;
   const num = h('input', { class: 'kit-num', value: nums(K.curve), spellcheck: 'false', 'aria-label': 'Curve numbers (cubic-bezier)', title: 'Type or paste 4 numbers or a cubic-bezier(…) — Enter applies' });
   num.addEventListener('focus', () => num.select());
   num.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
     const cv = KG.parseCurve(num.value);
     if (!cv) { app.toast('Type 4 numbers, e.g. 0.16, 1, 0.3, 1', 3000, 'warn'); return; }
-    K.curve = cv; w.set(cv);
+    K.curve = cv; K.graph.set(cv);
     if (pr.auto) applyCurve(app, cv, pr.side, 'Ease Curve'); else app.render();
   });
-  const mode = (m, l, t) => h('button', { 'aria-pressed': String(pr.graph === m), title: t, onclick: () => setPref(app, { graph: m }) }, l);
+  const mode = (m, l, t) => h('button', { 'aria-pressed': String(view === m), title: t, onclick: () => setPref(app, { graph: m }) }, l);
   // Whole selected animation (3+ keys): real speed over real time, with the new curve on every segment.
   let ov = null;
   if (K.segs && K.segs.length > 1) {
@@ -165,11 +219,14 @@ function graph(app) {
   const thru = K.nKeys > 2 ? h('button', { class: `kit-thru ${pr.through ? 'on' : ''}`, 'aria-pressed': String(!!pr.through), title: 'Pass through middle keys: the speed flows through the keys between the first and the last (no stop at each key)', onclick: () => setPref(app, { through: !pr.through }) }, 'Pass-through') : null;
   return h('div', { class: 'kit-graph-wrap' },
     ov,
-    w.canvas,
-    h('div', { class: 'kit-gbar' },
-      h('div', { class: 'kit-seg kit-gmode', role: 'group', 'aria-label': 'Graph' }, mode('value', 'Value', 'Value graph: progress over time (like CSS / Flow)'), mode('speed', 'Speed', 'Speed graph: drag sideways for influence, up / down for the speed at the key (like AE\'s speed graph)')),
+    h('div', { class: `kit-graphs ${both ? 'both' : ''}`, 'data-key': `graphs-${view}` }, ws.map((w, i) => h('div', { class: 'kit-gcell', 'data-key': `gcell-${i}` }, w.canvas))),
+    h('div', { class: 'kit-gbar', 'data-key': 'gbar' },
+      h('div', { class: 'kit-seg kit-gmode', role: 'group', 'aria-label': 'Graph' },
+        mode('both', 'Both', 'Value and speed graphs together — drag either one (Motion 4 / AE Graph Editor)'),
+        mode('value', 'Value', 'Value graph only: progress over time (like CSS / Flow)'),
+        mode('speed', 'Speed', 'Speed graph only: drag sideways for influence, up / down for the speed at the key (like AE\'s speed graph)')),
       thru,
-      w.grip,
+      grip,
       num));
 }
 const nums = (cv) => [cv.x1, cv.y1, cv.x2, cv.y2].map((v) => String(Math.round(v * 100) / 100)).join(', ');
@@ -222,7 +279,7 @@ function easeBlock(app) {
   const match = matchPreset(K.curve, userCurves(app));
   const nKeys = selectedKeyCount(ctx);
   const seg = (v, l, t) => h('button', { 'aria-pressed': String(pr.side === v), title: t, onclick: () => setPref(app, { side: v }) }, l);
-  const tool = (ic, label, title, onclick, extra = {}) => h('button', Object.assign({ class: 'kit-tb', title, 'aria-label': label, onclick }, extra), icon(ic, 'sm'), h('span', {}, label));
+  const tool = (ic, label, title, onclick, extra = {}) => h('button', Object.assign({ class: 'kit-ib', title: `${label} — ${title}`, 'aria-label': label, onclick }, extra), icon(ic, 'sm'));
   const chips = CHIPS.map((id) => BZ.PRESETS.find((p) => p.id === id)).filter(Boolean);
   const mine = userCurves(app);
   return h('section', { class: 'kit-block kit-ease', 'aria-label': 'Ease' },
@@ -236,29 +293,33 @@ function easeBlock(app) {
       h('button', { class: `icon-btn kit-auto ${pr.auto ? 'on' : ''}`, 'aria-pressed': String(pr.auto), title: pr.auto ? 'Auto on: graph edits land on the selected keys when you let go' : 'Auto off: shape the curve, then press Apply', 'aria-label': 'Auto apply', onclick: () => setPref(app, { auto: !pr.auto }) }, icon('kAuto', 'sm'))),
     h('div', { class: 'kit-graph-wrap' }, graph(app)),
     pr.auto ? null : h('div', { class: 'kit-row' }, h('span', { class: 'spacer' }), h('button', { class: 'btn primary sm', onclick: () => applyCurve(app, K.curve, pr.side, 'Ease Curve') }, icon('play', 'xs'), 'Apply curve')),
-    pr.graph === 'speed' ? velocity(app) : h('div', { class: 'kit-sliders' }, slider(app, 'Out', 'out'), slider(app, 'In', 'in')),
-    h('div', { class: 'kit-tools-row' },
+    pr.graph === 'value' ? h('div', { class: 'kit-sliders' }, slider(app, 'Out', 'out'), slider(app, 'In', 'in')) : velocity(app),
+    h('div', { class: 'kit-tools-row icons' },
+      h('div', { class: 'kit-ibgroup' },
       tool('easeCurve', 'Easy', 'Easy Ease (F9): speed 0, 33 % influence on both sides', () => run(app, 'motion.smartEase', { influenceIn: 33.33, influenceOut: 33.33 }, 'Easy Ease')),
       tool('kLinear', 'Linear', `Linear keys (${pr.side})`, () => run(app, 'kit.interp', { mode: 'linear', side: pr.side }, 'Linear')),
-      tool('kHold', 'Hold', `Hold keys (${pr.side})`, () => run(app, 'kit.interp', { mode: 'hold', side: pr.side }, 'Hold')),
+      tool('kHold', 'Hold', `Hold keys (${pr.side})`, () => run(app, 'kit.interp', { mode: 'hold', side: pr.side }, 'Hold'))),
+      h('div', { class: 'kit-ibgroup' },
       tool('copy', 'Copy', 'Copy this curve', () => { setPref(app, { clip: Object.assign({}, K.curve) }); app.toast(`Copied ${BZ.css(K.curve)}`, 2000, 'ok'); }),
-      tool('kPaste', 'Paste', pr.clip ? `Paste ${BZ.css(pr.clip)} on the selected keys` : 'Copy a curve first', () => applyCurve(app, pr.clip, pr.side, 'Paste ease'), { disabled: !pr.clip })),
+      tool('kPaste', 'Paste', pr.clip ? `Paste ${BZ.css(pr.clip)} on the selected keys` : 'Copy a curve first', () => applyCurve(app, pr.clip, pr.side, 'Paste ease'), { disabled: !pr.clip }),
+      tool('reverse', 'Flip', 'Flip the curve: the same ease played backwards (ease-out ↔ ease-in)', () => { const cv = KG.flipCurve(K.curve); K.curve = cv; if (K.graph) K.graph.set(cv); if (pr.auto) applyCurve(app, cv, pr.side, 'Flip curve'); else app.render(); }))),
     h('div', { class: 'kit-chips', role: 'toolbar', 'aria-label': 'Ease presets' },
       chips.map((p) => chip(app, p, match === p.id)),
+      mine.length ? h('span', { class: 'kit-chip-sep', 'aria-hidden': 'true' }) : null,
       mine.map((p) => chip(app, p, match === p.id, true)),
-      h('button', { class: 'kit-chip more', title: 'Save this curve as a preset', 'aria-label': 'Save curve', onclick: async () => {
-        const name = await app.dialog({ title: 'Save curve', body: BZ.css(K.curve), input: 'My curve', okLabel: 'Save' });
-        if (!name) return;
-        app.services.store.set('kit-curves', userCurves(app).concat([Object.assign({ id: `u${Date.now().toString(36)}`, label: String(name).slice(0, 24), tag: 'Mine' }, K.curve)]));
-        app.render();
-      } }, icon('plus', 'sm')),
-      h('button', { class: `kit-chip more ${K.lib ? 'on' : ''}`, 'aria-pressed': String(K.lib), title: 'All curves', 'aria-label': 'All curves', onclick: () => { K.lib = !K.lib; app.render(); } }, h('span', { class: 'kit-chip-l' }, K.lib ? 'Less' : 'All'))),
+      undoChip(app),
+      h('button', { class: 'kit-chip more', title: 'Save this curve as a preset (no name needed)', 'aria-label': 'Save curve', onclick: () => saveCurve(app) }, icon('plus', 'sm')),
+      h('button', { class: `kit-chip more ${K.lib ? 'on' : ''}`, 'aria-pressed': String(K.lib), title: K.lib ? 'Fewer curves' : 'All curves', 'aria-label': 'All curves', onclick: () => { K.lib = !K.lib; app.render(); } }, icon(K.lib ? 'x' : 'grid', 'sm'))),
     K.lib ? h('div', { class: 'kit-lib' }, curveLibrary(app, match)) : null);
 }
 function curveLibrary(app, match) {
+  const fam = ['All', ...BZ.TAGS];
+  const groups = (K.libTag === 'All' ? BZ.TAGS : [K.libTag]).map((t) => [t, BZ.PRESETS.filter((p) => p.tag === t)]).filter(([, l]) => l.length);
+  const mine = userCurves(app);
   return [
-    h('div', { class: 'kit-seg wide', role: 'group', 'aria-label': 'Curve family' }, ['All', ...BZ.TAGS].map((t) => h('button', { 'aria-pressed': String(K.libTag === t), onclick: () => { K.libTag = t; app.render(); } }, t))),
-    h('div', { class: 'kit-chips grid' }, BZ.PRESETS.filter((p) => K.libTag === 'All' || p.tag === K.libTag).map((p) => chip(app, p, match === p.id)), userCurves(app).filter(() => K.libTag === 'All').map((p) => chip(app, p, match === p.id, true)))];
+    h('div', { class: 'kit-seg wide', role: 'group', 'aria-label': 'Curve family' }, fam.map((t) => h('button', { 'aria-pressed': String(K.libTag === t), onclick: () => { K.libTag = t; app.render(); } }, t))),
+    groups.map(([t, list]) => h('div', { class: 'kit-libgroup', 'data-key': `lg-${t}` }, h('span', { class: 'kit-libtag' }, t), h('div', { class: 'kit-chips grid' }, list.map((p) => chip(app, p, match === p.id))))),
+    K.libTag === 'All' && mine.length ? h('div', { class: 'kit-libgroup', 'data-key': 'lg-mine' }, h('span', { class: 'kit-libtag' }, 'Mine'), h('div', { class: 'kit-chips grid' }, mine.map((p) => chip(app, p, match === p.id, true)))) : null];
 }
 
 /* ---------- anchor + align ---------- */
@@ -275,18 +336,44 @@ function anchorBlock(app) {
       }, h('span')))),
     h('label', { class: 'kit-check', title: 'Use the layer\'s masks for the box instead of its content' }, h('input', { type: 'checkbox', checked: pr.masks, onchange: (e) => setPref(app, { masks: e.target.checked }) }), 'Masks'));
 }
+/**
+ * Align (v0.13): two rows — ↔ and ↕ — each with align (edges / centre) and spread (distribute
+ * centres / space evenly). Target: the selection, the key layer (first selected stays) or the comp.
+ * Alt-click = to the comp, Shift-click = to the key layer (one-off). Gap: empty = even, a number = fixed px.
+ */
 function alignBlock(app) {
   const pr = prefs(app);
+  const to = (v, l, t) => h('button', { 'aria-pressed': String(pr.to === v), title: t, onclick: () => setPref(app, { to: v }) }, l);
+  const btn = ([mode, ic, label]) => {
+    const spread = /^(dist|space)/.test(mode);
+    const fixed = /^space/.test(mode) && pr.gap !== null && pr.gap !== undefined && pr.gap !== '';
+    const args = Object.assign({ mode, to: pr.to }, /^space/.test(mode) ? { fixedGap: fixed, gap: fixed ? Number(pr.gap) : 20 } : {});
+    const rd = library.readiness(app, { tool: 'transform.align', args });
+    const target = pr.to === 'key' ? 'the key layer (first selected)' : `the ${pr.to}`;
+    return h('button', {
+      class: `kit-ib ${rd.ok ? '' : 'off'}`, 'data-key': `al-${mode}`, 'aria-label': label,
+      title: `${label}${spread ? (fixed ? ` · gap ${pr.gap} px` : '') : ` to ${target}\nAlt-click: to the comp · Shift-click: to the key layer`} — the whole animation moves${rd.ok ? '' : `\n— ${rd.hint}`}`,
+      onclick: (e) => {
+        const a = Object.assign({}, args, spread ? {} : { to: e.altKey ? 'comp' : e.shiftKey ? 'key' : pr.to });
+        run(app, 'transform.align', a, label + (spread ? '' : a.to === pr.to ? '' : ` (${a.to})`));
+      }
+    }, icon(ic, 'sm'));
+  };
+  const gap = h('input', { class: 'kit-gap', value: pr.gap === null || pr.gap === undefined ? '' : String(pr.gap), placeholder: 'even', inputmode: 'decimal', spellcheck: 'false', 'aria-label': 'Gap for Space evenly (px; empty = even)', title: 'Gap for Space evenly, in px — empty = equal gaps across the current span; Enter keeps it' });
+  const setGap = () => { const t = String(gap.value).trim().replace(',', '.'); const v = t === '' ? null : Number(t); if (t !== '' && !Number.isFinite(v)) { app.toast('Type a number of pixels, or leave it empty for even gaps', 3000, 'warn'); return; } if (v !== pr.gap) setPref(app, { gap: v }); };
+  gap.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); setGap(); } });
+  gap.addEventListener('change', setGap);
   return h('section', { class: 'kit-block kit-align', 'aria-label': 'Align' },
     h('div', { class: 'kit-h' }, h('span', { class: 'kit-t' }, 'Align'), h('span', { class: 'spacer' }),
       h('div', { class: 'kit-seg', role: 'group', 'aria-label': 'Align to' },
-        h('button', { 'aria-pressed': String(pr.to === 'selection'), title: 'Align to the selection', onclick: () => setPref(app, { to: 'selection' }) }, 'Sel'),
-        h('button', { 'aria-pressed': String(pr.to === 'comp'), title: 'Align to the comp', onclick: () => setPref(app, { to: 'comp' }) }, 'Comp'))),
-    h('div', { class: 'kit-align-row' }, ALIGN.map(([mode, ic, label]) => {
-      const args = { mode, to: pr.to };
-      const rd = library.readiness(app, { tool: 'transform.align', args });
-      return h('button', { class: `kit-ib ${rd.ok ? '' : 'off'}`, 'data-key': `al-${mode}`, 'aria-label': label, title: `${label}${/^dist/.test(mode) ? '' : ` to the ${pr.to}`} — the whole animation moves${rd.ok ? '' : `\n— ${rd.hint}`}`, onclick: () => run(app, 'transform.align', args, label) }, icon(ic, 'sm'));
-    })));
+        to('selection', 'Sel', 'Align to the selection\'s bounds'),
+        to('key', 'Key', 'Align to the key layer: the first selected layer stays, the others line up with it'),
+        to('comp', 'Comp', 'Align to the comp'))),
+    ALIGN_ROWS.map((r) => h('div', { class: 'kit-align-row2', 'data-key': `ar-${r.axis}` },
+      h('span', { class: 'kit-axis', 'aria-hidden': 'true' }, r.axis),
+      h('div', { class: 'kit-ibgroup' }, r.align.map(btn)),
+      h('div', { class: 'kit-ibgroup' }, r.spread.map(btn)))),
+    h('label', { class: 'kit-gapl' }, h('span', {}, 'Gap'), gap, h('span', { class: 'kit-vunit' }, 'px')));
 }
 
 /* ---------- tools ---------- */

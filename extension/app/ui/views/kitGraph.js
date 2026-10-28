@@ -79,14 +79,23 @@ function freeDrag(cv0, zone, dx, dy, mode) {
   const n = BZ.normalize(c);
   return { x1: r3(n.x1), y1: r3(n.y1), x2: r3(n.x2), y2: r3(n.y2) };
 }
+/** The same ease played backwards: an ease-out becomes an ease-in (and the other way round). */
+function flipCurve(cv) { return { x1: r3(1 - cv.x2), y1: r3(1 - cv.y2), x2: r3(1 - cv.x1), y2: r3(1 - cv.y1) }; }
+/**
+ * Alt + mouse wheel over a zone: one notch = 1 % influence (sideways) or, with Shift, 0.02 of the
+ * shape (value) / 0.05 × the average speed (speed). Same zones and maths as the free drag.
+ */
+function wheelStep(cv, zone, notches, vertical, mode) {
+  return vertical ? freeDrag(cv, zone, 0, notches * (mode === 'speed' ? 0.05 : 0.02), mode) : freeDrag(cv, zone, notches * 0.01, 0, mode);
+}
 const ZONE_HINT = {
   value: { out: 'START · sideways: ease out · up/down: shape', in: 'END · sideways: ease in · up/down: overshoot', both: 'BOTH · sideways: ease amount · up/down: snap' },
   speed: { out: 'START · sideways: influence · up/down: speed', in: 'END · sideways: influence · up/down: speed', both: 'BOTH · sideways: influence · up/down: speed' }
 };
 
 /** Canvas geometry: graph area on top, spacing track at the bottom. */
-function geom(W, H, range) {
-  const x0 = 12, x1 = W - 12, y0 = 10, y1 = H - TRACK - 14;
+function geom(W, H, range, track = true) {
+  const x0 = 12, x1 = W - 12, y0 = 10, y1 = H - (track ? TRACK + 14 : 12);
   const X = (x) => x0 + x * (x1 - x0), Y = (v) => y0 + (range.hi - v) / (range.hi - range.lo) * (y1 - y0);
   return { W, H, x0, x1, y0, y1, X, Y, ix: (px) => (px - x0) / (x1 - x0), iy: (py) => range.hi - (py - y0) / (y1 - y0) * (range.hi - range.lo), tY: H - TRACK / 2 - 4 };
 }
@@ -122,7 +131,8 @@ function draw(canvas, st) {
   const { c, W, H } = prep(canvas);
   const { cv, mode } = st;
   const range = st.range || (mode === 'speed' ? speedRange(cv) : valueRange(cv));
-  const g = geom(W, H, range);
+  const track = st.track !== false;
+  const g = geom(W, H, range, track);
   const acc = css('--accent', '#ff6f59'), fg = css('--text-1', '#eee'), dim = css('--text-3', '#777'), line = css('--line-strong', 'rgba(255,255,255,.16)'), soft = css('--accent-soft', 'rgba(255,111,89,.15)');
   // free-drag zone under the mouse (hover or drag)
   if (st.zone) {
@@ -164,6 +174,16 @@ function draw(canvas, st) {
     c.fillStyle = active ? acc : fg; c.beginPath(); c.arc(p.x, p.y, active ? 7 : 6, 0, Math.PI * 2); c.fill();
     c.strokeStyle = acc; c.lineWidth = sel ? 3 : 2; c.stroke();
   }
+  // hover: a time line synced with the other graph + the value / speed at that moment
+  if (st.hoverT != null && !st.drag) {
+    const u = clamp(st.hoverT, 0, 1), v = mode === 'speed' ? BZ.speedAt(cv, u) : BZ.valueAt(cv, u);
+    c.strokeStyle = acc; c.globalAlpha = 0.5; c.lineWidth = 1; c.beginPath(); c.moveTo(Math.round(g.X(u)) + 0.5, g.y0); c.lineTo(Math.round(g.X(u)) + 0.5, g.y1); c.stroke(); c.globalAlpha = 1;
+    c.fillStyle = acc; c.beginPath(); c.arc(g.X(u), g.Y(clamp(v, range.lo, range.hi)), 3.5, 0, Math.PI * 2); c.fill();
+    const txt = `${Math.round(u * 100)}% time · ${mode === 'speed' ? (st.avg ? fmtSpeed(v * st.avg, st.unit) : `${v.toFixed(2)}× avg`) : `${Math.round(v * 100)}% done`}`;
+    c.font = '10px sans-serif'; c.fillStyle = fg; c.textAlign = 'right'; c.fillText(txt, g.x1 - 2, g.y0 + 9); c.textAlign = 'left';
+  } else if (st.label) {
+    c.font = '9px sans-serif'; c.fillStyle = dim; c.textAlign = 'right'; c.fillText(st.label, g.x1 - 2, g.y0 + 8); c.textAlign = 'left';
+  }
   // live readout next to the handle being dragged / nudged
   const k = st.drag === 3 ? 1 : st.drag || st.nudge;
   if (st.drag === 3) {
@@ -182,16 +202,20 @@ function draw(canvas, st) {
     c.fillStyle = css('--bg-raised', '#2a2a2a'); c.strokeStyle = acc; c.lineWidth = 1; c.beginPath(); c.rect(bx, by, w, 18); c.fill(); c.stroke();
     c.fillStyle = fg; c.fillText(txt, bx + 5, by + 13);
   }
+  canvas.setAttribute('data-h', hs.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(','));
+  const t = st.now == null ? null : ((st.now / 1000) % 2) / 1.5;
+  if (!track) {
+    if (t !== null && t <= 1) { c.fillStyle = acc; c.fillRect(Math.round(g.X(t)), g.y0, 1, g.y1 - g.y0); c.beginPath(); c.arc(g.X(t), g.Y(clamp(mode === 'speed' ? BZ.speedAt(cv, t) : BZ.valueAt(cv, t), range.lo, range.hi)), 4, 0, Math.PI * 2); c.fill(); }
+    return g;
+  }
   // spacing chart: where the layer is at 13 equal steps of time + the ball
   const vr = valueRange(cv), tx = (v) => g.x0 + (v - Math.min(0, vr.lo + 0.12)) / (Math.max(1, vr.hi - 0.12) - Math.min(0, vr.lo + 0.12)) * (g.x1 - g.x0);
   c.strokeStyle = line; c.lineWidth = 1; c.beginPath(); c.moveTo(tx(0), g.tY + 0.5); c.lineTo(tx(1), g.tY + 0.5); c.stroke();
   c.fillStyle = dim; for (let i = 0; i <= 12; i++) { const x = tx(BZ.valueAt(cv, i / 12)); c.fillRect(Math.round(x), g.tY - 5, 1.5, 10); }
-  const t = st.now == null ? null : ((st.now / 1000) % 2) / 1.5;
   if (t !== null && t <= 1) {
     c.fillStyle = acc; c.beginPath(); c.arc(tx(BZ.valueAt(cv, t)), g.tY, 5, 0, Math.PI * 2); c.fill();
     c.fillRect(Math.round(g.X(t)), g.y0, 1, g.y1 - g.y0);
   }
-  canvas.setAttribute('data-h', hs.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(','));
   return g;
 }
 
@@ -201,16 +225,17 @@ function draw(canvas, st) {
  * Drags redraw this canvas only; onCommit runs on release (the shell defers renders during a press).
  */
 function widget(opts) {
-  const S = { cv: Object.assign({}, opts.get()), drag: 0, sel: opts.sel || 1, nudge: 0, range: null, zone: null, free: null };
+  const S = { cv: Object.assign({}, opts.get()), drag: 0, sel: opts.sel || 1, nudge: 0, range: null, zone: null, free: null, hoverT: null };
+  const track = opts.track !== false;
   const units = () => (opts.units ? opts.units() : {});
   const mode = opts.mode === 'speed' ? 'speed' : 'value';
-  const canvas = h('canvas', { class: 'kit-graph', tabindex: '0', role: 'application', 'aria-label': `Ease graph (${mode}) — drag anywhere: left = start, right = end, middle = both; arrows nudge; Enter applies`, title: 'Drag anywhere: left = start, right = end, middle = both (Shift: fine · Ctrl: snap)\nOr grab a handle · double-click it: reset · arrows nudge (Shift ×5) · Enter: apply' });
+  const canvas = h('canvas', { class: 'kit-graph', tabindex: '0', role: 'application', 'aria-label': `Ease graph (${mode}) — drag anywhere: left = start, right = end, middle = both; arrows nudge; Enter applies`, title: 'Drag anywhere: left = start, right = end, middle = both (Shift: fine · Ctrl: snap)\nAlt + wheel: influence of the zone under the mouse (Alt + Shift + wheel: shape / speed)\nOr grab a handle · double-click it: reset · arrows nudge (Shift ×5) · Enter: apply' });
   canvas.setAttribute('data-fresh', '');
   canvas.style.height = `${opts.height || 150}px`;
   let timer = null;
-  const paint = (now = null) => draw(canvas, Object.assign({ cv: S.cv, ghost: opts.ghost(), mode, range: S.range, drag: S.drag, sel: S.sel, nudge: S.nudge, zone: S.zone, now }, units()));
+  const paint = (now = null) => draw(canvas, Object.assign({ cv: S.cv, ghost: opts.ghost(), mode, range: S.range, drag: S.drag, sel: S.sel, nudge: S.nudge, zone: S.zone, now, track, label: opts.label, hoverT: S.hoverT }, units()));
   const at = (e) => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, W: r.width, H: r.height }; };
-  const near = (p) => { const g = geom(p.W, p.H, S.range || (mode === 'speed' ? speedRange(S.cv) : valueRange(S.cv))); const hs = handles(S.cv, mode, g); const d = hs.map((q) => Math.hypot(p.x - q.x, p.y - q.y)); const k = d[0] <= d[1] ? 1 : 2; return { k, d: Math.min(d[0], d[1]), g }; };
+  const near = (p) => { const g = geom(p.W, p.H, S.range || (mode === 'speed' ? speedRange(S.cv) : valueRange(S.cv)), track); const hs = handles(S.cv, mode, g); const d = hs.map((q) => Math.hypot(p.x - q.x, p.y - q.y)); const k = d[0] <= d[1] ? 1 : 2; return { k, d: Math.min(d[0], d[1]), g }; };
   const mirror = (c, k) => (opts.link ? (k === 1 ? Object.assign(c, { x2: r3(1 - c.x1), y2: r3(1 - c.y1) }) : Object.assign(c, { x1: r3(1 - c.x2), y1: r3(1 - c.y2) })) : c);
   function moveTo(k, gx, gy, e) {
     let x = clamp(gx, BZ.X_MIN, BZ.X_MAX), y = gy;
@@ -229,9 +254,9 @@ function widget(opts) {
     S.range = mode === 'speed' ? speedRange(S.cv) : valueRange(S.cv); // range frozen while dragging
     if (n.d <= 14) { S.drag = n.k; S.sel = n.k; S.free = null; }
     else {
-      const g = geom(p.W, p.H, S.range);
+      const g = geom(p.W, p.H, S.range, track);
       const zone = zoneAt(clamp(g.ix(p.x), 0, 1));
-      S.free = { zone, x: p.x, y: p.y, cv0: Object.assign({}, S.cv), g };
+      S.free = { zone, x: p.x, y: p.y, cv0: Object.assign({}, S.cv), g, span: S.range.hi - S.range.lo };
       S.zone = zone; S.drag = zone === 'out' ? 1 : zone === 'in' ? 2 : 3; S.sel = zone === 'in' ? 2 : 1;
     }
     try { canvas.setPointerCapture(e.pointerId); } catch (_) { /* older CEP */ }
@@ -241,26 +266,46 @@ function widget(opts) {
     const p = at(e);
     if (!S.drag) {
       const n = near(p);
-      const zone = n.d <= 14 ? null : zoneAt(clamp(geom(p.W, p.H, mode === 'speed' ? speedRange(S.cv) : valueRange(S.cv)).ix(p.x), 0, 1));
+      const g = geom(p.W, p.H, mode === 'speed' ? speedRange(S.cv) : valueRange(S.cv), track);
+      const zone = n.d <= 14 ? null : zoneAt(clamp(g.ix(p.x), 0, 1));
       canvas.style.cursor = n.d <= 14 ? 'grab' : 'ew-resize';
-      if (zone !== S.zone) { S.zone = zone; paint(); }
+      const u = p.y >= g.y0 - 4 && p.y <= g.y1 + 4 ? clamp(g.ix(p.x), 0, 1) : null;
+      S.zone = zone; S.hoverT = u; paint();
+      if (opts.onHover) opts.onHover(u);
       return;
     }
     if (S.free) {
       const f = S.free, k = e.shiftKey ? 0.25 : 1; // Shift = fine
       const dx = (p.x - f.x) / (f.g.x1 - f.g.x0) * k;
-      const dy = -(p.y - f.y) / (f.g.y1 - f.g.y0) * (S.range.hi - S.range.lo) * k;
+      const dy = -(p.y - f.y) / (f.g.y1 - f.g.y0) * f.span * k; // sensitivity fixed at the press
       S.cv = freeDrag(f.cv0, f.zone, dx, dy, mode);
       if (e.ctrlKey || e.metaKey) S.cv = { x1: Math.round(S.cv.x1 * 20) / 20 || 0.05, y1: Math.round(S.cv.y1 * 20) / 20, x2: Math.min(0.95, Math.round(S.cv.x2 * 20) / 20), y2: Math.round(S.cv.y2 * 20) / 20 };
       if (opts.link && f.zone !== 'both') mirror(S.cv, f.zone === 'out' ? 1 : 2);
+      // the graph grows (never shrinks) so the curve stays in view while you drag past the edge
+      const nr = mode === 'speed' ? speedRange(S.cv) : valueRange(S.cv);
+      S.range = { lo: Math.min(S.range.lo, nr.lo), hi: Math.max(S.range.hi, nr.hi) };
     } else {
-      const g = geom(p.W, p.H, S.range);
+      const g = geom(p.W, p.H, S.range, track);
       moveTo(S.drag, g.ix(p.x), g.iy(p.y), e);
     }
     paint();
     if (opts.onLive) opts.onLive(S.cv);
   });
-  canvas.addEventListener('pointerleave', () => { if (!S.drag && S.zone) { S.zone = null; paint(); } });
+  canvas.addEventListener('pointerleave', () => { if (!S.drag) { S.zone = null; S.hoverT = null; paint(); if (opts.onHover) opts.onHover(null); } });
+  // Alt + wheel: fine-tune the zone under the mouse (plain wheel keeps scrolling the panel)
+  canvas.addEventListener('wheel', (e) => {
+    if (!e.altKey || S.drag) return;
+    e.preventDefault();
+    const p = at(e), g = geom(p.W, p.H, mode === 'speed' ? speedRange(S.cv) : valueRange(S.cv), track);
+    const zone = zoneAt(clamp(g.ix(p.x), 0, 1)), d = e.deltaY || e.deltaX;
+    if (!d) return;
+    S.cv = wheelStep(S.cv, zone, d < 0 ? 1 : -1, e.shiftKey, mode);
+    if (opts.link && zone !== 'both') mirror(S.cv, zone === 'out' ? 1 : 2);
+    S.zone = zone; S.nudge = zone === 'in' ? 2 : 1; paint();
+    if (opts.onLive) opts.onLive(S.cv);
+    clearTimeout(timer);
+    if (opts.autoApply) timer = setTimeout(commit, 700);
+  }, { passive: false });
   const up = () => { if (!S.drag) return; S.drag = 0; S.free = null; commit(); };
   canvas.addEventListener('pointerup', up);
   canvas.addEventListener('pointercancel', up);
@@ -295,7 +340,7 @@ function widget(opts) {
     grip.addEventListener('pointermove', mv); grip.addEventListener('pointerup', done); grip.addEventListener('pointercancel', done);
     e.preventDefault();
   });
-  return { canvas, grip, paint, state: S, set(cv) { S.cv = Object.assign({}, cv); paint(); } };
+  return { canvas, grip, paint, state: S, set(cv) { S.cv = Object.assign({}, cv); paint(); }, hover(u) { if (S.drag) return; S.hoverT = u; paint(); } };
 }
 
 /**
@@ -327,4 +372,4 @@ function drawOverview(canvas, segs, cv, unit) {
   c.textAlign = 'right'; c.fillText(`${segs.length} segments · ${(t1 - t0).toFixed(2)} s`, W - 10, 11); c.textAlign = 'left';
 }
 
-module.exports = { keySpeeds, fromSpeed, valueRange, speedRange, parseCurve, geom, handles, draw, widget, fmtSpeed, overviewSamples, drawOverview, zoneAt, freeDrag, ZONE_HINT };
+module.exports = { keySpeeds, fromSpeed, valueRange, speedRange, parseCurve, geom, handles, draw, widget, fmtSpeed, overviewSamples, drawOverview, zoneAt, freeDrag, ZONE_HINT, flipCurve, wheelStep };

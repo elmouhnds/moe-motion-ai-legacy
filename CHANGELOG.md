@@ -2,6 +2,25 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.13.0] — 2026-10-28 — Value + Speed graphs together, icon presets, better Align
+Requested by the product owner: value and speed graphs shown together with better control; saved-curve presets as icons without names; develop the ease part further; better Align; suggest more.
+### Changed
+- **Value and Speed graphs together** (new default *Both*; *Value* / *Speed* still available). Both are editable with the same Motion 4 free drag; a drag on one moves the other live; **hovering one shows the same moment on both** (a time line + "50 % time · 66 % done" / "· 66.7 px/s"). Side by side when the ease block is wide enough (≥ ~570 px), stacked otherwise. Each graph is labelled VALUE / SPEED.
+- **Presets are pictures only**: every preset chip (built-in and saved) is a small drawing of its curve that fits overshoot; the name and numbers are in the tooltip. Saved curves have a dashed border after a divider. The *All* library groups the pictures by family (Basic · In · Out · In-Out · Motion · Mine).
+- **+ saves the curve with no name dialog**; the same curve is never saved twice (it says which preset already has it). Right-click a saved curve removes it and an **↶ chip brings it back for 8 s** (no silent delete).
+- The ease tools (Easy · Linear · Hold | Copy · Paste · Flip) are one compact icon row.
+- **Align** redesigned: a ↔ row and a ↕ row, each with *align* (edges / centre) and *spread* (distribute centres / **Space evenly**). Targets: **Sel · Key · Comp** — *Key* = the first selected layer stays and the others line up with it. **Alt-click = to the comp, Shift-click = to the key layer** (one-off). **Gap** field: empty = equal gaps across the span (first and last stay), a number = fixed gap in px (works with 2 layers). Anchor and Align wrap onto two lines in a narrow panel instead of clipping.
+### Added
+- **Flip** (ease tools): the same ease played backwards — an ease-out becomes an ease-in.
+- **Alt + mouse wheel** on a graph: 1 % influence per notch in the zone under the mouse (start / both / end); **Alt + Shift + wheel**: shape (value) or speed (speed). Plain wheel still scrolls the panel. Applies 0.7 s after the last notch (one undo step).
+- **Alt-click a preset**: load it into the graph without applying (to tweak first).
+- While you free-drag past the edge the graph grows to keep the curve in view (drag sensitivity stays as it was at the press).
+- `transform.align`: `to: 'key'`, modes `spaceH` / `spaceV`, `fixedGap` + `gap`.
+### Fixed
+- **`dom.morph` patched an old `data-fresh` element into a different element**, keeping its listeners: when the overview strip appeared above the graphs, the value graph's resize grip became the speed graph's wrapper and swallowed every press on the speed graph. An old `data-fresh` element is now always replaced (regression test in `tests/ui-stability.test.js`).
+### Tests
+- New: align to key / space evenly / fixed gap through the executor (+ restore) and the pure maths; flip and Alt+wheel maths; the morph regression. 261 tests pass. Preview (Playwright): value drag moves the speed graph live, speed drag changes the start speed, Alt+wheel, save / duplicate refused / remove / undo, grouped library, hover sync, layouts at 280 / 420 / 640 px — no JS errors. **Not yet run inside After Effects.**
+
 ## [0.12.0] — 2026-10-28 — Delay matches Cinema 4D: Even · Blend · Spring + Field
 Requested by the product owner after comparing with C4D's MoGraph Delay effector.
 ### Changed

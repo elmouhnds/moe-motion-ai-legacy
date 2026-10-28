@@ -73,7 +73,7 @@ function on(el, type, fn) { el[`__on${type}`] = fn; el.addEventListener(type, di
  * Update the live DOM `a` to match a freshly built tree `b`, keeping the elements that are
  * already on screen (so the button under the mouse is never swapped mid-hover or mid-click,
  * animations keep running and scroll positions stay).
- * Replaced instead of updated: different tag, data-key mismatch, data-fresh, form fields
+ * Replaced instead of updated: different tag, data-key mismatch, data-fresh (old or new), form fields
  * (input / textarea / select keep their own listeners and are restored by the shell's
  * focus keeper), and canvases without an equal data-key (their drawing closures change).
  */
@@ -84,7 +84,9 @@ function morph(a, b) {
   if (a.nodeType !== 1) { a.replaceWith(b); return b; }
   const ka = a.getAttribute('data-key'), kb = b.getAttribute('data-key');
   const tag = a.nodeName;
-  if (ka !== kb || b.hasAttribute('data-fresh') || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (tag === 'CANVAS' && !kb)) { a.replaceWith(b); return b; }
+  // an old data-fresh element carries listeners added with addEventListener: it must never be
+  // patched into a different element (v0.13: a graph's resize grip became the next graph's wrapper)
+  if (ka !== kb || b.hasAttribute('data-fresh') || a.hasAttribute('data-fresh') || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (tag === 'CANVAS' && !kb)) { a.replaceWith(b); return b; }
   // attributes
   // A kept canvas keeps its bitmap size: removing width/height would clear the drawing, and still
   // (Calm) thumbnails are not redrawn — every tile went blank after the first re-render (v0.7 fix).

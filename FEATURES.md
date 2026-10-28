@@ -1,4 +1,6 @@
-# Features (v0.12.0)
+# Features (v0.13.0)
+
+**Ease graphs** (v0.13.0): Value + Speed together, both draggable and synced (hover shows the same moment on both); Alt + wheel fine-tune; Flip; presets are curve pictures only (+ saves without a name, removable with undo). **Align**: ↔ / ↕ rows, Space evenly with equal or fixed gaps, align to Selection · Key layer · Comp (Alt = comp, Shift = key).
 
 **Delay = Cinema 4D** (v0.12.0): Even · Blend · Spring like C4D's MoGraph Delay effector, plus **Field (null)** — a null sets each layer's delay by distance (radius, falloff, invert; move it to sweep, scale it to grow).
 

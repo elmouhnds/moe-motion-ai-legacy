@@ -845,19 +845,32 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .kit-tb span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kit-tb:hover:not(:disabled) { color: var(--text); border-color: var(--line-strong); }
 .kit-tb:disabled { opacity: .45; cursor: default; }
-.kit-chips { display: flex; gap: 4px; margin-top: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
-.kit-chips.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); overflow: visible; margin-top: 0; }
-.kit-chip { flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px; width: 58px; padding: 4px 2px 3px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text-2); cursor: pointer; }
-.kit-chips.grid .kit-chip { width: auto; }
+.kit-chips { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 8px; }
+.kit-chips.grid { display: flex; margin-top: 0; }
+/* v0.13: a preset is only the picture of its curve */
+.kit-chip { flex: none; display: flex; align-items: center; justify-content: center; width: 32px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text-3); cursor: pointer; }
 .kit-chip:hover { color: var(--text); border-color: var(--line-strong); }
-.kit-chip.on { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
-.kit-chip.on .kit-chip-g { color: var(--accent); }
-.kit-chip.more { justify-content: center; width: 40px; min-height: 44px; }
-.kit-chip-g { display: block; width: 28px; height: 26px; color: var(--text-3); }
-.kit-chip-g svg { display: block; width: 28px; height: 26px; }
+.kit-chip.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.kit-chip.mine { color: var(--text-2); border-style: dashed; }
+.kit-chip.mine.on { color: var(--accent); border-style: solid; }
+.kit-chip.more { color: var(--text-2); }
+.kit-chip.undo { color: var(--accent); border-color: var(--accent); }
+.kit-chip-sep { flex: none; width: 1px; height: 20px; margin: 4px 3px; background: var(--line-strong); }
+.kit-chip-g { display: block; width: 24px; height: 22px; }
+.kit-chip-g svg { display: block; width: 24px; height: 22px; }
+.kit-libgroup { display: grid; grid-template-columns: 54px minmax(0, 1fr); align-items: start; gap: 6px; margin-top: 6px; }
+.kit-libtag { font-size: 10px; color: var(--text-3); padding-top: 7px; text-transform: uppercase; letter-spacing: .04em; }
+/* v0.13: value + speed graphs together — side by side when there is room, stacked otherwise */
+.kit-graphs.both { display: flex; flex-wrap: wrap; gap: 6px; }
+.kit-graphs.both > .kit-gcell { flex: 1 1 280px; min-width: 0; }
+.kit-tools-row.icons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.kit-tools-row.icons .kit-ib { width: 30px; height: 26px; }
+.kit-tools-row.icons .kit-ib:disabled { opacity: .4; cursor: default; }
 .kit-chip-l { max-width: 100%; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kit-lib { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
-.kit-pair { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; }
+.kit-pair { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+.kit-pair > .kit-anchor { flex: 0 0 auto; }
+.kit-pair > .kit-align { flex: 1 1 214px; min-width: 0; } /* wraps under Anchor when the panel is narrow */
 .kit-dots { display: grid; grid-template-columns: repeat(3, 28px); grid-template-rows: repeat(3, 28px); gap: 3px; padding: 6px; border: 1px dashed var(--line-strong); border-radius: var(--r); width: max-content; }
 .kit-dot { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: none; cursor: pointer; }
 .kit-dot span { width: 9px; height: 9px; border-radius: 50%; background: var(--text-3); transition: background var(--t), box-shadow var(--t); }
@@ -880,18 +893,26 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .kit-tool-l { max-width: 100%; font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* narrow docks (≤ 300 px of content): align under anchor, three tools per row */
 .kit-align .kit-h { flex-wrap: wrap; row-gap: 4px; }
+/* v0.13 align: ↔ row and ↕ row, align group + spread group */
+.kit-align-row2 { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.kit-axis { flex: none; width: 12px; color: var(--text-3); font-size: 11px; text-align: center; }
+.kit-ibgroup { display: flex; gap: 2px; padding: 2px; border-radius: var(--r); background: var(--bg-sunken); }
+.kit-ibgroup .kit-ib { width: 28px; height: 26px; }
+.kit-gapl { display: flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 11px; color: var(--text-3); }
+.kit-gap { width: 52px; height: 24px; padding: 0 6px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text); font: inherit; font-size: 11px; }
+.kit-gap:focus { outline: none; border-color: var(--accent); }
 .app.kit-narrow .view.kit, .app.kit-tiny .view.kit { padding: 6px; gap: 6px; }
 .app.kit-narrow .kit-block, .app.kit-tiny .kit-block { padding: 7px; }
 .app.kit-narrow .kit-dots, .app.kit-tiny .kit-dots { grid-template-columns: repeat(3, 26px); grid-template-rows: repeat(3, 26px); padding: 4px; }
 .app.kit-narrow .kit-dot, .app.kit-tiny .kit-dot { width: 26px; height: 26px; }
-.app.kit-tiny .kit-pair { grid-template-columns: 1fr; }
+.app.kit-tiny .kit-pair > .kit-anchor { flex: 1 1 100%; }
 /* v0.10 Home = Motion 4 Home: the kit blocks first */
 .home-kit { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
 
 /* wide panels: ease on the left, anchor + align + pinned tools on the right — all above the fold */
 .app.kit-wide .home-kit { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(250px, 1fr); align-items: start; }
 .app.kit-wide .home-kit > .kit-ease { grid-row: span 2; }
-.app.kit-wide .home-kit > .kit-pair { grid-template-columns: auto minmax(0, 1fr); }
+.app.kit-wide .home-kit > .kit-pair { flex-wrap: wrap; }
 .app.kit-wide .home-kit > .kit-toolbox { grid-column: 2; }
 
 .kit-more { margin-left: auto; height: 22px; padding: 0 6px; font-size: var(--fs-sm); }

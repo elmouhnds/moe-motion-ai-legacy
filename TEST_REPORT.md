@@ -1,12 +1,12 @@
 # Test Report
 
-Last run: 2026-10-28 (v0.12.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-28 (v0.13.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
 | Layer | How it was tested | Result |
 |---|---|---|
-| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 258/258 automated tests pass (incl. `tests/kit.test.js` and the rewritten anchor / align tests in `tests/transform.test.js`) |
+| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 261/261 automated tests pass (incl. `tests/kit.test.js` and the rewritten anchor / align tests in `tests/transform.test.js`) |
 | ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (16 files) — since v0.6.3 also: ES3 reserved words (AST), ASCII-only sources, ES5+ APIs. **Why it matters:** the host tests run the .jsx in Node (V8), which is more permissive than ExtendScript — v0.6.2 and earlier had `final:` as an object key, legal in V8, reserved in ES3 |
 | Core (registry, schema, permissions, executor, storage, logger, bridge) | Unit + integration tests | Pass |
 | Claude integration | Mocked HTTPS responder: request shape, retries, refusal, truncation, 401, offline, budget; plan-schema size guard | Pass — **no real API call was made** (a mocked API does not compile the schema; that is how the v0.6.3 "grammar too large" error got through — now guarded by a size test, but only a real call proves acceptance) |
@@ -237,6 +237,12 @@ Record results here with AE version/build from the Diagnostics view.
 12. Disconnect network → local tools still work; AI shows "Cannot reach the Claude API".
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
+
+### Graphs + Align checklist (v0.13.0) — inside After Effects 2025
+118. Home docked at ~400 px: Value and Speed graphs stacked; drag the speed graph's start up — the value graph follows live, the keys change once on release (one Undo); compare the speed with Graph Editor › Speed. Hover one graph: the other shows the same time line.
+119. Alt + wheel over the end of the value graph: ease-in influence changes 1 % per notch and lands on the keys ~0.7 s after the last notch. Check AE does not also react to the wheel (Alt + wheel in CEP).
+120. + saves the curve as a picture (no dialog); + again says it already exists; right-click it → ↶ brings it back. Restart AE: saved curves are still there.
+121. Align with 3 layers of different widths: Space evenly ↔ (equal gaps, first and last stay), Gap 20 + Space evenly ↕, Key + Align right (the first selected does not move), Alt-click centre (comp), Shift-click top (key). Parented and keyframed layers keep their animation.
 
 ### Delay = C4D checklist (v0.12.0) — inside After Effects 2025
 114. Even / Blend / Spring on one layer with a fast Position jump: Even = a straight ramp, Blend = fast then slow, Spring = overshoot and settle. Both expression engines (Project Settings › Expressions).
