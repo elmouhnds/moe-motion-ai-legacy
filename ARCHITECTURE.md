@@ -149,6 +149,12 @@ See `docs/features/STUDIO_v0.4.md`.
 - Host: `ops/kit.jsx` (`keyframes.setInterp`, `layers.trimToKeys` / `restoreTiming`, `rigs.find` / `rigs.remove`); `ops/transform.jsx` anchor rewritten (2D maths R·S·Δa; 3D / auto-orient through a toWorld / fromWorld probe with selection restore; keyed anchor; mask box; Alt placement via the parent chain), `layers.nudge` handles parented layers (comp → parent space, 2D parents).
 - Second CEP extension `tv.madtomato.moe.motionai.kit` (`kit.html` → `main.start({ mode: 'kit' })` → `shell.renderKitPanel`). Both panels share `%APPDATA%\MOE Motion AI`: `core/storage.js` re-reads a document whose file changed (mtime, checked ≤ 2×/s per document; `version(name)`), `core/settings.js` re-reads before `get` / `update`.
 
+## 5q. Per-segment curves + tidier panel (v0.14.0)
+- `views/kit.js`: `K.seg` (0 = all, n = segment n) kept while the same keys are selected (`K.keysSig`); `curSeg()` feeds units / velocity; `selectSeg()` loads that segment's curve and ghost; `segStrip()`; overview click → `KG.segmentAt(segs, ovGeom(W).T(x))`. `applyCurve` sends `segment`. `motion.easeCurve` `prepare` slices the selected keys to `[seg − 1, seg]`.
+- `kitGraph.js`: `overviewSamples(segs, cv, sel)`, `drawOverview(…, sel)` (selected band, others dimmed with their own curves), `segmentAt`, `ovGeom`.
+- Folding: `prefs.fold[id]` + `foldTitle()`; `toolsBlock` renders `BAR.KIT_GROUPS` when no explicit id list is given.
+- Quick Bar: `shell.applyDensity` measures `.qbar` width (`state.qbarW`, independent of its buttons); `quickbar.strip` fits buttons (28 px, group line 7 px, room for +N and ⚡); `restPopover` positions itself against `.app` (works in CEP and in the preview's framed panel). Store key `quick-bar-rows`: fit | wrap | one.
+
 ## 5p. Graphs together + Align+ (v0.13.0)
 - `views/kit.js` `graph()` builds one `KG.widget` per visible mode (`value` with the spacing track, `speed` without it when both show); `onLive` / `onCommit` set the other widget, `onHover` → `widget.hover(u)`; `K.graph.set()` sets all. `syncLive()` keeps sliders, velocity fields, numbers and the overview live. Presets: `chip()` renders only `curveSvg()` (fits overshoot); `saveCurve()` (dedupe via `matchPreset`), `removeCurve()` + `undoChip()` (8 s).
 - `kitGraph.js`: `geom(W, H, range, track)`, `st.label`, `st.hoverT`, `flipCurve()`, `wheelStep()` (Alt + wheel through `freeDrag`), range grows during a free drag with the sensitivity frozen at the press.

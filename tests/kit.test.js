@@ -401,3 +401,35 @@ test('kit graph v0.13: flip plays the ease backwards; Alt+wheel = 1 % influence 
   const s = KG.keySpeeds(KG.wheelStep(c0, 'both', 4, true, 'speed'));
   assert.ok(Math.abs(s.out - 0.2) < 0.01 && Math.abs(s.in - 0.2) < 0.01, JSON.stringify(s));
 });
+
+test('Ease Curve per segment: segment 2 changes only keys 2 (out) and 3 (in); segment 1 then gets its own curve', async () => {
+  const { services, comp } = await createTestServices(studioComp([keyed('Ball')]));
+  const P = tp(named(comp, 'Ball'), 'ADBE Position');
+  const before1 = P.keyOutTemporalEase(1)[0], before2in = P.keyInTemporalEase(2)[0];
+  let r = await services.executor.run('motion.easeCurve', { x1: 0.16, y1: 1, x2: 0.3, y2: 1, segment: 2 });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  assert.deepEqual(P.keyOutTemporalEase(1)[0], before1, 'segment 1 untouched (key 1 out)');
+  assert.deepEqual(P.keyInTemporalEase(2)[0], before2in, 'segment 1 untouched (key 2 in)');
+  assert.ok(Math.abs(P.keyOutTemporalEase(2)[0].influence - 16) < 0.01, 'segment 2 out = 16 %');
+  assert.ok(Math.abs(P.keyInTemporalEase(3)[0].influence - 70) < 0.01, 'segment 2 in = 70 %');
+  r = await services.executor.run('motion.easeCurve', { x1: 0.7, y1: 0, x2: 0.84, y2: 0, segment: 1 });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification));
+  assert.ok(Math.abs(P.keyOutTemporalEase(1)[0].influence - 70) < 0.01 && Math.abs(P.keyOutTemporalEase(2)[0].influence - 16) < 0.01, 'two segments, two curves');
+  // a segment that does not exist is refused with the reason
+  r = await services.executor.run('motion.easeCurve', { x1: 0.3, y1: 0, x2: 0.7, y2: 1, segment: 5 });
+  assert.notEqual(r.status, 'success');
+  assert.match((r.errors || []).join(' '), /no segment 5/);
+});
+
+test('overview per segment: only the selected segment shows the edited curve; segmentAt maps time → segment', () => {
+  const KG = require('../extension/app/ui/views/kitGraph');
+  const lin = { x1: 0.333, y1: 0.333, x2: 0.667, y2: 0.667 }, out = { x1: 0.16, y1: 1, x2: 0.3, y2: 1 };
+  const segs = [{ t0: 0, t1: 1, avg: 100, curve: lin }, { t0: 1, t1: 3, avg: 50, curve: lin }];
+  const p2 = KG.overviewSamples(segs, out, 2);
+  assert.ok(p2.filter((p) => p.seg === 0).every((p) => Math.abs(p.v - 100) < 1), 'segment 1 keeps its own (linear) curve');
+  assert.ok(p2.filter((p) => p.seg === 1)[0].v > 200, 'segment 2 shows the edited ease-out (fast start)');
+  const pAll = KG.overviewSamples(segs, out, 0);
+  assert.ok(pAll.filter((p) => p.seg === 0)[0].v > 400, 'All: every segment shows the edited curve');
+  assert.equal(KG.segmentAt(segs, 0.5), 1); assert.equal(KG.segmentAt(segs, 2.2), 2); assert.equal(KG.segmentAt(segs, 9), 2); assert.equal(KG.segmentAt(segs, -1), 1);
+  const g = KG.ovGeom(216, segs); assert.equal(g.T(g.X(1.5)), 1.5);
+});

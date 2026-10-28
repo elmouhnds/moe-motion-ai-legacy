@@ -129,7 +129,7 @@ const WORKSPACES = [
   { id: 'ws-design', label: 'Design', icon: 'palette', items: ['shapes', 'backgrounds', 'looks', 'brand'] },
   { id: 'ws-layout', label: 'Layout', icon: 'grid', items: ['layout', 'zoom', 'deliver'] },
   { id: 'ws-finish', label: 'Finish', icon: 'layers', items: ['compositing'] },
-  { id: 'ws-tools', label: 'Tools', icon: 'tools', items: ['quick', 'select', 'tools'] }
+  { id: 'ws-tools', label: 'Utilities', icon: 'tools', items: ['quick', 'select', 'tools'] } // v0.14: was "Tools" (too close to Toolbox)
 ];
 /** v0.7 name for the same grouping. */
 const GROUPS = WORKSPACES;

@@ -19,7 +19,7 @@ function layerNameOf(ctx, address) {
 
 const easeCurve = {
   id: 'motion.easeCurve',
-  version: '1.1.0',
+  version: '1.2.0',
   category: 'motion',
   group: 'Easing',
   name: 'Ease Curve',
@@ -32,6 +32,7 @@ const easeCurve = {
     x2: { type: 'number', label: 'In X', description: 'Incoming handle: time (influence of the second key)', min: B.X_MIN, max: B.X_MAX, step: 0.01, default: 0.667 },
     y2: { type: 'number', label: 'In Y', description: 'Incoming handle: progress (speed of the second key)', min: B.Y_MIN, max: B.Y_MAX, step: 0.01, default: 1 },
     through: { type: 'boolean', label: 'Pass through middle keys', default: false, description: 'With 3+ keys, the speed flows through the middle keys (no stop) — like EaseCopy pass-through' },
+    segment: { type: 'integer', label: 'Segment', min: 0, max: 99, default: 0, description: '0 = every segment between the selected keys; n = only the n-th one (a different curve per segment, one at a time)' },
     side: { type: 'enum', label: 'Apply to', default: 'both', options: [{ value: 'both', label: 'In + Out' }, { value: 'in', label: 'Ease In only' }, { value: 'out', label: 'Ease Out only' }], description: 'In = the incoming side of each segment\'s second key; Out = the outgoing side of its first key (Shift / Ctrl-click a preset in the Motion Kit)' }
   },
   requires: { comp: true, selectedKeys: 2 },
@@ -50,7 +51,12 @@ const easeCurve = {
     for (const p of ctx.properties || []) {
       if ((p.selectedKeys || []).length < 2) continue;
       if (!NUMERIC.has(p.valueType)) { skipped.push(`${p.name}: not a numeric property (use Smart Ease)`); continue; }
-      const keys = [...new Set(p.selectedKeys)].sort((a, b) => a - b);
+      let keys = [...new Set(p.selectedKeys)].sort((a, b) => a - b);
+      const seg = args.segment || 0;
+      if (seg > 0) {
+        if (keys.length < seg + 1) { skipped.push(`${p.name}: has no segment ${seg} (${keys.length - 1} selected)`); continue; }
+        keys = keys.slice(seg - 1, seg + 1);
+      }
       targets.push({ address: p.address, keys, spatial: SPATIAL.test(p.valueType), name: p.name });
       segs += keys.length - 1;
       items.push(`${layerNameOf(ctx, p.address)} › ${p.name}: ${keys.length - 1} segment${keys.length > 2 ? 's' : ''}`);
@@ -58,7 +64,7 @@ const easeCurve = {
     if (!targets.length) return { ok: false, error: skipped[0] || 'Select at least two keyframes on one property' };
     const curve = B.normalize(args);
     const side = args.side || 'both';
-    return { ok: true, compId: ctx.comp.id, curve, side, through: !!args.through, targets, preview: { summary: `${B.css(curve)}${side === 'both' ? '' : side === 'in' ? ' (ease in)' : ' (ease out)'} on ${segs} segment${segs > 1 ? 's' : ''}`, items: items.concat(skipped) } };
+    return { ok: true, compId: ctx.comp.id, curve, side, through: !!args.through, targets, preview: { summary: `${B.css(curve)}${side === 'both' ? '' : side === 'in' ? ' (ease in)' : ' (ease out)'} on ${args.segment ? `segment ${args.segment}` : `${segs} segment${segs > 1 ? 's' : ''}`}`, items: items.concat(skipped) } };
   },
 
   async execute({ prepared, host }) {

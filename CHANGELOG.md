@@ -2,6 +2,20 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.14.0] — 2026-10-28 — A curve for each segment, tidier panel
+Requested by the product owner: start with a different curve per segment, and reorganise tools and windows with a better layout.
+### Added
+- **A curve for each segment** (3+ selected keys on one property). A strip under the overview shows **All · 1 · 2 · …**, each segment as a picture of the curve that is on it now. Click a segment — in the strip or **in the overview** — and the graphs load *its* curve and edit **only that segment** (drag, presets, paste, typed numbers, velocity fields, Flip all act on it); the overview highlights it and shows the other segments with their own curves; the line above the graph names it (*segment 2 (keys 2–3)*). Click it again or *All* for one curve on every segment. The selection stays while you work on the same keys and goes back to *All* when other keys are selected. Pass-through hides while one segment is edited.
+- `motion.easeCurve` `segment` (0 = all; n = only the n-th segment between the selected keys; a missing segment is refused with the reason).
+- **Folding blocks**: every Motion Kit block (Ease · Anchor · Align · Pinned tools, and Tools in the dock panel) folds from its title; folded Ease keeps a one-line summary (curve picture + source). Remembered per panel.
+- **Quick Bar "Fit"** (new default): one row with the buttons that fit and a **+N** button that opens the rest, with names, in a pop-up — no more buttons hidden off to the right. Thin lines separate the groups. *Utilities › Quick Bar › Bar:* fit · wrap (every button on more rows) · one row (old sideways scroll).
+### Changed
+- The **Toolbox** groups its tools by what they do: **Motion rigs** (Excite, Delay, Jump, Orbit, Spin, Swing, Wiggle, Stare, Repeat) · **Keyframes** (Clone keys, Reverse, Stagger, Trim keys, Trim path) · **Layers** (Null, Parent, Separate, Vignette) · **Clean up** (Trash). Pinned tools on Home keep your order.
+- The sidebar workspace **"Tools" is now "Utilities"** (Quick Bar · Select · My Tools) — it was too close to *Toolbox*.
+- A folded Anchor no longer stretches to Align's height.
+### Tests
+- New: per-segment apply through the executor (segment 2 changes only keys 2 out / 3 in, then segment 1 gets its own curve, a missing segment is refused); overview samples per segment and `segmentAt`; Quick Bar Fit / Wrap (jsdom) and the toolbox groups covering every tool. 264 tests pass. Preview (Playwright): choose segment 2, drag → only segment 2 changes, overview click selects segment 1, fold / unfold, Quick Bar at 294 / 374 / 478 px (one row, +N, pop-up inside the panel) — no JS errors. **Not yet run inside After Effects.**
+
 ## [0.13.0] — 2026-10-28 — Value + Speed graphs together, icon presets, better Align
 Requested by the product owner: value and speed graphs shown together with better control; saved-curve presets as icons without names; develop the ease part further; better Align; suggest more.
 ### Changed

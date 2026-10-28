@@ -99,8 +99,15 @@ function resolve(PRESETS) {
 
 /* Motion Kit layout: the tool grid (Motion 4 Toolbox order: layer helpers, rigs, keys, looks, clean-up). */
 const KIT_TOOLS = ['parentNull', 'k_parent', 'k_excite', 'k_delay', 'k_jump', 'k_orbit', 'k_spin', 'k_swing', 'k_wiggle', 'k_stare', 'clone', 'reverse', 'k_stagger', 'k_trimKeys', 'separate', 'trimDraw', 'k_repeat', 'k_vignette', 'k_trash'];
+/* v0.14: the Toolbox shows the same tools grouped by what they do. */
+const KIT_GROUPS = [
+  ['Motion rigs', ['k_excite', 'k_delay', 'k_jump', 'k_orbit', 'k_spin', 'k_swing', 'k_wiggle', 'k_stare', 'k_repeat']],
+  ['Keyframes', ['clone', 'reverse', 'k_stagger', 'k_trimKeys', 'trimDraw']],
+  ['Layers', ['parentNull', 'k_parent', 'separate', 'k_vignette']],
+  ['Clean up', ['k_trash']]
+];
 /* Alt-click variants (Motion 4 / Flow convention: the modifier gives the second most common intent). */
 const KIT_ALT = { k_parent: { reverse: true }, clone: { mode: 'mirror' }, k_delay: { mode: 'blend' } };
 const KIT_LABEL = { parentNull: 'Null', k_parent: 'Parent', k_excite: 'Excite', k_delay: 'Delay', k_jump: 'Jump', k_orbit: 'Orbit', k_spin: 'Spin', k_swing: 'Swing', k_wiggle: 'Wiggle', k_stare: 'Stare', clone: 'Clone keys', reverse: 'Reverse', k_stagger: 'Stagger', k_trimKeys: 'Trim keys', separate: 'Separate', trimDraw: 'Trim path', k_repeat: 'Repeat', k_vignette: 'Vignette', k_trash: 'Trash' };
 
-module.exports = { ACTIONS, DEFAULT_BAR, GROUPS, resolve, KIT_TOOLS, KIT_ALT, KIT_LABEL };
+module.exports = { ACTIONS, DEFAULT_BAR, GROUPS, resolve, KIT_TOOLS, KIT_GROUPS, KIT_ALT, KIT_LABEL };

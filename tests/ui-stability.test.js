@@ -139,3 +139,27 @@ test('morph: an old data-fresh element is replaced, never patched into a differe
   cells[1].dispatchEvent(new window.Event('pointerdown'));
   assert.equal(grabbed, 0, 'the cell does not carry the old grip listener');
 });
+
+test('Quick Bar v0.14: Fit shows what fits in one row + "+N" for the rest; Wrap shows all; groups are separated', () => {
+  const QB = require('../extension/app/ui/quickbar');
+  const B = require('../extension/features/quick/bar');
+  const mk = (rows, qbarW) => {
+    const store = { 'quick-bar': B.DEFAULT_BAR, 'quick-bar-rows': rows };
+    return { services: { store: { get: (k, d) => (k in store ? store[k] : d) } }, state: { get: () => ({ qbarW, running: false }), set: () => {} }, go: () => {} };
+  };
+  const total = B.DEFAULT_BAR.length;
+  const fit = QB.strip(mk('fit', 300));
+  const shown = fit.querySelectorAll('.qb-btn:not(.qb-rest):not(.more)').length;
+  const rest = fit.querySelector('.qb-rest');
+  assert.ok(rest, 'a +N button');
+  assert.equal(Number(rest.textContent.slice(1)), total - shown, '+N counts exactly the hidden ones');
+  const seps = fit.querySelectorAll('.qb-sep').length;
+  assert.ok(shown * 28 + seps * 7 + 2 * 28 + 12 <= 300, `fits in 300 px (${shown} buttons, ${seps} lines)`);
+  const wrap = QB.strip(mk('wrap', 300));
+  assert.equal(wrap.querySelectorAll('.qb-btn:not(.more)').length, total, 'wrap: every button');
+  assert.ok(wrap.classList.contains('wrap') && !wrap.querySelector('.qb-rest'));
+  assert.ok(wrap.querySelectorAll('.qb-sep').length >= 2, 'lines between groups');
+  // toolbox groups cover every kit tool exactly once
+  const grouped = B.KIT_GROUPS.flatMap(([, l]) => l);
+  assert.deepEqual([...grouped].sort(), [...B.KIT_TOOLS].sort());
+});

@@ -53,10 +53,41 @@ function strip(app) {
   if (app.services.store.get('quick-bar-hidden', false)) return null;
   // In a narrow panel part of the bar is off to the right; a normal mouse wheel scrolls it sideways
   // (before, only the 4 px scrollbar reached those buttons).
-  return h('div', { class: 'qbar', role: 'toolbar', 'aria-label': 'Quick Bar',
+  // v0.14: Fit (default) = one row with what fits + a "+N" button for the rest (named, in a pop-up);
+  // Wrap = every button on as many rows as needed; One row = the old sideways scroll.
+  // A thin line separates groups (Project · Layer · Keys · Kit …).
+  const mode = rowsMode(app);
+  const st = app.state.get();
+  const all = barIds(app).map(byId);
+  const BTN = 28, SEP = 7;
+  let shown = all, rest = [];
+  if (mode === 'fit' && st.qbarW) {
+    let room = st.qbarW - 12 - BTN * 2, last = null; // keep room for "+N" and ⚡
+    const fit = [];
+    for (const a of all) { const w = BTN + (last !== null && a.group !== last ? SEP : 0); if (room - w < 0) break; room -= w; fit.push(a); last = a.group; }
+    if (fit.length < all.length) { shown = fit; rest = all.slice(fit.length); }
+  }
+  const items = [];
+  let last = null;
+  for (const a of shown) { if (last !== null && a.group !== last) items.push(h('span', { class: 'qb-sep', 'aria-hidden': 'true' })); items.push(button(app, a)); last = a.group; }
+  return h('div', { class: `qbar ${mode === 'wrap' ? 'wrap' : ''} ${mode === 'fit' ? 'fit' : ''}`, role: 'toolbar', 'aria-label': 'Quick Bar',
     onwheel: (e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) { el.scrollLeft += e.deltaY; e.preventDefault(); } } },
-    barIds(app).map((id) => button(app, byId(id))),
+    items,
+    rest.length ? h('button', { class: 'qb-btn qb-rest', title: `${rest.length} more: ${rest.map((a) => a.label).join(', ')}`, 'aria-label': `${rest.length} more quick actions`, 'aria-expanded': String(!!st.qbarMore),
+      onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(), box = (e.currentTarget.closest('.app') || document.body).getBoundingClientRect(); app.state.set({ qbarMore: st.qbarMore ? null : { top: Math.round(r.bottom - box.top + 4), right: Math.max(4, Math.round(box.right - r.right - 30)), maxW: Math.round(box.width - 16), ids: rest.map((a) => a.id) } }); } }, `+${rest.length}`) : null,
     h('button', { class: 'qb-btn more', title: 'All quick actions', 'aria-label': 'All quick actions', onclick: () => app.go('quick') }, icon('bolt')));
+}
+const ROWS = ['fit', 'wrap', 'one'];
+const rowsMode = (app) => { const m = app.services.store.get('quick-bar-rows', 'fit'); return ROWS.includes(m) ? m : 'fit'; };
+
+/** The "+N" pop-up: the buttons that did not fit, with their names. */
+function restPopover(app) {
+  const s = app.state.get();
+  if (!s.qbarMore) return null;
+  const close = () => app.state.set({ qbarMore: null });
+  return h('div', { class: 'overlay qb-overlay', onmousedown: (e) => { if (e.target.classList.contains('overlay')) close(); } },
+    h('div', { class: 'qb-rest-pop', role: 'menu', 'aria-label': 'More quick actions', style: { top: `${s.qbarMore.top}px`, right: `${s.qbarMore.right || 10}px`, maxWidth: `${Math.min(420, s.qbarMore.maxW || 420)}px` }, onclick: (e) => { if (e.target.closest && e.target.closest('button')) close(); } },
+      s.qbarMore.ids.map(byId).filter(Boolean).map((a) => button(app, a, 'qt-tile'))));
 }
 
 /** Options popover (the tool's own form, prefilled with the action preset). */
@@ -80,6 +111,7 @@ function view(app) {
     h('div', { class: 'pad tl-bar' },
       h('span', { class: 'why', style: { flex: 1 } }, `Click = run · Right-click = options · ★ = on the bar (${pinned.size} pinned)`),
       h('button', { class: 'btn ghost', onclick: () => { app.services.store.set('quick-bar-hidden', !hidden); app.render(); } }, hidden ? 'Show bar' : 'Hide bar'),
+      hidden ? null : h('button', { class: 'btn ghost', title: 'Fit: one row + a “+N” button for the rest · Wrap: every button, on more rows · One row: scroll sideways (mouse wheel)', onclick: () => { const m = rowsMode(app); app.services.store.set('quick-bar-rows', ROWS[(ROWS.indexOf(m) + 1) % ROWS.length]); app.render(); } }, `Bar: ${{ fit: 'fit', wrap: 'wrap', one: 'one row' }[rowsMode(app)]}`),
       (() => {
         const isDefault = JSON.stringify(barIds(app)) === JSON.stringify(B.DEFAULT_BAR.filter((id) => byId(id)));
         return h('button', { class: 'btn ghost', disabled: isDefault, title: isDefault ? 'The bar already has the default set' : 'Reset the bar to the default set', onclick: () => { app.services.store.set('quick-bar', B.DEFAULT_BAR); app.toast('Quick Bar reset to the default set', 2200, 'ok'); app.render(); } }, icon('undo', 'sm'));
@@ -92,4 +124,4 @@ function view(app) {
     ]));
 }
 
-module.exports = { strip, popover, view, ACTIONS, run, openOptions };
+module.exports = { strip, popover, restPopover, view, ACTIONS, run, openOptions };

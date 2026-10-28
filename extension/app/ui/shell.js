@@ -119,6 +119,7 @@ function createApp(root, services, env = {}) {
         h('div', { class: 'content' }, chrome.banner(app, s.view), (views[s.view] || views.home).render(app)),
         copilot.render(app)),
       quickbar.popover(app),
+      quickbar.restPopover(app),
       s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, s.toastKind ? h('span', { class: 'toast-ic' }, icon(TOAST_ICON[s.toastKind] || 'info', 'sm')) : null, h('span', {}, s.toast)) : null,
       s.modal ? chrome.sheet(app, s.modal) : null);
     // Update in place: what is on screen stays the same element (no flicker, clicks never lost).
@@ -289,6 +290,7 @@ function createApp(root, services, env = {}) {
         contextStrip(s),
         h('div', { class: 'content' }, require('./views/kit').render(app))),
       quickbar.popover(app),
+      quickbar.restPopover(app),
       s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, s.toastKind ? h('span', { class: 'toast-ic' }, icon(TOAST_ICON[s.toastKind] || 'info', 'sm')) : null, h('span', {}, s.toast)) : null);
     const content = root.querySelector('.content');
     const top = content ? content.scrollTop : 0;
@@ -601,8 +603,11 @@ function createApp(root, services, env = {}) {
     const tilesCompact = tiles === 'compact' || (tiles === 'auto' && w < 520);
     // Motion Kit layout follows the panel's own width (not the window's — they differ in the web preview).
     const kitBand = w >= 760 ? 'kit-wide' : w < 250 ? 'kit-tiny' : w < 330 ? 'kit-narrow kit-slim' : w < 400 ? 'kit-narrow' : '';
+    // Quick Bar "fit" mode: how wide the bar is (its width does not depend on its buttons → no loop)
+    const qb = root.querySelector('.qbar');
+    const qbarW = qb ? Math.round(qb.clientWidth) : 0;
     const st = app.state.get();
-    if (compact !== st.compact || wide !== st.wide || navWide !== st.navWide || studioWide !== st.studioWide || tilesCompact !== st.tilesCompact || kitBand !== st.kitBand) app.state.set({ compact, wide, navWide, studioWide, tilesCompact, kitBand });
+    if (compact !== st.compact || wide !== st.wide || navWide !== st.navWide || studioWide !== st.studioWide || tilesCompact !== st.tilesCompact || kitBand !== st.kitBand || (qbarW && qbarW !== st.qbarW)) app.state.set({ compact, wide, navWide, studioWide, tilesCompact, kitBand, qbarW: qbarW || st.qbarW });
   };
 
   /* ---------- global keys & context polling ---------- */

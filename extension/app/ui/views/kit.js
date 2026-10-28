@@ -30,12 +30,20 @@ const ORDER = ['tl', 't', 'tr', 'l', 'c', 'r', 'bl', 'b', 'br'];
 const DEFAULT_CURVE = BZ.normalize(BZ.PRESETS.find((p) => p.id === 'easyEase'));
 
 /* Transient kit state (one panel = one kit). The graph keeps its curve between renders. */
-const K = { curve: Object.assign({}, DEFAULT_CURVE), ghost: null, sig: null, src: null, reading: false, lib: false, libTag: 'All', graph: null };
+const K = { curve: Object.assign({}, DEFAULT_CURVE), ghost: null, sig: null, src: null, reading: false, lib: false, libTag: 'All', graph: null, seg: 0, keysSig: null };
+/** The segment being edited (0 = all) and its data. */
+const curSeg = () => (K.segs && K.segs.length ? K.segs[Math.max(0, (K.seg || 1) - 1)] || K.segs[0] : null);
 
 /** Tools pinned to Home (Motion 4 "Pin Tools"); edited in the Toolbox. */
 const DEFAULT_PINS = ['parentNull', 'k_parent', 'k_excite', 'k_delay', 'k_jump', 'k_wiggle', 'k_stare', 'k_trash'];
 const prefs = (app) => Object.assign({ auto: true, side: 'both', to: 'selection', masks: false, link: false, clip: null, pins: DEFAULT_PINS, graph: 'both', graphH: 150, through: false, gap: null }, app.services.settings.get().ui.kit || {});
 const setPref = (app, patch) => { app.services.settings.update({ ui: { kit: Object.assign(prefs(app), patch) } }); app.render(); };
+/* v0.14: every block folds from its title (remembered per panel) — keep only what you use open. */
+const folded = (app, id) => !!(prefs(app).fold || {})[id];
+function foldTitle(app, id, label) {
+  const f = folded(app, id);
+  return h('button', { class: `kit-t kit-fold ${f ? 'folded' : ''}`, 'aria-expanded': String(!f), 'data-key': `fold-${id}`, title: f ? `Show ${label}` : `Fold ${label} (remembered)`, onclick: () => setPref(app, { fold: Object.assign({}, prefs(app).fold || {}, { [id]: !f }) }) }, icon('chev', 'xs'), h('span', {}, label));
+}
 const r3 = (v) => Math.round(v * 1000) / 1000;
 const ctxOf = (app) => app.state.get().ctx;
 
@@ -84,8 +92,9 @@ function autoRead(app, force) {
   const sig = p ? JSON.stringify([p.address.layerId, p.address.matchNames, p.selectedKeys]) : '';
   if (!force && sig === K.sig) return;
   K.sig = sig;
-  if (!p) { K.src = null; K.segs = null; K.unit = null; return; }
+  if (!p) { K.src = null; K.segs = null; K.unit = null; K.seg = 0; K.keysSig = null; return; }
   const keys = [...new Set(p.selectedKeys)].sort((a, b) => a - b).slice(0, 12);
+  if (sig !== K.keysSig) { K.seg = 0; K.keysSig = sig; } // other keys selected → back to "All"
   const layer = ((ctx.layers || []).find((l) => l.id === p.address.layerId) || {}).name || 'Layer';
   setTimeout(async () => {
     if (K.reading || app.services.executor.running) { K.sig = null; return; }
@@ -93,11 +102,13 @@ function autoRead(app, force) {
     try {
       const r = await app.services.host.call('keyframes.read', { compId: ctx.comp.id, targets: [{ address: p.address, keys }] });
       const segs = segmentsOf(r.targets[0].keys, /_SPATIAL$/.test(p.valueType));
-      const s0 = segs[0];
+      if (K.seg > segs.length) K.seg = 0;
+      const s0 = segs[Math.max(0, K.seg - 1)];
       K.segs = segs; K.unit = unitOf(p); K.nKeys = keys.length;
       K.ghost = null;
+      K.srcBase = `${layer} › ${p.name}`;
       if (s0.hold) K.src = `${layer} › ${p.name}: hold`;
-      else { K.curve = Object.assign({}, s0.curve); K.ghost = Object.assign({}, K.curve); K.src = `${layer} › ${p.name}${s0.linear ? ': linear' : ` · keys ${keys[0]}–${keys[keys.length - 1]}`}`; }
+      else { K.curve = Object.assign({}, s0.curve); K.ghost = Object.assign({}, K.curve); K.src = `${layer} › ${p.name}${s0.linear ? ': linear' : K.seg ? ` · segment ${K.seg} (keys ${s0.a}–${s0.b})` : ` · keys ${keys[0]}–${keys[keys.length - 1]}`}`; }
     } catch (e) { K.src = null; K.segs = null; } finally { K.reading = false; app.scheduleRender(); }
   }, 0);
 }
@@ -110,7 +121,8 @@ function applyCurve(app, cv, side, label) {
   K.curve = Object.assign({}, cv);
   if (!keyed(ctxOf(app)).length) { app.toast('Curve set — select two or more keyframes to apply it', 3200, 'info'); app.render(); return null; }
   // After applying, read the keys again (the line above the graph then names what is on them).
-  return Promise.resolve(run(app, 'motion.easeCurve', Object.assign({}, BZ.normalize(cv), { side, through: !!prefs(app).through }), label || 'Ease Curve')).then((r) => { K.sig = null; app.scheduleRender(); return r; });
+  const segment = K.segs && K.segs.length > 1 ? K.seg || 0 : 0;
+  return Promise.resolve(run(app, 'motion.easeCurve', Object.assign({}, BZ.normalize(cv), { side, through: !!prefs(app).through && !segment, segment }), `${label || 'Ease Curve'}${segment ? ` · segment ${segment}` : ''}`)).then((r) => { K.sig = null; app.scheduleRender(); return r; });
 }
 const sideOf = (e, p) => (e && e.shiftKey ? 'in' : e && (e.ctrlKey || e.metaKey) ? 'out' : p.side);
 
@@ -164,12 +176,33 @@ function undoChip(app) {
   } }, icon('undo', 'sm'));
 }
 
+/** Edit one segment (n ≥ 1) or all of them (0): the graph loads that segment's own curve. */
+function selectSeg(app, n) {
+  if (!K.segs || n < 0 || n > K.segs.length) return;
+  K.seg = n;
+  const s = curSeg();
+  if (s && !s.hold) { K.curve = Object.assign({}, s.curve); K.ghost = Object.assign({}, s.curve); if (K.graph) K.graph.set(K.curve); }
+  if (K.srcBase && s) K.src = `${K.srcBase}${n ? ` · segment ${n} (keys ${s.a}–${s.b})${s.hold ? ': hold' : ''}` : ` · keys ${K.segs[0].a}–${K.segs[K.segs.length - 1].b}`}`;
+  app.render();
+}
+/** All · 1 · 2 · … — each segment as the picture of the curve that is on it now. */
+function segStrip(app) {
+  if (!K.segs || K.segs.length < 2) return null;
+  return h('div', { class: 'kit-segs', role: 'tablist', 'aria-label': 'Segments', 'data-key': 'segs' },
+    h('button', { class: `kit-segb all ${K.seg ? '' : 'on'}`, role: 'tab', 'aria-selected': String(!K.seg), title: 'Edit every segment together (one curve on all)', onclick: () => selectSeg(app, 0) }, 'All'),
+    K.segs.map((s, i) => h('button', {
+      class: `kit-segb ${K.seg === i + 1 ? 'on' : ''}`, role: 'tab', 'aria-selected': String(K.seg === i + 1), 'data-key': `seg-${i}`, 'aria-label': `Segment ${i + 1}`,
+      title: `Segment ${i + 1}: keys ${s.a}–${s.b} · ${s.dt.toFixed(2)} s${s.hold ? ' · hold' : ` · ${BZ.css(s.curve)}`}\nClick: edit only this segment`,
+      onclick: () => selectSeg(app, K.seg === i + 1 ? 0 : i + 1)
+    }, h('span', { class: 'kit-segn' }, String(i + 1)), s.hold ? h('span', { class: 'kit-segh' }, 'hold') : h('span', { class: 'kit-chip-g', html: curveSvg(K.seg === i + 1 ? K.curve : s.curve) }))));
+}
+
 /** Live sync of everything that shows the curve (sliders, velocity fields, numbers, overview). */
 function syncLive(cv) {
   const el = document.querySelector('.kit-num'); if (el && document.activeElement !== el) el.value = nums(cv);
-  const ov = document.querySelector('.kit-overview'); if (ov) KG.drawOverview(ov, K.segs, cv, K.unit);
+  const ov = document.querySelector('.kit-overview'); if (ov) KG.drawOverview(ov, K.segs, cv, K.unit, K.seg);
   [['out', cv.x1 * 100], ['in', (1 - cv.x2) * 100]].forEach(([side, v]) => { const r = document.querySelector(`.kit-range[data-side="${side}"]`); if (r) { r.value = Math.round(v); const t = r.nextSibling; if (t) t.textContent = `${Math.round(v)}%`; } });
-  const avg = K.segs && K.segs[0] ? K.segs[0].avg : 0, sp = KG.keySpeeds(cv), spd = (rel) => (avg ? String(Math.round(rel * avg * 10) / 10) : String(Math.round(rel * 100) / 100));
+  const avg = curSeg() ? curSeg().avg : 0, sp = KG.keySpeeds(cv), spd = (rel) => (avg ? String(Math.round(rel * avg * 10) / 10) : String(Math.round(rel * 100) / 100));
   [['Outgoing speed', spd(sp.out)], ['Outgoing influence', String(Math.round(cv.x1 * 100))], ['Incoming speed', spd(sp.in)], ['Incoming influence', String(Math.round((1 - cv.x2) * 100))]].forEach(([l, v]) => { const f = document.querySelector(`.kit-vel[data-vel="${l}"]`); if (f && document.activeElement !== f) f.value = v; });
 }
 
@@ -185,7 +218,7 @@ function graph(app) {
   const make = (mode, height, track, label) => {
     const w = KG.widget({
       get: () => K.curve, ghost: () => K.ghost, mode, height, link: pr.link, autoApply: pr.auto, track, label,
-      units: () => (K.segs && K.segs[0] && K.segs[0].avg ? { avg: K.segs[0].avg, unit: K.unit } : {}),
+      units: () => { const sg = curSeg(); return sg && sg.avg ? { avg: sg.avg, unit: K.unit } : {}; },
       onCommit: (cv) => { K.curve = cv; ws.forEach((o) => o !== w && o.set(cv)); if (pr.auto) applyCurve(app, cv, pr.side, 'Ease Curve'); else app.render(); },
       onLive: (cv) => { ws.forEach((o) => o !== w && o.set(cv)); syncLive(cv); },
       onHover: (u) => ws.forEach((o) => o !== w && o.hover(u)),
@@ -212,13 +245,15 @@ function graph(app) {
   // Whole selected animation (3+ keys): real speed over real time, with the new curve on every segment.
   let ov = null;
   if (K.segs && K.segs.length > 1) {
-    ov = h('canvas', { class: 'kit-overview', role: 'img', 'aria-label': 'Speed of the whole selected animation', title: 'Speed of the whole selected animation with this curve on every segment (real time, real units)' });
+    ov = h('canvas', { class: 'kit-overview', role: 'img', 'aria-label': 'Speed of the whole selected animation — click a segment to edit it alone', title: 'Speed of the whole selected animation (real time, real units)\nClick a segment: edit only that one · click it again: all segments' });
     ov.setAttribute('data-fresh', '');
-    setTimeout(() => KG.drawOverview(ov, K.segs, K.curve, K.unit), 0);
+    ov.addEventListener('click', (e) => { const r = ov.getBoundingClientRect(); const n = KG.segmentAt(K.segs, KG.ovGeom(r.width, K.segs).T(e.clientX - r.left)); selectSeg(app, n === K.seg ? 0 : n); });
+    setTimeout(() => KG.drawOverview(ov, K.segs, K.curve, K.unit, K.seg), 0);
   }
-  const thru = K.nKeys > 2 ? h('button', { class: `kit-thru ${pr.through ? 'on' : ''}`, 'aria-pressed': String(!!pr.through), title: 'Pass through middle keys: the speed flows through the keys between the first and the last (no stop at each key)', onclick: () => setPref(app, { through: !pr.through }) }, 'Pass-through') : null;
+  const thru = K.nKeys > 2 && !K.seg ? h('button', { class: `kit-thru ${pr.through ? 'on' : ''}`, 'aria-pressed': String(!!pr.through), title: 'Pass through middle keys: the speed flows through the keys between the first and the last (no stop at each key)', onclick: () => setPref(app, { through: !pr.through }) }, 'Pass-through') : null;
   return h('div', { class: 'kit-graph-wrap' },
     ov,
+    segStrip(app),
     h('div', { class: `kit-graphs ${both ? 'both' : ''}`, 'data-key': `graphs-${view}` }, ws.map((w, i) => h('div', { class: 'kit-gcell', 'data-key': `gcell-${i}` }, w.canvas))),
     h('div', { class: 'kit-gbar', 'data-key': 'gbar' },
       h('div', { class: 'kit-seg kit-gmode', role: 'group', 'aria-label': 'Graph' },
@@ -252,7 +287,7 @@ function slider(app, label, which) {
 /** AE's Keyframe Velocity dialog, in the kit: exact speed (real units) and influence for each side. */
 function velocity(app) {
   const pr = prefs(app);
-  const avg = K.segs && K.segs[0] ? K.segs[0].avg : 0, unit = K.unit;
+  const avg = curSeg() ? curSeg().avg : 0, unit = K.unit;
   const sp = KG.keySpeeds(K.curve);
   const field = (label, value, suffix, on) => {
     const input = h('input', { class: 'kit-vel', value, inputmode: 'decimal', spellcheck: 'false', 'aria-label': label, 'data-vel': label, title: `${label} — Enter applies` });
@@ -282,9 +317,15 @@ function easeBlock(app) {
   const tool = (ic, label, title, onclick, extra = {}) => h('button', Object.assign({ class: 'kit-ib', title: `${label} — ${title}`, 'aria-label': label, onclick }, extra), icon(ic, 'sm'));
   const chips = CHIPS.map((id) => BZ.PRESETS.find((p) => p.id === id)).filter(Boolean);
   const mine = userCurves(app);
+  if (folded(app, 'ease')) {
+    return h('section', { class: 'kit-block kit-ease folded', 'aria-label': 'Ease' },
+      h('div', { class: 'kit-h' }, foldTitle(app, 'ease', 'Ease'),
+        h('span', { class: 'kit-chip-g kit-fold-cv', html: curveSvg(K.curve), title: BZ.css(K.curve) }),
+        h('span', { class: `kit-src ${K.src ? '' : 'dim'}` }, K.src || (nKeys ? 'select 2+ keys on one property' : 'no keys selected'))));
+  }
   return h('section', { class: 'kit-block kit-ease', 'aria-label': 'Ease' },
     h('div', { class: 'kit-h' },
-      h('span', { class: 'kit-t' }, 'Ease'),
+      foldTitle(app, 'ease', 'Ease'),
       h('button', { class: `kit-src ${K.src ? '' : 'dim'}`, title: `${K.src || 'No curve read'} — click to read the selected keys again`, onclick: () => (keyed(ctxOf(app)).length ? autoRead(app, true) : app.toast('Select two or more keyframes on one property — the graph then shows their curve', 3500, 'info')) }, K.src || (nKeys ? 'select 2+ keys on one property' : 'no keys selected')),
       match ? h('span', { class: 'kit-match', title: 'The curve matches this preset' }, `≈ ${(BZ.PRESETS.concat(userCurves(app)).find((p) => p.id === match) || {}).label || ''}`) : null,
       h('span', { class: 'spacer' }),
@@ -327,14 +368,15 @@ function anchorBlock(app) {
   const pr = prefs(app);
   const rd = library.readiness(app, { tool: 'transform.anchor', args: { point: 'c' } });
   return h('section', { class: 'kit-block kit-anchor', 'aria-label': 'Anchor point' },
-    h('div', { class: 'kit-h' }, h('span', { class: 'kit-t' }, 'Anchor')),
+    h('div', { class: 'kit-h' }, foldTitle(app, 'anchor', 'Anchor')),
+    folded(app, 'anchor') ? null : h('div', { class: 'kit-anchor-body' },
     h('div', { class: `kit-dots ${rd.ok ? '' : 'off'}`, role: 'group', 'aria-label': 'Anchor point' },
       ORDER.map((p) => h('button', {
         class: 'kit-dot', 'data-key': `ap-${p}`, 'aria-label': `Anchor ${TM.POINT_LABEL[p]}`,
         title: `${TM.POINT_LABEL[p]}\nClick: anchor here (the layer does not move)\nAlt-click: also place the layer at the ${TM.POINT_LABEL[p].toLowerCase()} of the comp${rd.ok ? '' : `\n— ${rd.hint}`}`,
         onclick: (e) => run(app, 'transform.anchor', { point: p, masks: pr.masks, place: !!e.altKey }, `Anchor ${TM.POINT_LABEL[p]}${e.altKey ? ' + place' : ''}`)
       }, h('span')))),
-    h('label', { class: 'kit-check', title: 'Use the layer\'s masks for the box instead of its content' }, h('input', { type: 'checkbox', checked: pr.masks, onchange: (e) => setPref(app, { masks: e.target.checked }) }), 'Masks'));
+    h('label', { class: 'kit-check', title: 'Use the layer\'s masks for the box instead of its content' }, h('input', { type: 'checkbox', checked: pr.masks, onchange: (e) => setPref(app, { masks: e.target.checked }) }), 'Masks')));
 }
 /**
  * Align (v0.13): two rows — ↔ and ↕ — each with align (edges / centre) and spread (distribute
@@ -364,16 +406,16 @@ function alignBlock(app) {
   gap.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); setGap(); } });
   gap.addEventListener('change', setGap);
   return h('section', { class: 'kit-block kit-align', 'aria-label': 'Align' },
-    h('div', { class: 'kit-h' }, h('span', { class: 'kit-t' }, 'Align'), h('span', { class: 'spacer' }),
+    h('div', { class: 'kit-h' }, foldTitle(app, 'align', 'Align'), h('span', { class: 'spacer' }),
       h('div', { class: 'kit-seg', role: 'group', 'aria-label': 'Align to' },
         to('selection', 'Sel', 'Align to the selection\'s bounds'),
         to('key', 'Key', 'Align to the key layer: the first selected layer stays, the others line up with it'),
         to('comp', 'Comp', 'Align to the comp'))),
-    ALIGN_ROWS.map((r) => h('div', { class: 'kit-align-row2', 'data-key': `ar-${r.axis}` },
+    folded(app, 'align') ? null : ALIGN_ROWS.map((r) => h('div', { class: 'kit-align-row2', 'data-key': `ar-${r.axis}` },
       h('span', { class: 'kit-axis', 'aria-hidden': 'true' }, r.axis),
       h('div', { class: 'kit-ibgroup' }, r.align.map(btn)),
       h('div', { class: 'kit-ibgroup' }, r.spread.map(btn)))),
-    h('label', { class: 'kit-gapl' }, h('span', {}, 'Gap'), gap, h('span', { class: 'kit-vunit' }, 'px')));
+    folded(app, 'align') ? null : h('label', { class: 'kit-gapl' }, h('span', {}, 'Gap'), gap, h('span', { class: 'kit-vunit' }, 'px')));
 }
 
 /* ---------- tools ---------- */
@@ -399,10 +441,15 @@ function toolButton(app, id, pinMode) {
 }
 function toolsBlock(app, opts = {}) {
   const ids = opts.ids || BAR.KIT_TOOLS;
+  const f = opts.foldId && folded(app, opts.foldId);
+  const title = opts.foldId ? foldTitle(app, opts.foldId, opts.title || 'Tools') : h('span', { class: 'kit-t' }, opts.title || 'Tools');
+  // v0.14: the full list is grouped by what the tools do; a pinned list keeps the user's order
+  const body = !ids.length ? h('div', { class: 'why kit-empty' }, 'Nothing pinned — open the Toolbox and use “Pin to Home”.')
+    : opts.ids ? h('div', { class: 'kit-grid' }, ids.map((id) => toolButton(app, id, opts.pinMode)))
+      : BAR.KIT_GROUPS.map(([g, list]) => h('div', { class: 'kit-tgroup', 'data-key': `tg-${g}` }, h('div', { class: 'kit-tgroup-h' }, g), h('div', { class: 'kit-grid' }, list.filter((id) => ids.includes(id)).map((id) => toolButton(app, id, opts.pinMode)))));
   return h('section', { class: `kit-block kit-toolbox ${opts.cls || ''}`, 'aria-label': opts.title || 'Tools' },
-    h('div', { class: 'kit-h' }, h('span', { class: 'kit-t' }, opts.title || 'Tools'), opts.right || h('span', { class: 'kit-hint' }, 'right-click: options · Alt: variant')),
-    ids.length ? h('div', { class: 'kit-grid' }, ids.map((id) => toolButton(app, id, opts.pinMode)))
-      : h('div', { class: 'why kit-empty' }, 'Nothing pinned — open the Toolbox and use “Pin to Home”.'));
+    h('div', { class: 'kit-h' }, title, opts.right || h('span', { class: 'kit-hint' }, 'right-click: options · Alt: variant')),
+    f ? null : body);
 }
 
 /** Docked Motion Kit panel: everything, compact. */
@@ -410,7 +457,7 @@ function render(app) {
   return h('div', { class: 'view kit' },
     easeBlock(app),
     h('div', { class: 'kit-pair' }, anchorBlock(app), alignBlock(app)),
-    toolsBlock(app));
+    toolsBlock(app, { foldId: 'kitTools' }));
 }
 
 /** Home (Motion 4 Home): ease + anchor + align always first, then the tools you pinned. */
@@ -419,7 +466,7 @@ function homeTop(app) {
   return h('div', { class: 'kit home-kit' },
     easeBlock(app),
     h('div', { class: 'kit-pair' }, anchorBlock(app), alignBlock(app)),
-    toolsBlock(app, { ids: pr.pins.filter((id) => BAR.KIT_TOOLS.includes(id)), title: 'Pinned tools', right: h('button', { class: 'btn ghost sm kit-more', title: 'All tools and the pin list (Ctrl 2)', onclick: () => app.go('kit') }, 'Toolbox', icon('chev', 'xs')) }));
+    toolsBlock(app, { ids: pr.pins.filter((id) => BAR.KIT_TOOLS.includes(id)), title: 'Pinned tools', foldId: 'pinned', right: h('button', { class: 'btn ghost sm kit-more', title: 'All tools and the pin list (Ctrl 2)', onclick: () => app.go('kit') }, 'Toolbox', icon('chev', 'xs')) }));
 }
 
 /** Toolbox (sidebar, Ctrl 2): every tool, the pin list for Home, the whole curve library. */

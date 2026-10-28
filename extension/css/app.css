@@ -308,6 +308,13 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 /* ---------- quick bar (v0.4) ---------- */
 .qbar { display: flex; align-items: center; gap: 2px; padding: 3px 6px; border-bottom: 1px solid var(--line); overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; flex: none; }
 .qbar::-webkit-scrollbar { height: 4px; }
+.qbar.wrap { flex-wrap: wrap; overflow: visible; row-gap: 1px; }
+.qbar.wrap .qb-btn.more { position: static; margin-left: auto; }
+.qb-btn.qb-rest { width: auto; min-width: 30px; padding: 0 6px; font-size: 11px; font-weight: 600; color: var(--accent); }
+.qbar.fit { overflow: hidden; }
+.qb-overlay { background: transparent; }
+.qb-rest-pop { position: fixed; right: 10px; max-width: min(420px, calc(100vw - 20px)); max-height: 60vh; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 4px; padding: 8px; border: 1px solid var(--line-strong); border-radius: var(--r-lg, 10px); background: var(--bg-raised); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.qb-sep { flex: none; width: 1px; height: 16px; margin: 0 3px; background: var(--line-strong); }
 .qb-btn { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 26px; height: 26px; border: 0; border-radius: var(--r); background: none; color: var(--text-2); cursor: pointer; transition: background var(--t), color var(--t), transform var(--t); }
 .qb-btn:hover { background: var(--bg-hover); color: var(--text); }
 .qb-btn:active { filter: brightness(0.92); }
@@ -860,6 +867,25 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .kit-chip-g svg { display: block; width: 24px; height: 22px; }
 .kit-libgroup { display: grid; grid-template-columns: 54px minmax(0, 1fr); align-items: start; gap: 6px; margin-top: 6px; }
 .kit-libtag { font-size: 10px; color: var(--text-3); padding-top: 7px; text-transform: uppercase; letter-spacing: .04em; }
+/* v0.14: foldable blocks + grouped toolbox */
+.kit-fold { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.kit-fold .svg-i { transform: rotate(90deg); color: var(--text-3); }
+.kit-fold.folded .svg-i { transform: none; }
+.kit-fold:hover { color: var(--text); }
+.kit-block.folded { padding-bottom: 6px; }
+.kit-fold-cv, .kit-fold-cv svg { width: 22px; height: 20px; color: var(--accent); flex: none; }
+.kit-tgroup + .kit-tgroup { margin-top: 8px; }
+.kit-tgroup-h { margin: 0 0 4px; font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--text-3); }
+/* v0.14: per-segment strip */
+.kit-segs { display: flex; flex-wrap: wrap; gap: 3px; margin: 4px 0 6px; }
+.kit-segb { display: inline-flex; align-items: center; gap: 2px; height: 26px; padding: 0 5px 0 4px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text-2); font: inherit; font-size: 11px; cursor: pointer; }
+.kit-segb:hover { color: var(--text); border-color: var(--line-strong); }
+.kit-segb.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.kit-segb.all { padding: 0 8px; }
+.kit-segn { min-width: 9px; text-align: center; font-variant-numeric: tabular-nums; }
+.kit-segh { font-size: 10px; color: var(--text-3); }
+.kit-segb .kit-chip-g, .kit-segb .kit-chip-g svg { width: 22px; height: 20px; }
+.kit-overview { cursor: pointer; }
 /* v0.13: value + speed graphs together — side by side when there is room, stacked otherwise */
 .kit-graphs.both { display: flex; flex-wrap: wrap; gap: 6px; }
 .kit-graphs.both > .kit-gcell { flex: 1 1 280px; min-width: 0; }
@@ -868,7 +894,7 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .kit-tools-row.icons .kit-ib:disabled { opacity: .4; cursor: default; }
 .kit-chip-l { max-width: 100%; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kit-lib { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
-.kit-pair { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+.kit-pair { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px; }
 .kit-pair > .kit-anchor { flex: 0 0 auto; }
 .kit-pair > .kit-align { flex: 1 1 214px; min-width: 0; } /* wraps under Anchor when the panel is narrow */
 .kit-dots { display: grid; grid-template-columns: repeat(3, 28px); grid-template-rows: repeat(3, 28px); gap: 3px; padding: 6px; border: 1px dashed var(--line-strong); border-radius: var(--r); width: max-content; }

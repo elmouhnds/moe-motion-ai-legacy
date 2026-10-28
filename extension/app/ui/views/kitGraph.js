@@ -348,28 +348,45 @@ function widget(opts) {
  * being edited (the first) shows the new curve; the others show what is on the keys now.
  * segs: [{ t0, t1, avg, curve, hold }], cv: the curve being edited (applied to every segment).
  */
-function overviewSamples(segs, cv, applyAll) {
+function overviewSamples(segs, cv, sel) {
+  // sel: true / 0 = the edited curve on every segment; n = only on segment n (the others keep their own)
+  const all = sel === true || !sel;
   const out = [];
   segs.forEach((s, i) => {
-    const curve = applyAll || i === 0 ? cv : s.curve;
+    const curve = all || i === sel - 1 ? cv : s.curve;
     for (let j = 0; j <= 24; j++) { const u = j / 24; out.push({ t: s.t0 + u * (s.t1 - s.t0), v: s.hold ? 0 : BZ.speedAt(curve, u) * s.avg, seg: i }); }
   });
   return out;
 }
-function drawOverview(canvas, segs, cv, unit) {
+/** Which segment (1-based) is under time t, or 0. */
+function segmentAt(segs, t) {
+  if (!segs || !segs.length) return 0;
+  const i = segs.findIndex((s) => t >= s.t0 && t <= s.t1);
+  return i < 0 ? (t < segs[0].t0 ? 1 : segs.length) : i + 1;
+}
+/** Overview geometry shared by drawing and clicking. */
+function ovGeom(W, segs) { const t0 = segs[0].t0, t1 = segs[segs.length - 1].t1; return { t0, t1, X: (t) => 8 + (t - t0) / (t1 - t0) * (W - 16), T: (x) => t0 + (x - 8) / (W - 16) * (t1 - t0) }; }
+function drawOverview(canvas, segs, cv, unit, sel) {
   const { c, W, H } = prep(canvas);
   if (!segs || segs.length < 2) return;
-  const pts = overviewSamples(segs, cv, true);
-  const t0 = segs[0].t0, t1 = segs[segs.length - 1].t1, vmax = Math.max(1e-6, ...pts.map((p) => Math.abs(p.v)));
-  const X = (t) => 8 + (t - t0) / (t1 - t0) * (W - 16), Y = (v) => H - 6 - Math.max(0, v) / vmax * (H - 22); // top 16 px: labels
-  const acc = css('--accent', '#ff6f59'), dim = css('--text-3', '#777'), line = css('--line-strong', 'rgba(255,255,255,.16)'), soft = css('--accent-soft', 'rgba(255,111,89,.15)');
+  const pts = overviewSamples(segs, cv, sel || 0);
+  const { t1, X } = ovGeom(W, segs), vmax = Math.max(1e-6, ...pts.map((p) => Math.abs(p.v)));
+  const Y = (v) => H - 6 - Math.max(0, v) / vmax * (H - 22); // top 16 px: labels
+  const acc = css('--accent', '#ff6f59'), dim = css('--text-3', '#777'), fg = css('--text-1', '#eee'), line = css('--line-strong', 'rgba(255,255,255,.16)'), soft = css('--accent-soft', 'rgba(255,111,89,.15)');
+  // selected segment band
+  if (sel) { const s = segs[sel - 1]; c.fillStyle = soft; c.fillRect(X(s.t0), 14, X(s.t1) - X(s.t0), H - 19); }
   c.strokeStyle = line; c.lineWidth = 1; c.beginPath(); c.moveTo(8, H - 5.5); c.lineTo(W - 8, H - 5.5);
   segs.forEach((s) => { c.moveTo(Math.round(X(s.t0)) + 0.5, 15); c.lineTo(Math.round(X(s.t0)) + 0.5, H - 5); });
   c.moveTo(Math.round(X(t1)) + 0.5, 15); c.lineTo(Math.round(X(t1)) + 0.5, H - 5); c.stroke();
-  c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(X(p.t), Y(p.v)) : c.moveTo(X(p.t), Y(p.v)))); c.lineTo(X(t1), Y(0)); c.lineTo(X(t0), Y(0)); c.closePath(); c.fillStyle = soft; c.fill();
-  c.strokeStyle = acc; c.lineWidth = 1.6; c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(X(p.t), Y(p.v)) : c.moveTo(X(p.t), Y(p.v)))); c.stroke();
+  segs.forEach((s, i) => {
+    const sp = pts.filter((p) => p.seg === i), on = !sel || sel === i + 1;
+    c.beginPath(); sp.forEach((p, j) => (j ? c.lineTo(X(p.t), Y(p.v)) : c.moveTo(X(p.t), Y(p.v)))); c.lineTo(X(s.t1), Y(0)); c.lineTo(X(s.t0), Y(0)); c.closePath();
+    c.fillStyle = soft; c.globalAlpha = on ? 1 : 0.35; c.fill();
+    c.strokeStyle = on ? acc : dim; c.lineWidth = on ? 1.8 : 1.2; c.beginPath(); sp.forEach((p, j) => (j ? c.lineTo(X(p.t), Y(p.v)) : c.moveTo(X(p.t), Y(p.v)))); c.stroke(); c.globalAlpha = 1;
+    if (segs.length <= 12) { c.fillStyle = on && sel ? fg : dim; c.font = '9px sans-serif'; c.textAlign = 'center'; c.fillText(String(i + 1), (X(s.t0) + X(s.t1)) / 2, H - 9); c.textAlign = 'left'; }
+  });
   c.fillStyle = dim; c.font = '9px sans-serif'; c.fillText(`peak ${fmtSpeed(vmax, unit)}`, 10, 11);
-  c.textAlign = 'right'; c.fillText(`${segs.length} segments · ${(t1 - t0).toFixed(2)} s`, W - 10, 11); c.textAlign = 'left';
+  c.textAlign = 'right'; c.fillText(sel ? `segment ${sel} of ${segs.length} · click another` : `${segs.length} segments · click one to edit it alone`, W - 10, 11); c.textAlign = 'left';
 }
 
-module.exports = { keySpeeds, fromSpeed, valueRange, speedRange, parseCurve, geom, handles, draw, widget, fmtSpeed, overviewSamples, drawOverview, zoneAt, freeDrag, ZONE_HINT, flipCurve, wheelStep };
+module.exports = { keySpeeds, fromSpeed, valueRange, speedRange, parseCurve, geom, handles, draw, widget, fmtSpeed, overviewSamples, drawOverview, segmentAt, ovGeom, zoneAt, freeDrag, ZONE_HINT, flipCurve, wheelStep };

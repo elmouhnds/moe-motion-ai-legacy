@@ -80,6 +80,8 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['easeCurve', 'A curve for each segment', 'Select 3+ keys: the strip under the overview shows every segment as its curve. Click one (or click it in the overview) and the graph edits only that segment — each segment keeps its own ease. All = one curve on every segment.'],
+  ['grid', 'Tidier panel', 'Every Home block folds from its title (remembered). The Toolbox groups tools: Motion rigs · Keyframes · Layers · Clean up. The Quick Bar fits one row, with +N for the rest; “Tools” is now Utilities.'],
   ['easeCurve', 'Value + Speed graphs together', 'Both graphs at once, both draggable — drag one and the other follows; hover shows the same moment on both. Alt + wheel fine-tunes. Presets are now just pictures of their curves; + saves without a name; Flip plays an ease backwards.'],
   ['alignCenter', 'Align, better', 'Two rows (↔ and ↕): align edges / centres, distribute centres, or Space evenly (equal gaps — or a fixed gap in px). Align to the selection, the key layer (first selected stays) or the comp; Alt-click = comp, Shift-click = key layer.'],
   ['kDelay', 'Delay = C4D: Even · Blend · Spring + Field', 'The three modes of Cinema 4D\'s Delay effector. Turn on Field (right-click Delay): a null sets how much delay each layer gets by its distance — move the null to sweep the effect, scale it to grow the field.'],

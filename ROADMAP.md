@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.19 — Per-segment curves + tidier panel ✅ (v0.14.0)
+- [x] Segment strip + overview click, `segment` param; foldable blocks; grouped Toolbox; Quick Bar Fit with +N; Utilities
+- [ ] Confirm inside AE 2025 (TEST_REPORT.md → items 122–124)
+- Next: apply several segments' curves in one undo step (edit 1, 2, 3 then Apply all); copy a segment's curve to the next; separate X / Y curves; drag to reorder pinned tools and Quick Bar buttons
+
 ## M1.18 — Graphs together, icon presets, Align+ ✅ (v0.13.0)
 - [x] Value + Speed graphs at once (synced drag + hover), Alt+wheel, Flip, icon-only presets with undo, grouped library; Align rows, Key layer, Space evenly + fixed gap; morph fix for old data-fresh elements
 - [ ] Confirm inside AE 2025 (TEST_REPORT.md → items 118–121)

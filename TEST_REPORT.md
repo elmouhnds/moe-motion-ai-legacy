@@ -1,12 +1,12 @@
 # Test Report
 
-Last run: 2026-10-28 (v0.13.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
+Last run: 2026-10-28 (v0.14.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## Summary
 
 | Layer | How it was tested | Result |
 |---|---|---|
-| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 261/261 automated tests pass (incl. `tests/kit.test.js` and the rewritten anchor / align tests in `tests/transform.test.js`) |
+| ExtendScript host ops (`extension/host/*.jsx`) | Real .jsx files executed in a Node `vm` against `tests/mock/ae-mock.js` (AE object model mock written from the Scripting Guide) | 264/264 automated tests pass (incl. `tests/kit.test.js` and the rewritten anchor / align tests in `tests/transform.test.js`) |
 | ES3 compatibility of host files | `npm run lint:jsx` — parses with acorn `ecmaVersion: 3`, rejects ES5+ runtime APIs | Pass (16 files) — since v0.6.3 also: ES3 reserved words (AST), ASCII-only sources, ES5+ APIs. **Why it matters:** the host tests run the .jsx in Node (V8), which is more permissive than ExtendScript — v0.6.2 and earlier had `final:` as an object key, legal in V8, reserved in ES3 |
 | Core (registry, schema, permissions, executor, storage, logger, bridge) | Unit + integration tests | Pass |
 | Claude integration | Mocked HTTPS responder: request shape, retries, refusal, truncation, 401, offline, budget; plan-schema size guard | Pass — **no real API call was made** (a mocked API does not compile the schema; that is how the v0.6.3 "grammar too large" error got through — now guarded by a size test, but only a real call proves acceptance) |
@@ -238,6 +238,11 @@ Record results here with AE version/build from the Diagnostics view.
 12. Disconnect network → local tools still work; AI shows "Cannot reach the Claude API".
 13. 500+ selected layers: context read time acceptable; stagger completes.
 14. Change AE brightness (Preferences › Appearance) → panel follows.
+
+### Per-segment + panel checklist (v0.14.0) — inside After Effects 2025
+122. Select 4 Position keys: the strip shows All · 1 · 2 · 3 with the curve on each. Click 2, drag the graph: Graph Editor › Speed shows the change only between keys 2 and 3 (one Undo). Click segment 3 in the overview, apply Out Expo: segments 1 and 2 keep theirs. Select other keys: back to All.
+123. Fold Ease / Anchor / Align / Pinned on Home, close and reopen AE: they stay folded; the dock panel (MOE Motion Kit) keeps its own folds.
+124. Quick Bar at ~300 / 400 / 500 px: one row, +N opens the rest inside the panel; a button in the pop-up runs and closes it; Utilities › Quick Bar › Bar cycles fit / wrap / one row.
 
 ### Graphs + Align checklist (v0.13.0) — inside After Effects 2025
 118. Home docked at ~400 px: Value and Speed graphs stacked; drag the speed graph's start up — the value graph follows live, the keys change once on release (one Undo); compare the speed with Graph Editor › Speed. Hover one graph: the other shows the same time line.

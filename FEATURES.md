@@ -1,4 +1,6 @@
-# Features (v0.13.0)
+# Features (v0.14.0)
+
+**A curve for each segment** (v0.14.0): with 3+ keys, pick a segment in the strip or the overview and the graphs edit only it; All = one curve everywhere. **Tidier panel**: foldable kit blocks, grouped Toolbox, Quick Bar that fits one row with +N, *Utilities* instead of *Tools*.
 
 **Ease graphs** (v0.13.0): Value + Speed together, both draggable and synced (hover shows the same moment on both); Alt + wheel fine-tune; Flip; presets are curve pictures only (+ saves without a name, removable with undo). **Align**: ↔ / ↕ rows, Space evenly with equal or fixed gaps, align to Selection · Key layer · Comp (Alt = comp, Shift = key).
 
