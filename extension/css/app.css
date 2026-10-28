@@ -816,6 +816,10 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .view.kit { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
 .kit-block { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-raised); padding: 8px; min-width: 0; }
 .kit-h { display: flex; align-items: center; gap: 6px; min-height: 24px; margin-bottom: 6px; }
+.kit-h > * { flex-shrink: 0; }
+.kit-h > .kit-src, .kit-h > .kit-match { flex-shrink: 1; min-width: 0; }
+.kit-ease > .kit-h { flex-wrap: wrap; row-gap: 4px; } /* the controls drop to a second line instead of overflowing */
+.kit-fold { flex-shrink: 0; }
 .kit-h .spacer, .kit-row .spacer { flex: 1; }
 .kit-t { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-2); }
 .kit-src { min-width: 0; padding: 0; border: 0; background: none; font: inherit; font-size: var(--fs-sm); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-align: left; }

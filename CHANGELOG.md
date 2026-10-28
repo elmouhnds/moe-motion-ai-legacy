@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.14.1] — 2026-10-28 — Layout fixes from the button audit
+### Fixed
+- Home at ~340 px: the Ease header (now with the fold arrow) pushed the Auto button 6 px past the panel edge. The source name shrinks first and the In / Both / Out · mirror · Auto controls drop to a second line when there is no room.
+- Quick Bar **+N** pop-up opened on top of its own button in the main panel (it was positioned for the web preview's frame). It now measures the box a fixed pop-up is placed against, so it opens under the button in After Effects and in the preview.
+### Tests
+- Button audit (Home 321 + Kit 127 interactions): 0 JS errors, 0 unnamed controls, **0 overflow at 340 / 420 / 600 / 900 px**. Flagged and expected: *Open Folder* (unsaved project), *Grid* / *Ring* (layers already carry your own expressions), *Refresh selection* (nothing changed). **Preview + mock host, not After Effects.**
+
 ## [0.14.0] — 2026-10-28 — A curve for each segment, tidier panel
 Requested by the product owner: start with a different curve per segment, and reorganise tools and windows with a better layout.
 ### Added

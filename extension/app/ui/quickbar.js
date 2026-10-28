@@ -74,8 +74,18 @@ function strip(app) {
     onwheel: (e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) { el.scrollLeft += e.deltaY; e.preventDefault(); } } },
     items,
     rest.length ? h('button', { class: 'qb-btn qb-rest', title: `${rest.length} more: ${rest.map((a) => a.label).join(', ')}`, 'aria-label': `${rest.length} more quick actions`, 'aria-expanded': String(!!st.qbarMore),
-      onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(), box = (e.currentTarget.closest('.app') || document.body).getBoundingClientRect(); app.state.set({ qbarMore: st.qbarMore ? null : { top: Math.round(r.bottom - box.top + 4), right: Math.max(4, Math.round(box.right - r.right - 30)), maxW: Math.round(box.width - 16), ids: rest.map((a) => a.id) } }); } }, `+${rest.length}`) : null,
+      onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(), box = fixedBox(e.currentTarget.closest('.app') || document.body); app.state.set({ qbarMore: st.qbarMore ? null : { top: Math.round(r.bottom - box.top + 4), right: Math.max(4, Math.round(box.right - r.right - 30)), maxW: Math.round(box.width - 16), ids: rest.map((a) => a.id) } }); } }, `+${rest.length}`) : null,
     h('button', { class: 'qb-btn more', title: 'All quick actions', 'aria-label': 'All quick actions', onclick: () => app.go('quick') }, icon('bolt')));
+}
+/** The box a position:fixed element inside `host` is placed against: the window in AE, but a
+ *  transformed frame in the web preview. Measured with a throw-away probe, so both are right. */
+function fixedBox(host) {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;visibility:hidden;pointer-events:none';
+  host.appendChild(probe);
+  const b = probe.getBoundingClientRect();
+  probe.remove();
+  return b;
 }
 const ROWS = ['fit', 'wrap', 'one'];
 const rowsMode = (app) => { const m = app.services.store.get('quick-bar-rows', 'fit'); return ROWS.includes(m) ? m : 'fit'; };

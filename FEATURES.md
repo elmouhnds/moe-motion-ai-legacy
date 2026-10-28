@@ -1,4 +1,4 @@
-# Features (v0.14.0)
+# Features (v0.14.1)
 
 **A curve for each segment** (v0.14.0): with 3+ keys, pick a segment in the strip or the overview and the graphs edit only it; All = one curve everywhere. **Tidier panel**: foldable kit blocks, grouped Toolbox, Quick Bar that fits one row with +N, *Utilities* instead of *Tools*.
 
