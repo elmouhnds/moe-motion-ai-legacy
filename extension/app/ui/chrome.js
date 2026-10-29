@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['star', 'MOE ★ — the recommended layout', 'Settings › Panel layout › MOE ★: menus by object (the one for your selection lights up, nothing moves), your Quick Bar in one row, and four task tabs — Animate · Design · Layout · Finish. More room for the graphs in a docked panel.'],
   ['grid', 'Try three panel layouts', 'Settings › Panel layout: Hub (screens + a Home that never changes), Command Bar (menus by object — the one for your selection lights up — plus your own bars) or Workspace (a context bar for the selection + four task tabs). Every tool keeps one place in each; Current is the v0.15 panel.'],
   ['spark', 'Home follows your selection', 'The top card shows what you selected and only the tools that fit it: keys → the ease graphs, keys and loops; a layer → animate in / out, rigs, anchor and align; text → text in; shapes → draw-on and arrange; nothing → create. The rest waits under More, folded — and stays the way you leave it for each kind of selection. Home › Layout: fixed brings the old order back.'],
   ['easeCurve', 'A curve for each segment', 'Select 3+ keys: the strip under the overview shows every segment as its curve. Click one (or click it in the overview) and the graph edits only that segment — each segment keeps its own ease. All = one curve on every segment.'],

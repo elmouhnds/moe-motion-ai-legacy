@@ -42,10 +42,25 @@ the panel is reachable in every layout (`tests/layouts.test.js`).
   section inside the tab; the crumb goes back.
 - **Your bar** at the bottom: pinned tools, F4 (repeat last), ★ to edit pins.
 
+## ★ MOE — the recommendation (v0.17)
+Asked "show me your proposal", this is the one to make the default. It keeps the strongest part of
+each proposal and drops what costs height or moves:
+
+| Row | Taken from | Why |
+|---|---|---|
+| **Menus by object** — Keys · Layer · Text · Shape · Comp · Design · Layout · Finish · AI, the one for the selection lit | Command Bar (MoBar) | Context **without moving anything**: one orange word instead of a strip that changes. Every quick action is one click + one click away, grouped by what it acts on. |
+| **Your bar** — the Quick Bar, one fitted row, +N for the rest | Hub (KBar / Motion Mini) | One user-owned bar beats three: the references cap visible bars, and the panel is docked. |
+| **Four task tabs** — Animate · Design · Layout · Finish, cards + crumb | Workspace | Fixed order = positions you learn (Findlater & McGrenere); libraries open in place. |
+
+Dropped on purpose: the Hub's *For this* strip and the Workspace's context bar (the lit menu does
+their job — two context areas would repeat the same actions), the Command Bar's extra bars and the
+Workspace's bottom bar (height). F4 sits next to the title after a run; Ctrl K, the pie and F4 work
+everywhere. Three rows above the content at any width from 340 px.
+
 ## Where to switch
-- **Settings › Appearance › Panel layout**: Current · Hub · Command Bar · Workspace (`ui.layout`).
+- **Settings › Appearance › Panel layout**: Current · Hub · Command Bar · Workspace · **MOE ★** (`ui.layout`).
 - The web preview has a **Layout** switch and links `#p1` (Hub), `#p2` (Command Bar),
-  `#p3` (Workspace), `#current`.
+  `#p3` (Workspace), `#moe` (the recommendation — the preview opens on it), `#current`.
 
 ## Fitting a docked panel (340–640 px)
 Crowded tab rows keep the icon only (or only the open tab's icon); menus share one row; context

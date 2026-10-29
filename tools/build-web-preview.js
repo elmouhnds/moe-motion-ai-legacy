@@ -93,7 +93,7 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
     <div class="pv-ctl"><label for="pv-w">Panel</label><div class="pv-seg" id="pv-w" role="group" aria-label="Panel width">
       <button data-w="280" data-mode="kit" title="The Motion Kit as its own slim panel (Window › Extensions › MOE Motion Kit)">Kit panel</button><button data-w="340">Narrow</button><button data-w="420">Docked</button><button data-w="640">Wide</button><button data-w="920">Full</button></div></div>
     <div class="pv-ctl pv-layout"><label for="pv-layout">Layout</label><div class="pv-seg" id="pv-layout" role="group" aria-label="Panel layout (the three proposals)">
-      <button data-layout="hub" title="Proposal 1 — fixed Home + screens (Motion 4 style)">1 · Hub</button><button data-layout="bar" title="Proposal 2 — menus by object + your bars (MoBar / KBar style)">2 · Command Bar</button><button data-layout="workspace" title="Proposal 3 — context bar + task tabs (AE Properties style)">3 · Workspace</button><button data-layout="studio" title="The current v0.15 layout (sidebar + workspaces)">Current</button></div></div>
+      <button data-layout="hub" title="Proposal 1 — fixed Home + screens (Motion 4 style)">1 · Hub</button><button data-layout="bar" title="Proposal 2 — menus by object + your bars (MoBar / KBar style)">2 · Command Bar</button><button data-layout="workspace" title="Proposal 3 — context bar + task tabs (AE Properties style)">3 · Workspace</button><button data-layout="moe" title="My recommendation — menus by object + your bar + four task tabs">★ MOE</button><button data-layout="studio" title="The current v0.15 layout (sidebar + workspaces)">Current</button></div></div>
     <div class="pv-ctl"><label for="pv-scene">Comp</label><div class="pv-seg" id="pv-scene" role="group" aria-label="Sample composition">
       <button data-scene="title">Title</button><button data-scene="layout">9 cards</button><button data-scene="studio">Text</button></div></div>
     <div class="pv-ctl"><label for="pv-theme">Theme</label><div class="pv-seg" id="pv-theme" role="group" aria-label="Panel theme">
@@ -115,6 +115,11 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
         <li>The top <b>For this</b> bar <b>copies</b> the eight actions for what you selected (the same eight as the pie, same order) — change the <i>Comp</i> above and watch only this bar change. × hides it.</li>
         <li>Four <b>task tabs</b>, each with a fixed order: <b>Animate</b> (ease, anchor + align, rigs, keyframes, then Motion presets · Text · Expressions), <b>Design</b>, <b>Layout</b>, <b>Finish</b>. A card opens its section in place; the crumb takes you back.</li>
         <li><b>Your tools</b> stay at the bottom with <kbd>F4</kbd> (repeat) and ★ to choose them.</li></ol></div>
+      <div class="pv-lguide" data-for="moe"><h2>★ MOE — my recommendation</h2><ol>
+        <li>Three rows, each with one job. <b>Menus by object</b> (from proposal 2): the one for your selection lights up orange — switch the <i>Comp</i> above and watch it move from Keys to Shape to Text. Nothing else moves.</li>
+        <li><b>Your bar</b> (from proposal 1): the Quick Bar, one row that fits the panel; <b>+N</b> shows the rest, right-click edits it.</li>
+        <li><b>Four task tabs</b> (from proposal 3): <b>Animate</b> opens on ease → anchor + align → rigs → keyframes → presets; <b>Design</b>, <b>Layout</b>, <b>Finish</b> are cards that open in place with a crumb back.</li>
+        <li>Why: one context area instead of two, nothing that moves under your hand, and the most height left for the graphs in a docked panel. <kbd>Ctrl</kbd> <kbd>K</kbd>, the pie (<kbd>Q</kbd>) and <kbd>F4</kbd> work everywhere.</li></ol></div>
       <div class="pv-lguide" data-for="studio">
       <h2>Current layout (v0.15)</h2>
       <ol>
@@ -168,8 +173,8 @@ ${texts}
 
   /* ---------- options (kept for this tab only) ---------- */
   var KEY = 'moe-preview-options';
-  var opts = { w: 420, scene: 'title', theme: 'dark', mode: 'main', layout: 'hub' };
-  var HASH = { p1: 'hub', p2: 'bar', p3: 'workspace', current: 'studio' };
+  var opts = { w: 420, scene: 'title', theme: 'dark', mode: 'main', layout: 'moe' };
+  var HASH = { p1: 'hub', p2: 'bar', p3: 'workspace', moe: 'moe', current: 'studio' };
   try { var saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); if (saved) for (var k in saved) opts[k] = saved[k]; } catch (e) { /* storage blocked: defaults */ }
   function save() { try { sessionStorage.setItem(KEY, JSON.stringify(opts)); } catch (e) { /* ignore */ } }
   var h0 = (location.hash || '').slice(1);
@@ -254,7 +259,7 @@ ${texts}
     window.__app.services.settings.update({ ui: { layout: l } });
     window.__app.state.set({ layMenu: null });
     window.__app.go('home'); window.__app.render();
-    try { history.replaceState(null, '', '#' + ({ hub: 'p1', bar: 'p2', workspace: 'p3', studio: 'current' })[l]); } catch (e) { /* sandboxed */ }
+    try { history.replaceState(null, '', '#' + ({ hub: 'p1', bar: 'p2', workspace: 'p3', moe: 'moe', studio: 'current' })[l]); } catch (e) { /* sandboxed */ }
   }
   document.getElementById('pv-layout').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setLayout(b.dataset.layout); });
   document.getElementById('pv-scene').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; opts.scene = b.dataset.scene; save(); location.reload(); });

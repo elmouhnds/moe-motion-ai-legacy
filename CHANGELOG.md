@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.17.0] — 2026-10-29 — ★ MOE: the recommended layout
+The product owner asked to see the recommendation. It is a fourth layout built from the best part of each proposal (reasons in `docs/features/UI_LAYOUTS.md`).
+### Added
+- **Settings › Panel layout › MOE ★**: three rows above the content — **menus by object** (the one for your selection lights up; nothing moves), **your Quick Bar** (one fitted row, +N), **four task tabs** (Animate · Design · Layout · Finish, cards that open in place with a crumb back). No second context strip, no bottom bar; **F4** appears next to the title after a run.
+- Web preview opens on MOE (`#moe`) with its own guide; the three proposals and Current stay one click away.
+### Tests
+- `tests/layouts.test.js` covers the new layout id. Preview (Playwright): MOE × 3 demo comps × 340 / 420 / 640 px — no overflow, no button outside the panel; every menu, tab, card and crumb clicked (82 clicks), 0 JS errors. Button audit on Home in MOE — see TEST_REPORT. **Preview + mock host, not After Effects.**
+
 ## [0.16.0] — 2026-10-28 — Three panel layouts you can try
 After the study of the big AE tools (Motion 4, MoBar, KBar, Motion Tools Pro, Duik, AE's Properties panel / Quick Apply) the product owner asked for a live preview of each of the three proposals. They are real layouts of the same panel, not mock-ups. Design and rules: `docs/features/UI_LAYOUTS.md`.
 ### Added

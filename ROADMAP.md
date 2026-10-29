@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.22 — ★ MOE layout (recommended) ✅ (v0.17.0)
+- [x] Menus by object + one Quick Bar + four task tabs (`layouts.moe`), Settings › Panel layout › MOE ★, preview `#moe`
+- [ ] Owner approves → make MOE the default for new installs and retire the other layouts (keep Current one release as a fallback)
+- [ ] Confirm inside AE 2025 (TEST_REPORT.md → item 131)
+
 ## M1.21 — Three panel layouts ✅ (v0.16.0)
 - [x] Hub · Command Bar · Workspace as real layouts of the same panel (`app/ui/layouts.js`), Settings › Panel layout, preview links #p1 #p2 #p3
 - [ ] Owner picks one (or a mix) after trying them in AE 2025 (TEST_REPORT.md → items 128–130)

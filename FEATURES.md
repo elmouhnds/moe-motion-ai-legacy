@@ -1,4 +1,6 @@
-# Features (v0.16.0)
+# Features (v0.17.0)
+
+**★ MOE layout** (v0.17.0, recommended): menus by object (lit for the selection) + your Quick Bar + four stable task tabs — Settings › Panel layout › MOE ★.
 
 **Panel layouts** (v0.16.0): Settings › Panel layout — Current · **Hub** (screens + fixed Home + *For this* strip) · **Command Bar** (menus by object, highlighted for the selection + your bars) · **Workspace** (context bar + four stable task tabs + your bar). Every tool keeps one place; context areas only copy (docs/features/UI_LAYOUTS.md).
 

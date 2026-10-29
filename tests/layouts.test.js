@@ -13,9 +13,10 @@ const studio = require('../extension/app/ui/studio/sections');
 const SECTIONS = [...new Set(studio.WORKSPACES.flatMap((w) => w.items))];
 
 test('layouts: the three proposals + current are listed; unknown values fall back to the current layout', () => {
-  assert.deepEqual(L.LAYOUTS.map((l) => l.id), ['studio', 'hub', 'bar', 'workspace']);
+  assert.deepEqual(L.LAYOUTS.map((l) => l.id), ['studio', 'hub', 'bar', 'workspace', 'moe']);
   const app = (layout) => ({ services: { settings: { get: () => ({ ui: { layout } }) } } });
   assert.equal(L.layoutOf(app('bar')), 'bar');
+  assert.equal(L.layoutOf(app('moe')), 'moe');
   assert.equal(L.layoutOf(app('nope')), 'studio');
   assert.equal(L.layoutOf(app(undefined)), 'studio');
 });

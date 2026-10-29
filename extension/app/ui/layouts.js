@@ -27,7 +27,8 @@ const LAYOUTS = [
   { id: 'studio', label: 'Studio', hint: 'Sidebar + workspaces (v0.15)' },
   { id: 'hub', label: 'Hub', hint: 'Fixed Home + screens (Motion 4 style)' },
   { id: 'bar', label: 'Command Bar', hint: 'Menus by object + your bars (MoBar / KBar style)' },
-  { id: 'workspace', label: 'Workspace', hint: 'Context bar + task tabs (AE Properties style)' }
+  { id: 'workspace', label: 'Workspace', hint: 'Context bar + task tabs (AE Properties style)' },
+  { id: 'moe', label: 'MOE (recommended)', hint: 'Menus by object + your bar + four task tabs' }
 ];
 const layoutOf = (app) => { const l = app.services.settings.get().ui.layout; return LAYOUTS.some((x) => x.id === l) ? l : 'studio'; };
 
@@ -154,13 +155,10 @@ const DEFAULT_BARS = [
   ['Rig', ['k_excite', 'k_wiggle', 'k_delay', 'k_stare', 'k_swing', 'k_spin', 'parentNull', 'k_trash']],
   ['Layer', ['anchorC', 'anchorB', 'alignH', 'alignV', 'distH', 'flipH', 'precompose', 'separate']]
 ];
-const PANELS = [{ id: 'bar-ease', label: 'Ease', icon: 'easeCurve' }, { id: 'kit', label: 'Toolbox', icon: 'kExcite' }];
-function bar(app, s, body) {
-  const kit = require('./views/kit');
+/** One row of menus by object; the menu that fits the selection is highlighted (nothing moves). */
+function menusRow(app, s) {
   const qb = require('./quickbar');
-  let view = s.view === 'home' ? 'bar-ease' : s.view;
   const kind = A.profile(s.ctx);
-  const bars = app.services.store.get('cmd-bars', DEFAULT_BARS);
   const menuBtn = (m) => h('button', {
     class: `lay-menu ${MENU_FOR[kind] === m.id ? 'hint' : ''}`, 'data-key': `m-${m.id}`, 'aria-expanded': String(s.layMenu && s.layMenu.id === m.id), 'aria-haspopup': 'true',
     title: MENU_FOR[kind] === m.id ? `${m.id} — fits what you selected` : m.id,
@@ -172,6 +170,14 @@ function bar(app, s, body) {
       app.state.set({ layMenu: { id: m.id, top: Math.round(r.bottom - box.top + 2), left: left <= box.width / 2 ? Math.max(4, left) : null, right: left > box.width / 2 ? Math.max(4, right) : null, maxW: Math.round(box.width - 8) } });
     }
   }, h('span', {}, m.id), icon('chev', 'xs'));
+  return h('div', { class: 'lay-menus', role: 'menubar', 'aria-label': 'Tools by object', 'data-key': 'menus' }, MENUS.map(menuBtn));
+}
+const PANELS = [{ id: 'bar-ease', label: 'Ease', icon: 'easeCurve' }, { id: 'kit', label: 'Toolbox', icon: 'kExcite' }];
+function bar(app, s, body) {
+  const kit = require('./views/kit');
+  const qb = require('./quickbar');
+  let view = s.view === 'home' ? 'bar-ease' : s.view;
+  const bars = app.services.store.get('cmd-bars', DEFAULT_BARS);
   const panelTabs = PANELS.concat(PANELS.some((p) => p.id === view) || UTIL.includes(view) ? [] : [{ id: view, label: (studio.byId(view) || { label: view }).label, icon: (studio.byId(view) || {}).icon || 'tools' }]);
   let content;
   if (view === 'bar-ease') content = h('div', { class: 'view kit lay-page' }, kit.easeBlock(app), h('div', { class: 'kit-pair' }, kit.anchorBlock(app), kit.alignBlock(app)));
@@ -179,7 +185,7 @@ function bar(app, s, body) {
   else content = body(view);
   return {
     top: [
-      h('div', { class: 'lay-menus', role: 'menubar', 'aria-label': 'Tools by object', 'data-key': 'menus' }, MENUS.map(menuBtn)),
+      menusRow(app, s),
       h('div', { class: 'lay-bars', 'data-key': 'bars', role: 'toolbar', 'aria-label': 'Your bars' },
         bars.slice(0, 3).map(([name, ids]) => h('div', { class: 'lay-barrow', 'data-key': `bar-${name}` }, h('span', { class: 'lay-bar-n' }, name), h('div', { class: 'lay-icons' }, ids.map(qb.byId).filter(Boolean).map((a) => qb.button(app, a))))),
         h('div', { class: 'lay-barrow lay-bar-edit' }, h('span', { class: 'lay-bar-n' }), h('button', { class: 'btn ghost sm', title: 'Change the buttons on your bars (Quick Bar editor)', onclick: () => app.go('quick') }, icon('edit', 'xs'), 'Edit bars'), h('span', { class: 'kit-hint' }, 'right-click a button: options'))),
@@ -208,14 +214,14 @@ const WS = [
   { id: 'wsp-layout', label: 'Layout', icon: 'grid', owns: ['layout', 'zoom', 'deliver'] },
   { id: 'wsp-finish', label: 'Finish', icon: 'layers', owns: ['compositing', 'select', 'quick', 'tools'] }
 ];
-function workspace(app, s, body) {
+function workspace(app, s, body, opt = {}) {
   const kit = require('./views/kit');
   const qb = require('./quickbar');
   let view = s.view === 'home' ? 'wsp-animate' : s.view;
   const tab = WS.find((t) => t.id === view || t.owns.includes(view)) || null;
   const sub = tab && tab.id !== view ? view : null;
   const n = counts(app);
-  const hidden = app.services.store.get('ctx-bar-hidden', false);
+  const hidden = opt.contextBar === false || app.services.store.get('ctx-bar-hidden', false);
   const { kind, items } = contextActions(app, 8);
   let content;
   if (!tab) content = body(view);
@@ -243,9 +249,9 @@ function workspace(app, s, body) {
       tabRow('lay-screens', WS, (t) => t === tab, (t) => (t === tab && sub ? app.go(t.id) : goScreen(app, { id: t.id })), 'Workspaces')
     ],
     title: tab ? tab.label : (studio.byId(view) || { label: view.charAt(0).toUpperCase() + view.slice(1) }).label,
-    titleExtra: hidden ? h('button', { class: 'btn ghost sm', title: 'Show the context bar', onclick: () => { app.services.store.set('ctx-bar-hidden', false); app.render(); } }, 'For this') : null,
+    titleExtra: hidden && opt.contextBar !== false ? h('button', { class: 'btn ghost sm', title: 'Show the context bar', onclick: () => { app.services.store.set('ctx-bar-hidden', false); app.render(); } }, 'For this') : null,
     content,
-    bottom: h('div', { class: 'lay-foot', 'data-key': 'foot', role: 'toolbar', 'aria-label': 'Your tools' },
+    bottom: opt.foot === false ? null : h('div', { class: 'lay-foot', 'data-key': 'foot', role: 'toolbar', 'aria-label': 'Your tools' },
       h('div', { class: 'lay-icons' }, pins.map((id) => { const a = qb.byId(id); return a ? qb.button(app, a) : null; })),
       h('span', { class: 'spacer' }),
       s.last ? h('button', { class: 'btn ghost sm', title: `Repeat “${s.last.label}” (F4)`, disabled: !!s.running, onclick: () => app.repeatLast() }, icon('repeat', 'xs'), 'F4') : null,
@@ -253,9 +259,23 @@ function workspace(app, s, body) {
   };
 }
 
+/* ============ Recommended — MOE: the best part of each proposal ============
+ * Command Bar's menus by object (the one for the selection lights up — context without moving
+ * anything), ONE bar you own (the Quick Bar, fitted to the panel width, like KBar), and
+ * Workspace's four task tabs with a fixed order and a crumb. No second context area and no
+ * bottom bar: three rows above the content, so a docked panel keeps its height for the tools. */
+function moe(app, s, body) {
+  const qb = require('./quickbar');
+  const p = workspace(app, s, body, { contextBar: false, foot: false });
+  p.top = [menusRow(app, s), qb.strip(app)].concat(p.top);
+  p.titleExtra = s.last ? h('button', { class: 'btn ghost sm', title: `Repeat “${s.last.label}” (F4)`, disabled: !!s.running, onclick: () => app.repeatLast() }, icon('repeat', 'xs'), 'F4') : null;
+  p.overlay = s.layMenu ? menuPopover(app, s.layMenu) : null;
+  return p;
+}
+
 /** Build a layout's parts: { top[], title, titleExtra, content, bottom, overlay }. */
 function build(app, s, layout, body) {
-  const parts = (layout === 'hub' ? hub : layout === 'bar' ? bar : workspace)(app, s, body);
+  const parts = ({ hub, bar, workspace, moe }[layout] || workspace)(app, s, body);
   parts.header = header(app, parts.title, parts.titleExtra);
   return parts;
 }

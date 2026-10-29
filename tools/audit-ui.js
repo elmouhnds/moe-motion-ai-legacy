@@ -35,6 +35,7 @@ const VARIANTS = {
   hub: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'hub' } }); a.render(); } },
   bar: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'bar' } }); a.render(); } },
   workspace: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'workspace' } }); a.render(); } },
+  moe: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'moe' } }); a.render(); } },
   pins: { setup: async () => { const f = window.__app.services.favorites; ['motion.smartEase', 'quick.animate', 'grid.build'].forEach((id) => f.toggle(id)); window.__app.render(); } }
 };
 const split = (v) => { const [view, variant] = v.split('@'); return { view, variant: VARIANTS[variant] || {} }; };
