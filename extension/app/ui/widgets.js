@@ -86,6 +86,7 @@ function gridPreview(args, setArgs, { h, ctx }) {
   const maxH = Math.min(Math.max(...items.map((l) => l.height || 160), 160), ctx.comp.height / 3);
   const auto = L.autoParams({ n, maxW: Math.min(maxW, 220), maxH: Math.min(maxH, 220), compW: ctx.comp.width, compH: ctx.comp.height });
   const p = GT.resolveParams(Object.assign({}, args), auto);
+  const morphTo = p.morphTo;
   const canvas = h('canvas', { class: 'grid-canvas', 'aria-label': 'Grid preview' });
   const accent = css('--accent', '#ff6f59');
   const dim = css('--text-3', '#777');
@@ -97,32 +98,39 @@ function gridPreview(args, setArgs, { h, ctx }) {
     c.setLineDash([]);
     const cx = f.ox + (ctx.comp.width / 2) * f.k, cy = f.oy + (ctx.comp.height / 2) * f.k;
     let path = null;
-    if (args.mode === 'path') {
+    if (args.mode === 'path' || morphTo === 'path') {
       const pts = (u) => [ctx.comp.width * (0.1 + 0.8 * u), ctx.comp.height * (0.5 - 0.3 * Math.sin(u * Math.PI))];
       path = { point: (u) => { const q = pts(u); return [q[0] - ctx.comp.width / 2, q[1] - ctx.comp.height / 2]; }, tangent: (u) => { const a = pts(u), b = pts(Math.min(1, u + 0.01)); return [b[0] - a[0], b[1] - a[1]]; } };
       c.strokeStyle = dim; c.beginPath();
       for (let u = 0; u <= 1.001; u += 0.02) { const q = path.point(u); u === 0 ? c.moveTo(cx + q[0] * f.k, cy + q[1] * f.k) : c.lineTo(cx + q[0] * f.k, cy + q[1] * f.k); }
       c.stroke();
     }
-    const cycle = (args.buildDuration || 1.5) + 1.2;
-    const build = args.animateIn && now !== null ? Math.min(100, Math.max(0, (((now / 1000) % cycle) - 0.3) / (args.buildDuration || 1.5) * 100)) : 100;
-    const pp = Object.assign({}, p, { build, path });
-    const pts = L.place(pp, n).map((it) => Object.assign(it, { m: L.modifiers(pp, it, n) }));
-    if (args.mode === 'sphere') pts.sort((a, b) => a.z - b.z);
+    // timeline of the preview: build-in (if any), then the morph there and back (if any)
+    const bd = args.animateIn ? (args.buildDuration || 1.5) : 0, md = morphTo ? (args.morphDuration || 1.5) : 0;
+    const cycle = 0.3 + bd + (morphTo ? 2 * md + 1.2 : 0.9);
+    const tt = now === null ? cycle : (now / 1000) % cycle;
+    const build = args.animateIn ? Math.min(100, Math.max(0, (tt - 0.3) / bd * 100)) : 100;
+    const mt = tt - 0.3 - bd - 0.3;
+    const morph = !morphTo || now === null ? 0 : Math.min(100, Math.max(0, mt < md + 0.3 ? mt / md * 100 : (2 * md + 0.3 - mt) / md * 100));
+    const pp = Object.assign({}, p, { build, path, morph });
+    const pts = L.placeMorph(pp, n).map((it) => Object.assign(it, { m: L.modifiers(pp, it, n) }));
+    const is3D = args.mode === 'sphere' || morphTo === 'sphere';
+    if (is3D) pts.sort((a, b) => a.z - b.z);
     for (const it of pts) {
-      const depth = args.mode === 'sphere' ? (it.z / Math.max(p.radius, 1) + 1) / 2 : 1;
-      const s = it.m.scale * (args.mode === 'sphere' ? 0.55 + 0.45 * (1 - depth) : 1);
+      const depth = is3D ? (it.z / Math.max(p.radius, 1) + 1) / 2 : 1;
+      const s = it.m.scale * (is3D ? 0.55 + 0.45 * (1 - depth) : 1);
       const w = auto.spacingX / 1.25 * f.k * s, hh = auto.spacingY / 1.25 * f.k * s;
       const x = cx + (it.x + it.m.dx) * f.k, y = cy + (it.y + it.m.dy) * f.k;
       c.save(); c.translate(x, y); c.rotate((it.m.rot * Math.PI) / 180);
-      c.globalAlpha = Math.max(0, Math.min(1, it.m.opacity)) * (args.mode === 'sphere' ? 0.35 + 0.65 * (1 - depth) : 1);
+      c.globalAlpha = Math.max(0, Math.min(1, it.m.opacity)) * (is3D ? 0.35 + 0.65 * (1 - depth) : 1);
       c.fillStyle = it.i === 0 ? accent : css('--text-2', '#bbb');
       c.beginPath(); c.rect(-w / 2, -hh / 2, w, hh); c.fill();
       c.restore();
     }
     c.globalAlpha = 1; c.fillStyle = accent; c.beginPath(); c.arc(cx, cy, 2.5, 0, Math.PI * 2); c.fill();
   });
-  return h('div', { class: 'field stack' }, h('label', {}, `Preview · ${n} item${n > 1 ? 's' : ''}${items.length < 2 ? ' (select layers)' : ''}`), canvas);
+  const target = morphTo ? L.MODES.find((m) => m.id === morphTo) : null;
+  return h('div', { class: 'field stack' }, h('label', {}, `Preview · ${n} item${n > 1 ? 's' : ''}${target ? ` · morphs to ${target.label}` : ''}${items.length < 2 ? ' (select layers)' : ''}`), canvas);
 }
 
 /* ---------- Layout guides preview ---------- */

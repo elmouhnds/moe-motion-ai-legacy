@@ -1084,3 +1084,31 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .bgm-chip[aria-checked="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
 .bgm-chip:disabled { opacity: .45; cursor: default; }
 .bgm-hint { color: var(--text-3); font-weight: 400; font-size: 11px; text-transform: none; letter-spacing: 0; }
+/* v0.19 "Your grid" panel (app/ui/gridPanel.js) */
+.gp { display: flex; flex-direction: column; gap: 8px; margin: 0 12px 10px; padding: 10px 12px; border: 1px solid var(--accent); border-radius: var(--r-lg); background: linear-gradient(var(--accent-soft), transparent 70%); }
+.gp-h { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.gp-h b { white-space: nowrap; }
+.gp-sub { color: var(--text-3); font-size: 11px; }
+.gp-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.gp-row.top { align-items: flex-start; }
+.gp-l { flex: none; width: 62px; font-size: 11px; color: var(--text-3); }
+.gp-chips { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.gp-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; }
+.gp-row .slider-row { flex: 1; min-width: 0; }
+.gp-val { width: 38px; text-align: right; font-size: 11px; color: var(--text-2); }
+.gp-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; max-height: 220px; overflow: auto; }
+.gp-item { display: flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 4px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); cursor: grab; }
+.gp-item:hover { border-color: var(--line-strong); }
+.gp-n { width: 18px; text-align: right; font-size: 10px; color: var(--text-3); }
+.gp-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-sm); }
+.gp-grip { opacity: .5; }
+.svg-i.gp-up { transform: rotate(-90deg); }
+.svg-i.gp-down { transform: rotate(90deg); }
+.gp-tweak { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.gp-tweak label { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-2); }
+.gp-tweak .num { width: 58px; }
+.gp-tip { margin-top: -2px; }
+.app.kit-narrow .gp-l, .app.kit-tiny .gp-l { width: 100%; }
+.app.kit-narrow .gp-row, .app.kit-tiny .gp-row { flex-wrap: wrap; row-gap: 4px; }
+.gp .kit-hint { white-space: normal; min-width: 0; }
+.app.kit-narrow .gp-h .kit-hint, .app.kit-tiny .gp-h .kit-hint { display: none; }

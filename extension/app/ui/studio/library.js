@@ -205,6 +205,8 @@ function render(app, section) {
   const filters = section.filters.concat(['Mine']);
   return h('div', { class: 'view studio-sec' }, tabs,
     h('div', { class: 'st-chips' }, filters.map((f) => h('button', { class: `chip-btn ${f === 'Mine' ? 'mine' : ''}`, 'aria-pressed': String(st.filter === f), onclick: () => pickFilter(app, section, all, f) }, f === 'Mine' ? [icon('presets', 'xs'), ` Mine${mine.length ? ` ${mine.length}` : ''}`] : f))),
+    // v0.19: a selected MOE Grid shows its live controls above the library (Layout section)
+    section.id === 'layout' ? require('../gridPanel').render(app) : null,
     h('div', { class: `st-body ${s.studioWide ? 'wide' : ''}` }, h('div', { class: 'st-main' }, grid, h('div', { class: 'st-hint' }, 'Click to inspect · ▶ applies now · F4 repeats the last change · save your own settings with ', icon('presets', 'xs'))), inspector),
     actionBar(app, section, tile, tool));
 }

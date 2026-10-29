@@ -35,6 +35,8 @@ const VARIANTS = {
   hub: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'hub' } }); a.render(); } },
   bar: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'bar' } }); a.render(); } },
   workspace: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'workspace' } }); a.render(); } },
+  // v0.19: a built MOE Grid with its null selected — audits the "Your grid" panel
+  gridsel: { setup: async () => { const a = window.__app; const d = require('/extension/core/schema.js').defaults(a.services.registry.get('grid.build').params); await a.services.executor.run('grid.build', Object.assign(d, { mode: 'rect', columns: 3, morphTo: 'radial' })); const c = window.app.project.activeItem; for (let i = 1; i <= c.numLayers; i++) c.layer(i).selected = /^MOE Grid/.test(c.layer(i).name); await a.refreshContext(true); a.render(); } },
   moe: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'moe' } }); a.render(); } },
   pins: { setup: async () => { const f = window.__app.services.favorites; ['motion.smartEase', 'quick.animate', 'grid.build'].forEach((id) => f.toggle(id)); window.__app.render(); } }
 };

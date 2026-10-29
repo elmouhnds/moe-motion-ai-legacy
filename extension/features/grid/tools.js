@@ -1,19 +1,25 @@
 'use strict';
 /**
- * Grid Builder (inspired by aescripts Grid Builder, extended):
+ * Grid Builder (inspired by aescripts Grid Builder, extended — study: docs/features/GRID_BUILDER_2.md):
  *   grid.build        arrange selected layers on a live grid driven by one "MOE Grid N" null
  *                     (Grid, Radial, Spiral, Sunflower, Path, Sphere) with twist, scale step,
  *                     random jitter, Build animation (stagger/order/style) and an Effector.
+ *                     v0.19: Layout switchable in Effect Controls, Morph To + Morph, Orient,
+ *                     Effector Rotate / Fade / attract, items keep a hand-made nudge.
  *   grid.update       change a grid's controls from the panel (live).
+ *   grid.items        v0.19: reorder a grid's items (slot order, without touching the layer stack)
+ *                     or give selected items their own Twist / Delay.
  *   grid.remove       remove (layers return to their own positions) or freeze (bake the layout).
  *   grid.guides       design layout guides: columns, rows, gutters, margins (AE guides you can snap to).
  *   grid.placeInCells drop selected layers into the cells of that layout (keeps their keyframes).
  */
 const L = require('./layouts');
 const X = require('./expressions');
+const S = require('../compositing/shared');
 
 const GRID_NAME = /^MOE Grid \d+$/;
 const MODE_OPTIONS = L.MODES.map((m) => ({ value: m.id, label: m.label }));
+const MORPH_OPTIONS = [{ value: 'none', label: 'No morph' }].concat(MODE_OPTIONS);
 const enumOf = (list) => list.map((v, i) => ({ value: String(i + 1), label: v }));
 const NO_LAYOUT = new Set(['camera', 'light']);
 
@@ -62,12 +68,21 @@ function resolveParams(args, auto) {
   Object.assign(p, {
     columns: args.columns || auto.columns, spacingX: args.spacingX || auto.spacingX, spacingY: args.spacingY || auto.spacingY,
     order: Number(args.order), buildOrder: Number(args.buildOrder), buildStyle: Number(args.buildStyle), buildStagger: args.stagger,
-    reverse: false, faceCenter: !!args.faceCenter, rowOffset: args.rowOffset || 0
+    reverse: false, faceCenter: !!args.faceCenter, rowOffset: args.rowOffset || 0,
+    // old presets: "Face center" on and Orient left at its default → Face Center
+    orient: args.faceCenter && (!args.orient || args.orient === '1') ? 2 : Number(args.orient || 1)
   });
-  if (args.mode === 'radial') { p.radius = args.radius || auto.radius; p.arc = args.arc; p.ringSpacing = auto.ringSpacing; }
-  if (args.mode === 'spiral') { p.radius = args.radius || 60; p.spiralStep = Math.max(4, Math.round(auto.spacingX / 6)); }
-  if (args.mode === 'sphere') p.radius = args.radius || Math.max(200, auto.radius * 0.8);
-  if (args.mode === 'phyllo') p.spread = auto.spread;
+  const morphTo = args.morphTo && args.morphTo !== 'none' && args.morphTo !== args.mode ? args.morphTo : null;
+  const uses = (m) => args.mode === m || morphTo === m;
+  // every layout used (built or morphed to) gets sensible numbers from the layer sizes
+  p.ringSpacing = auto.ringSpacing; p.spread = auto.spread; p.spiralStep = Math.max(4, Math.round(auto.spacingX / 6));
+  if (uses('radial')) { p.radius = args.radius || auto.radius; p.arc = args.arc === undefined ? 360 : args.arc; }
+  if (uses('sphere')) p.radius = args.radius || (uses('radial') ? p.radius : Math.max(200, auto.radius * 0.8));
+  if (args.mode === 'spiral') p.radius = args.radius || 60;
+  p.morphTo = morphTo;
+  p.layoutIdx = L.modeIndex(args.mode);
+  p.morphToIdx = morphTo ? L.modeIndex(morphTo) : (args.mode === 'radial' ? 1 : 2);
+  p.morph = 0;
   if (args.animateIn) p.build = 0;
   return p;
 }
@@ -91,7 +106,11 @@ const build = {
     arc: { type: 'number', label: 'Arc', min: -360, max: 360, step: 1, default: 360, unit: '°', showIf: (a) => a.mode === 'radial' },
     pathLayer: { type: 'layer', label: 'Path layer', description: 'Shape or masked layer whose path the items follow', showIf: (a) => a.mode === 'path' },
     order: { type: 'enum', label: 'Order', default: '1', options: enumOf(L.ORDERS) },
-    faceCenter: { type: 'boolean', label: 'Face center / path', default: false, showIf: (a) => a.mode !== 'rect' },
+    orient: { type: 'enum', label: 'Orient', default: '1', options: enumOf(L.ORIENTS), description: 'Forward = turn with the grid · Face Center = face the centre or the path · Face Screen = stay upright when the grid spins' },
+    morphTo: { type: 'enum', label: 'Morph to', default: 'none', options: MORPH_OPTIONS, description: 'A second layout the grid can blend into with the Morph slider (0–100)' },
+    animateMorph: { type: 'boolean', label: 'Animate morph', default: false, description: 'Keyframe Morph 0 → 100 (after the build-in, if any)', showIf: (a) => a.morphTo && a.morphTo !== 'none' && a.morphTo !== a.mode },
+    morphDuration: { type: 'number', label: 'Morph time', min: 0.1, max: 20, step: 0.1, default: 1.5, unit: 's', showIf: (a) => a.animateMorph && a.morphTo && a.morphTo !== 'none' && a.morphTo !== a.mode },
+    faceCenter: { type: 'boolean', label: 'Face center (old)', default: false, hidden: true, description: 'Kept for presets saved before v0.19 — same as Orient: Face Center' },
     animateIn: { type: 'boolean', label: 'Animate in', default: false, description: 'Keyframe Build 0 → 100 from the current time' },
     buildStyle: { type: 'enum', label: 'Build style', default: '1', options: enumOf(L.BUILD_STYLES), showIf: (a) => a.animateIn },
     buildOrder: { type: 'enum', label: 'Build order', default: '1', options: enumOf(L.BUILD_ORDERS), showIf: (a) => a.animateIn },
@@ -104,7 +123,7 @@ const build = {
   requires: { comp: true, minLayers: 2 },
   permissions: ['modify.layers', 'modify.effects', 'modify.expressions'],
   recovery: 'undo+checkpoint',
-  ai: { callable: true, hint: 'Arrange selected layers in a grid / circle / spiral / sunflower / along a path / on a 3D sphere, optionally animating them in with a stagger. Live controls on a MOE Grid null.' },
+  ai: { callable: true, hint: 'Arrange selected layers in a grid / circle / spiral / sunflower / along a path / on a 3D sphere, optionally animating them in with a stagger, and optionally morphing into a second layout (morphTo, animateMorph). orient: 1 Forward, 2 Face Center, 3 Face Screen. Live controls on a MOE Grid null.' },
   uses: { hostOps: ['layers.bounds', 'layers.centerAnchor', 'layers.createNull', 'effects.ensure', 'effects.setMenu', 'layers.setParent', 'expressions.set', 'keys.write', 'props.values', 'paths.find'], network: false },
   compatibility: { minAE: '25.0' },
   ui: {
@@ -112,10 +131,12 @@ const build = {
     presets: [
       { id: 'wall', label: 'Wall', args: { mode: 'rect', order: '1', animateIn: true, buildStyle: '4', buildOrder: '3' } },
       { id: 'brick', label: 'Honeycomb', args: { mode: 'rect', order: '1', rowOffset: 50 } },
-      { id: 'ring', label: 'Ring', args: { mode: 'radial', arc: 360, faceCenter: true } },
-      { id: 'fan', label: 'Fan', args: { mode: 'radial', arc: 120, faceCenter: true } },
+      { id: 'ring', label: 'Ring', args: { mode: 'radial', arc: 360, orient: '2' } },
+      { id: 'fan', label: 'Fan', args: { mode: 'radial', arc: 120, orient: '2' } },
       { id: 'galaxy', label: 'Galaxy', args: { mode: 'phyllo', animateIn: true, buildStyle: '1', buildOrder: '3' } },
-      { id: 'globe', label: 'Globe', args: { mode: 'sphere' } }
+      { id: 'globe', label: 'Globe', args: { mode: 'sphere' } },
+      { id: 'gridRing', label: 'Grid → Ring', args: { mode: 'rect', morphTo: 'radial', animateMorph: true, orient: '1' } },
+      { id: 'galaxyWall', label: 'Galaxy → Wall', args: { mode: 'phyllo', morphTo: 'rect', animateIn: true, buildStyle: '1', buildOrder: '3', animateMorph: true } }
     ]
   },
 
@@ -123,6 +144,12 @@ const build = {
     const exclude = [args.pathLayer, args.effector].filter(Boolean);
     const items = itemsOf(ctx, exclude);
     if (items.length < 2) return { ok: false, error: 'Select at least 2 layers to arrange' };
+    // items already in a MOE Grid: building again would pull them out of it — say where to go instead
+    const inGrid = items.filter((l) => l.parentIndex && (ctx.compLayers || []).some((g) => g.index === l.parentIndex && GRID_NAME.test(g.name)));
+    if (inGrid.length) {
+      const g = (ctx.compLayers || []).find((x) => x.index === inGrid[0].parentIndex);
+      return { ok: false, error: `${inGrid.length === items.length ? 'These layers are' : `${inGrid.length} of these layers are`} already in ${g.name} — change it in "Your grid" (Layout & Grid), or Release it first` };
+    }
     const locked = items.filter((l) => l.locked);
     if (locked.length) return { ok: false, error: `Unlock ${locked.map((l) => l.name).join(', ')} first` };
     const parented = items.filter((l) => l.parentIndex && !items.some((o) => o.index === l.parentIndex));
@@ -132,10 +159,11 @@ const build = {
     return {
       ok: true, items, name,
       preview: {
-        summary: `${mode.label} of ${items.length} layers · ${name}${args.animateIn ? ' · animated in' : ''}`,
+        summary: `${mode.label} of ${items.length} layers · ${name}${args.animateIn ? ' · animated in' : ''}${args.morphTo && args.morphTo !== 'none' && args.morphTo !== args.mode ? ` · morphs to ${L.MODES.find((m) => m.id === args.morphTo).label}${args.animateMorph ? ' (animated)' : ''}` : ''}`,
         items: [
           ...items.slice(0, 6).map((l) => l.name), ...(items.length > 6 ? [`+${items.length - 6} more`] : []),
-          ...(args.mode === 'sphere' ? ['Items become 3D layers (restorable)'] : []),
+          ...(args.mode === 'sphere' || args.morphTo === 'sphere' ? ['Items become 3D layers (restorable)'] : []),
+          'Layout, Morph and every control stay live on the grid null (Effect Controls)',
           ...(parented.length ? [`${parented.length} item(s) are re-parented to the grid (restorable)`] : [])
         ]
       }
@@ -153,7 +181,7 @@ const build = {
     const params = resolveParams(args, auto);
     const cx = boxes.length ? boxes.reduce((s, b) => s + (b[0] + b[2]) / 2, 0) / boxes.length : comp.width / 2;
     const cy = boxes.length ? boxes.reduce((s, b) => s + (b[1] + b[3]) / 2, 0) / boxes.length : comp.height / 2;
-    const threeD = args.mode === 'sphere';
+    const threeD = args.mode === 'sphere' || params.morphTo === 'sphere';
     let made3D = null;
     if (threeD) {
       const flat = items.filter((l) => !l.threeD);
@@ -170,14 +198,11 @@ const build = {
       compId: comp.id, label: 'MOE: Grid Controls',
       layers: [{ layer: { layerId: created.layerId }, items: X.controlItems(args.mode, params, (name) => (name === 'Path Layer' ? idxOf(args.pathLayer) : name === 'Effector' && args.effector ? idxOf(args.effector) : 0)) }]
     });
-    for (const [name, list, value] of [['Order', L.ORDERS, params.order], ['Build Order', L.BUILD_ORDERS, params.buildOrder], ['Build Style', L.BUILD_STYLES, params.buildStyle]]) {
+    for (const [name, list, value] of [['Layout', X.MODE_MENU, params.layoutIdx], ['Morph To', X.MODE_MENU, params.morphToIdx], ['Orient', L.ORIENTS, params.orient], ['Order', L.ORDERS, params.order], ['Build Order', L.BUILD_ORDERS, params.buildOrder], ['Build Style', L.BUILD_STYLES, params.buildStyle]]) {
       await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: name, items: list, value });
     }
     const targets = [];
-    items.forEach((l, i) => {
-      const code = X.build(i, items.length, { mode: args.mode, gridName: prepared.name, pathAccess: path && path.access, pathClosed: path && path.closed });
-      for (const prop of Object.keys(X.PROP_ADDR)) targets.push({ layer: l, prop, address: { layerId: l.id, matchNames: X.PROP_ADDR[prop] }, expression: code[prop] });
-    });
+    items.forEach((l) => { for (const prop of Object.keys(X.PROP_ADDR)) targets.push({ layer: l, prop, address: { layerId: l.id, matchNames: X.PROP_ADDR[prop] } }); });
     const peek = await host.call('expressions.peek', { compId: comp.id, items: targets.map((t) => ({ address: t.address })) });
     const conflicts = targets.filter((t, i) => peek.items[i].expression && !peek.items[i].expression.startsWith(X.TAG));
     if (conflicts.length && !args.replace) {
@@ -189,18 +214,31 @@ const build = {
       throw e;
     }
     const parented = await host.call('layers.setParent', { compId: comp.id, label: 'MOE: Grid Parent', items: items.map((l) => ({ layerId: l.id, parentId: created.layerId })) });
+    // home = where each item sits in the null's space now: the expression adds (value − home), so a
+    // later hand nudge (or the layer's own Position keys) plays on top of the grid
+    const homes = await host.call('props.values', { compId: comp.id, time: comp.time, items: items.map((l) => ({ address: { layerId: l.id, matchNames: X.PROP_ADDR.position } })) });
+    items.forEach((l, i) => {
+      const hv = homes.items[i].value || [0, 0];
+      const code = X.buildAll(i, items.length, { gridName: prepared.name, pathAccess: path && path.access, pathClosed: path && path.closed, home: [hv[0], hv[1]] });
+      targets.filter((t) => t.layer === l).forEach((t) => { t.expression = code[t.prop]; });
+    });
     const set = await host.call('expressions.set', { compId: comp.id, label: 'MOE: Grid', revertOnError: true, targets: targets.map((t) => ({ address: t.address, expression: t.expression, enabled: true })) });
-    let keys = null;
+    let keys = null, morphKeys = null;
     let checkTime = comp.time;
     if (args.animateIn) {
       const t0 = comp.time, t1 = comp.time + args.buildDuration;
       keys = await host.call('keys.write', { compId: comp.id, label: 'MOE: Grid Build', items: [{ address: X.controlAddress(created.layerId, 'Build'), keys: [{ t: t0, v: 0, easeOut: { speed: 0, influence: 20 } }, { t: t1, v: 100, easeIn: { speed: 0, influence: 75 } }] }] });
       checkTime = t1;
     }
+    if (args.animateMorph && params.morphTo) {
+      const m0 = checkTime, m1 = checkTime + args.morphDuration;
+      morphKeys = await host.call('keys.write', { compId: comp.id, label: 'MOE: Grid Morph', items: [{ address: X.controlAddress(created.layerId, 'Morph'), keys: [{ t: m0, v: 0, easeOut: { speed: 0, influence: 50 } }, { t: m1, v: 100, easeIn: { speed: 0, influence: 50 } }] }] });
+      checkTime = m1;
+    }
     const read = await host.call('props.values', { compId: comp.id, time: checkTime, items: items.map((l) => ({ address: { layerId: l.id, matchNames: X.PROP_ADDR.position } })) });
-    const finalParams = Object.assign({}, params, { build: 100 });
-    const predicted = args.mode === 'path' || args.effector ? null : L.place(finalParams, items.length).map((it) => { const m = L.modifiers(finalParams, it, items.length); return [it.x + m.dx, it.y + m.dy]; });
-    return { name: prepared.name, nullId: created.layerId, params, controls, set, parented, anchors, made3D, keys, read, predicted, items: items.map((l) => ({ id: l.id, name: l.name })) };
+    const finalParams = Object.assign({}, params, { build: 100, morph: morphKeys ? 100 : 0 });
+    const predicted = args.mode === 'path' || params.morphTo === 'path' || args.effector ? null : L.placeMorph(finalParams, items.length).map((it) => { const m = L.modifiers(finalParams, it, items.length); return [it.x + m.dx, it.y + m.dy]; });
+    return { name: prepared.name, nullId: created.layerId, params, controls, set, parented, anchors, made3D, keys, morphKeys, read, predicted, items: items.map((l) => ({ id: l.id, name: l.name })) };
   },
 
   verify({ result }) {
@@ -211,7 +249,8 @@ const build = {
     checks.push({ ok: bad.length === 0, label: 'Expressions', detail: bad.length ? `${bad.length} failed: ${bad.slice(0, 3).map((t) => `${t.layerName} › ${t.name}: ${t.after ? t.after.expressionError : t.skipped}`).join('; ')}` : `${result.set.targets.length} live expressions, no engine errors` });
     checks.push({ ok: result.parented.layers.every((l) => l.after === result.nullId), label: 'Parenting', detail: `${result.parented.layers.length} item(s) follow ${result.name}` });
     if (result.predicted) {
-      const off = result.read.items.map((r, i) => (r.value ? Math.hypot(r.value[0] - result.predicted[i][0], r.value[1] - result.predicted[i][1]) : Infinity));
+      // items with their own Position keys move on top of the grid — compare the others
+      const off = result.read.items.map((r, i) => (r.numKeys ? 0 : r.value ? Math.hypot(r.value[0] - result.predicted[i][0], r.value[1] - result.predicted[i][1]) : Infinity));
       const worst = Math.max(...off);
       checks.push({ ok: worst < 0.6, label: 'Layout read-back', detail: worst < 0.6 ? `${off.length} positions match the preview (±0.5 px)` : `position differs by ${worst.toFixed(1)} px` });
     } else {
@@ -219,6 +258,7 @@ const build = {
       checks.push({ ok: errs.length === 0, label: 'Layout read-back', detail: errs.length ? errs[0].error : `${result.read.items.length} positions evaluated` });
     }
     if (result.keys) checks.push({ ok: result.keys.items[0].written.length === 2, label: 'Build', detail: 'Build 0 → 100 keyframed' });
+    if (result.morphKeys) checks.push({ ok: result.morphKeys.items[0].written.length === 2, label: 'Morph', detail: 'Morph 0 → 100 keyframed' });
     return { ok: checks.every((c) => c.ok), checks };
   },
 
@@ -267,7 +307,7 @@ const update = {
   requires: { comp: true },
   permissions: ['modify.effects'],
   recovery: 'undo+checkpoint',
-  ai: { callable: true, hint: 'Tweak an existing MOE Grid (select its null). values is JSON keyed by control name: Columns, Spacing X/Y, Row Offset, Radius, Arc, Twist, Item Scale, Scale Step, Random Position/Rotation/Scale, Seed, Build, Build Stagger, Build Distance, Effector Radius/Scale/Push…' },
+  ai: { callable: true, hint: 'Tweak an existing MOE Grid (select its null). values is JSON keyed by control name: Layout (1 Grid, 2 Radial, 3 Spiral, 4 Sunflower, 5 Path, 6 Sphere), Morph To, Morph (0-100), Orient (1-3), Columns, Spacing X/Y, Row Offset, Radius, Arc, Twist, Item Scale, Scale Step, Random Position/Rotation/Scale, Seed, Build, Build Stagger, Build Distance, Effector Radius/Scale/Push/Rotate/Fade…' },
   uses: { hostOps: ['props.setValues'], network: false },
   compatibility: { minAE: '25.0' },
   ui: { primaryLabel: 'Apply' },
@@ -276,7 +316,7 @@ const update = {
     if (!g) return { ok: false, error: 'Select a MOE Grid null' };
     let values;
     try { values = JSON.parse(args.values || '{}'); } catch (e) { return { ok: false, error: 'Values must be JSON' }; }
-    const known = new Set([...Object.values(X.MODE_CONTROLS).flat(), ...X.COMMON_CONTROLS].filter((c) => !['layer'].includes(c[1])).map((c) => c[0]));
+    const known = new Set(X.allControls().filter((c) => c[1] !== 'layer').map((c) => c[0]));
     const bad = Object.keys(values).filter((k) => !known.has(k) || !Number.isFinite(Number(values[k])));
     if (bad.length) return { ok: false, error: `Unknown or non-numeric control(s): ${bad.join(', ')}` };
     if (!Object.keys(values).length) return { ok: false, error: 'Nothing to change' };
@@ -293,6 +333,113 @@ const update = {
   checkpoint({ result, ctx }) { return { compId: ctx.comp.id, items: result.items.filter((i) => !i.skipped).map((i) => ({ address: i.address, value: i.before })) }; },
   async restore({ data, host }) { return host.call('props.setValues', { compId: data.compId, label: 'MOE: Restore Grid', items: data.items }); },
   summarize(result) { return `${result.items.length} grid control(s) updated`; }
+};
+
+/* ---------- v0.19 items: order + per-item tweaks ---------- */
+
+const SORTS = [{ value: 'custom', label: 'My order' }, { value: 'layer', label: 'Layer order' }, { value: 'name', label: 'Name A→Z' }, { value: 'reverse', label: 'Reverse' }, { value: 'shuffle', label: 'Shuffle' }];
+
+/** The grid a selection points to: the selected grid null, or the null the selected items follow. */
+function gridFor(ctx, args) {
+  const g = gridOf(ctx, args);
+  if (g) return g;
+  const kid = (ctx.layers || []).find((l) => l.parentIndex);
+  const parent = kid && (ctx.compLayers || []).find((l) => l.index === kid.parentIndex);
+  return parent && GRID_NAME.test(parent.name) ? parent : null;
+}
+
+/** New slot order (array of layer ids, slot 0 first) for a sort. items: [{ id, name, index, slot }]. */
+function sortSlots(items, sort, args) {
+  const bySlot = items.slice().sort((a, b) => a.slot - b.slot);
+  if (sort === 'layer') return items.slice().sort((a, b) => a.index - b.index).map((x) => x.id);
+  if (sort === 'name') return items.slice().sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }) || a.index - b.index).map((x) => x.id);
+  if (sort === 'reverse') return bySlot.reverse().map((x) => x.id);
+  if (sort === 'shuffle') { const pm = L.permutation(items.length, args.seed || 1); return pm.map((j) => bySlot[j].id); }
+  let ids; try { ids = JSON.parse(args.order || '[]'); } catch (e) { ids = null; }
+  return Array.isArray(ids) ? ids.map(Number) : null;
+}
+
+const items = {
+  id: 'grid.items',
+  version: '1.0.0',
+  category: 'layout',
+  group: 'Grid',
+  name: 'Grid Items',
+  description: 'Change which item sits in which place of a MOE Grid — drag to reorder, sort by layer order or name, reverse, shuffle — without touching the layer stack. Or give the selected items their own Twist and build Delay.',
+  keywords: ['grid', 'order', 'reorder', 'sort', 'slots', 'shuffle', 'twist', 'delay', 'stagger', 'items'],
+  icon: 'grid',
+  params: {
+    action: { type: 'enum', label: 'Action', default: 'order', options: [{ value: 'order', label: 'Order' }, { value: 'tweak', label: 'Tweak items' }] },
+    gridId: { type: 'integer', label: 'Grid', hidden: true },
+    sort: { type: 'enum', label: 'Order by', default: 'layer', options: SORTS, showIf: (a) => a.action !== 'tweak' },
+    order: { type: 'text', label: 'My order', maxLength: 8000, hidden: true, description: 'JSON list of layer ids, first = slot 1 (set by the panel list)' },
+    seed: { type: 'integer', label: 'Seed', min: 1, max: 9999, default: 1, showIf: (a) => a.action !== 'tweak' && a.sort === 'shuffle' },
+    twist: { type: 'number', label: 'Twist', min: -720, max: 720, step: 1, default: 0, unit: '°', description: 'Extra rotation for the selected items', showIf: (a) => a.action === 'tweak' },
+    delay: { type: 'number', label: 'Delay', min: -100, max: 100, step: 1, default: 0, unit: '%', description: 'Build later (+) or earlier (−) than their turn', showIf: (a) => a.action === 'tweak' }
+  },
+  requires: { comp: true },
+  permissions: ['modify.expressions', 'modify.effects'],
+  recovery: 'undo+checkpoint',
+  ai: { callable: true, hint: 'Reorder the items of a MOE Grid (sort: layer, name, reverse, shuffle) or give selected grid items their own twist (deg) / delay (%) — action order | tweak.' },
+  uses: { hostOps: ['layers.describe', 'proximity.scan', 'expressions.peek', 'expressions.set', 'effects.ensure'], network: false },
+  compatibility: { minAE: '25.0' },
+  ui: { primaryLabel: 'Apply' },
+  prepare(args, ctx) {
+    const g = gridFor(ctx, args);
+    if (!g) return { ok: false, error: 'Select a MOE Grid null (or some of its items)' };
+    if (args.action === 'tweak') {
+      const sel = (ctx.layers || []).filter((l) => l.parentIndex === g.index);
+      if (!sel.length) return { ok: false, error: `Select the items of ${g.name} to tweak` };
+      return { ok: true, grid: g, sel, preview: { summary: `${sel.length} item(s) of ${g.name}: twist ${args.twist}° · delay ${args.delay}%`, items: sel.slice(0, 6).map((l) => l.name) } };
+    }
+    return { ok: true, grid: g, preview: { summary: `${g.name}: ${SORTS.find((o) => o.value === args.sort).label}`, items: ['Only the places change — the layer stack stays as it is'] } };
+  },
+  async execute({ args, ctx, prepared, host }) {
+    const comp = ctx.comp;
+    if (args.action === 'tweak') {
+      const req = prepared.sel.map((l) => ({ layer: { layerId: l.id }, items: [
+        { key: X.ITEM_FX.twist, matchName: 'ADBE Angle Control', before: [], params: [{ id: 'twist', value: args.twist, names: ['Angle'], suffix: 1 }] },
+        { key: X.ITEM_FX.delay, matchName: 'ADBE Slider Control', before: [], params: [{ id: 'delay', value: args.delay, names: ['Slider'], suffix: 1 }] }
+      ] }));
+      // only v0.19 grids read these effects
+      const scan = await host.call('proximity.scan', { compId: comp.id, layerIds: prepared.sel.map((l) => l.id), tag: X.TAG });
+      const peek = scan.expressions.length ? await host.call('expressions.peek', { compId: comp.id, items: scan.expressions.map((a) => ({ address: a })) }) : { items: [] };
+      if (!peek.items.some((x) => X.isV2(x.expression))) { const e = new Error(`${prepared.grid.name} was built before v0.19 — rebuild it (Release › Remove, then Grid Builder) to tweak single items`); e.code = 'OLD_GRID'; throw e; }
+      const fx = await S.writeEffects(host, ctx, req, 'MOE: Grid Item Tweaks');
+      return { action: 'tweak', fx, req };
+    }
+    const desc = await host.call('layers.describe', { compId: comp.id });
+    const kids = desc.layers.filter((l) => l.parentId === prepared.grid.id);
+    const scan = kids.length ? await host.call('proximity.scan', { compId: comp.id, layerIds: kids.map((l) => l.id), tag: X.TAG }) : { expressions: [] };
+    const peek = scan.expressions.length ? await host.call('expressions.peek', { compId: comp.id, items: scan.expressions.map((a) => ({ address: a })) }) : { items: [] };
+    const exprs = scan.expressions.map((a, j) => ({ address: a, code: peek.items[j].expression })).filter((e) => X.slotOf(e.code));
+    const list = kids.map((l) => { const e = exprs.find((x) => x.address.layerId === l.id); return e ? { id: l.id, name: l.name, index: l.index, slot: X.slotOf(e.code).i } : null; }).filter(Boolean);
+    if (list.length < 2) { const e = new Error(`${prepared.grid.name} has fewer than 2 items`); e.code = 'NO_ITEMS'; throw e; }
+    const order = sortSlots(list, args.sort, args);
+    if (!order || order.length !== list.length || !list.every((x) => order.includes(x.id))) { const e = new Error('The order must list every item of the grid once'); e.code = 'BAD_ORDER'; throw e; }
+    // keep the grid's own slot numbers (0..n-1 as built) — only who sits where changes
+    const slots = list.map((x) => x.slot).sort((a, b) => a - b);
+    const newSlot = new Map(order.map((id, j) => [id, slots[j]]));
+    const targets = exprs.filter((e) => newSlot.get(e.address.layerId) !== X.slotOf(e.code).i).map((e) => ({ address: e.address, expression: X.withSlot(e.code, newSlot.get(e.address.layerId)), enabled: true }));
+    const set = targets.length ? await host.call('expressions.set', { compId: comp.id, label: 'MOE: Grid Order', revertOnError: true, targets }) : { targets: [] };
+    return { action: 'order', list, order, newSlot: [...newSlot.entries()], set };
+  },
+  verify({ result }) {
+    if (result.action === 'tweak') return S.verifyEffects(result.fx, result.req);
+    const want = new Map(result.newSlot);
+    const bad = result.set.targets.filter((t) => t.skipped || t.reverted || (t.after && t.after.expressionError) || !X.slotOf(t.after && t.after.expression) || X.slotOf(t.after.expression).i !== want.get(t.address.layerId));
+    return { ok: bad.length === 0, checks: [{ ok: bad.length === 0, label: 'Order', detail: bad.length ? `${bad.length} expression(s) not updated` : result.set.targets.length ? `${new Set(result.set.targets.map((t) => t.address.layerId)).size} item(s) moved to new places — layer stack unchanged` : 'already in this order' }] };
+  },
+  checkpoint({ result, ctx }) {
+    if (result.action === 'tweak') return Object.assign({ action: 'tweak' }, S.effectsCheckpoint(result.fx, ctx));
+    return { action: 'order', compId: ctx.comp.id, expressions: result.set.targets.filter((t) => !t.skipped).map((t) => ({ address: t.address, expression: t.before.expression, enabled: t.before.expressionEnabled })) };
+  },
+  async restore({ data, host }) {
+    if (data.action === 'tweak') return S.restoreEffects({ data, host });
+    if (data.expressions.length) await host.call('expressions.set', { compId: data.compId, label: 'MOE: Restore Grid Order', revertOnError: false, targets: data.expressions });
+    return { ok: true };
+  },
+  summarize(result, v) { return result.action === 'tweak' ? `${result.req.length} grid item(s) tweaked` : (v.ok ? 'Grid order changed' : 'Grid order: problems'); }
 };
 
 /* ---------- remove / freeze ---------- */
@@ -468,4 +615,4 @@ const placeInCells = {
   summarize(result) { return `${result.items.length} layer(s) placed in cells`; }
 };
 
-module.exports = { build, update, remove, guides, placeInCells, layoutGuides, resolveParams, GRID_NAME };
+module.exports = { build, update, items, remove, guides, placeInCells, layoutGuides, resolveParams, sortSlots, gridFor, GRID_NAME };

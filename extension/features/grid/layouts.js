@@ -16,6 +16,9 @@ const MODES = [
   { id: 'sphere', label: 'Sphere', menu: 'Sphere (3D)' }
 ];
 const ORDERS = ['Rows', 'Columns', 'Snake', 'Random'];
+/** v0.19 orientation (menu): Forward = turn with the grid null; Face Center = face the centre (or the
+ *  path direction); Face Screen = stay upright even when the grid null rotates. */
+const ORIENTS = ['Forward', 'Face Center', 'Face Screen'];
 const BUILD_ORDERS = ['Index', 'Reverse', 'Center Out', 'Edges In', 'Random'];
 const BUILD_STYLES = ['Pop', 'Fade', 'Rise', 'Pop + Fade', 'Drop', 'Spin In'];
 const GOLDEN_DEG = 137.50776405003785;
@@ -41,7 +44,7 @@ function permutation(n, seed) {
  *           radius, startAngle, arc, ringSize, ringSpacing, spiralStep, angleStep, spread,
  *           sphereSpin, sphereTilt, seed, buildOrder (1..5), path: { points(pct) -> [x,y], tangent(pct) } }
  */
-function place(p, n) {
+function rawPlace(p, n) {
   const out = [];
   const perm = p.order === 4 ? permutation(n, p.seed || 1) : null;
   const C = Math.max(1, Math.round(p.columns || 1));
@@ -103,27 +106,53 @@ function place(p, n) {
     }
     out.push({ i, k, x, y, z, face });
   }
-  // Build start fraction.
+  for (const o of out) o.maxD = p.mode === 'path' ? 1 : maxDist;
+  return out;
+}
+
+/** Build start fraction (0..1) per item — after any morph mix, from the mixed positions. */
+function finishBuild(out, p, n, pathLike) {
   const rnd = prng((p.seed || 1) + 7919);
   const rands = Array.from({ length: n }, () => rnd());
   for (const o of out) {
     const lin = n > 1 ? o.k / (n - 1) : 0;
-    const dist = p.mode === 'path' ? Math.abs(lin - 0.5) * 2 : (maxDist > 0 ? Math.min(1, Math.hypot(o.x, o.y, o.z) / maxDist) : 0);
+    const dist = pathLike ? Math.abs(lin - 0.5) * 2 : (o.maxD > 0 ? Math.min(1, Math.hypot(o.x, o.y, o.z) / o.maxD) : 0);
     o.f = [lin, 1 - lin, dist, 1 - dist, rands[o.i]][(p.buildOrder || 1) - 1];
   }
   return out;
 }
 
+function place(p, n) { return finishBuild(rawPlace(p, n), p, n, p.mode === 'path'); }
+
+/**
+ * v0.19 Morph: the layout of p.mode blended into p.morphTo by p.morph (0–100, smoothstep) — the same
+ * mix the expressions do. Positions, facing angle and the distance scale all blend.
+ */
+function placeMorph(p, n) {
+  const mo = Math.min(Math.max((p.morph || 0) / 100, 0), 1);
+  if (!(mo > 0) || !p.morphTo || p.morphTo === p.mode) return place(p, n);
+  const A = rawPlace(p, n), B = rawPlace(Object.assign({}, p, { mode: p.morphTo }), n);
+  const u = mo * mo * (3 - 2 * mo);
+  A.forEach((a, j) => { const b = B[j]; for (const key of ['x', 'y', 'z', 'face', 'maxD']) a[key] = a[key] + (b[key] - a[key]) * u; });
+  return finishBuild(A, p, n, false);
+}
+
+/** Layout menu index (1-based, as in the "Layout" / "Morph To" dropdowns) ↔ mode id. */
+const modeIndex = (id) => Math.max(1, MODES.findIndex((m) => m.id === id) + 1);
+const modeAt = (idx) => (MODES[Math.round(idx) - 1] || MODES[0]).id;
+
 /** Item modifiers at build progress — shared with expressions (scale %, rotation °, opacity %, offset). */
 function modifiers(p, item, n) {
   const B = p.build / 100, S = Math.min(Math.max(p.buildStagger / 100, 0), 1);
-  const pr = Math.min(Math.max((B - item.f * S) / Math.max(1 - S, 0.05), 0), 1);
+  const f = Math.min(Math.max(item.f + (item.delay || 0) / 100, 0), 1); // per-item Delay (MOE Grid Delay)
+  const pr = Math.min(Math.max((B - f * S) / Math.max(1 - S, 0.05), 0), 1);
   const eOut = 1 - Math.pow(1 - pr, 3);
   const back = 1 + 2.70158 * Math.pow(pr - 1, 3) + 1.70158 * Math.pow(pr - 1, 2);
   const r = prng((p.seed || 1) * 31 + item.i * 7 + 3);
   const jx = (r() * 2 - 1) * p.randomPosition, jy = (r() * 2 - 1) * p.randomPosition, jr = (r() * 2 - 1) * p.randomRotation, js = (r() * 2 - 1) * p.randomScale;
   let scale = (p.itemScale / 100) * Math.max(0, 1 + (p.scaleStep / 100) * item.k) * Math.max(0, 1 + js / 100);
-  let rot = p.twist * item.k + jr + (p.faceCenter ? item.face : 0);
+  const orient = p.orient !== undefined ? Number(p.orient) : (p.faceCenter ? 2 : 1);
+  let rot = p.twist * item.k + jr + (item.twist || 0) + (orient === 2 ? item.face : 0) - (orient === 3 ? (p.nullRotation || 0) : 0);
   let opacity = 1;
   let dy = 0;
   const st = p.buildStyle || 1;
@@ -146,4 +175,4 @@ function autoParams({ n, maxW, maxH, compW, compH, gap = 0.25 }) {
   return { spacingX: sx, spacingY: sy, columns, radius, spread: Math.round(Math.max(sx, sy) * 0.55), ringSpacing: Math.round(Math.max(sx, sy)) };
 }
 
-module.exports = { MODES, ORDERS, BUILD_ORDERS, BUILD_STYLES, GOLDEN_DEG, GOLDEN_RAD, prng, permutation, place, modifiers, autoParams };
+module.exports = { MODES, ORDERS, ORIENTS, BUILD_ORDERS, BUILD_STYLES, GOLDEN_DEG, GOLDEN_RAD, prng, permutation, place, placeMorph, modifiers, autoParams, modeIndex, modeAt };

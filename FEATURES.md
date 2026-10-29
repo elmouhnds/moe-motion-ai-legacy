@@ -1,4 +1,6 @@
-# Features (v0.18.0)
+# Features (v0.19.0)
+
+**Grid Builder 2** (v0.19.0): Layout switches live in Effect Controls (all controls and keyframes stay), Morph To + Morph slider (animate at build), Orient (Forward / Face Center / Face Screen), Effector scale / push / attract / rotate / fade, items stay editable by hand, Grid Items (drag / sort places without touching the layer stack, per-item Twist and Delay), and a "Your grid" panel when a grid is selected. Palette tiles in Backgrounds move on hover with your motion.
 
 **Moving backgrounds** (v0.18.0): Backgrounds › Motion (Drift, Orbit, Swirl, Wave, Breathe, Wander) and Colours (Cycle, Swap, Hue, Pulse) — expressions on the gradient points and colours, seamless loops, live sliders MOE BG Loop / Amount / Colour, live preview in the Inspector.
 

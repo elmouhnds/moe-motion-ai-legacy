@@ -160,3 +160,148 @@ test('Layout guides + Place in Cells (keyframes kept, measured centres)', async 
   assert.ok((await services.executor.restore(p.checkpointId)).ok);
   assert.deepEqual(A(k.keyValue(2)), [100, 0]);
 });
+
+/* ---------------- v0.19 Grid Builder 2 ---------------- */
+const GT = require('../extension/features/grid/tools');
+const ctl = (g, name) => g._parade._children.find((f) => f.name === name)._children[0];
+const pos = (comp, t) => cards(comp).map((L) => A(tp(L, 'ADBE Position').valueAtTime(t === undefined ? comp.time : t, false)));
+const paramsOf = (r) => Object.assign({}, r.result ? r.result.params : r.params, { build: 100 });
+
+test('Grid 2 · Morph: the null blends two layouts; AE values equal the pure placeMorph at 0 / 35 / 100 %', async () => {
+  const { services, comp } = await createTestServices(gridItems(8));
+  const r = await services.executor.run('grid.build', { mode: 'rect', columns: 4, spacingX: 150, spacingY: 120, morphTo: 'radial', radius: 300 });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors, null, 1));
+  const g = comp._layers.find((l) => l.name === 'MOE Grid 1');
+  assert.equal(ctl(g, 'Layout').value, 1); assert.equal(ctl(g, 'Morph To').value, 2);
+  assert.equal(ctl(g, 'Layout')._menuItems.length, 6, 'Layout dropdown lists the six layouts');
+  const p = Object.assign(Lg.place.length ? {} : {}, X.defaultParams('rect'), { mode: 'rect', columns: 4, spacingX: 150, spacingY: 120, radius: 300, arc: 360, morphTo: 'radial', order: 1, buildOrder: 1, buildStyle: 1, build: 100, seed: 1, rowOffset: 0, columnOffset: 0 });
+  for (const m of [0, 35, 100]) {
+    ctl(g, 'Morph').setValue(m);
+    const want = Lg.placeMorph(Object.assign({}, p, { morph: m }), 8);
+    pos(comp).forEach((v, i) => assert.ok(near(v[0], want[i].x, 0.01) && near(v[1], want[i].y, 0.01), `morph ${m}% item ${i}: ${v} vs ${want[i].x},${want[i].y}`));
+  }
+  pos(comp).forEach((v) => assert.ok(near(Math.hypot(v[0], v[1]), 300, 0.01), 'Morph 100 = on the ring'));
+});
+
+test('Grid 2 · Layout switches live in Effect Controls and keeps every control and keyframe', async () => {
+  const { services, comp } = await createTestServices(gridItems(6));
+  const r = await services.executor.run('grid.build', { mode: 'rect', columns: 3, spacingX: 150, spacingY: 120 });
+  assert.equal(r.status, 'success');
+  const g = comp._layers.find((l) => l.name === 'MOE Grid 1');
+  ctl(g, 'Spacing X').setValueAtTime(0, 150); ctl(g, 'Spacing X').setValueAtTime(2, 300);
+  const u = await services.executor.run('grid.update', { gridId: g.id, values: JSON.stringify({ Layout: 2, Radius: 250 }) });
+  assert.equal(u.status, 'success', JSON.stringify(u.verification || u.errors));
+  pos(comp).forEach((v) => assert.ok(near(Math.hypot(v[0], v[1]), 250, 0.01), 'radial now'));
+  ctl(g, 'Layout').setValue(1);
+  assert.ok(near(pos(comp, 2)[2][0] - pos(comp, 2)[1][0], 300, 0.01), 'back to the grid — Spacing X keyframes still drive it');
+  assert.equal(ctl(g, 'Spacing X').numKeys, 2);
+});
+
+test('Grid 2 · Orient: Forward turns with the null, Face Center faces out, Face Screen stays upright', async () => {
+  const { services, comp } = await createTestServices(gridItems(4));
+  const r = await services.executor.run('grid.build', { mode: 'radial', radius: 200, orient: '3' });
+  assert.equal(r.status, 'success');
+  const g = comp._layers.find((l) => l.name === 'MOE Grid 1');
+  tp(g, 'ADBE Rotate Z').setValue(30);
+  const rot = () => cards(comp).map((L) => tp(L, 'ADBE Rotate Z').valueAtTime(comp.time, false));
+  rot().forEach((v) => assert.ok(near(v, -30), 'Face Screen cancels the null rotation'));
+  ctl(g, 'Orient').setValue(1); rot().forEach((v) => assert.ok(near(v, 0), 'Forward: no own rotation'));
+  ctl(g, 'Orient').setValue(2); assert.deepEqual(rot().map(Math.round), [0, 90, 180, 270], 'Face Center: each item faces out');
+});
+
+test('Grid 2 · items stay editable: a hand nudge (or own Position keys) plays on top of the layout', async () => {
+  const { services, comp } = await createTestServices(gridItems(4));
+  const r = await services.executor.run('grid.build', { mode: 'rect', columns: 2, spacingX: 200, spacingY: 200 });
+  assert.equal(r.status, 'success');
+  const before = pos(comp);
+  const P = tp(cards(comp)[1], 'ADBE Position'); const v = A(P.value);
+  P.setValue([v[0] + 40, v[1] - 15]);
+  const after = pos(comp);
+  assert.ok(near(after[1][0] - before[1][0], 40) && near(after[1][1] - before[1][1], -15), 'nudged by hand');
+  assert.deepEqual(after[0], before[0], 'others unchanged');
+});
+
+test('Grid 2 · Effector: push / attract, rotate and fade near it', async () => {
+  const layers = gridItems(3).comp.layers;
+  layers.push({ name: 'Magnet', null: true, transform: TA({ pos: [0, 0] }) });
+  const fx = studioComp(layers);
+  fx.comp.layers.forEach((l) => { l.selected = /^Card/.test(l.name); });
+  const { services, comp } = await createTestServices(fx);
+  const mi = comp._layers.findIndex((l) => l.name === 'Magnet') + 1;
+  const r = await services.executor.run('grid.build', { mode: 'rect', columns: 3, spacingX: 300, spacingY: 100, effector: mi });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors, null, 1));
+  const g = comp._layers.find((l) => l.name === 'MOE Grid 1');
+  const gp = A(tp(g, 'ADBE Position').value);
+  tp(comp._layers.find((l) => l.name === 'Magnet'), 'ADBE Position').setValue([gp[0], gp[1]]); // on the middle item
+  ctl(g, 'Effector Rotate').setValue(90); ctl(g, 'Effector Fade').setValue(100); ctl(g, 'Effector Scale').setValue(0);
+  const mid = cards(comp)[1];
+  assert.ok(near(tp(mid, 'ADBE Rotate Z').valueAtTime(comp.time, false), 90), 'full rotate at the centre');
+  assert.ok(near(tp(mid, 'ADBE Opacity').valueAtTime(comp.time, false), 0), 'faded out at the centre');
+  ctl(g, 'Effector Radius').setValue(400); ctl(g, 'Effector Push').setValue(-100);
+  const left = tp(cards(comp)[0], 'ADBE Position').valueAtTime(comp.time, false);
+  assert.ok(left[0] > -300, 'negative push attracts toward the effector');
+});
+
+test('Grid 2 · Grid Items: reorder (reverse, name, my order) moves places, not the layer stack; restore; tweaks', async () => {
+  const { services, comp } = await createTestServices(gridItems(4));
+  const r = await services.executor.run('grid.build', { mode: 'rect', columns: 4, spacingX: 100, spacingY: 100 });
+  assert.equal(r.status, 'success');
+  const g = comp._layers.find((l) => l.name === 'MOE Grid 1');
+  const names = () => comp._layers.map((l) => l.name).join(',');
+  const stack = names(), before = pos(comp);
+  const rev = await services.executor.run('grid.items', { action: 'order', gridId: g.id, sort: 'reverse' });
+  assert.equal(rev.status, 'success', JSON.stringify(rev.verification || rev.errors));
+  const after = pos(comp);
+  after.forEach((v, i) => assert.ok(near(v[0], before[3 - i][0]), `item ${i} now in place ${3 - i}`));
+  assert.equal(names(), stack, 'layer stack untouched');
+  assert.ok((await services.executor.restore(rev.checkpointId)).ok);
+  pos(comp).forEach((v, i) => assert.ok(near(v[0], before[i][0]), 'restored'));
+  const ids = cards(comp).map((L) => L.id);
+  const mine = await services.executor.run('grid.items', { action: 'order', gridId: g.id, sort: 'custom', order: JSON.stringify([ids[2], ids[0], ids[3], ids[1]]) });
+  assert.equal(mine.status, 'success');
+  assert.ok(near(pos(comp)[2][0], before[0][0]), 'Card 3 took the first place');
+  const bad = await services.executor.run('grid.items', { action: 'order', gridId: g.id, sort: 'custom', order: JSON.stringify([ids[0]]) });
+  assert.notEqual(bad.status, 'success', 'an order missing items is refused');
+  // tweak: select item 2, twist 45
+  comp._layers.forEach((l) => { l.selected = l.name === 'Card 2'; });
+  const tw = await services.executor.run('grid.items', { action: 'tweak', twist: 45, delay: 0 });
+  assert.equal(tw.status, 'success', JSON.stringify(tw.verification || tw.errors));
+  assert.ok(near(tp(cards(comp)[1], 'ADBE Rotate Z').valueAtTime(comp.time, false), 45));
+  assert.ok(near(tp(cards(comp)[0], 'ADBE Rotate Z').valueAtTime(comp.time, false), 0), 'others not twisted');
+  assert.ok((await services.executor.restore(tw.checkpointId)).ok);
+  assert.ok(near(tp(cards(comp)[1], 'ADBE Rotate Z').valueAtTime(comp.time, false), 0), 'tweak removed');
+});
+
+test('Grid 2 · presets: Grid → Ring and Galaxy → Wall build, keyframe Morph after the build-in, and verify', async () => {
+  for (const id of ['gridRing', 'galaxyWall']) {
+    const { services, comp } = await createTestServices(gridItems(9, { comp: { time: 1 } }));
+    const preset = GT.build.ui.presets.find((p) => p.id === id);
+    const r = await services.executor.run('grid.build', Object.assign({}, preset.args));
+    assert.equal(r.status, 'success', `${id}: ${JSON.stringify(r.verification || r.errors, null, 1)}`);
+    const g = comp._layers.find((l) => l.name === 'MOE Grid 1');
+    assert.equal(ctl(g, 'Morph').numKeys, 2, `${id}: Morph keyframed`);
+    if (preset.args.animateIn) assert.ok(ctl(g, 'Morph').keyTime(1) >= ctl(g, 'Build').keyTime(2) - 1e-9, 'morph starts after the build-in');
+    assert.ok(r.verification.checks.some((c) => /match the preview/.test(c.detail)), `${id}: read-back equals the pure layout`);
+  }
+});
+
+test('Grid 2 · old "Face center" presets still face the centre; sortSlots is a permutation', () => {
+  const p = GT.resolveParams({ mode: 'radial', faceCenter: true, orient: '1', order: '1', buildOrder: '1', buildStyle: '1' }, { columns: 3, spacingX: 100, spacingY: 100, radius: 300, spread: 40, ringSpacing: 100 });
+  assert.equal(p.orient, 2);
+  const items = [{ id: 1, name: 'b', index: 3, slot: 0 }, { id: 2, name: 'a', index: 1, slot: 1 }, { id: 3, name: 'c', index: 2, slot: 2 }];
+  assert.deepEqual(GT.sortSlots(items, 'layer', {}), [2, 3, 1]);
+  assert.deepEqual(GT.sortSlots(items, 'name', {}), [2, 1, 3]);
+  assert.deepEqual(GT.sortSlots(items, 'reverse', {}), [3, 2, 1]);
+  assert.deepEqual(GT.sortSlots(items, 'shuffle', { seed: 5 }).slice().sort(), [1, 2, 3]);
+});
+
+test('Grid 2 · building again on items already in a grid is refused with where to go instead', async () => {
+  const { services, comp } = await createTestServices(gridItems(4));
+  const r = await services.executor.run('grid.build', { mode: 'rect', columns: 2 });
+  assert.equal(r.status, 'success');
+  comp._layers.forEach((l) => { l.selected = /^Card/.test(l.name); });
+  const again = await services.executor.run('grid.build', { mode: 'radial' });
+  assert.notEqual(again.status, 'success');
+  assert.match(JSON.stringify(again.errors), /already in MOE Grid 1/);
+  assert.equal(comp._layers.filter((l) => /^MOE Grid/.test(l.name)).length, 1, 'no second null');
+});

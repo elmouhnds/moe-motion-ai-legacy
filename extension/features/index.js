@@ -32,7 +32,7 @@ const TOOLS = [
   text.animate, text.removeAnimation,
   brand.applyColor, brand.applyFont, brand.extractPalette,
   select.selectLayers,
-  grid.build, grid.update, grid.remove, grid.guides, grid.placeInCells,
+  grid.build, grid.update, grid.items, grid.remove, grid.guides, grid.placeInCells,
   adapt.resize, adapt.suggest,
   exprQuick.quick, expr.apply, expr.validate, expr.inspect, expr.remove, assist,
   quick.reveal, quick.purge, quick.duplicate, quick.flip, quick.parentNull, quick.precompose, quick.separate,

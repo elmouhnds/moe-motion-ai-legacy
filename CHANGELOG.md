@@ -2,6 +2,23 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.19.0] — 2026-10-29 — Grid Builder 2 (and moving palette tiles)
+Requested by the product owner: study aescripts Grid Builder and add it professionally, smarter, without duplicate tools. MOE already had a Grid Builder (6 layouts vs their 4, auto spacing, preview, Build-in, Release / Freeze); v0.19 closes every gap found. Study and comparison: `docs/features/GRID_BUILDER_2.md`.
+### Added
+- **Layout switches live** — one expression holds all six layouts; the grid null's **Layout** dropdown (Effect Controls or the panel) changes it and keeps every control and keyframe.
+- **Morph**: *Morph to* a second layout and blend with the **Morph** slider (0–100); *Animate morph* keyframes it at build time (after the build-in). Presets **Grid → Ring** and **Galaxy → Wall**; the preview plays the morph.
+- **Orient**: Forward · Face Center (or the path direction) · Face Screen (upright while the grid spins). Old *Face center* presets map to Face Center.
+- **Effector** also **rotates** and **fades** items, and a negative **Push** attracts them.
+- **Items stay editable**: move a grid item by hand (or keep its Position keys) — the nudge plays on top of the layout.
+- **Grid Items** (`grid.items`): reorder places — drag, ↑ / ↓, Layer order, Name A→Z, Reverse, Shuffle — without touching the layer stack; give selected items their own **Twist** and build **Delay**.
+- **"Your grid" panel** in Layout & Grid when a MOE Grid (or its items) is selected: Layout / Morph To chips, Morph slider, Orient, Places, item tweaks — every change verified and undoable. Picking as Layout the layout you morph to swaps the two.
+### Fixed
+- Building a grid from layers that are already in a MOE Grid pulled them out of it; it is now refused with where to change that grid instead.
+- Every slider's coloured fill ignored its value (CSS variables set through `h(…, { style })` were dropped); they now match (`dom.h` uses `setProperty` for `--` names).
+- "Your grid" tip line overflowed narrow panels (found by the button audit).
+### Tests
+- New: Morph values in AE equal the pure `placeMorph` at 0 / 35 / 100 %; Layout switch keeps Spacing keyframes; Orient (Forward / Face Center / Face Screen with a rotated null); hand nudge; Effector rotate / fade / attract; Grid Items reverse / custom order / bad order refused / restore / tweak + restore; presets Grid → Ring and Galaxy → Wall verify against the pure layout; old Face center mapping; sort permutations; the rebuild guard. 284 tests pass. Panel (Playwright, dev preview): Layout chip → all items on the ring, Morph slider writes 50, Reverse / ↓ / drag reorder, Twist on selected items only, 0 JS errors. **Mock host, not After Effects.**
+
 ## [0.18.1] — 2026-10-29 — Palette tiles move on hover
 Requested by the product owner: the tiles themselves move when the mouse is over them.
 ### Changed

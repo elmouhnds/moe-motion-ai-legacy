@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.24 — Grid Builder 2 ✅ (v0.19.0)
+- [x] Live Layout switch, Morph, Orient, Effector rotate / fade / attract, editable items, Grid Items, "Your grid" panel (docs/features/GRID_BUILDER_2.md)
+- [ ] Confirm inside AE 2025 (TEST_REPORT.md → items 135–138), both expression engines
+- Next: add / remove items from an existing grid; a per-grid pseudo effect (one tidy effect instead of ~40 controls, via a bundled .ffx); Face Camera for 3D (auto-orient); morph between two settings of the same layout (e.g. 3 → 6 columns)
+
 ## M1.23 — Moving backgrounds ✅ (v0.18.0)
 - [x] 6 point motions + 4 colour moves, seamless loops, 3 live sliders, live preview (`features/design/bgMotion.js`)
 - [ ] Confirm inside AE 2025 (TEST_REPORT.md → items 132–134)
