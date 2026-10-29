@@ -2,6 +2,18 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.18.0] — 2026-10-29 — Moving backgrounds
+Requested by the product owner: backgrounds whose colour points move through expressions, with different kinds of motion for the background and its colours. Design: `docs/features/ANIMATED_BACKGROUNDS.md`.
+### Added
+- **Backgrounds › Motion**: Still · Drift · Orbit · Swirl · Wave · Breathe · Wander — expressions on the gradient points (Ramp start / end, or the 4-Colour Gradient's four points).
+- **Backgrounds › Colours**: Still · Cycle (through the palette) · Swap · Hue · Pulse — expressions on the gradient colours.
+- **Seamless loops**: every motion repeats exactly every *Loop* seconds; three live sliders on the layer — `MOE BG Loop`, `MOE BG Amount`, `MOE BG Colour` (keyframeable).
+- **Live preview** in the Backgrounds Inspector, drawn with the same maths and geometry as the layer; Motion and Colours as chips with a one-line description.
+### Fixed
+- The v0.6 "Slow drift" expression added arrays with `+`, which AE's JavaScript expression engine treats as text (MOE then rolled it back). Point motion now uses `add()`. Old presets with *Slow drift* become *Drift*.
+### Tests
+- The expressions evaluated in the mock equal the plain-JS reference for Linear / Radial / Mesh × 6 motions × 4 colour moves at several times; every motion and colour move loops exactly; Movement 0 % holds the points, Colour change 0 % keeps the palette colours; HSL conversion matches the standard; Flat gets no sliders; restore removes the layer. 273 tests pass. Preview: the canvas moves, the chips switch, running the tool on the mock comp passes all checks. **Preview + mock host, not After Effects** — the look of each motion in AE (and 4-Colour Gradient blending vs the preview's approximation) is still to confirm.
+
 ## [0.17.0] — 2026-10-29 — ★ MOE: the recommended layout
 The product owner asked to see the recommendation. It is a fourth layout built from the best part of each proposal (reasons in `docs/features/UI_LAYOUTS.md`).
 ### Added

@@ -1075,3 +1075,12 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .app.kit-narrow .lay-chip, .app.kit-tiny .lay-chip { min-width: 0; padding: 0 6px; }
 .lay-chip span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .lay-menu { min-width: 28px; }
+/* v0.18 animated background: live preview + Motion / Colours pickers */
+.bgm { display: flex; flex-direction: column; gap: 8px; }
+.bgm-canvas { display: block; width: 100%; height: auto; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--bg-sunken); }
+.bgm-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.bgm-chip { height: 24px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 12px; background: none; color: var(--text-2); font: inherit; font-size: var(--fs-sm); cursor: pointer; }
+.bgm-chip:hover { color: var(--text); border-color: var(--text-3); }
+.bgm-chip[aria-checked="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+.bgm-chip:disabled { opacity: .45; cursor: default; }
+.bgm-hint { color: var(--text-3); font-weight: 400; font-size: 11px; text-transform: none; letter-spacing: 0; }

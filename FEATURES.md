@@ -1,4 +1,6 @@
-# Features (v0.17.0)
+# Features (v0.18.0)
+
+**Moving backgrounds** (v0.18.0): Backgrounds › Motion (Drift, Orbit, Swirl, Wave, Breathe, Wander) and Colours (Cycle, Swap, Hue, Pulse) — expressions on the gradient points and colours, seamless loops, live sliders MOE BG Loop / Amount / Colour, live preview in the Inspector.
 
 **★ MOE layout** (v0.17.0, recommended): menus by object (lit for the selection) + your Quick Bar + four stable task tabs — Settings › Panel layout › MOE ★.
 

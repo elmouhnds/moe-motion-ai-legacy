@@ -24,6 +24,9 @@ const vec = {
   length(a, b) { a = arr(a); if (b !== undefined) { b = arr(b); a = a.map((x, i) => x - (b[i] || 0)); } return Math.sqrt(a.reduce((s, x) => s + x * x, 0)); },
   normalize(a) { a = arr(a); const l = Math.sqrt(a.reduce((s, x) => s + x * x, 0)) || 1; return a.map((x) => x / l); },
   dot(a, b) { a = arr(a); b = arr(b); return a.reduce((s, x, i) => s + x * (b[i] || 0), 0); },
+  // Color Conversion methods (AE expression reference): 0–1 RGBA ↔ HSLA
+  rgbToHsl(c) { return require('../../extension/features/design/bgMotion').rgbToHsl(arr(c)); },
+  hslToRgb(c) { return require('../../extension/features/design/bgMotion').hslToRgb(arr(c)); },
   degreesToRadians(d) { return d * Math.PI / 180; },
   radiansToDegrees(r) { return r * 180 / Math.PI; },
   linear(t, a, b, c, d) {

@@ -30,7 +30,7 @@ const COPY = {
   zoom: (n) => ({ kicker: 'ZOOM & FOCUS', title: 'Screen-recording zooms', pitch: 'Punch-ins, follows, spotlights and animated cursors without touching your layers.', stats: [[n.zoom, 'zoom presets']] }),
   expressions: (n) => ({ kicker: 'EXPRESSIONS', title: 'Smart expressions, no typing', pitch: 'Wiggles, loops, bounces, orbits and auto-animations — with live slider controls.', stats: [[n.expressions, 'expressions']] }),
   shapes: (n) => ({ kicker: 'SHAPES & ICONS', title: 'Vector icons, ready to animate', pitch: 'Every icon lands as editable shape paths; native shapes stay parametric in AE.', stats: [[n.icons.toLocaleString('en-US'), 'icons'], [n.shapes, 'native shapes']] }),
-  backgrounds: (n) => ({ kicker: 'BACKGROUNDS', title: 'Backgrounds & colour', pitch: 'Gradient, radial and mesh backgrounds from curated palettes — with grain and slow drift.', stats: [[n.palettes, 'palettes'], [4, 'styles']] }),
+  backgrounds: (n) => ({ kicker: 'BACKGROUNDS', title: 'Backgrounds & colour', pitch: 'Gradient, radial and mesh backgrounds from curated palettes — still or moving: the colour points travel and the colours change, in a seamless loop.', stats: [[n.palettes, 'palettes'], [6, 'motions'], [4, 'colour moves']] }),
   compositing: () => ({ kicker: 'COMPOSITING', title: 'Key, match & grade', pitch: 'Analyse a shot, pull a key, match colour and grade — measured, not guessed. Green-screen prompts and import & key live here too.' }),
   deliver: () => ({ kicker: 'DELIVER', title: 'Every format from one master', pitch: 'Plan all aspect ratios at once and adapt the animation — keyframes kept.' }),
   quick: () => ({ kicker: 'QUICK BAR', title: 'Edit your Quick Bar', pitch: 'Every everyday button in one place. Star a button to put it on the bar under the selection line; right-click any button for its options.' }),
@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['background', 'Moving backgrounds', 'Backgrounds › pick a Motion for the colour points (Drift, Orbit, Swirl, Wave, Breathe, Wander) and how the Colours change (Cycle, Swap, Hue, Pulse). The preview shows it live; in AE it loops seamlessly and stays editable on three sliders: MOE BG Loop, Amount and Colour.'],
   ['star', 'MOE ★ — the recommended layout', 'Settings › Panel layout › MOE ★: menus by object (the one for your selection lights up, nothing moves), your Quick Bar in one row, and four task tabs — Animate · Design · Layout · Finish. More room for the graphs in a docked panel.'],
   ['grid', 'Try three panel layouts', 'Settings › Panel layout: Hub (screens + a Home that never changes), Command Bar (menus by object — the one for your selection lights up — plus your own bars) or Workspace (a context bar for the selection + four task tabs). Every tool keeps one place in each; Current is the v0.15 panel.'],
   ['spark', 'Home follows your selection', 'The top card shows what you selected and only the tools that fit it: keys → the ease graphs, keys and loops; a layer → animate in / out, rigs, anchor and align; text → text in; shapes → draw-on and arrange; nothing → create. The rest waits under More, folded — and stays the way you leave it for each kind of selection. Home › Layout: fixed brings the old order back.'],

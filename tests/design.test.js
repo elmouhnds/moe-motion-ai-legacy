@@ -187,6 +187,92 @@ test('Background mesh uses the 4-Colour Gradient; flat style needs no effect', a
   assert.equal(named(comp, 'MOE Background Flat').property('ADBE Effect Parade').numProperties, 0);
 });
 
+/* ---------------- Animated backgrounds (v0.18) ---------------- */
+const BM = require('../extension/features/design/bgMotion');
+const Brand = require('../extension/features/brand/brands');
+
+test('bgMotion maths: every motion loops exactly; Still holds; swirl turns around the centre; HSL matches the standard', () => {
+  const o = { loop: 6, amount: 40, w: 1920, h: 1080 }, base = [400, 300];
+  for (const m of BM.POINT_MOTIONS) {
+    for (const t of [0.37, 2.2, 5.1]) {
+      const a = BM.pointAt(m.id, base, 1, 4, t, o), b = BM.pointAt(m.id, base, 1, 4, t + o.loop, o);
+      assert.ok(near(a[0], b[0], 1e-6) && near(a[1], b[1], 1e-6), `${m.id} loops`);
+    }
+  }
+  assert.deepEqual(BM.pointAt('none', base, 0, 2, 3, o), base);
+  const c = [960, 540], q = BM.pointAt('swirl', base, 0, 2, 1.5, o); // a quarter turn
+  assert.ok(near(Math.hypot(q[0] - c[0], q[1] - c[1]), Math.hypot(base[0] - c[0], base[1] - c[1]), 1e-6), 'same distance from the centre');
+  assert.ok(near(q[0], c[0] - (base[1] - c[1]), 1e-6) && near(q[1], c[1] + (base[0] - c[0]), 1e-6));
+  assert.deepEqual(BM.rgbToHsl([1, 0, 0, 1]), [0, 1, 0.5, 1]);
+  assert.deepEqual(BM.rgbToHsl([0.5, 0.5, 0.5, 1]), [0, 0, 0.5, 1]);
+  const blue = BM.rgbToHsl([0, 0, 1, 1]); assert.ok(near(blue[0], 2 / 3, 1e-9));
+  for (const col of [[0.2, 0.6, 0.9, 1], [0.95, 0.4, 0.1, 1], [0.1, 0.1, 0.12, 1]]) {
+    const back = BM.hslToRgb(BM.rgbToHsl(col)); col.forEach((v, k) => assert.ok(near(back[k], v, 1e-9), 'round trip'));
+  }
+  const P = PAL.byId('ocean').colors.map((hx) => Brand.hexToRgb(hx).concat([1]));
+  for (const m of BM.COLOR_MOTIONS) {
+    const s = { i: 0, n: 2, idx: 1, P, own: P[1], other: P[3] }, oo = { loop: 4, colour: 100 };
+    const a = BM.colorAt(m.id, s, 1.3, oo), b = BM.colorAt(m.id, s, 5.3, oo);
+    a.forEach((v, k) => assert.ok(near(v, b[k], 1e-9), `${m.id} colour loops`));
+    BM.colorAt(m.id, s, 0, oo).forEach((v, k) => assert.ok(near(v, P[1][k], 1e-9), `${m.id} starts on the palette colour`));
+    BM.colorAt(m.id, s, 1.3, { loop: 4, colour: 0 }).forEach((v, k) => assert.ok(near(v, P[1][k], 1e-9), `${m.id}: Colour change 0 % keeps the colour`));
+  }
+});
+
+test('Animated background: the expressions AE runs give the same points and colours as the JS reference, for every motion', async () => {
+  for (const style of ['linear', 'radial', 'mesh']) {
+    for (const [i, m] of BM.POINT_MOTIONS.filter((x) => x.id !== 'none').entries()) {
+      const cm = BM.COLOR_MOTIONS[1 + (i % 4)].id;
+      const { services, comp } = await createTestServices(base());
+      const r = await services.executor.run('design.background', { palette: 'ocean', style, from: 1, to: 3, motion: m.id, colorMotion: cm, loop: 5, amount: 60, colourAmount: 80 });
+      assert.equal(r.status, 'success', `${style}/${m.id}/${cm}: ${JSON.stringify(r.verification || r.errors)}`);
+      const L = named(comp, 'MOE Background'), fx = L.property('ADBE Effect Parade');
+      assert.equal(fx.property(BM.FX.loop).property('Slider').value, 5);
+      assert.equal(fx.property(BM.FX.amount).property('Slider').value, 60);
+      assert.equal(fx.property(BM.FX.colour).property('Slider').value, 80);
+      const eff = fx.property(style === 'mesh' ? 'MOE Mesh' : 'MOE Gradient');
+      const plan = D.backgroundPlan({ palette: 'ocean', style, from: 1, to: 3, angle: 135, spread: 100, grain: 0, motion: m.id, colorMotion: cm, loop: 5, amount: 60, colourAmount: 80 }, comp);
+      const pointNames = style === 'mesh' ? ['Point 1', 'Point 2', 'Point 3', 'Point 4'] : ['Start of Ramp', 'End of Ramp'];
+      const colourNames = style === 'mesh' ? ['Color 1', 'Color 2', 'Color 3', 'Color 4'] : ['Start Color', 'End Color'];
+      const P = PAL.byId('ocean').colors.map((hx) => Brand.hexToRgb(hx).concat([1]));
+      for (const t of [0, 1.1, 3.7, 5]) {
+        pointNames.forEach((pn, k) => {
+          const got = eff.property(pn).valueAtTime(t, false), want = BM.pointAt(m.id, plan.bases[k], k, pointNames.length, t, { loop: 5, amount: 60, w: comp.width, h: comp.height });
+          assert.ok(near(got[0], want[0], 0.01) && near(got[1], want[1], 0.01), `${style}/${m.id} ${pn} @${t}: ${got} vs ${want}`);
+        });
+        colourNames.forEach((cn, k) => {
+          const sl = plan.slots[k], other = plan.slots.find((x) => x.id === sl.other);
+          const got = A(eff.property(cn).valueAtTime(t, false)), want = BM.colorAt(cm, { i: k, n: colourNames.length, idx: sl.idx, P, own: P[sl.idx], other: P[other.idx] }, t, { loop: 5, colour: 80 });
+          want.forEach((v, j) => assert.ok(near(got[j], v, 1e-3), `${style}/${cm} ${cn} @${t}: ${got} vs ${want}`));
+        });
+      }
+      // live: the sliders drive the expressions
+      fx.property(BM.FX.amount).property('Slider').setValue(0);
+      const still = eff.property(pointNames[0]).valueAtTime(1.1, false);
+      if (m.id !== 'swirl') assert.ok(near(still[0], plan.bases[0][0], 0.01) && near(still[1], plan.bases[0][1], 0.01), `${m.id}: Movement 0 % holds the point`);
+      assert.ok((await services.executor.restore(r.checkpointId)).ok);
+      assert.equal(named(comp, 'MOE Background'), undefined);
+    }
+  }
+});
+
+test('Animated background: old "drift" presets still work (= Drift); Flat ignores motion; every expression is tagged and uses add(), never array +', async () => {
+  const { services, comp } = await createTestServices(base());
+  const r = await services.executor.run('design.background', { palette: 'cyber', style: 'mesh', drift: true });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
+  const mesh = named(comp, 'MOE Background').property('ADBE Effect Parade').property('MOE Mesh');
+  assert.match(mesh.property('Point 1').expression, /^\/\/ MOE Background: motion drift/);
+  assert.equal(mesh.property('Color 1').expression, '', 'colours stay still unless asked');
+  const f = await services.executor.run('design.background', { palette: 'mono', style: 'solid', motion: 'orbit', colorMotion: 'cycle', name: 'MOE Background Flat' });
+  assert.equal(f.status, 'success');
+  assert.equal(named(comp, 'MOE Background Flat').property('ADBE Effect Parade').numProperties, 0, 'no sliders, no expressions on a flat colour');
+  for (const m of BM.POINT_MOTIONS.filter((x) => x.id !== 'none')) {
+    const e = BM.pointExpression(m.id, 1, 4, 1920, 1080);
+    assert.ok(e.startsWith(D.TAG));
+    assert.ok(!/value \+ \[/.test(e), `${m.id}: no array + array`);
+  }
+});
+
 /* ---------------- Colorize ---------------- */
 
 test('Palette colour maths: cycle wraps, blend hits both ends, shuffle is deterministic', () => {

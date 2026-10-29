@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.23 — Moving backgrounds ✅ (v0.18.0)
+- [x] 6 point motions + 4 colour moves, seamless loops, 3 live sliders, live preview (`features/design/bgMotion.js`)
+- [ ] Confirm inside AE 2025 (TEST_REPORT.md → items 132–134)
+- Next: motion on the palette tiles themselves (hover = moving), a "Follow" motion where a null drags a colour point, noise-based grain flicker speed, save a moving background as My Preset with its motion
+
 ## M1.22 — ★ MOE layout (recommended) ✅ (v0.17.0)
 - [x] Menus by object + one Quick Bar + four task tabs (`layouts.moe`), Settings › Panel layout › MOE ★, preview `#moe`
 - [ ] Owner approves → make MOE the default for new installs and retire the other layouts (keep Current one release as a fallback)

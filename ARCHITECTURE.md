@@ -149,6 +149,12 @@ See `docs/features/STUDIO_v0.4.md`.
 - Host: `ops/kit.jsx` (`keyframes.setInterp`, `layers.trimToKeys` / `restoreTiming`, `rigs.find` / `rigs.remove`); `ops/transform.jsx` anchor rewritten (2D maths R·S·Δa; 3D / auto-orient through a toWorld / fromWorld probe with selection restore; keyed anchor; mask box; Alt placement via the parent chain), `layers.nudge` handles parented layers (comp → parent space, 2D parents).
 - Second CEP extension `tv.madtomato.moe.motionai.kit` (`kit.html` → `main.start({ mode: 'kit' })` → `shell.renderKitPanel`). Both panels share `%APPDATA%\MOE Motion AI`: `core/storage.js` re-reads a document whose file changed (mtime, checked ≤ 2×/s per document; `version(name)`), `core/settings.js` re-reads before `get` / `update`.
 
+## 5u. Moving backgrounds (v0.18.0)
+- `features/design/bgMotion.js`: `POINT_MOTIONS`, `COLOR_MOTIONS`, `FX` (slider names), `pointAt` / `colorAt` (reference), `pointExpression` / `colorExpression` (same constants baked in, tagged `// MOE Background: motion|colour …`), `rgbToHsl` / `hslToRgb`.
+- `design.background`: params `motion`, `colorMotion` (hidden in the form — the widget's chips set them), `loop`, `amount`, `colourAmount`; `drift` kept (hidden) for old presets. `backgroundPlan` adds `bases`, `slots`, `motion`, `colorMotion`, `controls`. `execute` writes the sliders (`S.writeEffects`) then one `expressions.set` (revertOnError) for points + colours; `verify` checks sliders and every expression.
+- Preview: `widgets.body['design.background']` = `bgMotion` (replaces the big thumb in the library Inspector); `bgFrame` draws Ramp with canvas gradients and the 4-Colour Gradient by inverse-distance blending on a 64-px grid.
+- Mock: `tests/mock/ae-expr.js` gains `rgbToHsl` / `hslToRgb`.
+
 ## 5t. ★ MOE layout (v0.17.0)
 - `layouts.moe(app, s, body)` = `workspace(app, s, body, { contextBar: false, foot: false })` with `top = [menusRow(app, s), quickbar.strip(app), …tabs]`, the Command Bar's `menuPopover` as overlay and an F4 button as `titleExtra`. `menusRow` was pulled out of `bar()` so both layouts share it.
 

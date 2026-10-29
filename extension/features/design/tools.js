@@ -7,7 +7,9 @@
  *                       draw-on, pop or fade at the playhead.
  *   design.background   "MOE Background" solid at the bottom of the comp: linear / radial Gradient
  *                       Ramp, 4-Colour mesh or flat colour from a palette, optional film grain
- *                       (Noise) and slow drift (tagged expressions on the gradient points).
+ *                       (Noise), and motion (v0.18, bgMotion.js): the colour points move (drift,
+ *                       orbit, swirl, wave, breathe, wander) and the colours change (cycle, swap,
+ *                       hue, pulse) through tagged expressions driven by three live sliders.
  *   design.colorize     colour the selected layers from a palette: cycle, shuffle (seeded) or
  *                       blend along the selection order.
  */
@@ -16,6 +18,7 @@ const LIB = require('./shapesLib');
 const PAL = require('./palettes');
 const B = require('../brand/brands');
 const S = require('../compositing/shared');
+const BM = require('./bgMotion');
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const close = (a, b, t = 0.006) => !!a && !!b && [0, 1, 2].every((i) => Math.abs(a[i] - b[i]) < t);
@@ -157,7 +160,8 @@ function backgroundPlan(args, comp) {
   const pal = PAL.byId(args.palette);
   const col = (i) => pal.colors[((i % 5) + 5) % 5];
   const rgba = (hex) => B.hexToRgb(hex).concat([1]);
-  const plan = { palette: pal, base: col(args.from), items: [], drift: [] };
+  const idxOf = (i) => ((i % 5) + 5) % 5;
+  const plan = { palette: pal, base: col(args.from), items: [], drift: [], bases: [], slots: [] };
   if (args.style === 'linear' || args.style === 'radial') {
     const g = gradientPoints(args.style, comp.width, comp.height, args.angle, args.spread);
     plan.items.push({ key: BG_KEYS.gradient, matchName: 'ADBE Ramp', before: [], params: [
@@ -168,7 +172,9 @@ function backgroundPlan(args, comp) {
       { id: 'shape', value: args.style === 'radial' ? 2 : 1, names: ['Ramp Shape'], suffix: 5 }
     ] });
     plan.drift = ['start', 'end'];
+    plan.bases = [g.start, g.end];
     plan.colors = [col(args.from), col(args.to)];
+    plan.slots = [{ id: 'startColor', idx: idxOf(args.from), other: 'endColor' }, { id: 'endColor', idx: idxOf(args.to), other: 'startColor' }];
   } else if (args.style === 'mesh') {
     const pts = meshPoints(comp.width, comp.height);
     const cols = [0, 1, 2, 3].map((i) => col(args.from + i + (i >= 2 ? 1 : 0)));
@@ -179,19 +185,26 @@ function backgroundPlan(args, comp) {
     });
     plan.items.push({ key: BG_KEYS.mesh, matchName: 'ADBE 4ColorGradient', before: [], params });
     plan.drift = ['point1', 'point2', 'point3', 'point4'];
+    plan.bases = pts;
     plan.colors = cols;
+    plan.slots = [0, 1, 2, 3].map((i) => ({ id: `color${i + 1}`, idx: idxOf(args.from + i + (i >= 2 ? 1 : 0)), other: `color${((i + 1) % 4) + 1}` }));
   } else {
     plan.colors = [col(args.from)];
+  }
+  // motion: what moves (points) and how the colours change; the old "drift" switch = Drift
+  plan.motion = args.style === 'solid' ? 'none' : (args.motion && args.motion !== 'none' ? args.motion : (args.drift ? 'drift' : 'none'));
+  plan.colorMotion = args.style === 'solid' ? 'none' : (args.colorMotion || 'none');
+  plan.animated = plan.motion !== 'none' || plan.colorMotion !== 'none';
+  if (plan.animated) {
+    const slider = (key, value) => ({ key, matchName: 'ADBE Slider Control', before: [], params: [{ id: 'v', value, names: ['Slider'], suffix: 1 }] });
+    plan.controls = [slider(BM.FX.loop, args.loop), slider(BM.FX.amount, args.amount), slider(BM.FX.colour, args.colourAmount)];
   }
   if (args.grain > 0) plan.grain = { key: BG_KEYS.grain, matchName: 'ADBE Noise', before: [], params: [{ id: 'amount', value: args.grain, names: ['Amount of Noise'], nth: { type: 'OneD', n: 1 } }] };
   return plan;
 }
 
-function driftExpression(id, i, w, h) {
-  const ax = Math.round(w * 0.07), ay = Math.round(h * 0.07);
-  const f = [0.21, 0.17, 0.13, 0.19][i % 4], g = [0.16, 0.23, 0.11, 0.14][i % 4];
-  return `${TAG}: drift\nvalue + [${ax} * Math.sin(time * ${f} * 2 * Math.PI + ${i * 1.7}), ${ay} * Math.cos(time * ${g} * 2 * Math.PI + ${i * 2.3})];`;
-}
+/** v0.6 name kept for callers: the Drift motion of point i (of n) — now a bgMotion expression. */
+function driftExpression(id, i, w, h, n = 2) { return BM.pointExpression('drift', i, n, w, h); }
 
 const background = {
   id: 'design.background',
@@ -199,8 +212,8 @@ const background = {
   category: 'design',
   group: 'Backgrounds',
   name: 'Background',
-  description: 'Add a "MOE Background" at the bottom of the comp from a palette: linear or radial gradient (Gradient Ramp), a soft 4-colour mesh, or a flat colour — with optional film grain and a slow, looping drift.',
-  keywords: ['background', 'gradient', 'ramp', 'mesh', 'bg', 'backdrop', 'palette', 'grain', 'noise', 'colour'],
+  description: 'Add a "MOE Background" at the bottom of the comp from a palette: linear or radial gradient (Gradient Ramp), a soft 4-colour mesh, or a flat colour — with optional film grain, moving colour points (drift, orbit, swirl, wave, breathe, wander) and changing colours (cycle, swap, hue, pulse) that loop seamlessly and stay live on sliders.',
+  keywords: ['background', 'gradient', 'ramp', 'mesh', 'bg', 'backdrop', 'palette', 'grain', 'noise', 'colour', 'animated', 'motion', 'loop', 'moving'],
   icon: 'background',
   params: {
     palette: { type: 'enum', label: 'Palette', default: 'tomato', options: PAL.PALETTES.map((p) => ({ value: p.id, label: p.name })) },
@@ -210,13 +223,18 @@ const background = {
     angle: { type: 'number', label: 'Angle', min: 0, max: 360, step: 1, default: 135, unit: '°', showIf: (a) => a.style === 'linear' },
     spread: { type: 'number', label: 'Spread', min: 10, max: 300, step: 1, default: 100, unit: '%', showIf: (a) => a.style === 'linear' || a.style === 'radial' },
     grain: { type: 'number', label: 'Grain', min: 0, max: 40, step: 0.5, default: 0, unit: '%' },
-    drift: { type: 'boolean', label: 'Slow drift', default: false, description: 'Animate the gradient points with a gentle looping expression', showIf: (a) => a.style !== 'solid' },
+    motion: { type: 'enum', label: 'Motion', default: 'none', options: BM.POINT_MOTIONS.map((m) => ({ value: m.id, label: m.label })), description: 'How the colour points move (a looping expression on each point)', hidden: true },
+    colorMotion: { type: 'enum', label: 'Colours', default: 'none', options: BM.COLOR_MOTIONS.map((m) => ({ value: m.id, label: m.label })), description: 'How the colours change over time (a looping expression on each colour)', hidden: true },
+    loop: { type: 'number', label: 'Loop', min: 1, max: 120, step: 0.5, default: 8, unit: 's', description: 'One full loop — the background repeats seamlessly after this', showIf: (a) => a.style !== 'solid' && ((a.motion && a.motion !== 'none') || (a.colorMotion && a.colorMotion !== 'none') || a.drift) },
+    amount: { type: 'number', label: 'Movement', min: 0, max: 100, step: 1, default: 40, unit: '%', description: 'How far the points travel (100 % = a quarter of the comp)', showIf: (a) => a.style !== 'solid' && ((a.motion && a.motion !== 'none' && a.motion !== 'swirl') || a.drift) },
+    colourAmount: { type: 'number', label: 'Colour change', min: 0, max: 100, step: 1, default: 100, unit: '%', description: 'How strongly the colours change', showIf: (a) => a.style !== 'solid' && a.colorMotion && a.colorMotion !== 'none' },
+    drift: { type: 'boolean', label: 'Slow drift (old)', default: false, advanced: true, description: 'Kept for presets saved before v0.18 — same as Motion: Drift', showIf: () => false },
     name: { type: 'string', label: 'Layer name', default: 'MOE Background', maxLength: 120, advanced: true }
   },
   requires: { comp: true },
   permissions: ['modify.layers', 'modify.effects', 'modify.expressions'],
   recovery: 'undo+checkpoint',
-  ai: { callable: true, hint: 'Create a background layer from a named palette: linear/radial gradient, 4-colour mesh or flat colour, optional grain and drift.' },
+  ai: { callable: true, hint: 'Create a background layer from a named palette: linear/radial gradient, 4-colour mesh or flat colour, optional grain; animate it with motion (drift/orbit/swirl/wave/breathe/wander) and colorMotion (cycle/swap/hue/pulse), loop seconds and amount.' },
   uses: { hostOps: ['layers.createSolid', 'effects.ensure', 'expressions.set', 'layers.remove'], network: false },
   compatibility: { minAE: '25.0' },
   ui: { primaryLabel: 'Add Background' },
@@ -230,7 +248,8 @@ const background = {
     if (!/^MOE /.test(name)) return { ok: false, error: 'Layer name must start with "MOE " so it can be found and removed safely' };
     return {
       ok: true, plan, name,
-      preview: { summary: `${plan.palette.name} · ${args.style}${args.grain ? ` · grain ${args.grain}%` : ''}${args.drift && args.style !== 'solid' ? ' · drift' : ''}`, items: [plan.colors.join(' → '), `New layer "${name}" at the bottom of the comp`] }
+      preview: { summary: `${plan.palette.name} · ${args.style}${args.grain ? ` · grain ${args.grain}%` : ''}${plan.motion !== 'none' ? ` · ${BM.pointMotion(plan.motion).label.toLowerCase()}` : ''}${plan.colorMotion !== 'none' ? ` · colours ${BM.colorMotion(plan.colorMotion).label.toLowerCase()}` : ''}`,
+        items: [plan.colors.join(' → '), `New layer "${name}" at the bottom of the comp`].concat(plan.animated ? [`Loops every ${args.loop} s — live on the "${BM.FX.loop}", "${BM.FX.amount}" and "${BM.FX.colour}" sliders`] : []) }
     };
   },
 
@@ -250,13 +269,22 @@ const background = {
     if (plan.grain) {
       try { out.grain = await S.writeEffects(host, ctx, [{ layer: { layerId: solid.layerId }, items: [plan.grain] }], 'MOE: Grain'); } catch (e) { out.grainError = e.message; }
     }
-    if (args.drift && out.fx && plan.drift.length) {
+    if (plan.animated && out.fx) {
+      // sliders first: the expressions read them
+      out.controlsRequest = [{ layer: { layerId: solid.layerId }, items: plan.controls }];
+      out.controls = await S.writeEffects(host, ctx, out.controlsRequest, 'MOE: Background Controls');
       const entry = out.fx.layers[0].items[0];
-      const targets = plan.drift.map((id, i) => {
-        const p = entry.params.find((x) => x.id === id);
-        return { address: { layerId: solid.layerId, matchNames: ['ADBE Effect Parade', `name:${entry.key}`, p.matchName] }, expression: driftExpression(id, i, ctx.comp.width, ctx.comp.height), enabled: true };
-      });
-      out.drift = await host.call('expressions.set', { compId: ctx.comp.id, label: 'MOE: Background Drift', revertOnError: true, targets });
+      const addr = (id) => { const p = entry.params.find((x) => x.id === id); return { layerId: solid.layerId, matchNames: ['ADBE Effect Parade', `name:${entry.key}`, p.matchName] }; };
+      const targets = [];
+      if (plan.motion !== 'none') plan.drift.forEach((id, i) => targets.push({ address: addr(id), expression: BM.pointExpression(plan.motion, i, plan.drift.length, ctx.comp.width, ctx.comp.height), enabled: true }));
+      if (plan.colorMotion !== 'none') {
+        const P = plan.palette.colors.map((hx) => B.hexToRgb(hx).concat([1]));
+        plan.slots.forEach((sl, i) => {
+          const other = plan.slots.find((x) => x.id === sl.other);
+          targets.push({ address: addr(sl.id), expression: BM.colorExpression(plan.colorMotion, { i, n: plan.slots.length, idx: sl.idx, P, own: P[sl.idx], other: P[other.idx] }), enabled: true });
+        });
+      }
+      out.drift = await host.call('expressions.set', { compId: ctx.comp.id, label: 'MOE: Background Motion', revertOnError: true, targets });
     }
     return out;
   },
@@ -265,7 +293,8 @@ const background = {
     const checks = [{ ok: !!result.solid.layerId, label: result.solid.name, detail: 'background layer created at the bottom' }];
     if (result.fx) checks.push(...S.verifyEffects(result.fx, result.fxRequest).checks);
     if (args.grain > 0) checks.push({ ok: !!result.grain, label: 'Grain', detail: result.grain ? `${args.grain}%` : `not applied: ${result.grainError}` });
-    if (result.drift) for (const t of result.drift.targets) checks.push({ ok: !t.skipped && !t.reverted && !t.after.expressionError, label: `Drift › ${t.name}`, detail: t.reverted ? t.after.expressionError : 'expression active' });
+    if (result.controls) checks.push(...S.verifyEffects(result.controls, result.controlsRequest).checks);
+    if (result.drift) for (const t of result.drift.targets) checks.push({ ok: !t.skipped && !t.reverted && !t.after.expressionError, label: `Motion › ${t.name}`, detail: t.reverted ? t.after.expressionError : 'expression active' });
     return { ok: checks.every((c) => c.ok), checks };
   },
   checkpoint({ result, ctx }) { return { compId: ctx.comp.id, layerId: result.solid.layerId }; },

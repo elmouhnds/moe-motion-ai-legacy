@@ -234,7 +234,10 @@ ${texts}
       var start = (location.hash || '').slice(1);
       var studio = require('/extension/app/ui/studio/sections.js');
       if (start && studio.byId(start)) app.go(start);
-      window.addEventListener('hashchange', function () { var l = HASH[(location.hash || '').slice(1)]; if (l && l !== opts.layout) setLayout(l); });
+      // #backgrounds, #animate, … open that section (any section id of the panel)
+      var openSection = function () { var v = (location.hash || '').slice(1); if (v && !HASH[v] && require('/extension/app/ui/studio/sections.js').byId(v)) app.go(v); };
+      openSection();
+      window.addEventListener('hashchange', function () { var l = HASH[(location.hash || '').slice(1)]; if (l && l !== opts.layout) setLayout(l); else openSection(); });
     });
   } catch (e) {
     document.getElementById('app').innerHTML = '<div class="pv-err"></div>';
