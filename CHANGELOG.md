@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.22.0] — 2026-10-29 — Classic: your group order, ▸ Recent, keyboard
+Next Roadmap step after choosing Classic as the final layout (M1.26). Details: `docs/features/AE_CLASSIC_LAYOUT.md` › Your order.
+### Added
+- **Reorder groups**: drag a group by its header (⠿) or Alt+↑/↓ on it; saved per tab. Tab ▾ › **Reset group order**.
+- **▸ Recent** in every tab: the last six things you ran from that tab (actions, Motion Kit tools, presets, ▾ menu items), newest first; one fixed-height row so nothing below moves; *Clear*.
+- **Keyboard on group headers**: ↑/↓ previous / next group, Home / End, → open, ← fold.
+### Fixed
+- The shortcuts sheet still described the old Ctrl 1…7 (Sidebar); it now lists Ctrl 1…6 for the Classic tabs and the group keys.
+### Tests
+- `tests/layouts.test.js`: saved order per tab, stale / partial stored orders, default order stored as nothing, reset; Recent newest-first / no duplicates / max 6 / per tab; every ref the panel records resolves. Playwright (dev preview): Recent fills without changing height, ↓ / Alt+↑ / ← / → on headers, drag Arrange above Recent, order kept per tab, Reset from ▾ — 0 JS errors. **Preview + mock host, not After Effects.**
+
 ## [0.21.0] — 2026-10-29 — Final layout: Classic
 The product owner asked to pick the two smartest layouts, develop both, compare them and choose the final style. All six were measured; Classic and MOE ★ were developed and timed on the same 12 everyday tasks (Classic 19 clicks, MOE ★ 20). **Classic is final**; MOE ★ stays optional. Details: `docs/features/FINAL_LAYOUT.md`.
 ### Added

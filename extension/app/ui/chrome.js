@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['grid', 'Your groups, your order', 'Drag a group by its header (or Alt+↑/↓) to put it where you want — each tab keeps your order; ▾ › Reset group order brings the original back. ▸ Recent at the top of every tab holds the last six things you ran from it. Keyboard: ↑/↓ between groups, ←/→ fold and open.'],
   ['grid', 'Classic is the final layout', 'After comparing the layouts on the same 12 everyday tasks, Classic stays. New: ▾ next to each tab (or right-click the tab) lists every action and preset of that tab — two clicks from anywhere. Ctrl 1…6 switch tabs. MOE ★ is still in ≡ › Panel layout.'],
   ['grid', 'Classic layout — organised like After Effects', 'Tabs named after AE\'s menus (Keys · Animate · Layer · Design · Effect · Comp), twirl-down groups like Effect Controls, a search like Effects & Presets (Ctrl K) and the ≡ panel menu. A dot shows which tab fits your selection; its groups open by themselves. Preset tiles apply in one click. Other layouts: ≡ › Panel layout.'],
   ['grid', 'Grid Builder 2', 'Switch a grid\'s Layout live (Effect Controls or the panel — controls and keyframes stay), Morph into a second layout with one slider, Orient (Forward / Face Center / Face Screen), drag items to new places without touching the layer stack, Twist / Delay for single items, and an Effector that also rotates, fades and attracts. Select a grid: the "Your grid" panel shows it all.'],
@@ -123,7 +124,10 @@ const WHATS_NEW = [
 const SHORTCUTS = [
   [['Ctrl', 'K'], 'Search every tool'],
   [['Ctrl', 'Space'], 'Ask the Copilot'],
-  [['Ctrl', '1…7'], 'Home (ease · anchor · align), the Toolbox and the five workspaces'],
+  [['Ctrl', '1…6'], 'Classic tabs: Keys · Animate · Layer · Design · Effect · Comp (Sidebar layout: 1…7 = Home, Toolbox, workspaces)'],
+  [['↑', '↓'], 'On a group header: previous / next group (Home / End: first / last)'],
+  [['←', '→'], 'On a group header: fold / open it'],
+  [['Alt', '↑ ↓'], 'On a group header: move the group (or drag its header) — saved per tab'],
   [['Q', 'hold'], 'Pie menu: point and release (tap Q to keep it open, 1–8 to choose)'],
   [['Right button', 'hold'], 'Pie menu with the mouse'],
   [['?'], 'Show this sheet'],

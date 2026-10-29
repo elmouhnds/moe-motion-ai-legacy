@@ -433,7 +433,7 @@ function alignBlock(app) {
 }
 
 /* ---------- tools ---------- */
-function toolButton(app, id, pinMode) {
+function toolButton(app, id, pinMode, onRun) {
   const s = app.state.get();
   const pr = prefs(app);
   const a = quickbar.ACTIONS.find((x) => x.id === id);
@@ -449,7 +449,7 @@ function toolButton(app, id, pinMode) {
   return h('button', {
     class: `kit-tool ${rd.ok ? '' : 'off'} ${id === 'k_trash' ? 'danger' : ''}`, 'data-key': `kt-${id}`, disabled: !!s.running, 'aria-label': BAR.KIT_LABEL[id] || a.label,
     title: `${a.label}${alt ? `\nAlt-click: ${{ clone: 'mirror keys', k_delay: 'Blend (smooth lag) instead of Spring' }[id] || 'reverse order'}` : ''}\nRight-click: options${rd.ok ? '' : `\n— ${rd.hint}`}`,
-    onclick: (e) => (e.altKey && alt ? quickbar.run(app, Object.assign({}, a, { args: Object.assign({}, a.args, alt) })) : rd.ok ? quickbar.run(app, a) : app.toast(`${a.label}: ${rd.hint}`, 4000, 'warn')),
+    onclick: (e) => (e.altKey && alt ? quickbar.run(app, Object.assign({}, a, { args: Object.assign({}, a.args, alt) })) : rd.ok ? (onRun && onRun(id), quickbar.run(app, a)) : app.toast(`${a.label}: ${rd.hint}`, 4000, 'warn')),
     oncontextmenu: (e) => { e.preventDefault(); quickbar.openOptions(app, a); }
   }, icon(a.icon || 'bolt'), h('span', { class: 'kit-tool-l' }, BAR.KIT_LABEL[id] || a.label));
 }
@@ -459,7 +459,7 @@ function toolsBlock(app, opts = {}) {
   const title = opts.foldId ? foldTitle(app, opts.foldId, opts.title || 'Tools') : h('span', { class: 'kit-t' }, opts.title || 'Tools');
   // v0.14: the full list is grouped by what the tools do; a pinned list keeps the user's order
   const body = !ids.length ? h('div', { class: 'why kit-empty' }, 'Nothing pinned — open the Toolbox and use “Pin to Home”.')
-    : opts.ids ? h('div', { class: 'kit-grid' }, ids.map((id) => toolButton(app, id, opts.pinMode)))
+    : opts.ids ? h('div', { class: 'kit-grid' }, ids.map((id) => toolButton(app, id, opts.pinMode, opts.onRun)))
       : BAR.KIT_GROUPS.map(([g, list]) => h('div', { class: 'kit-tgroup', 'data-key': `tg-${g}` }, h('div', { class: 'kit-tgroup-h' }, g), h('div', { class: 'kit-grid' }, list.filter((id) => ids.includes(id)).map((id) => toolButton(app, id, opts.pinMode)))));
   return h('section', { class: `kit-block kit-toolbox ${opts.cls || ''}`, 'aria-label': opts.title || 'Tools' },
     h('div', { class: 'kit-h' }, title, opts.right || h('span', { class: 'kit-hint' }, 'right-click: options · Alt: variant')),

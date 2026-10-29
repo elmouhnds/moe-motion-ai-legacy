@@ -94,3 +94,51 @@ test('final layout (v0.21): every Classic tab action and preset is in its ▾ qu
   assert.deepEqual(shown, ['ae', 'studio', 'moe']);
   assert.ok(['hub', 'bar', 'workspace'].every((id) => L.LAYOUTS.find((x) => x.id === id).retired));
 });
+
+test('Classic groups (v0.22): your order is saved per tab, survives new / unknown groups, resets to default', () => {
+  const AE = require('../extension/app/ui/layoutAE');
+  const data = {};
+  const app = { render() {}, services: { store: { get: (k, f) => (k in data ? JSON.parse(JSON.stringify(data[k])) : f), set: (k, v) => { data[k] = v; } } } };
+  const t = AE.TABS.find((x) => x.id === 'ae-layer');
+  const def = ['recent'].concat(t.groups.map((g) => g.id));
+  assert.deepEqual(AE.groupsOf(app, t).map((g) => g.id), def, 'Recent first, then the tab groups');
+  assert.ok(AE.moveGroup(app, t, 'arrange', 0));
+  assert.deepEqual(AE.groupsOf(app, t).map((g) => g.id).slice(0, 2), ['arrange', 'recent']);
+  assert.equal(AE.moveGroup(app, t, 'arrange', -5), false, 'already first');
+  assert.equal(AE.moveGroup(app, t, 'nope', 2), false);
+  // other tabs keep the default
+  const k = AE.TABS.find((x) => x.id === 'ae-keys');
+  assert.deepEqual(AE.groupsOf(app, k).map((g) => g.id), ['recent'].concat(k.groups.map((g) => g.id)));
+  // a stored order from an older version: unknown ids ignored, missing groups keep their default place, no duplicates
+  data['ae-order'] = { 'ae-layer': ['gone', 'parent', 'parent', 'align'] };
+  const ids = AE.groupsOf(app, t).map((g) => g.id);
+  assert.equal(ids.length, def.length);
+  assert.deepEqual([...ids].sort(), [...def].sort());
+  assert.ok(ids.indexOf('parent') < ids.indexOf('align'));
+  // moving back to the default order stores nothing
+  data['ae-order'] = {};
+  AE.moveGroup(app, t, 'align', 3); AE.moveGroup(app, t, 'align', 1);
+  assert.equal(data['ae-order']['ae-layer'], undefined);
+  AE.moveGroup(app, t, 'select', 0); AE.resetOrder(app, t);
+  assert.deepEqual(AE.groupsOf(app, t).map((g) => g.id), def);
+});
+
+test('Classic ▸ Recent (v0.22): newest first, no duplicates, at most 6, per tab; every ref kind resolves', () => {
+  const AE = require('../extension/app/ui/layoutAE');
+  const data = {};
+  const app = { render() {}, state: { get: () => ({ ctx: null }) }, services: { registry: { get: () => null, list: () => [] }, settings: { get: () => ({ ui: {} }) }, store: { get: (k, f) => (k in data ? JSON.parse(JSON.stringify(data[k])) : f), set: (k, v) => { data[k] = v; } } } };
+  const t = AE.TABS.find((x) => x.id === 'ae-keys');
+  ['quick:k_easy', 'quick:reverse', 'quick:k_easy', 'kit:k_easy', 'quick:x_loopCycle', 'quick:mirror', 'quick:clone', 'quick:k_hold', 'quick:k_linear'].forEach((r) => AE.remember(app, t, r));
+  const list = AE.recentRefs(app, t);
+  assert.equal(list.length, 6);
+  assert.equal(list[0], 'quick:k_linear');
+  assert.equal(new Set(list).size, list.length);
+  assert.deepEqual(AE.recentRefs(app, AE.TABS[1]), [], 'per tab');
+  // the refs the panel records resolve: actions, Motion Kit tools, library tiles; a stale ref is skipped
+  assert.ok(AE.recentItem(app, 'quick:k_easy'));
+  assert.ok(AE.recentItem(app, 'tile:animate:inRL'));
+  assert.ok(AE.recentItem(app, 'kit:k_easy'));
+  assert.equal(AE.recentItem(app, 'tile:animate:nope'), null);
+  // every ref the ▾ menus can record resolves too
+  for (const tab of AE.TABS) for (const { items } of AE.tabItems(app, tab)) for (const it of items) if (it.ref) assert.ok(AE.recentItem(app, it.ref), `${tab.label}: ${it.ref}`);
+});

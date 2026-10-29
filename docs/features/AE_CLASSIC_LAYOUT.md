@@ -36,7 +36,12 @@ the same tool, quick action or preset as before — the change is where things a
   Animate + Layer; nothing → Design + Comp).
 - On first open the panel starts on the first tab that fits; after you pick a tab it stays.
 - Inside a tab, the groups that fit the selection **open by themselves** and say *for selection*;
-  whatever you open or fold is remembered **per kind of selection**. Groups never move or reorder.
+  whatever you open or fold is remembered **per kind of selection**. Groups never move by themselves — only when you move them (below).
+
+## Your order, ▸ Recent, keyboard (v0.22)
+- **Drag a group by its header** (the ⠿ grip, or anywhere on the header) above or below another group; an accent line shows where it lands. The order is saved **per tab** (store `ae-order`, only when it differs from the default). Tab ▾ › **Reset group order** brings the original back. Groups added in a later version keep their default place; ids that no longer exist are ignored.
+- **▸ Recent** is the first group of every tab (drag it anywhere, fold it): the last **six** things you ran from that tab — actions, Motion Kit tools, preset tiles, items of the tab's ▾ menu — newest first (store `ae-recent`). It is **one row of fixed height** (it scrolls sideways), so a new item never pushes the groups below, and running something *from* Recent does not reorder it — nothing moves under the pointer. *Clear* empties it. Kit blocks (Ease, Align, Anchor) act on drag / slider and are not recorded.
+- **Keyboard on a group header**: ↑ / ↓ previous / next group, Home / End first / last, → open, ← fold, **Alt + ↑ / ↓ move the group** (saved, focus stays on it).
 
 ## Kept
 Quick Bar (your row), Pie (Q), F4, Copilot, the context line (comp · layers · keys). The other layouts

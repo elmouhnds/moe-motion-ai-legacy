@@ -149,6 +149,11 @@ See `docs/features/STUDIO_v0.4.md`.
 - Host: `ops/kit.jsx` (`keyframes.setInterp`, `layers.trimToKeys` / `restoreTiming`, `rigs.find` / `rigs.remove`); `ops/transform.jsx` anchor rewritten (2D maths R·S·Δa; 3D / auto-orient through a toWorld / fromWorld probe with selection restore; keyed anchor; mask box; Alt placement via the parent chain), `layers.nudge` handles parented layers (comp → parent space, 2D parents).
 - Second CEP extension `tv.madtomato.moe.motionai.kit` (`kit.html` → `main.start({ mode: 'kit' })` → `shell.renderKitPanel`). Both panels share `%APPDATA%\MOE Motion AI`: `core/storage.js` re-reads a document whose file changed (mtime, checked ≤ 2×/s per document; `version(name)`), `core/settings.js` re-reads before `get` / `update`.
 
+## 5y. Classic groups (v0.22.0)
+- `layoutAE.groupsOf(app, tab)` = `[RECENT].concat(tab.groups)` in the saved order (store `ae-order[tabId]`, ids; unknown ignored, missing inserted at their default index). `moveGroup` (drag drop / Alt+↑↓; the default order deletes the entry), `resetOrder` (tab ▾ menu).
+- ▸ Recent: virtual group `RECENT` (kind `recent`); store `ae-recent[tabId]` = up to 6 refs, newest first — `'quick:…'` (actions.resolve), `'kit:<id>'` (Motion Kit tool), `'tile:<section>:<id>'`. Recorded by `remember()` from act buttons, tile strips, `kit.toolsBlock({ onRun })` and ▾ menu items (`tabItems` items carry `ref`); runs from Recent itself do not reorder. `recentItem(ref)` resolves a ref or returns null (stale refs are skipped).
+- Group header: `.ae-gh` is `draggable` (module-level `drag = { tab, id }`, drop indicator classes `drop-before` / `drop-after` set directly, cleared on drop / dragend); `.ae-twirl` `onkeydown` → `groupKey` (focus restored after a move because morph replaces keyed nodes that change place).
+
 ## 5x. Final layout (v0.21.0)
 - Classic is final (docs/features/FINAL_LAYOUT.md). `layoutAE.tabItems(app, tab)` collects every action / preset ref of a tab (deduplicated); `tabMenu` renders it (state `aeTabMenu`; ▾ button `.ae-tabmenu-btn` or the tab's context menu). `build()` overlay = ≡ menu, else the tab menu.
 - `layouts.LAYOUTS`: `retired: true` hides `hub` / `bar` / `workspace` from every list (still rendered if selected). `moe` = Classic `build()` with `menusRow` prepended and its own menu popover as overlay.

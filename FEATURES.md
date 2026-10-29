@@ -1,4 +1,6 @@
-# Features (v0.21.0)
+# Features (v0.22.0)
+
+**Classic groups** (v0.22.0): drag a group's header (or Alt+↑/↓) to reorder — saved per tab, ▾ › Reset group order; ▸ Recent in every tab (last six things you ran there, fixed-height row); ↑/↓ ←/→ on group headers.
 
 **Final layout** (v0.21.0): Classic is the final panel layout (docs/features/FINAL_LAYOUT.md). Each tab has a ▾ quick menu (or right-click the tab) with all its actions and presets; Ctrl 1…6 switch tabs. MOE ★ (object menus on top of Classic) stays optional; Hub / Command Bar / Workspace retired from the lists.
 

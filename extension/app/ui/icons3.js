@@ -3,6 +3,7 @@
 module.exports = {
   /* sections / pages */
   menu: '<path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>',
+  grip: '<circle cx="6" cy="4" r="1" fill="currentColor"/><circle cx="10" cy="4" r="1" fill="currentColor"/><circle cx="6" cy="8" r="1" fill="currentColor"/><circle cx="10" cy="8" r="1" fill="currentColor"/><circle cx="6" cy="12" r="1" fill="currentColor"/><circle cx="10" cy="12" r="1" fill="currentColor"/>',
   dot: '<circle cx="8" cy="8" r="1.6" fill="currentColor"/>',
   home: '<path d="M2.5 7.5L8 3l5.5 4.5"/><path d="M4 6.5V13h3V9.5h2V13h3V6.5"/>',
   shapes: '<circle cx="5" cy="5" r="2.7"/><rect x="9" y="2.3" width="5" height="5" rx="1"/><path d="M5 9.5l3 4.5H2z"/><path d="M11.5 9l.9 1.9 2.1.3-1.5 1.5.4 2.1-1.9-1-1.9 1 .4-2.1-1.5-1.5 2.1-.3z"/>',

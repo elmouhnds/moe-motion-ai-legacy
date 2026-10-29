@@ -37,10 +37,15 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.27 — Classic groups: your order, Recent, keyboard ✅ (v0.22.0)
+- [x] Drag / Alt+↑↓ to reorder groups (saved per tab, Reset in ▾), ▸ Recent per tab (fixed-height row, last six), keyboard navigation of group headers
+- [ ] Owner tries it inside AE 2025 (TEST_REPORT.md → items 145–147)
+- Next: remove the retired layouts' code (Hub / Command Bar / Workspace), pin a Recent item to the Quick Bar (right-click), hide a group you never use (▾ › Show groups)
+
 ## M1.26 — Final layout ✅ (v0.21.0)
 - [x] Six layouts measured, Classic and MOE ★ developed and timed on 12 tasks, Classic chosen (docs/features/FINAL_LAYOUT.md); tab ▾ quick menus, Ctrl 1…6; proposal layouts retired from the lists
 - [ ] Owner tries it inside AE 2025 (TEST_REPORT.md → items 142–144)
-- Next: drag groups to reorder within a tab (saved), a ▸ Recent group per tab, keyboard navigation of groups; remove the retired layouts' code after one release
+- Next: ~~drag groups, Recent, keyboard~~ (v0.22); remove the retired layouts' code after one release
 
 ## M1.25 — Classic layout (organised like AE) ✅ (v0.20.0)
 - [x] AE-named tabs, twirl-down groups, inline search, ≡ panel menu, one-click tiles, smart dots / auto-open (docs/features/AE_CLASSIC_LAYOUT.md)
