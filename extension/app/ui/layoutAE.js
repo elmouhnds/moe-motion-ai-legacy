@@ -393,4 +393,12 @@ function build(app, s, body) {
   };
 }
 
-module.exports = { TABS, TAB_IDS, RECENT, ownerOf, isOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem };
+/** The panel menu button (≡), shared by the v0.24 style proposals. */
+function menuButton(app, s) {
+  return h('button', { class: 'icon-btn ae-menubtn', title: 'Panel menu', 'aria-label': 'Panel menu', 'aria-haspopup': 'true', 'aria-expanded': String(!!s.aeMenu),
+    onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(), box = require('./quickbar').fixedBox(e.currentTarget.closest('.app') || document.body); app.state.set({ aeMenu: !s.aeMenu, aeMenuAt: { top: Math.round(r.bottom - box.top + 2), right: Math.max(4, Math.round(box.left + box.width - r.right)) } }); } }, icon('menu', 'sm'));
+}
+
+module.exports = { TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
+  // building blocks reused by the v0.24 style proposals (layoutGlass / layoutApple / layoutBento)
+  twirl, actButton, groupBody, tileStrip, moreLink, linkRow, searchBox, searchResults, panelMenu, menuButton, openTile };

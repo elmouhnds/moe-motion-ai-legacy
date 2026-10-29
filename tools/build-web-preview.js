@@ -46,7 +46,8 @@ const texts = [...jsxFiles, ...jsonFiles].map((f) => `${asString(rel(f))}: ${asS
 
 const font = fs.readFileSync(path.join(ROOT, 'extension/assets/fonts/sora-latin-wght.woff2')).toString('base64');
 const css = fs.readFileSync(path.join(ROOT, 'extension/css/tokens.css'), 'utf8').replace('url("../assets/fonts/sora-latin-wght.woff2")', `url("data:font/woff2;base64,${font}")`)
-  + '\n' + fs.readFileSync(path.join(ROOT, 'extension/css/app.css'), 'utf8');
+  + '\n' + fs.readFileSync(path.join(ROOT, 'extension/css/app.css'), 'utf8')
+  + '\n' + fs.readFileSync(path.join(ROOT, 'extension/css/styles.css'), 'utf8');
 
 const html = `<title>MOE Motion AI Preview</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -93,7 +94,7 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
     <div class="pv-ctl"><label for="pv-w">Panel</label><div class="pv-seg" id="pv-w" role="group" aria-label="Panel width">
       <button data-w="280" data-mode="kit" title="The Motion Kit as its own slim panel (Window › Extensions › MOE Motion Kit)">Kit panel</button><button data-w="340">Narrow</button><button data-w="420">Docked</button><button data-w="640">Wide</button><button data-w="920">Full</button></div></div>
     <div class="pv-ctl pv-layout"><label for="pv-layout">Layout</label><div class="pv-seg" id="pv-layout" role="group" aria-label="Panel layout (the three proposals)">
-      <button data-layout="ae" title="The final layout — organised like After Effects: tabs named after AE menus, twirl-down groups, ▾ quick menus, ≡ panel menu">Classic ✓</button><button data-layout="moe" title="My recommendation — menus by object + your bar + four task tabs">MOE ★</button><button data-layout="studio" title="The v0.15 layout (sidebar + workspaces)">Sidebar (old)</button></div></div>
+      <button data-layout="ae" title="The final layout — organised like After Effects: tabs named after AE menus, twirl-down groups, ▾ quick menus, ≡ panel menu">Classic ✓</button><button data-layout="moe" title="My recommendation — menus by object + your bar + four task tabs">MOE ★</button><button data-layout="studio" title="The v0.15 layout (sidebar + workspaces)">Sidebar (old)</button><button data-layout="glass" title="New style 1 — frosted glass, four spaces by stage of work, Now card, floating bottom bar">Glass</button><button data-layout="apple" title="New style 2 — like macOS / iOS Settings: lists, coloured icons, categories you open">Apple</button><button data-layout="bento" title="New style 3, my proposal — one page, no tabs, tile size = importance">Bento ★</button></div></div>
     <div class="pv-ctl"><label for="pv-scene">Comp</label><div class="pv-seg" id="pv-scene" role="group" aria-label="Sample composition">
       <button data-scene="title">Title</button><button data-scene="layout">9 cards</button><button data-scene="studio">Text</button></div></div>
     <div class="pv-ctl"><label for="pv-theme">Theme</label><div class="pv-seg" id="pv-theme" role="group" aria-label="Panel theme">
@@ -115,6 +116,18 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
         <li>The top <b>For this</b> bar <b>copies</b> the eight actions for what you selected (the same eight as the pie, same order) — change the <i>Comp</i> above and watch only this bar change. × hides it.</li>
         <li>Four <b>task tabs</b>, each with a fixed order: <b>Animate</b> (ease, anchor + align, rigs, keyframes, then Motion presets · Text · Expressions), <b>Design</b>, <b>Layout</b>, <b>Finish</b>. A card opens its section in place; the crumb takes you back.</li>
         <li><b>Your tools</b> stay at the bottom with <kbd>F4</kbd> (repeat) and ★ to choose them.</li></ol></div>
+      <div class="pv-lguide" data-for="glass"><h2>New style 1 · Glass</h2><ol>
+        <li><b>Frosted glass</b> cards over a deep colour field; try the <i>Light</i> theme above too.</li>
+        <li>Organised by <b>stage of work</b>, not AE menus: <b>Motion · Arrange · Look · Deliver</b> in the floating bar at the bottom (a dot marks the one that fits your selection).</li>
+        <li>The <b>Now</b> card on top: what you selected and the eight best actions for it — switch the <i>Comp</i> above and watch it change.</li></ol></div>
+      <div class="pv-lguide" data-for="apple"><h2>New style 2 · Apple</h2><ol>
+        <li>Like <b>macOS / iOS Settings</b>: a large title, rounded cards of rows, coloured icons.</li>
+        <li>Organised as <b>pages you open and come back from</b>: tap <i>Keys</i>, <i>Layer</i>… then <b>‹ MOE</b> to go back. The top card is the five best actions for your selection.</li>
+        <li>In a category: the main actions are <b>big tinted buttons</b>, the rest are rows, presets are a shelf that scrolls sideways.</li></ol></div>
+      <div class="pv-lguide" data-for="bento"><h2>★ New style 3 · Bento — my proposal</h2><ol>
+        <li><b>One page, no tabs.</b> A tool's <b>size is its importance</b>: primary tools are wide glowing tiles, the rest square tiles, rare ones small chips.</li>
+        <li><b>NOW</b> on top is the big tool for what you selected — the <b>ease graph</b> for keys, <b>Align</b> for several layers, <b>Anchor</b> for one — plus the eight best actions.</li>
+        <li>The <b>chips</b> under it (Keys · Animate · Layer…) jump down the page; the one that fits your selection is outlined.</li></ol></div>
       <div class="pv-lguide" data-for="ae"><h2>Classic — organised like After Effects</h2><ol>
         <li><b>Tabs named after AE's menus</b>: Keys · Animate · Layer · Design · Effect · Comp. An orange <b>dot</b> marks the tabs that fit what you selected — switch the <i>Comp</i> above and watch it move.</li>
         <li>Inside a tab, <b>twirl-down groups like Effect Controls</b> (▸ Keyframe Assistant, ▸ Animate In, ▸ Align…). Groups that fit your selection open by themselves; what you open or fold is remembered.</li>
@@ -179,7 +192,7 @@ ${texts}
   /* ---------- options (kept for this tab only) ---------- */
   var KEY = 'moe-preview-options';
   var opts = { w: 420, scene: 'title', theme: 'dark', mode: 'main', layout: 'ae' };
-  var HASH = { classic: 'ae', p1: 'hub', p2: 'bar', p3: 'workspace', moe: 'moe', current: 'studio', sidebar: 'studio' };
+  var HASH = { classic: 'ae', p1: 'hub', p2: 'bar', p3: 'workspace', moe: 'moe', current: 'studio', sidebar: 'studio', glass: 'glass', apple: 'apple', bento: 'bento' };
   try { var saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); if (saved) for (var k in saved) opts[k] = saved[k]; } catch (e) { /* storage blocked: defaults */ }
   function save() { try { sessionStorage.setItem(KEY, JSON.stringify(opts)); } catch (e) { /* ignore */ } }
   var h0 = (location.hash || '').slice(1);
@@ -267,7 +280,7 @@ ${texts}
     window.__app.services.settings.update({ ui: { layout: l } });
     window.__app.state.set({ layMenu: null });
     window.__app.go('home'); window.__app.render();
-    try { history.replaceState(null, '', '#' + ({ ae: 'classic', hub: 'p1', bar: 'p2', workspace: 'p3', moe: 'moe', studio: 'sidebar' })[l]); } catch (e) { /* sandboxed */ }
+    try { history.replaceState(null, '', '#' + ({ ae: 'classic', hub: 'p1', bar: 'p2', workspace: 'p3', moe: 'moe', studio: 'sidebar', glass: 'glass', apple: 'apple', bento: 'bento' })[l]); } catch (e) { /* sandboxed */ }
   }
   document.getElementById('pv-layout').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setLayout(b.dataset.layout); });
   document.getElementById('pv-scene').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; opts.scene = b.dataset.scene; save(); location.reload(); });

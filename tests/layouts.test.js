@@ -13,7 +13,7 @@ const studio = require('../extension/app/ui/studio/sections');
 const SECTIONS = [...new Set(studio.WORKSPACES.flatMap((w) => w.items))];
 
 test('layouts: Classic (AE) is the default; the others stay selectable', () => {
-  assert.deepEqual(L.LAYOUTS.map((l) => l.id), ['ae', 'studio', 'hub', 'bar', 'workspace', 'moe']);
+  assert.deepEqual(L.LAYOUTS.map((l) => l.id), ['ae', 'studio', 'hub', 'bar', 'workspace', 'moe', 'glass', 'apple', 'bento']);
   const app = (layout) => ({ services: { settings: { get: () => ({ ui: { layout } }) } } });
   assert.equal(L.layoutOf(app('bar')), 'bar');
   assert.equal(L.layoutOf(app('moe')), 'moe');
@@ -91,7 +91,7 @@ test('final layout (v0.21): every Classic tab action and preset is in its ▾ qu
     assert.ok(menu, `${t.label}: tabItems builds without a live AE context`);
   }
   const shown = L.LAYOUTS.filter((x) => !x.retired).map((x) => x.id);
-  assert.deepEqual(shown, ['ae', 'studio', 'moe']);
+  assert.deepEqual(shown, ['ae', 'studio', 'moe', 'glass', 'apple', 'bento']);
   assert.ok(['hub', 'bar', 'workspace'].every((id) => L.LAYOUTS.find((x) => x.id === id).retired));
 });
 
@@ -141,4 +141,23 @@ test('Classic ▸ Recent (v0.22): newest first, no duplicates, at most 6, per ta
   assert.equal(AE.recentItem(app, 'tile:animate:nope'), null);
   // every ref the ▾ menus can record resolves too
   for (const tab of AE.TABS) for (const { items } of AE.tabItems(app, tab)) for (const it of items) if (it.ref) assert.ok(AE.recentItem(app, it.ref), `${tab.label}: ${it.ref}`);
+});
+
+test('style proposals (v0.24): every Classic group has one place in Glass, Apple and Bento; ids never collide with pages', () => {
+  const AE = require('../extension/app/ui/layoutAE');
+  const G = require('../extension/app/ui/layoutGlass');
+  const AP = require('../extension/app/ui/layoutApple');
+  const B = require('../extension/app/ui/layoutBento');
+  // Glass: the four spaces cover the six tabs exactly once
+  const covered = G.SPACES.flatMap((sp) => sp.tabs);
+  assert.deepEqual([...covered].sort(), [...AE.TAB_IDS].sort());
+  assert.equal(new Set(covered).size, covered.length);
+  // every page a tab owns is owned by one space (crumb and active space agree)
+  for (const t of AE.TABS) for (const page of t.owns) assert.ok(G.ownerOf(page), `glass owns ${page}`);
+  // Apple: one coloured category per tab
+  assert.deepEqual(Object.keys(AP.CAT).sort(), [...AE.TAB_IDS].sort());
+  for (const ids of [G.SPACE_IDS, AP.CAT_IDS]) for (const id of ids) assert.ok(!studio.byId(id) && !AE.TAB_IDS.includes(id), `${id} is not a page id`);
+  // Bento: the NOW block exists for every kind, and is a kit block of a Classic group
+  for (const k of ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany']) assert.ok(AE.TABS.some((t) => t.groups.some((g) => g.kind === 'kit' && g.block === B.nowBlock(k))), k);
+  assert.equal(B.nowBlock('none'), null);
 });

@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.24.0] — 2026-10-29 — Three new styles (proposals): Glass, Apple, Bento
+The product owner expected a different style altogether (glass, modern, Apple-like or my own idea) and a radical new organisation — not the small refinements of 0.23. Three complete proposals, each a new look **and** a new way to organise the tools, all live in the panel. Comparison and reasons: `docs/features/STYLE_PROPOSALS.md`.
+### Added
+- **Glass**: frosted glass cards over a deep colour field (light: pastel), floating capsule navigation at the bottom. Organised by **stage of work** — Motion · Arrange · Look · Deliver — instead of AE menus, with a **Now** card on top: what is selected and its eight best actions.
+- **Apple**: macOS / iOS Settings look — large titles, inset grouped lists, coloured squircle icons, tinted primary buttons, preset shelves. Organised as a **navigation stack**: a root page (for your selection · six categories › · general) and a page per category with ‹ back.
+- **Bento ★** (my proposal): near-black canvas, bento tiles. **One page, no tabs**: NOW holds the big tool for the selection (ease graph for keys, Align for several layers, Anchor for one) and the eight best actions; below, every group as bento where **size = importance** (primary 2×1 glowing tiles, standard 1×1, rare as chips, presets as a shelf); index chips jump down the page.
+- Choose in ≡ › Panel layout, Settings › New styles, or the preview's toolbar. Classic stays the default until a style is chosen.
+### Tests
+- `tests/layouts.test.js`: Glass spaces cover the six tabs once, every page has an owning space, Apple has a category per tab, ids never collide with pages, Bento has a NOW block for every kind. Playwright: the three styles × keys / shapes selections × dark / light, 340 and 420 px — 0 JS errors. **Preview + mock host, not After Effects.**
+
 ## [0.23.0] — 2026-10-29 — Design system: icons, buttons, look, tools by importance
 The product owner asked for a complete pass on icons, button style, screens, colours and placing tools by importance (size, position, consistent dimensions). Measured first, then one rulebook: `docs/features/DESIGN_SYSTEM.md`.
 ### Changed

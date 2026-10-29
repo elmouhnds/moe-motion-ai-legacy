@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.29 — New style (proposals) ⏳ (v0.24.0)
+- [x] Glass, Apple and Bento built live in the panel, timed on ten tasks (docs/features/STYLE_PROPOSALS.md)
+- [ ] Owner picks one → it becomes final, the other two are retired; library pages, Settings and the Motion Kit panel get the same style
+- [ ] Inside AE 2025: blur performance (Glass), scaling 100 / 150 % (TEST_REPORT items 151–153)
+
 ## M1.28 — Design system ✅ (v0.23.0)
 - [x] Measured the six tabs; tokens for sizes / icons / radii / type / elevation; importance tiers; Lucide for generic icons; restyled actions, rigs, links, tiles, menus, tabs (docs/features/DESIGN_SYSTEM.md)
 - [ ] Owner checks it inside AE 2025 at 100 % and 150 % Windows scaling (TEST_REPORT.md → items 148–150)

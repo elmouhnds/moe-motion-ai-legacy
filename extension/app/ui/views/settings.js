@@ -33,6 +33,8 @@ function render(app) {
     h('div', { class: 'set-group' },
       h('div', { class: 'field', title: 'Classic is the final layout (docs/features/FINAL_LAYOUT.md). MOE ★ adds menus by object; Sidebar is the v0.15 panel.' }, h('label', {}, 'Panel layout'),
         seg([['ae', 'Classic'], ['moe', 'MOE ★'], ['studio', 'Sidebar (old)']], require('../layouts').layoutOf(app), (v) => { app.services.settings.update({ ui: { layout: v } }); app.state.set({ layMenu: null }); app.render(); })),
+      h('div', { class: 'field', title: 'v0.24 style proposals — a new look and a new organisation each (docs/features/STYLE_PROPOSALS.md)' }, h('label', {}, 'New styles'),
+        seg([['glass', 'Glass'], ['apple', 'Apple'], ['bento', 'Bento ★']], require('../layouts').layoutOf(app), (v) => { app.services.settings.update({ ui: { layout: v } }); app.state.set({ layMenu: null, view: 'home' }); app.render(); })),
       h('div', { class: 'field' }, h('label', {}, 'Theme'), seg(theme.THEMES, st.ui.theme || 'auto', (v) => updUi({ theme: v }))),
       h('div', { class: 'field' }, h('label', {}, 'Accent'), h('div', { class: 'accent-row', role: 'radiogroup', 'aria-label': 'Accent colour' },
         theme.ACCENTS.map(([id, label, hex]) => h('button', { class: `accent-sw ${(st.ui.accent || 'tomato') === id ? 'on' : ''}`, role: 'radio', 'aria-checked': String((st.ui.accent || 'tomato') === id), title: label, 'aria-label': label, style: { background: hex }, onclick: () => updUi({ accent: id }) })))),

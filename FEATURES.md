@@ -1,4 +1,6 @@
-# Features (v0.23.0)
+# Features (v0.24.0)
+
+**Three new styles** (v0.24.0, proposals): Glass (frosted cards, four spaces by stage of work, Now card, bottom capsule), Apple (Settings-style lists, coloured icons, categories you open), Bento ★ (one page, tile size = importance, the big tool for the selection on top). ≡ › Panel layout / Settings › New styles (docs/features/STYLE_PROPOSALS.md).
 
 **Design system** (v0.23.0): one scale for controls (24 · 28 · 32), icons (12 · 14 · 16 · 20) and corners (6 · 8); tools by importance in every group (primary first and larger, rare ones as chips); Lucide for generic icons, MOE icons for motion; quiet links, elevated menus, moving Out thumbnails (docs/features/DESIGN_SYSTEM.md).
 

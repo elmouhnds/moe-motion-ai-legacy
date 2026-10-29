@@ -149,6 +149,11 @@ See `docs/features/STUDIO_v0.4.md`.
 - Host: `ops/kit.jsx` (`keyframes.setInterp`, `layers.trimToKeys` / `restoreTiming`, `rigs.find` / `rigs.remove`); `ops/transform.jsx` anchor rewritten (2D maths R·S·Δa; 3D / auto-orient through a toWorld / fromWorld probe with selection restore; keyed anchor; mask box; Alt placement via the parent chain), `layers.nudge` handles parented layers (comp → parent space, 2D parents).
 - Second CEP extension `tv.madtomato.moe.motionai.kit` (`kit.html` → `main.start({ mode: 'kit' })` → `shell.renderKitPanel`). Both panels share `%APPDATA%\MOE Motion AI`: `core/storage.js` re-reads a document whose file changed (mtime, checked ≤ 2×/s per document; `version(name)`), `core/settings.js` re-reads before `get` / `update`.
 
+## 6a. Style proposals (v0.24.0)
+- `layouts.LAYOUTS` gains `glass`, `apple`, `bento` (`proposal: true`); `layouts.build` dispatches to `layoutGlass` / `layoutApple` / `layoutBento` (each returns `{ top, title, content, bottom?, overlay, menuBtn }` like Classic).
+- They reuse `layoutAE` exports (TABS data, `twirl`, `groupBody`, `actButton`, `tileStrip`, `moreLink`, `linkRow`, `searchBox`, `searchResults`, `panelMenu`, `menuButton`, `remember`, `recentRefs`, `recentItem`). View ids: Glass spaces `gl-*`, Apple categories `ap-<tab id>`; Bento has only `home`. State: `glSpace` (last Glass space).
+- CSS: `css/styles.css` (loaded after app.css in index.html, preview.html and the web preview), scoped per layout; tokens redefined inside the scope for dark and light.
+
 ## 5z. Design system (v0.23.0)
 - Tokens in `css/tokens.css` (`--h-s/m/l`, `--ic-*`, `--r`, `--r-lg`, `--r-pill`, `--fs-*`, `--bg-elev`, `--shadow-1/2`, per theme); component rules in the "v0.23 design system" block at the end of `css/app.css` (later rules win; nothing else re-declares sizes). `tools/check-contrast.js` also checks text on `--bg-raised` and `--bg-elev`.
 - Icons: `dom.icon(name)` renders `app/ui/icons-ui.js` (generated from `assets/icons/lucide.json` by `tools/build-ui-icons.js`, `MAP` = MOE name → Lucide name) with `viewBox 0 0 24 24` and class `lu` (stroke 2.25 = 1.5 px at 16 px); any other name uses MOE's 16-grid `ICONS` (`dom.js`, `icons2.js`, `icons3.js`).
@@ -227,7 +232,7 @@ See `docs/features/STUDIO_v0.4.md`.
 
 ## 6. Data locations
 
-`%APPDATA%\MOE Motion AI\` — `quick-bar.json`, `brands.json`, `text-presets.json` + `presets/*.ffx`, `settings.json`, `favorites.json`, `presets.json`, `snippets.json`, `recipes.json`, `checkpoints.json` (last 50), `usage.json`, `history.jsonl`, `diagnostics.jsonl`, `secrets.dat` (DPAPI). Override with env `MOE_DATA_DIR`.
+`%APPDATA%\MOE Motion AI` — `quick-bar.json`, `brands.json`, `text-presets.json` + `presets/*.ffx`, `settings.json`, `favorites.json`, `presets.json`, `snippets.json`, `recipes.json`, `checkpoints.json` (last 50), `usage.json`, `history.jsonl`, `diagnostics.jsonl`, `secrets.dat` (DPAPI). Override with env `MOE_DATA_DIR`.
 
 ## 7. Repository structure
 

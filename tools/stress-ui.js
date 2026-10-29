@@ -15,7 +15,7 @@ const { chromium } = require(require('child_process').execSync('npm root -g').to
 
 const BASE = 'http://localhost:5173/';
 const Q = '&fixture=layout&w=900&hostDelay=250&ctxChurn=1';
-const VIEWS = [['animate', '.st-tile'], ['shapes', '.sh-tile'], ['home', '.focus-act, .ae-act, .ae-tile'], ['backgrounds', '.st-tile'], ['kit', '.kit-tool']];
+const VIEWS = [['animate', '.st-tile'], ['shapes', '.sh-tile'], ['home', '.focus-act, .ae-act, .ae-tile, .bt, .ap-row'], ['backgrounds', '.st-tile'], ['kit', '.kit-tool']];
 
 (async () => {
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' }).catch(() => chromium.launch());
@@ -27,6 +27,8 @@ const VIEWS = [['animate', '.st-tile'], ['shapes', '.sh-tile'], ['home', '.focus
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(`${BASE}?view=${view}${Q}`);
     await page.waitForSelector('.ctx .dot.live', { timeout: 8000 });
+    // LAYOUT=glass|apple|bento npm run stress — the same checks in another panel layout
+    if (process.env.LAYOUT) await page.evaluate((l) => { const a = window.__app; a.services.settings.update({ ui: { layout: l } }); a.render(); }, process.env.LAYOUT);
     await page.waitForTimeout(600);
     const rect = (i) => page.evaluate(([s, k]) => { const el = document.querySelectorAll(s)[k]; const c = el.closest('.content'); const r0 = el.getBoundingClientRect(); if (c && (r0.bottom > c.getBoundingClientRect().bottom || r0.top < c.getBoundingClientRect().top)) el.scrollIntoView({ block: 'center' }); const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; }, [sel, i]);
     const box = await rect(2);

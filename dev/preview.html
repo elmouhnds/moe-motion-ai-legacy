@@ -7,6 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="/extension/css/tokens.css">
   <link rel="stylesheet" href="/extension/css/app.css">
+  <link rel="stylesheet" href="/extension/css/styles.css">
   <style>
     html, body { background: #111; }
     .frame { position: absolute; top: 28px; left: 16px; bottom: 16px; width: var(--w, 360px); border: 1px solid #333; overflow: hidden; background: var(--bg); }
@@ -39,7 +40,7 @@
       };
       var demoUp = q.get('demoUpdate') ? require('/dev/demo-update.js') : null;
       var platform = mem.createMemPlatform(q.get('demoAI') ? { apiKey: 'sk-ant-preview-demo', http: require('/dev/demo-ai.js') } : (demoUp ? { http: demoUp.http, system: demoUp.system } : {}));
-      require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform, mode: q.get('mode') || undefined, ui: { theme: q.get('theme') || 'auto', accent: q.get('accent') || 'tomato', splash: q.get('splash') === '1', banners: q.get('banners') !== '0', motion: q.get('motion') || 'calm', motionV: 2, seenVersion: q.get('fresh') ? '' : '0.23.0' } }).then(function (app) {
+      require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform, mode: q.get('mode') || undefined, ui: { theme: q.get('theme') || 'auto', accent: q.get('accent') || 'tomato', splash: q.get('splash') === '1', banners: q.get('banners') !== '0', motion: q.get('motion') || 'calm', motionV: 2, seenVersion: q.get('fresh') ? '' : '0.24.0' } }).then(function (app) {
         window.__app = app;
         if (demoUp) { app.services.settings.update({ updates: { feedUrl: 'https://updates.example.com/moe/latest.json' } }); app.render(); }
         if (q.get('seedBrand')) {

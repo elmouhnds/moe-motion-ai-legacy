@@ -29,7 +29,11 @@ const LAYOUTS = [
   { id: 'hub', label: 'Hub', hint: 'Fixed Home + screens (Motion 4 style)', retired: true },
   { id: 'bar', label: 'Command Bar', hint: 'Menus by object + your bars (MoBar / KBar style)', retired: true },
   { id: 'workspace', label: 'Workspace', hint: 'Context bar + task tabs (AE Properties style)', retired: true },
-  { id: 'moe', label: 'MOE ★ (menus by object)', hint: 'Classic plus a row of menus by object, lit for the selection' }
+  { id: 'moe', label: 'MOE ★ (menus by object)', hint: 'Classic plus a row of menus by object, lit for the selection' },
+  // v0.24 style proposals (docs/features/STYLE_PROPOSALS.md): a new look AND a new organisation each
+  { id: 'glass', label: 'Glass', hint: 'Frosted glass over a colour field · four spaces by stage of work · Now card · floating bottom bar', proposal: true },
+  { id: 'apple', label: 'Apple', hint: 'Settings-style lists · coloured icons · categories you open and come back from', proposal: true },
+  { id: 'bento', label: 'Bento ★', hint: 'One page, no tabs · tile size = importance · the big tool for your selection on top', proposal: true }
 ];
 /** The panel layout; anything unknown or unset is the default, Classic (v0.20). */
 const layoutOf = (app) => { const l = app.services.settings.get().ui.layout; return LAYOUTS.some((x) => x.id === l) ? l : 'ae'; };
@@ -288,7 +292,8 @@ function moe(app, s, body) {
 
 /** Build a layout's parts: { top[], title, titleExtra, content, bottom, overlay }. */
 function build(app, s, layout, body) {
-  const parts = layout === 'ae' ? require('./layoutAE').build(app, s, body) : ({ hub, bar, workspace, moe }[layout] || workspace)(app, s, body);
+  const own = { ae: './layoutAE', glass: './layoutGlass', apple: './layoutApple', bento: './layoutBento' }[layout];
+  const parts = own ? require(own).build(app, s, body) : ({ hub, bar, workspace, moe }[layout] || workspace)(app, s, body);
   parts.header = header(app, parts.title, parts.titleExtra, parts.menuBtn);
   return parts;
 }

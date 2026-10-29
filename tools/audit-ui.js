@@ -41,6 +41,12 @@ const VARIANTS = {
   tkeys: { setup: () => window.__app.go('ae-keys') }, tanimate: { setup: () => window.__app.go('ae-animate') }, tlayer: { setup: () => window.__app.go('ae-layer') },
   tdesign: { setup: () => window.__app.go('ae-design') }, teffect: { setup: () => window.__app.go('ae-effect') }, tcomp: { setup: () => window.__app.go('ae-comp') },
   moe: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'moe' } }); a.render(); } },
+  // v0.24 style proposals: Glass (Now + a space), Apple (root + a category page), Bento (one page)
+  glass: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'glass' } }); a.render(); } },
+  glook: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'glass' } }); a.go('gl-look'); } },
+  apple: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'apple' } }); a.render(); } },
+  aplayer: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'apple' } }); a.go('ap-ae-layer'); } },
+  bento: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'bento' } }); a.render(); } },
   pins: { setup: async () => { const f = window.__app.services.favorites; ['motion.smartEase', 'quick.animate', 'grid.build'].forEach((id) => f.toggle(id)); window.__app.render(); } }
 };
 const split = (v) => { const [view, variant] = v.split('@'); return { view, variant: VARIANTS[variant] || {} }; };
