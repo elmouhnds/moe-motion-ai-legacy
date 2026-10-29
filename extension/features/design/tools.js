@@ -237,7 +237,8 @@ const background = {
   ai: { callable: true, hint: 'Create a background layer from a named palette: linear/radial gradient, 4-colour mesh or flat colour, optional grain; animate it with motion (drift/orbit/swirl/wave/breathe/wander) and colorMotion (cycle/swap/hue/pulse), loop seconds and amount.' },
   uses: { hostOps: ['layers.createSolid', 'effects.ensure', 'expressions.set', 'layers.remove'], network: false },
   compatibility: { minAE: '25.0' },
-  ui: { primaryLabel: 'Add Background' },
+  // palette tiles change the palette only — your style, motion and colours stay (studio/library.fill)
+  ui: { primaryLabel: 'Add Background', keepOnTile: ['style', 'motion', 'colorMotion', 'loop', 'amount', 'colourAmount', 'grain', 'drift'] },
   gradientPoints,
   backgroundPlan,
 

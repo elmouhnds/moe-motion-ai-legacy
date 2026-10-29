@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.18.1] — 2026-10-29 — Palette tiles move on hover
+Requested by the product owner: the tiles themselves move when the mouse is over them.
+### Changed
+- **Backgrounds tiles play the motion you picked** when you hover them (same drawing and maths as the Inspector preview and the expressions): Motion + Colours from the Inspector, your own presets (Mine) with theirs. With Motion and Colours both *Still*, a hovered tile shows a gentle Drift so it still comes alive. Tiles follow your style too (Mesh shows mesh).
+- **Clicking a palette tile changes the palette only** — your style, Motion, Colours, Loop, Movement, Colour change and Grain stay (before, every click reset them to defaults). Your own presets still apply in full. (`tool.ui.keepOnTile`)
+### Fixed
+- Hovered tiles did not animate in the web preview: hover is now tracked from mouse events instead of CSS `:hover` (which the single-file preview page never updated). Affects every library's tiles.
+- Background drawing called `require()` on every frame (2.5 ms per tile frame → 0.02 ms; mesh 0.6 ms); a still background preview is drawn once instead of 30 times a second. `npm run stress` busy on Backgrounds: 64 % → 5 %.
+
 ## [0.18.0] — 2026-10-29 — Moving backgrounds
 Requested by the product owner: backgrounds whose colour points move through expressions, with different kinds of motion for the background and its colours. Design: `docs/features/ANIMATED_BACKGROUNDS.md`.
 ### Added

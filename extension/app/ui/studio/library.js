@@ -33,7 +33,25 @@ function userTiles(app, section) {
 /** Fill the tool's settings from the tile (once per selection). */
 function fill(app, tile) {
   const tool = app.services.registry.get(tile.tool);
-  app.state.set((s) => ({ args: Object.assign({}, s.args, { [tool.id]: Object.assign(defaults(tool.params || {}), tile.args) }), open: Object.assign({}, s.open, { [tool.id]: true }) }));
+  // A built-in tile can keep some of your choices (Backgrounds: a palette tile changes the palette,
+  // not your style or motion — tool.ui.keepOnTile). Your own presets (Mine) apply in full.
+  const keep = !tile.user && tool.ui && tool.ui.keepOnTile;
+  app.state.set((s) => {
+    const cur = s.args[tool.id] || {};
+    const kept = {};
+    if (keep) keep.forEach((k) => { if (cur[k] !== undefined) kept[k] = cur[k]; });
+    return { args: Object.assign({}, s.args, { [tool.id]: Object.assign(defaults(tool.params || {}), tile.args, kept) }), open: Object.assign({}, s.open, { [tool.id]: true }) };
+  });
+}
+/** Background tiles move with the Motion / Colours picked in the Inspector (your own presets with theirs). */
+function tileThumb(app, t) {
+  if (t.thumb.k !== 'bg') return t;
+  const a = t.user ? t.args : Object.assign({}, app.state.get().args['design.background'] || {}, { palette: t.thumb.palette });
+  const pick = {};
+  ['style', 'motion', 'colorMotion', 'loop', 'amount', 'colourAmount', 'drift'].forEach((k) => { if (a[k] !== undefined) pick[k] = a[k]; });
+  if (pick.drift && (!pick.motion || pick.motion === 'none')) pick.motion = 'drift';
+  delete pick.drift;
+  return Object.assign({}, t, { thumb: Object.assign({}, t.thumb, pick) });
 }
 
 /**
@@ -168,7 +186,7 @@ function render(app, section) {
         onclick: () => { setSt(app, section, { tile: t.id, filled: null }); },
         ondblclick: () => applyNow(app, t, section),
         oncontextmenu: t.user ? (e) => { e.preventDefault(); removePreset(app, section, t); } : undefined
-      }, thumbEl(t), t.isNew ? h('span', { class: 'st-new' }, 'NEW') : null,
+      }, thumbEl(tileThumb(app, t)), t.isNew ? h('span', { class: 'st-new' }, 'NEW') : null,
       h('span', { class: 'st-meta' }, h('span', { class: 'st-name' }, t.label), rd.ok || rd.kind !== 'input' ? null : h('span', { class: 'st-why', title: rd.hint }, 'setup'), t.badge ? h('span', { class: `st-badge ${t.badge.toLowerCase()}` }, t.badge) : null)),
       h('button', { class: 'st-play', title: rd.ok ? `Apply ${t.label} now` : rd.hint, 'aria-label': `Apply ${t.label} now`, onclick: () => applyNow(app, t, section) }, icon('play', 'sm')));
   })

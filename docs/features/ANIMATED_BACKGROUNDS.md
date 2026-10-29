@@ -30,6 +30,11 @@ Gradient's four points):
 The Inspector shows a **live preview** drawn with the same maths and the same geometry as the
 layer MOE will make. A flat colour has no points, so its pickers are disabled.
 
+## Tiles (v0.18.1)
+Hovering a palette tile plays it with the Motion and Colours picked in the Inspector (Still + Still
+→ a gentle Drift), in your style. Clicking a palette tile changes the palette only — style and
+motion choices stay (`design.background` `ui.keepOnTile`); your own presets apply in full.
+
 ## In After Effects
 - The background layer gets three **Slider Controls** — `MOE BG Loop` (seconds per loop),
   `MOE BG Amount` (% movement; 100 % = a quarter of the comp's short side), `MOE BG Colour`

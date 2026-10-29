@@ -21,6 +21,14 @@ let raf = null;
  * At most 30 fps, off-screen canvases skipped, nothing drawn while the panel is hidden.
  */
 let frame = 0, lastFrame = 0;
+// The element under the mouse, from mouse events (not CSS :hover — it does not update in every host
+// page, e.g. the single-file web preview), so a hovered tile animates wherever the panel runs.
+let overEl = null;
+if (typeof document !== 'undefined' && document.addEventListener) {
+  document.addEventListener('mouseover', (e) => { overEl = e.target; }, true);
+  document.addEventListener('mouseout', (e) => { if (!e.relatedTarget) overEl = null; }, true);
+}
+const isOver = (host) => !!overEl && (host === overEl || host.contains(overEl));
 function loop(now) {
   raf = null;
   if (!live.size) return;
@@ -34,16 +42,17 @@ function loop(now) {
     if (!e.canvas.isConnected) { live.delete(e); continue; }
     if (frame % 6 === 0 || e.visible === undefined) { const r = e.canvas.getBoundingClientRect(); e.visible = r.bottom > -40 && r.top < vh + 40 && r.width > 0; }
     if (!e.visible) continue;
-    let animate = mode === 'full';
-    if (mode === 'calm') { const host = e.canvas.closest('.st-tile, .tp-card, .st-inspector, .tool'); animate = !!host && (host.classList.contains('st-tile') || host.classList.contains('tp-card') ? host.matches(':hover') : true); }
+    let animate = mode === 'full' && !e.still;
+    if (mode === 'calm' && !e.still) { const host = e.canvas.closest('.st-tile, .tp-card, .st-inspector, .tool'); animate = !!host && (host.classList.contains('st-tile') || host.classList.contains('tp-card') ? isOver(host) : true); }
     // After a hover ends, draw the still frame once (it used to freeze on the last moving frame).
     if (!animate && e.drawn && !e.moving) continue;
     e.draw(animate ? now : null); e.drawn = true; e.moving = animate; // null = still frame (each drawer picks its rest pose)
   }
   if (!live.size && raf) { cancelAnimationFrame(raf); raf = null; }
 }
-function animated(canvas, draw) {
-  const entry = { canvas, draw };
+/** opts.still: the picture never changes — drawn once (and on resize), never per frame. */
+function animated(canvas, draw, opts = {}) {
+  const entry = { canvas, draw, still: !!opts.still };
   live.add(entry);
   if (!raf && typeof requestAnimationFrame === 'function') raf = requestAnimationFrame(loop);
   // First paint is the still frame. (It used to be a random moment of the animation, and it ran
@@ -439,49 +448,14 @@ function anchorPicker(args, setArgs, { h }) {
  * moves in AE. The 4-Colour mesh is drawn by inverse-distance blending on a small grid, scaled up.
  */
 const BM = require('../../features/design/bgMotion');
-const BG_DEFAULTS = { palette: 'tomato', style: 'linear', from: 0, to: 2, angle: 135, spread: 100, grain: 0, motion: 'none', colorMotion: 'none', loop: 8, amount: 40, colourAmount: 100 };
-function bgFrame(c, W, H, a, comp, t) {
-  const D = require('../../features/design/tools');
-  const PALS = require('../../features/design/palettes');
-  const Bn = require('../../features/brand/brands');
-  const plan = D.backgroundPlan(a, comp);
-  const k = Math.min(W / comp.width, H / comp.height), ox = (W - comp.width * k) / 2, oy = (H - comp.height * k) / 2;
-  const P = PALS.byId(a.palette).colors.map((hx) => Bn.hexToRgb(hx).concat([1]));
-  const mo = { loop: a.loop, amount: a.amount, w: comp.width, h: comp.height };
-  const pts = plan.bases.map((b, i) => BM.pointAt(plan.motion, b, i, plan.bases.length, t, mo)).map((q) => [ox + q[0] * k, oy + q[1] * k]);
-  const cols = plan.slots.map((sl, i) => { const other = plan.slots.find((x) => x.id === sl.other); return BM.colorAt(plan.colorMotion, { i, n: plan.slots.length, idx: sl.idx, P, own: P[sl.idx], other: P[other.idx] }, t, { loop: a.loop, colour: a.colourAmount }); });
-  const css = (q) => `rgb(${Math.round(q[0] * 255)},${Math.round(q[1] * 255)},${Math.round(q[2] * 255)})`;
-  c.save(); c.beginPath(); c.rect(ox, oy, comp.width * k, comp.height * k); c.clip();
-  if (a.style === 'solid' || !cols.length) { c.fillStyle = plan.base; c.fillRect(ox, oy, comp.width * k, comp.height * k); }
-  else if (a.style === 'mesh') {
-    const gw = 64, gh = Math.max(8, Math.round(64 * comp.height / comp.width));
-    const off = bgFrame.off || (bgFrame.off = document.createElement('canvas'));
-    off.width = gw; off.height = gh;
-    const oc = off.getContext('2d'), img = oc.createImageData(gw, gh);
-    for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
-      const px = ox + (x + 0.5) / gw * comp.width * k, py = oy + (y + 0.5) / gh * comp.height * k;
-      let sw = 0; const acc = [0, 0, 0];
-      pts.forEach((q, i) => { const d2 = (px - q[0]) ** 2 + (py - q[1]) ** 2 + 1; const w = 1 / (d2 * d2); sw += w; for (let j = 0; j < 3; j++) acc[j] += cols[i][j] * w; });
-      const o = (y * gw + x) * 4; img.data[o] = acc[0] / sw * 255; img.data[o + 1] = acc[1] / sw * 255; img.data[o + 2] = acc[2] / sw * 255; img.data[o + 3] = 255;
-    }
-    oc.putImageData(img, 0, 0);
-    c.imageSmoothingEnabled = true; c.drawImage(off, ox, oy, comp.width * k, comp.height * k);
-  } else {
-    const [s0, e0] = pts;
-    const g = a.style === 'radial' ? c.createRadialGradient(s0[0], s0[1], 0, s0[0], s0[1], Math.max(1, Math.hypot(e0[0] - s0[0], e0[1] - s0[1]))) : c.createLinearGradient(s0[0], s0[1], e0[0], e0[1]);
-    g.addColorStop(0, css(cols[0])); g.addColorStop(1, css(cols[1]));
-    c.fillStyle = g; c.fillRect(ox, oy, comp.width * k, comp.height * k);
-  }
-  if (plan.motion !== 'none') pts.forEach((q) => { c.beginPath(); c.arc(q[0], q[1], 3.5, 0, Math.PI * 2); c.fillStyle = 'rgba(255,255,255,0.9)'; c.fill(); c.lineWidth = 1; c.strokeStyle = 'rgba(0,0,0,0.45)'; c.stroke(); });
-  c.restore();
-}
+const { bgFrame, BG_DEFAULTS, moves } = require('./bgDraw');
 function bgMotion(args, setArgs, { h, ctx }) {
   const a = Object.assign({}, BG_DEFAULTS, args);
   if (a.drift && (!a.motion || a.motion === 'none')) a.motion = 'drift';
   const comp = ctx && ctx.comp && ctx.comp.width ? { width: ctx.comp.width, height: ctx.comp.height } : { width: 1920, height: 1080 };
   const canvas = h('canvas', { class: 'bgm-canvas', 'aria-label': 'Background preview', style: { aspectRatio: `${comp.width} / ${comp.height}` } });
   const t0 = Date.now();
-  animated(canvas, (now) => { const { c, W, H } = prep(canvas); bgFrame(c, W, H, a, comp, now === null ? 0 : ((Date.now() - t0) / 1000) % Math.max(a.loop, 0.1)); });
+  animated(canvas, (now) => { const { c, W, H } = prep(canvas); bgFrame(c, W, H, a, comp, now === null ? 0 : ((Date.now() - t0) / 1000) % Math.max(a.loop, 0.1)); }, { still: !moves(a) });
   const set = (patch) => setArgs(Object.assign({}, args, patch, patch.motion ? { drift: false } : {}));
   const flat = a.style === 'solid';
   const pick = (label, list, cur, key) => h('div', { class: 'field stack bgm-pick' }, h('label', {}, label, h('span', { class: 'bgm-hint' }, ' · ', (list.find((m) => m.id === cur) || list[0]).hint)),

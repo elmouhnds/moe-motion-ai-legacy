@@ -185,26 +185,21 @@ const DRAW = {
     const pts = th.hand ? [[-2.5, 0], [2.5, 0], [3.2, 12], [9.5, 12.3], [17.6, 13.6], [18.6, 24], [15.6, 31], [3.5, 31], [-7.4, 15.6], [-3.2, 14.2]] : [[0, 0], [0, 26], [6.5, 20], [11, 30], [15, 28.2], [10.6, 18.6], [19, 18.6]];
     pts.forEach((q, i) => (i ? c.lineTo(q[0] * 0.6, q[1] * 0.6) : c.moveTo(q[0] * 0.6, q[1] * 0.6))); c.closePath(); c.fill(); c.stroke(); c.restore();
   },
-  /** Background tile: the real gradient for that palette + slow drift, with swatches along the bottom. */
+  /**
+   * Background tile (v0.18): the real background for that palette, moving on hover with the Motion
+   * and Colours picked in the Inspector (Still → a gentle Drift, so hover always shows life),
+   * through the same drawing as the Inspector preview. Swatches along the bottom.
+   */
   bg(c, W, H, th, t) {
     const pal = PAL.byId(th.palette);
     if (!pal) return;
-    const col = pal.colors;
-    const style = th.style || 'linear';
-    const dx = Math.sin(t * 0.5) * W * 0.08, dy = Math.cos(t * 0.4) * H * 0.08;
-    let g;
-    if (style === 'radial') { g = c.createRadialGradient(W / 2 + dx, H / 2 + dy, 0, W / 2, H / 2, Math.hypot(W, H) / 2); g.addColorStop(0, col[th.from || 0]); g.addColorStop(1, col[th.to === undefined ? 2 : th.to]); }
-    else { g = c.createLinearGradient(dx, dy, W - dx, H - dy); g.addColorStop(0, col[th.from || 0]); g.addColorStop(1, col[th.to === undefined ? 2 : th.to]); }
-    c.fillStyle = g; c.fillRect(0, 0, W, H);
-    if (style === 'mesh') {
-      [[0.15, 0.2, 2], [0.85, 0.2, 3], [0.2, 0.85, 4], [0.85, 0.8, 1]].forEach(([x, y, i], k) => {
-        const rg = c.createRadialGradient(W * x + Math.sin(t * 0.6 + k) * 8, H * y, 0, W * x, H * y, W * 0.55);
-        rg.addColorStop(0, col[i]); rg.addColorStop(1, 'rgba(0,0,0,0)');
-        c.globalAlpha = 0.75; c.fillStyle = rg; c.fillRect(0, 0, W, H); c.globalAlpha = 1;
-      });
-    }
+    const { bgFrame, BG_DEFAULTS } = bgDraw || (bgDraw = require('../bgDraw'));
+    const a = Object.assign({}, BG_DEFAULTS, th);
+    if ((!a.motion || a.motion === 'none') && (!a.colorMotion || a.colorMotion === 'none')) a.motion = 'drift';
+    // a tile is a small window on a 16:9-ish frame: the comp takes the tile's own shape
+    bgFrame(c, W, H, a, { width: 1920, height: Math.round(1920 * H / W) }, t % Math.max(a.loop, 0.1), false);
     const sw = W / 5;
-    col.forEach((hex, i) => { c.fillStyle = hex; c.fillRect(i * sw, H - 6, sw, 6); });
+    pal.colors.forEach((hex, i) => { c.fillStyle = hex; c.fillRect(i * sw, H - 6, sw, 6); });
   },
   /** Palette strip (Colorize / palette pickers). */
   palette(c, W, H, th) {
@@ -325,6 +320,7 @@ Object.assign(DRAW, {
   }
 });
 
+let bgDraw = null; // loaded on first use (bgDraw → design tools; keeps thumbs light to load)
 /** Draw one thumbnail frame. */
 function draw(c, W, H, thumb, t) {
   theme();
