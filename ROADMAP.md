@@ -37,10 +37,15 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.26 — Final layout ✅ (v0.21.0)
+- [x] Six layouts measured, Classic and MOE ★ developed and timed on 12 tasks, Classic chosen (docs/features/FINAL_LAYOUT.md); tab ▾ quick menus, Ctrl 1…6; proposal layouts retired from the lists
+- [ ] Owner tries it inside AE 2025 (TEST_REPORT.md → items 142–144)
+- Next: drag groups to reorder within a tab (saved), a ▸ Recent group per tab, keyboard navigation of groups; remove the retired layouts' code after one release
+
 ## M1.25 — Classic layout (organised like AE) ✅ (v0.20.0)
 - [x] AE-named tabs, twirl-down groups, inline search, ≡ panel menu, one-click tiles, smart dots / auto-open (docs/features/AE_CLASSIC_LAYOUT.md)
 - [ ] Owner tries it inside AE 2025 (TEST_REPORT.md → items 139–141)
-- Next: drag groups to reorder within a tab (saved), a ▸ Recent group per tab, keyboard navigation of groups (↑/↓, ←/→ to twirl), retire the proposal layouts once Classic is approved
+- Next: drag groups to reorder within a tab (saved), a ▸ Recent group per tab, keyboard navigation of groups (↑/↓, ←/→ to twirl)
 
 ## M1.24 — Grid Builder 2 ✅ (v0.19.0)
 - [x] Live Layout switch, Morph, Orient, Effector rotate / fade / attract, editable items, Grid Items, "Your grid" panel (docs/features/GRID_BUILDER_2.md)

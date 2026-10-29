@@ -1,4 +1,6 @@
-# Features (v0.20.0)
+# Features (v0.21.0)
+
+**Final layout** (v0.21.0): Classic is the final panel layout (docs/features/FINAL_LAYOUT.md). Each tab has a ▾ quick menu (or right-click the tab) with all its actions and presets; Ctrl 1…6 switch tabs. MOE ★ (object menus on top of Classic) stays optional; Hub / Command Bar / Workspace retired from the lists.
 
 **Classic layout** (v0.20.0, default): tabs named after AE's menus (Keys · Animate · Layer · Design · Effect · Comp), twirl-down groups like Effect Controls, search like Effects & Presets, ≡ panel menu, one-click preset tiles, smart dots / auto-open groups for the selection.
 

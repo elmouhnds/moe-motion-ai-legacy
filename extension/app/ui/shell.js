@@ -649,9 +649,12 @@ function createApp(root, services, env = {}) {
     else if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); app.openCopilot(); }
     else if (e.key === 'Escape' && app.state.get().modal) { e.preventDefault(); app.state.set({ modal: null }); }
     else if (e.key === 'Escape' && app.state.get().layMenu) { e.preventDefault(); app.state.set({ layMenu: null }); }
-    else if (e.key === 'Escape' && app.state.get().aeMenu) { e.preventDefault(); app.state.set({ aeMenu: false }); }
+    else if (e.key === 'Escape' && (app.state.get().aeMenu || app.state.get().aeTabMenu)) { e.preventDefault(); app.state.set({ aeMenu: false, aeTabMenu: null }); }
     else if (e.key === '?' && !typing) { e.preventDefault(); app.state.set({ modal: 'shortcuts' }); }
-    else if ((e.ctrlKey || e.metaKey) && /^Digit[1-9]$/.test(e.code)) {
+    else if ((e.ctrlKey || e.metaKey) && /^Digit[1-6]$/.test(e.code) && ['ae', 'moe'].includes(require('./layouts').layoutOf(app))) {
+      // Classic: Ctrl+1…6 = the six tabs (Keys · Animate · Layer · Design · Effect · Comp)
+      e.preventDefault(); app.state.set({ aeQ: '', aeTabMenu: null }); app.go(require('./layoutAE').TAB_IDS[Number(e.code.slice(5)) - 1]);
+    } else if ((e.ctrlKey || e.metaKey) && /^Digit[1-9]$/.test(e.code)) {
       const hidden = services.settings.get().ui.hiddenSections || [];
       const visible = JUMPS.filter((id) => id === 'home' || studio.WORKSPACES.find((w) => w.id === id).items.some((x) => !hidden.includes(x)));
       const target = visible[Number(e.code.slice(5)) - 1];

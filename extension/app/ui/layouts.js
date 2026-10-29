@@ -24,12 +24,12 @@ const A = require('./actions');
 const BAR = require('../../features/quick/bar');
 
 const LAYOUTS = [
-  { id: 'ae', label: 'Classic (AE style)', hint: 'Tabs named after AE menus, twirl-down groups, ≡ panel menu — the default (v0.20)' },
+  { id: 'ae', label: 'Classic (AE style)', hint: 'Tabs named after AE menus, twirl-down groups, ≡ panel menu — the final layout (v0.21)' },
   { id: 'studio', label: 'Sidebar (v0.15)', hint: 'Sidebar + workspaces (v0.15)' },
-  { id: 'hub', label: 'Hub', hint: 'Fixed Home + screens (Motion 4 style)' },
-  { id: 'bar', label: 'Command Bar', hint: 'Menus by object + your bars (MoBar / KBar style)' },
-  { id: 'workspace', label: 'Workspace', hint: 'Context bar + task tabs (AE Properties style)' },
-  { id: 'moe', label: 'MOE (recommended)', hint: 'Menus by object + your bar + four task tabs' }
+  { id: 'hub', label: 'Hub', hint: 'Fixed Home + screens (Motion 4 style)', retired: true },
+  { id: 'bar', label: 'Command Bar', hint: 'Menus by object + your bars (MoBar / KBar style)', retired: true },
+  { id: 'workspace', label: 'Workspace', hint: 'Context bar + task tabs (AE Properties style)', retired: true },
+  { id: 'moe', label: 'MOE ★ (menus by object)', hint: 'Classic plus a row of menus by object, lit for the selection' }
 ];
 /** The panel layout; anything unknown or unset is the default, Classic (v0.20). */
 const layoutOf = (app) => { const l = app.services.settings.get().ui.layout; return LAYOUTS.some((x) => x.id === l) ? l : 'ae'; };
@@ -277,11 +277,12 @@ function workspace(app, s, body, opt = {}) {
  * Workspace's four task tabs with a fixed order and a crumb. No second context area and no
  * bottom bar: three rows above the content, so a docked panel keeps its height for the tools. */
 function moe(app, s, body) {
-  const qb = require('./quickbar');
-  const p = workspace(app, s, body, { contextBar: false, foot: false });
-  p.top = [menusRow(app, s), qb.strip(app)].concat(p.top);
-  p.titleExtra = s.last ? h('button', { class: 'btn ghost sm', title: `Repeat “${s.last.label}” (F4)`, disabled: !!s.running, onclick: () => app.repeatLast() }, icon('repeat', 'xs'), 'F4') : null;
-  p.overlay = s.layMenu ? menuPopover(app, s.layMenu) : null;
+  // v0.21: the same tabs and twirl-down groups as Classic, with MOE's own row on top — menus by
+  // object (Keys · Layer · Text · Shape · Comp …), the one for the selection lit: any action in two
+  // clicks without leaving the tab you are on. (Classic gets the same from its tab ▾ menus.)
+  const p = require('./layoutAE').build(app, s, body);
+  p.top = [menusRow(app, s)].concat(p.top);
+  p.overlay = s.layMenu ? menuPopover(app, s.layMenu) : p.overlay;
   return p;
 }
 

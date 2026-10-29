@@ -169,6 +169,42 @@ function searchResults(app, q) {
   }, icon(it.icon || 'tools', 'sm'), h('span', { class: 'ae-res-n' }, it.name), h('span', { class: 'ae-res-d' }, it.desc), it.kind === 'preset' ? h('span', { class: 'ae-res-a' }, 'apply') : h('span', { class: 'ae-res-w' }, it.ws))));
 }
 
+/* ---------- tab quick menus (▾ / right-click): every action of a tab, two clicks from anywhere ---------- */
+/** Items of a tab's quick menu, per group: actions run, presets apply, blocks / pages open. */
+function tabItems(app, t) {
+  const lib = require('./studio/library');
+  const qb = require('./quickbar');
+  const BAR = require('../../features/quick/bar');
+  return t.groups.map((g) => {
+    let items = [];
+    if (g.kind === 'acts') items = g.refs.map((r) => A.resolve(r)).filter(Boolean).map((a) => ({ id: a.id, label: a.label, icon: a.icon, run: () => a.run(app), ready: a.ready(app) }));
+    else if (g.kind === 'kitTools') { const grp = BAR.KIT_GROUPS.find(([n]) => n === g.group); items = (grp ? grp[1] : []).map((id) => qb.byId(id)).filter(Boolean).map((a) => ({ id: a.id, label: BAR.KIT_LABEL[a.id] || a.label, icon: a.icon, run: () => qb.run(app, a), ready: { ok: true } })); }
+    else if (g.kind === 'tiles' || g.kind === 'grid') { const sec = studio.byId(g.section); items = g.ids.map((id) => sec.tiles.find((x) => x.id === id)).filter(Boolean).map((x) => ({ id: x.id, label: x.label, icon: sec.icon, run: () => lib.applyNow(app, x, sec), ready: lib.readiness(app, x) })); }
+    const open = { id: `open-${g.id}`, label: g.kind === 'tiles' || g.kind === 'grid' ? `All ${g.label}…` : `Open ${g.label}`, icon: 'chev', nav: true, run: () => { const kind = A.profile(app.state.get().ctx); setOpen(app, g, kind, true); app.go(t.id); } };
+    if (g.kind === 'links') items = (g.links || []).map(([id, label]) => ({ id: `l-${id}`, label, icon: 'chev', nav: true, run: () => app.go(id), ready: { ok: true } }));
+    return { g, items: items.concat(g.kind === 'links' ? [] : [Object.assign(open, { ready: { ok: true } })]) };
+  });
+}
+function tabMenu(app, s) {
+  const t = TABS.find((x) => x.id === s.aeTabMenu.id);
+  if (!t) return null;
+  const close = () => app.state.set({ aeTabMenu: null });
+  return h('div', { class: 'overlay qb-overlay', onmousedown: (e) => { if (e.target.classList.contains('overlay')) close(); } },
+    h('div', { class: 'ae-menu ae-tabmenu', role: 'menu', 'aria-label': `${t.label} — quick menu`, style: Object.assign({ top: `${s.aeTabMenu.top}px`, maxWidth: `${s.aeTabMenu.maxW}px` }, s.aeTabMenu.right != null ? { right: `${s.aeTabMenu.right}px` } : { left: `${s.aeTabMenu.left}px` }) },
+      tabItems(app, t).map(({ g, items }) => [h('div', { class: 'ae-mh' }, g.label),
+        h('div', { class: 'ae-mgrid' }, items.map((it) => h('button', {
+          class: `ae-mi ${it.ready.ok || it.nav ? '' : 'off'}`, role: 'menuitem', 'data-key': `tm-${it.id}`, title: it.ready.ok || it.nav ? it.label : `${it.label} — ${it.ready.hint}`,
+          onclick: () => { close(); if (!it.ready.ok && !it.nav) app.toast(`${it.label}: ${it.ready.hint}`, 4500, 'warn'); else it.run(); }
+        }, icon(it.icon || 'bolt', 'sm'), h('span', {}, it.label))))])));
+}
+function openTabMenu(app, t, el) {
+  const s = app.state.get();
+  if (s.aeTabMenu && s.aeTabMenu.id === t.id) { app.state.set({ aeTabMenu: null }); return; }
+  const r = el.getBoundingClientRect(), box = require('./quickbar').fixedBox(el.closest('.app') || document.body);
+  const left = Math.round(r.left - box.left), right = Math.round(box.left + box.width - r.right);
+  app.state.set({ aeTabMenu: { id: t.id, top: Math.round(r.bottom - box.top + 2), left: left <= box.width / 2 ? Math.max(4, left) : null, right: left > box.width / 2 ? Math.max(4, right) : null, maxW: Math.round(box.width - 8) } });
+}
+
 /* ---------- ≡ panel menu ---------- */
 function panelMenu(app, s) {
   const close = () => app.state.set({ aeMenu: false });
@@ -186,7 +222,7 @@ function panelMenu(app, s) {
       item('bolt', 'Customize Quick Bar', () => app.go('quick'), 'qb'),
       h('div', { class: 'ae-msep' }),
       h('div', { class: 'ae-mh' }, 'Panel layout'),
-      ...L.LAYOUTS.filter((x) => ['ae', 'studio', 'moe'].includes(x.id)).map((x) => h('button', { class: 'ae-mi', role: 'menuitemradio', 'aria-checked': String(L.layoutOf(app) === x.id), 'data-key': `mi-l-${x.id}`, onclick: () => { close(); app.services.settings.update({ ui: { layout: x.id } }); app.render(); } }, icon(L.layoutOf(app) === x.id ? 'check' : 'dot', 'sm'), h('span', {}, x.label))),
+      ...L.LAYOUTS.filter((x) => !x.retired).map((x) => h('button', { class: 'ae-mi', role: 'menuitemradio', 'aria-checked': String(L.layoutOf(app) === x.id), 'data-key': `mi-l-${x.id}`, onclick: () => { close(); app.services.settings.update({ ui: { layout: x.id } }); app.render(); } }, icon(L.layoutOf(app) === x.id ? 'check' : 'dot', 'sm'), h('span', {}, x.label))),
       h('div', { class: 'ae-msep' }),
       item('gear', 'Settings', () => app.go('settings'), 'settings'),
       item('pulse', 'Diagnostics', () => app.go('diagnostics'), 'diag'),
@@ -218,8 +254,13 @@ function build(app, s, body) {
   const tabs = h('div', { class: 'lay-tabs ae-tabs', role: 'tablist', 'aria-label': 'Tool categories' }, TABS.map((t) => {
     const on = tab && tab.id === t.id;
     const hint = t.fits.includes(kind);
-    return h('button', { role: 'tab', 'data-key': `t-${t.id.slice(3)}`, 'aria-selected': String(!!on), title: `${t.title}${hint ? ' — fits what you selected' : ''}`, onclick: () => { app.state.set({ aeQ: '' }); app.go(t.id); } },
-      h('span', {}, t.label), hint ? h('span', { class: 'ae-dot', 'aria-hidden': 'true' }) : null);
+    const n = TABS.indexOf(t) + 1;
+    return h('div', { class: `ae-tab ${on ? 'on' : ''}`, 'data-key': `tw-${t.id}` },
+      h('button', { role: 'tab', 'data-key': `t-${t.id.slice(3)}`, 'aria-selected': String(!!on), title: `${t.title}${hint ? ' — fits what you selected' : ''} · Ctrl+${n} · right-click: quick menu`,
+        onclick: () => { app.state.set({ aeQ: '', aeTabMenu: null }); app.go(t.id); },
+        oncontextmenu: (e) => { e.preventDefault(); openTabMenu(app, t, e.currentTarget); } },
+      h('span', {}, t.label), hint ? h('span', { class: 'ae-dot', 'aria-hidden': 'true' }) : null),
+      h('button', { class: 'ae-tabmenu-btn', 'data-key': `tm-${t.id}`, 'aria-label': `${t.label} quick menu`, 'aria-haspopup': 'true', 'aria-expanded': String(!!(s.aeTabMenu && s.aeTabMenu.id === t.id)), title: `${t.label}: every action in two clicks (without leaving this tab)`, onclick: (e) => openTabMenu(app, t, e.currentTarget.parentNode) }, icon('chev', 'xs')));
   }));
   const menuBtn = h('button', { class: 'icon-btn ae-menubtn', title: 'Panel menu', 'aria-label': 'Panel menu', 'aria-haspopup': 'true', 'aria-expanded': String(!!s.aeMenu),
     onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(), box = require('./quickbar').fixedBox(e.currentTarget.closest('.app') || document.body); app.state.set({ aeMenu: !s.aeMenu, aeMenuAt: { top: Math.round(r.bottom - box.top + 2), right: Math.max(4, Math.round(box.left + box.width - r.right)) } }); } }, icon('menu', 'sm'));
@@ -227,9 +268,9 @@ function build(app, s, body) {
     top: [require('./quickbar').strip(app), tabs, searchBox(app, s)],
     title: q ? 'Search' : isTab ? tab.label : (studio.byId(view) || { label: view.charAt(0).toUpperCase() + view.slice(1) }).label,
     content,
-    overlay: s.aeMenu ? panelMenu(app, s) : null,
+    overlay: s.aeMenu ? panelMenu(app, s) : s.aeTabMenu ? tabMenu(app, s) : null,
     menuBtn
   };
 }
 
-module.exports = { TABS, TAB_IDS, ownerOf, isOpen, build };
+module.exports = { TABS, TAB_IDS, ownerOf, isOpen, build, tabItems };

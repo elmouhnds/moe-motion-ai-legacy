@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.21.0] — 2026-10-29 — Final layout: Classic
+The product owner asked to pick the two smartest layouts, develop both, compare them and choose the final style. All six were measured; Classic and MOE ★ were developed and timed on the same 12 everyday tasks (Classic 19 clicks, MOE ★ 20). **Classic is final**; MOE ★ stays optional. Details: `docs/features/FINAL_LAYOUT.md`.
+### Added
+- **Tab quick menu** (Classic): ▾ next to each tab, or right-click the tab — every action and preset of that tab in a two-column menu, two clicks from anywhere.
+- **Ctrl 1…6** switch the Classic tabs (also in MOE ★).
+### Changed
+- **MOE ★** now uses Classic's tabs and twirl-down groups under its row of object menus (old cards and banners removed).
+- Settings › Panel layout and ≡ › Panel layout list only **Classic · MOE ★ · Sidebar (old)**. Hub, Command Bar and Workspace are retired from the lists (still work for anyone who had picked one).
+### Tests
+- 286 tests pass. Button audit on the six Classic tabs incl. every ▾ menu: 768 interactions, 0 JS errors, only the expected refusals. 12-task click benchmark in the preview. Stress 20/20. **Preview + mock host, not After Effects.**
+
 ## [0.20.0] — 2026-10-29 — Classic layout: organised like After Effects
 The owner felt the panel was no longer organised or familiar for a normal AE user. The new default layout borrows from AE's own panels. Design and reasons: `docs/features/AE_CLASSIC_LAYOUT.md`.
 ### Changed

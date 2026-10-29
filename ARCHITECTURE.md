@@ -149,6 +149,11 @@ See `docs/features/STUDIO_v0.4.md`.
 - Host: `ops/kit.jsx` (`keyframes.setInterp`, `layers.trimToKeys` / `restoreTiming`, `rigs.find` / `rigs.remove`); `ops/transform.jsx` anchor rewritten (2D maths R·S·Δa; 3D / auto-orient through a toWorld / fromWorld probe with selection restore; keyed anchor; mask box; Alt placement via the parent chain), `layers.nudge` handles parented layers (comp → parent space, 2D parents).
 - Second CEP extension `tv.madtomato.moe.motionai.kit` (`kit.html` → `main.start({ mode: 'kit' })` → `shell.renderKitPanel`). Both panels share `%APPDATA%\MOE Motion AI`: `core/storage.js` re-reads a document whose file changed (mtime, checked ≤ 2×/s per document; `version(name)`), `core/settings.js` re-reads before `get` / `update`.
 
+## 5x. Final layout (v0.21.0)
+- Classic is final (docs/features/FINAL_LAYOUT.md). `layoutAE.tabItems(app, tab)` collects every action / preset ref of a tab (deduplicated); `tabMenu` renders it (state `aeTabMenu`; ▾ button `.ae-tabmenu-btn` or the tab's context menu). `build()` overlay = ≡ menu, else the tab menu.
+- `layouts.LAYOUTS`: `retired: true` hides `hub` / `bar` / `workspace` from every list (still rendered if selected). `moe` = Classic `build()` with `menusRow` prepended and its own menu popover as overlay.
+- Shell: `Ctrl 1…6` select Classic tabs (ae / moe); Esc closes `aeMenu`, `aeTabMenu`, `layMenu`.
+
 ## 5w. Classic layout (v0.20.0)
 - `app/ui/layoutAE.js`: `TABS` (id `ae-*`, label, `fits` kinds, `owns` pages, `groups`) — group kinds `kit` (Motion Kit block, rendered with a private open scope so the group twirl is the only fold), `kitTools`, `acts` (`actions.resolve` refs), `tiles` (library tiles, `library.applyNow` / `readiness` / `thumbEl`), `grid` (`gridPanel` + tiles), `curves`, `links`. Open state: store `ae-open[kind][groupId]`, default = fits the selection or `open`. `build()` returns `{ top: [Quick Bar, tabs, search], content, overlay: ≡ menu, menuBtn }`; `layouts.header(…, menuBtn)` draws the Classic header.
 - `layouts.layoutOf` falls back to `ae`. Shell: Ctrl K focuses `.ae-search` when present; Esc closes the ≡ menu. CSS block "v0.20 Classic layout".

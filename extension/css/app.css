@@ -1176,3 +1176,18 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .app.kit-narrow .ae-gb, .app.kit-tiny .ae-gb { padding-left: 12px; }
 .app.kit-narrow .ae-acts, .app.kit-tiny .ae-acts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .ae-more { min-height: 24px; padding: 0 4px; }
+/* v0.21 Classic: tab quick menus (▾ or right-click) */
+.ae-tabs { gap: 0; }
+.ae-tab { position: relative; display: flex; align-items: stretch; flex: 1 1 auto; min-width: 0; }
+.ae-tab > [role=tab] { flex: 1 1 auto; padding-right: 2px; }
+.ae-tabmenu-btn { flex: none; width: 14px; padding: 0; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--text-3); cursor: pointer; }
+.ae-tab.on .ae-tabmenu-btn { border-bottom-color: var(--accent); }
+.ae-tabmenu-btn .svg-i { transform: rotate(90deg); width: 9px; height: 9px; }
+.ae-tabmenu-btn:hover, .ae-tabmenu-btn[aria-expanded="true"] { color: var(--accent); }
+.app.kit-narrow .ae-tabmenu-btn, .app.kit-tiny .ae-tabmenu-btn { display: none; }
+.ae-tabmenu { min-width: min(330px, 92vw); }
+.ae-mgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1px 4px; }
+.ae-mgrid .ae-mi { min-width: 0; }
+.ae-mgrid .ae-mi span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ae-mi.off { opacity: .5; }
+.layout-moe .ae-tabmenu-btn { display: none; } /* MOE ★ reaches actions through its menus-by-object row */

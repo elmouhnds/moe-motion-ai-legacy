@@ -72,3 +72,25 @@ test('layouts: menu actions resolve, bars use real quick actions, no duplicates 
   // the highlighted menu exists for every selection kind
   for (const k of ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany', 'none']) assert.ok(L.MENUS.some((m) => m.id === L.MENU_FOR[k]), `hint for ${k}`);
 });
+
+test('final layout (v0.21): every Classic tab action and preset is in its ▾ quick menu; retired layouts stay hidden', () => {
+  const AE = require('../extension/app/ui/layoutAE');
+  const fake = { state: { get: () => ({ ctx: null }) }, services: { settings: { get: () => ({ ui: {} }) }, registry: { get: () => null, list: () => [] } } };
+  for (const t of AE.TABS) {
+    let menu;
+    try { menu = AE.tabItems(fake, t); } catch (e) { menu = null; }
+    // readiness needs a live app; fall back to comparing ids from the groups themselves
+    const ids = menu ? new Set(menu.flatMap((m) => m.items.map((i) => i.id))) : null;
+    for (const g of t.groups) {
+      const want = g.kind === 'acts' ? g.refs.map((r) => A.resolve(r)).filter(Boolean).map((a) => a.id)
+        : g.kind === 'tiles' || g.kind === 'grid' ? g.ids
+          : g.kind === 'links' ? (g.links || []).map(([id]) => `l-${id}`) : [];
+      if (ids) want.forEach((id) => assert.ok(ids.has(id), `${t.label} › ${g.label}: ${id} in the ▾ menu`));
+      if (ids && g.kind !== 'links') assert.ok(ids.has(`open-${g.id}`), `${t.label} › ${g.label}: an Open entry`);
+    }
+    assert.ok(menu, `${t.label}: tabItems builds without a live AE context`);
+  }
+  const shown = L.LAYOUTS.filter((x) => !x.retired).map((x) => x.id);
+  assert.deepEqual(shown, ['ae', 'studio', 'moe']);
+  assert.ok(['hub', 'bar', 'workspace'].every((id) => L.LAYOUTS.find((x) => x.id === id).retired));
+});
