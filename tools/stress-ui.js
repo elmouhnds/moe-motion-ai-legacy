@@ -15,7 +15,7 @@ const { chromium } = require(require('child_process').execSync('npm root -g').to
 
 const BASE = 'http://localhost:5173/';
 const Q = '&fixture=layout&w=900&hostDelay=250&ctxChurn=1';
-const VIEWS = [['animate', '.st-tile'], ['shapes', '.sh-tile'], ['home', '.focus-act'], ['backgrounds', '.st-tile'], ['kit', '.kit-tool']];
+const VIEWS = [['animate', '.st-tile'], ['shapes', '.sh-tile'], ['home', '.focus-act, .ae-act, .ae-tile'], ['backgrounds', '.st-tile'], ['kit', '.kit-tool']];
 
 (async () => {
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' }).catch(() => chromium.launch());

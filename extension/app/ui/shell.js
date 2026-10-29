@@ -644,11 +644,12 @@ function createApp(root, services, env = {}) {
   /* ---------- global keys & context polling ---------- */
   document.addEventListener('keydown', (e) => {
     const typing = /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '');
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); if (!app.paletteOpen) palette.open(app); }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); const box = document.querySelector('.ae-search'); if (box) { box.focus(); box.select(); } else if (!app.paletteOpen) palette.open(app); }
     else if (e.key === '/' && !typing && !app.paletteOpen) { e.preventDefault(); palette.open(app); }
     else if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); app.openCopilot(); }
     else if (e.key === 'Escape' && app.state.get().modal) { e.preventDefault(); app.state.set({ modal: null }); }
     else if (e.key === 'Escape' && app.state.get().layMenu) { e.preventDefault(); app.state.set({ layMenu: null }); }
+    else if (e.key === 'Escape' && app.state.get().aeMenu) { e.preventDefault(); app.state.set({ aeMenu: false }); }
     else if (e.key === '?' && !typing) { e.preventDefault(); app.state.set({ modal: 'shortcuts' }); }
     else if ((e.ctrlKey || e.metaKey) && /^Digit[1-9]$/.test(e.code)) {
       const hidden = services.settings.get().ui.hiddenSections || [];

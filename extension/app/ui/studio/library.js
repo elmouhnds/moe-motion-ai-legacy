@@ -229,4 +229,4 @@ function actionBar(app, section, tile, tool) {
       running ? h('span', { class: 'spin' }) : icon('play', 'sm'), (tool.ui && tool.ui.primaryLabel) || 'Apply'));
 }
 
-module.exports = { render, stateOf, setSt, fill, applyNow, readiness, userTiles, actionBar };
+module.exports = { render, stateOf, setSt, fill, applyNow, readiness, userTiles, actionBar, thumbEl, tileThumb };

@@ -2,6 +2,21 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.20.0] — 2026-10-29 — Classic layout: organised like After Effects
+The owner felt the panel was no longer organised or familiar for a normal AE user. The new default layout borrows from AE's own panels. Design and reasons: `docs/features/AE_CLASSIC_LAYOUT.md`.
+### Changed
+- **New default layout, Classic**: tabs named after AE's menus — **Keys · Animate · Layer · Design · Effect · Comp** — instead of an icon-only sidebar.
+- Each tab is a list of **twirl-down groups like Effect Controls** with thin dividers (▸ Keyframe Assistant, ▸ Animate In, ▸ Align, ▸ Keying, ▸ Guides & Safe Areas …), using AE's own words.
+- **Search under the tabs**, like Effects & Presets (Ctrl K jumps there; Enter applies the first result).
+- **≡ panel menu** in the corner (What's new, shortcuts, pie, Copilot, Favorites, History, Quick Bar, Panel layout, Settings, Diagnostics, About) instead of unnamed header icons.
+- **Preset tiles apply in one click** inside the groups (right-click: settings); **All N ›** opens the full library with a crumb back. No marketing banners.
+- **Smart**: a dot on the tabs that fit the selection; first open starts on the right tab; groups that fit open by themselves (*for selection*) and your open / fold choices are remembered per kind of selection. Nothing moves.
+- The other layouts stay one click away (≡ › Panel layout, Settings): Sidebar (v0.15), MOE ★, Hub, Command Bar, Workspace.
+### Fixed
+- The tab "Animate" and the Motion presets page shared the id `animate` (All 37 › led back to the tab) — tab ids are now prefixed (found by `npm run stress`).
+### Tests
+- `tests/layouts.test.js`: six AE-named tabs; every page reachable; every quick action, link and preset id exists; tab ids never collide with page ids; unique group ids; a tab fits every kind of selection. 286 tests pass. Preview (Playwright): all six tabs, ≡ menu, search, text comp opens on Animate, 9-cards comp on Animate with Layer dotted, Arrange, library page + crumb back — 0 JS errors. Stress 20/20 stable. Button audit on all six tabs — see TEST_REPORT. **Preview + mock host, not After Effects.**
+
 ## [0.19.0] — 2026-10-29 — Grid Builder 2 (and moving palette tiles)
 Requested by the product owner: study aescripts Grid Builder and add it professionally, smarter, without duplicate tools. MOE already had a Grid Builder (6 layouts vs their 4, auto spacing, preview, Build-in, Release / Freeze); v0.19 closes every gap found. Study and comparison: `docs/features/GRID_BUILDER_2.md`.
 ### Added

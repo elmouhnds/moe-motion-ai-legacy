@@ -1,4 +1,6 @@
-# Features (v0.19.0)
+# Features (v0.20.0)
+
+**Classic layout** (v0.20.0, default): tabs named after AE's menus (Keys · Animate · Layer · Design · Effect · Comp), twirl-down groups like Effect Controls, search like Effects & Presets, ≡ panel menu, one-click preset tiles, smart dots / auto-open groups for the selection.
 
 **Grid Builder 2** (v0.19.0): Layout switches live in Effect Controls (all controls and keyframes stay), Morph To + Morph slider (animate at build), Orient (Forward / Face Center / Face Screen), Effector scale / push / attract / rotate / fade, items stay editable by hand, Grid Items (drag / sort places without touching the layer stack, per-item Twist and Delay), and a "Your grid" panel when a grid is selected. Palette tiles in Backgrounds move on hover with your motion.
 

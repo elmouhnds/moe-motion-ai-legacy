@@ -43,7 +43,7 @@ function loop(now) {
     if (frame % 6 === 0 || e.visible === undefined) { const r = e.canvas.getBoundingClientRect(); e.visible = r.bottom > -40 && r.top < vh + 40 && r.width > 0; }
     if (!e.visible) continue;
     let animate = mode === 'full' && !e.still;
-    if (mode === 'calm' && !e.still) { const host = e.canvas.closest('.st-tile, .tp-card, .st-inspector, .tool'); animate = !!host && (host.classList.contains('st-tile') || host.classList.contains('tp-card') ? isOver(host) : true); }
+    if (mode === 'calm' && !e.still) { const host = e.canvas.closest('.st-tile, .ae-tile, .tp-card, .st-inspector, .tool'); animate = !!host && (host.classList.contains('st-tile') || host.classList.contains('ae-tile') || host.classList.contains('tp-card') ? isOver(host) : true); }
     // After a hover ends, draw the still frame once (it used to freeze on the last moving frame).
     if (!animate && e.drawn && !e.moving) continue;
     e.draw(animate ? now : null); e.drawn = true; e.moving = animate; // null = still frame (each drawer picks its rest pose)

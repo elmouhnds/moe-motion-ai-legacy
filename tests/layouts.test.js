@@ -12,13 +12,40 @@ const studio = require('../extension/app/ui/studio/sections');
 
 const SECTIONS = [...new Set(studio.WORKSPACES.flatMap((w) => w.items))];
 
-test('layouts: the three proposals + current are listed; unknown values fall back to the current layout', () => {
-  assert.deepEqual(L.LAYOUTS.map((l) => l.id), ['studio', 'hub', 'bar', 'workspace', 'moe']);
+test('layouts: Classic (AE) is the default; the others stay selectable', () => {
+  assert.deepEqual(L.LAYOUTS.map((l) => l.id), ['ae', 'studio', 'hub', 'bar', 'workspace', 'moe']);
   const app = (layout) => ({ services: { settings: { get: () => ({ ui: { layout } }) } } });
   assert.equal(L.layoutOf(app('bar')), 'bar');
   assert.equal(L.layoutOf(app('moe')), 'moe');
-  assert.equal(L.layoutOf(app('nope')), 'studio');
-  assert.equal(L.layoutOf(app(undefined)), 'studio');
+  assert.equal(L.layoutOf(app('studio')), 'studio');
+  assert.equal(L.layoutOf(app('nope')), 'ae');
+  assert.equal(L.layoutOf(app(undefined)), 'ae');
+});
+
+test('Classic (AE): six tabs named after AE menus; every section reachable; every button and preset exists', () => {
+  const AE = require('../extension/app/ui/layoutAE');
+  assert.deepEqual(AE.TABS.map((t) => t.label), ['Keys', 'Animate', 'Layer', 'Design', 'Effect', 'Comp']);
+  const reach = new Set(['kit']);
+  assert.ok(AE.TAB_IDS.every((id) => !studio.byId(id)), 'tab ids never collide with a page id');
+  const groupIds = [];
+  for (const t of AE.TABS) {
+    t.owns.forEach((id) => reach.add(id));
+    for (const g of t.groups) {
+      groupIds.push(g.id);
+      (g.refs || []).forEach((r) => assert.ok(A.resolve(r), `${t.id}/${g.id}: ${r} resolves`));
+      (g.links || []).forEach(([id]) => { assert.ok(studio.byId(id), `${g.id}: link ${id}`); reach.add(id); });
+      if (g.more) { assert.ok(studio.byId(g.more), `${g.id}: more ${g.more}`); reach.add(g.more); }
+      if (g.ids) { const sec = studio.byId(g.section); g.ids.forEach((id) => assert.ok(sec.tiles.some((x) => x.id === id), `${g.id}: tile ${id} in ${g.section}`)); }
+      g.fits.forEach((k) => assert.ok(['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany', 'none'].includes(k), `${g.id}: kind ${k}`));
+    }
+  }
+  assert.equal(new Set(groupIds).size, groupIds.length, 'group ids unique (their open state is remembered by id)');
+  for (const id of SECTIONS) assert.ok(reach.has(id), `Classic reaches ${id}`);
+  // every section page belongs to exactly one tab (crumb + active tab agree)
+  const owned = AE.TABS.flatMap((t) => t.owns);
+  assert.equal(new Set(owned).size, owned.length);
+  // at least one tab fits every kind of selection (the dot always points somewhere)
+  for (const k of ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany', 'none']) assert.ok(AE.TABS.some((t) => t.fits.includes(k)), `a tab fits ${k}`);
 });
 
 test('layouts: every section stays reachable in every layout', () => {

@@ -2,6 +2,8 @@
 /** v0.6 icons (16×16, stroke = currentColor, same language as dom.js / icons2.js). */
 module.exports = {
   /* sections / pages */
+  menu: '<path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>',
+  dot: '<circle cx="8" cy="8" r="1.6" fill="currentColor"/>',
   home: '<path d="M2.5 7.5L8 3l5.5 4.5"/><path d="M4 6.5V13h3V9.5h2V13h3V6.5"/>',
   shapes: '<circle cx="5" cy="5" r="2.7"/><rect x="9" y="2.3" width="5" height="5" rx="1"/><path d="M5 9.5l3 4.5H2z"/><path d="M11.5 9l.9 1.9 2.1.3-1.5 1.5.4 2.1-1.9-1-1.9 1 .4-2.1-1.5-1.5 2.1-.3z"/>',
   background: '<rect x="2" y="2.5" width="12" height="11" rx="1.5"/><path d="M2 10.5l3.5-3 3 2.5 2-1.5 3.5 3"/><circle cx="10.5" cy="5.5" r="1.2"/>',

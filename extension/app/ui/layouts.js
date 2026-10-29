@@ -24,13 +24,15 @@ const A = require('./actions');
 const BAR = require('../../features/quick/bar');
 
 const LAYOUTS = [
-  { id: 'studio', label: 'Studio', hint: 'Sidebar + workspaces (v0.15)' },
+  { id: 'ae', label: 'Classic (AE style)', hint: 'Tabs named after AE menus, twirl-down groups, ≡ panel menu — the default (v0.20)' },
+  { id: 'studio', label: 'Sidebar (v0.15)', hint: 'Sidebar + workspaces (v0.15)' },
   { id: 'hub', label: 'Hub', hint: 'Fixed Home + screens (Motion 4 style)' },
   { id: 'bar', label: 'Command Bar', hint: 'Menus by object + your bars (MoBar / KBar style)' },
   { id: 'workspace', label: 'Workspace', hint: 'Context bar + task tabs (AE Properties style)' },
   { id: 'moe', label: 'MOE (recommended)', hint: 'Menus by object + your bar + four task tabs' }
 ];
-const layoutOf = (app) => { const l = app.services.settings.get().ui.layout; return LAYOUTS.some((x) => x.id === l) ? l : 'studio'; };
+/** The panel layout; anything unknown or unset is the default, Classic (v0.20). */
+const layoutOf = (app) => { const l = app.services.settings.get().ui.layout; return LAYOUTS.some((x) => x.id === l) ? l : 'ae'; };
 
 /* ---------- shared pieces ---------- */
 /** One action reference (tile: / quick: / nav: / cmd:) as a button with readiness, like the pie. */
@@ -70,9 +72,19 @@ function groupBlock(app, name) {
   const g = BAR.KIT_GROUPS.find(([n]) => n === name);
   return g ? kit.toolsBlock(app, { ids: g[1], title: name, cls: 'lay-group', right: h('span', { class: 'kit-hint' }, 'right-click: options') }) : null;
 }
-function header(app, title, extra) {
+function header(app, title, extra, menuBtn) {
   const s = app.state.get();
   const seen = app.services.settings.get().ui.seenVersion === app.services.version;
+  if (menuBtn) {
+    // Classic: like any AE panel — title, then the ≡ panel menu (What's new, shortcuts, pie, settings…)
+    if (!seen) menuBtn.classList.add('dot');
+    return h('div', { class: 'hdr lay-hdr ae-hdr' },
+      h('button', { class: 'lay-logo', title: `MOE Motion AI ${app.services.version} — About`, 'aria-label': 'About MOE Motion AI', onclick: () => app.state.set({ modal: 'about' }), html: art.logo(18) }),
+      h('div', { class: 'title' }, title), extra || null, h('span', { class: 'spacer' }),
+      ['available', 'ready'].includes(s.update.phase) ? h('button', { class: 'hdr-update', title: `Update to ${s.update.info.version}`, onclick: () => app.go('settings') }, icon('download', 'sm'), h('span', { class: 'label' }, s.update.info.version)) : null,
+      h('button', { class: 'icon-btn', title: 'History (undo MOE changes)', 'aria-label': 'History', 'aria-pressed': String(s.view === 'history'), onclick: () => app.go('history') }, icon('history', 'sm')),
+      menuBtn);
+  }
   return h('div', { class: 'hdr lay-hdr' },
     h('button', { class: 'lay-logo', title: `MOE Motion AI ${app.services.version} — About`, 'aria-label': 'About MOE Motion AI', onclick: () => app.state.set({ modal: 'about' }), html: art.logo(18) }),
     h('div', { class: 'title' }, title),
@@ -275,8 +287,8 @@ function moe(app, s, body) {
 
 /** Build a layout's parts: { top[], title, titleExtra, content, bottom, overlay }. */
 function build(app, s, layout, body) {
-  const parts = ({ hub, bar, workspace, moe }[layout] || workspace)(app, s, body);
-  parts.header = header(app, parts.title, parts.titleExtra);
+  const parts = layout === 'ae' ? require('./layoutAE').build(app, s, body) : ({ hub, bar, workspace, moe }[layout] || workspace)(app, s, body);
+  parts.header = header(app, parts.title, parts.titleExtra, parts.menuBtn);
   return parts;
 }
 

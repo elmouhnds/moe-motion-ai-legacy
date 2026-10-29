@@ -1112,3 +1112,67 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .app.kit-narrow .gp-row, .app.kit-tiny .gp-row { flex-wrap: wrap; row-gap: 4px; }
 .gp .kit-hint { white-space: normal; min-width: 0; }
 .app.kit-narrow .gp-h .kit-hint, .app.kit-tiny .gp-h .kit-hint { display: none; }
+/* ===== v0.20 Classic layout (app/ui/layoutAE.js): the way After Effects organises its own panels ===== */
+.layout-ae .hero, .layout-ae .hero-line { display: none; } /* no marketing banners: AE panels go straight to the controls */
+.ae-hdr .title { font-weight: 600; }
+.ae-menubtn { position: relative; }
+.ae-menubtn.dot::after { content: ''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+/* tabs named after AE's menus */
+.ae-tabs { padding: 0 4px; }
+.ae-tabs button { position: relative; flex: 1 1 auto; justify-content: center; padding: 0 6px; font-size: 12px; }
+.ae-dot { position: absolute; top: 7px; right: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+/* search, like Effects & Presets › Contains */
+.ae-searchrow { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--line); color: var(--text-3); flex: none; }
+.ae-search { flex: 1; min-width: 0; height: 26px; }
+.ae-page { display: flex; flex-direction: column; padding: 0 0 12px; }
+/* twirl-down groups, like Effect Controls */
+.ae-group { border-bottom: 1px solid var(--line); min-width: 0; }
+.ae-gh { display: flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 10px 0 6px; }
+.ae-twirl { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 6px 0 2px; border: 0; background: none; color: var(--text); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.ae-twirl .svg-i { color: var(--text-3); }
+.ae-group.open > .ae-gh .ae-twirl .svg-i { transform: rotate(90deg); }
+.ae-twirl:hover { color: var(--accent); }
+.ae-fit { padding: 1px 6px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 10px; white-space: nowrap; }
+.ae-more { display: inline-flex; align-items: center; gap: 2px; border: 0; background: none; color: var(--text-3); font: inherit; font-size: 11px; cursor: pointer; white-space: nowrap; }
+.ae-more:hover { color: var(--text); }
+.ae-gb { display: flex; flex-direction: column; gap: 8px; padding: 2px 10px 12px 26px; min-width: 0; }
+/* Motion Kit blocks inside a group: the group is the frame and the fold */
+.ae-gb > .kit-block { border: 0; background: none; padding: 0; }
+.ae-gb > .kit-block > .kit-h > .kit-fold, .ae-gb > .kit-block.ae-kit > .kit-h { display: none; }
+.ae-gb > .kit-block > .kit-h { margin-bottom: 4px; }
+/* action buttons: text + icon, two columns */
+.ae-acts { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px; }
+.ae-act { display: flex; align-items: center; gap: 7px; min-width: 0; height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-raised); color: var(--text-2); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.ae-act span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ae-act:hover { color: var(--text); border-color: var(--line-strong); }
+.ae-act.off { opacity: .5; }
+/* preset tiles: one click applies, right-click opens settings */
+.ae-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 6px; }
+.ae-tile { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 0 0 5px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-raised); color: var(--text-2); font: inherit; overflow: hidden; cursor: pointer; }
+.ae-tile:hover { border-color: var(--accent); color: var(--text); }
+.ae-tile.off { opacity: .55; }
+.ae-tile .st-thumb { display: block; width: 100%; height: 50px; }
+.ae-tile .st-thumb.icon { display: grid; place-items: center; height: 50px; }
+.ae-tile-l { padding: 0 6px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+.ae-link { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--r); background: none; color: var(--text-2); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.ae-link:hover { color: var(--text); border-color: var(--line-strong); }
+.ae-gb > .gp { margin: 0; }
+/* search results */
+.ae-results { display: flex; flex-direction: column; }
+.ae-res { display: grid; grid-template-columns: 18px minmax(0, auto) minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 32px; padding: 0 12px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--text-2); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.ae-res:hover { background: var(--bg-hover); color: var(--text); }
+.ae-res-n { color: var(--text); white-space: nowrap; }
+.ae-res-d { color: var(--text-3); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ae-res-a, .ae-res-w { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; }
+.ae-res-a { color: var(--accent); }
+.ae-crumb { position: sticky; top: 0; z-index: 2; }
+/* ≡ panel menu */
+.ae-menu { position: fixed; display: flex; flex-direction: column; min-width: 220px; max-height: 80vh; overflow: auto; padding: 4px; border: 1px solid var(--line-strong); border-radius: var(--r-lg); background: var(--bg-raised); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+.ae-mi { display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 0 10px; border: 0; border-radius: var(--r); background: none; color: var(--text-2); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.ae-mi:hover { background: var(--bg-hover); color: var(--text); }
+.ae-mi[aria-checked="true"] { color: var(--text); }
+.ae-msep { height: 1px; margin: 4px 6px; background: var(--line); }
+.ae-mh { padding: 4px 10px 2px; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+.app.kit-narrow .ae-gb, .app.kit-tiny .ae-gb { padding-left: 12px; }
+.app.kit-narrow .ae-acts, .app.kit-tiny .ae-acts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ae-more { min-height: 24px; padding: 0 4px; }
