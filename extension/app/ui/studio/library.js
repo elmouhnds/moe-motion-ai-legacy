@@ -96,7 +96,9 @@ function thumbEl(tile, cls) {
   const canvas = h('canvas', { class: `st-thumb ${cls || ''}`, 'aria-hidden': 'true', 'data-key': `${tile.id}|${cls || ''}|${JSON.stringify(tile.thumb)}` });
   const t0 = Math.random() * 3;
   // Still frames use 1.6 s: every recipe has finished its move by then (phase() completes at 1.45 s).
-  return widgets.animated(canvas, (now) => { const { c, W, H } = widgets.prep(canvas); thumbs.draw(c, W, H, tile.thumb, now === null ? 1.6 : now / 1000 + t0); });
+  // An Out move is gone by then, so its still frame is the moment it starts leaving (v0.23: no empty tiles).
+  const still = tile.thumb.dir === 'out' ? 0.6 : 1.6;
+  return widgets.animated(canvas, (now) => { const { c, W, H } = widgets.prep(canvas); thumbs.draw(c, W, H, tile.thumb, now === null ? still : now / 1000 + t0); });
 }
 
 async function saveAsPreset(app, section, tile) {

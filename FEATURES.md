@@ -1,4 +1,6 @@
-# Features (v0.22.0)
+# Features (v0.23.0)
+
+**Design system** (v0.23.0): one scale for controls (24 · 28 · 32), icons (12 · 14 · 16 · 20) and corners (6 · 8); tools by importance in every group (primary first and larger, rare ones as chips); Lucide for generic icons, MOE icons for motion; quiet links, elevated menus, moving Out thumbnails (docs/features/DESIGN_SYSTEM.md).
 
 **Classic groups** (v0.22.0): drag a group's header (or Alt+↑/↓) to reorder — saved per tab, ▾ › Reset group order; ▸ Recent in every tab (last six things you ran there, fixed-height row); ↑/↓ ←/→ on group headers.
 

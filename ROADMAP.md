@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.28 — Design system ✅ (v0.23.0)
+- [x] Measured the six tabs; tokens for sizes / icons / radii / type / elevation; importance tiers; Lucide for generic icons; restyled actions, rigs, links, tiles, menus, tabs (docs/features/DESIGN_SYSTEM.md)
+- [ ] Owner checks it inside AE 2025 at 100 % and 150 % Windows scaling (TEST_REPORT.md → items 148–150)
+- Next: the same pass on the library pages (Inspector, action bar), Settings and the Motion Kit panel; per-tool importance learned from your own use (shown in Recent only, never moving buttons)
+
 ## M1.27 — Classic groups: your order, Recent, keyboard ✅ (v0.22.0)
 - [x] Drag / Alt+↑↓ to reorder groups (saved per tab, Reset in ▾), ▸ Recent per tab (fixed-height row, last six), keyboard navigation of group headers
 - [ ] Owner tries it inside AE 2025 (TEST_REPORT.md → items 145–147)

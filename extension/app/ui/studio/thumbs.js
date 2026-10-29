@@ -46,6 +46,8 @@ const DRAW = {
     const ph = phase(t);
     const s = th.dir === 'in' ? (th.over ? Math.max(0, eBack(ph)) : eOut(ph)) : 1 - eOut(ph);
     const bw = W * 0.34 * s, bh = H * 0.42 * s;
+    // the full size as a dashed ghost (like move): shows where the scale starts or ends
+    c.setLineDash([3, 3]); c.strokeStyle = DIM; rrect(c, W / 2 - W * 0.17, H / 2 - H * 0.21, W * 0.34, H * 0.42, 4); c.stroke(); c.setLineDash([]);
     c.fillStyle = FG; rrect(c, W / 2 - bw / 2, H / 2 - bh / 2, Math.max(bw, 0.1), Math.max(bh, 0.1), 4); c.fill();
   },
   spin(c, W, H, th, t) {

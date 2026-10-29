@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['spark', 'A cleaner, clearer panel', 'One design system: three button sizes, one icon family, the same corners and spacing everywhere. The tools you use most are bigger and come first in each group (Easy Ease, Reverse, Loop Cycle, Pre-compose, Center Anchor, Parent Null, Dup Comp); rare ones are small chips at the end. Motion Rigs look like every other action, links are quiet, and Out presets show their motion.'],
   ['grid', 'Your groups, your order', 'Drag a group by its header (or Alt+↑/↓) to put it where you want — each tab keeps your order; ▾ › Reset group order brings the original back. ▸ Recent at the top of every tab holds the last six things you ran from it. Keyboard: ↑/↓ between groups, ←/→ fold and open.'],
   ['grid', 'Classic is the final layout', 'After comparing the layouts on the same 12 everyday tasks, Classic stays. New: ▾ next to each tab (or right-click the tab) lists every action and preset of that tab — two clicks from anywhere. Ctrl 1…6 switch tabs. MOE ★ is still in ≡ › Panel layout.'],
   ['grid', 'Classic layout — organised like After Effects', 'Tabs named after AE\'s menus (Keys · Animate · Layer · Design · Effect · Comp), twirl-down groups like Effect Controls, a search like Effects & Presets (Ctrl K) and the ≡ panel menu. A dot shows which tab fits your selection; its groups open by themselves. Preset tiles apply in one click. Other layouts: ≡ › Panel layout.'],

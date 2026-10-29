@@ -13,7 +13,7 @@ const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
 const base = blocks[':root'];
 const THEMES = { dark: base, midnight: Object.assign({}, base, blocks[':root[data-theme="midnight"]']), light: Object.assign({}, base, blocks[':root[data-theme="light"]']) };
 const ACCENTS = ['tomato', ...Object.keys(blocks).map((k) => (k.match(/^:root\[data-accent="(\w+)"\]$/) || [])[1]).filter(Boolean)];
-const PAIRS = [['text', 'bg', 4.5], ['text-2', 'bg', 4.5], ['text-3', 'bg', 4.5], ['text-3', 'bg-sunken', 4.5], ['accent', 'bg', 3], ['accent', 'bg-raised', 3], ['accent-ink', 'accent', 4.5], ['ok', 'bg', 3], ['err', 'bg', 3], ['warn', 'bg', 3]];
+const PAIRS = [['text', 'bg', 4.5], ['text-2', 'bg', 4.5], ['text-3', 'bg', 4.5], ['text-3', 'bg-sunken', 4.5], ['text-2', 'bg-raised', 4.5], ['text-3', 'bg-raised', 4.5], ['text', 'bg-elev', 4.5], ['text-2', 'bg-elev', 4.5], ['text-3', 'bg-elev', 4.5], ['accent', 'bg', 3], ['accent', 'bg-raised', 3], ['accent-ink', 'accent', 4.5], ['ok', 'bg', 3], ['err', 'bg', 3], ['warn', 'bg', 3]];
 let bad = 0, n = 0;
 for (const [theme, t0] of Object.entries(THEMES)) {
   for (const accent of ACCENTS) {

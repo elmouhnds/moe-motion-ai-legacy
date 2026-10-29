@@ -20,6 +20,8 @@ const A = require('./actions');
 const studio = require('./studio/sections');
 
 /* ---------- information architecture: tab → groups ---------- */
+// Action groups list their refs by importance (v0.23, docs/features/DESIGN_SYSTEM.md): `hero` = primary (32 px, first row),
+// the rest standard (28 px), `minor` = rare / housekeeping (24 px chips, last). hero and minor are subsets of refs.
 // Group kinds: 'kit' (an existing Motion Kit block), 'acts' (quick actions), 'tiles' (library presets,
 // one click applies), 'grid' (Your grid + layouts), 'links' (pages). fits = selection kinds it suits.
 const SEL = { keys: 'keys', layer: 'layer', layers: 'layers', text: 'text', shapes: 'shapes', shapesMany: 'shapesMany', none: 'none' };
@@ -27,8 +29,8 @@ const TABS = [
   { id: 'ae-keys', label: 'Keys', title: 'Keyframes: ease, keyframe assistant, loops (Animation › Keyframe Assistant)', fits: ['keys'], owns: [],
     groups: [
       { id: 'ease', label: 'Ease', kind: 'kit', block: 'ease', fits: ['keys'], open: true },
-      { id: 'assist', label: 'Keyframe Assistant', kind: 'acts', fits: ['keys'], refs: ['quick:k_easy', 'quick:k_linear', 'quick:k_hold', 'quick:reverse', 'quick:mirror', 'quick:clone', 'quick:k_stagger', 'quick:k_trimKeys', 'quick:selectSame'] },
-      { id: 'loops', label: 'Loops', kind: 'acts', fits: ['keys'], refs: ['quick:x_loopCycle', 'quick:x_loopPingPong', 'quick:x_loopOffset', 'quick:x_loopInOut'] },
+      { id: 'assist', label: 'Keyframe Assistant', kind: 'acts', fits: ['keys'], hero: ['quick:k_easy', 'quick:reverse'], minor: ['quick:k_trimKeys', 'quick:selectSame'], refs: ['quick:k_easy', 'quick:reverse', 'quick:k_linear', 'quick:k_hold', 'quick:mirror', 'quick:clone', 'quick:k_stagger', 'quick:k_trimKeys', 'quick:selectSame'] },
+      { id: 'loops', label: 'Loops', kind: 'acts', fits: ['keys'], hero: ['quick:x_loopCycle'], refs: ['quick:x_loopCycle', 'quick:x_loopPingPong', 'quick:x_loopOffset', 'quick:x_loopInOut'] },
       { id: 'curves', label: 'Curve Library', kind: 'curves', fits: [] }
     ] },
   { id: 'ae-animate', label: 'Animate', title: 'Animation presets, text, rigs, expressions (Animation menu)', fits: ['layer', 'layers', 'text', 'shapes', 'shapesMany'], owns: ['animate', 'text', 'expressions', 'kit'],
@@ -44,8 +46,8 @@ const TABS = [
     groups: [
       { id: 'align', label: 'Align', kind: 'kit', block: 'align', fits: ['layers', 'shapesMany'], open: true },
       { id: 'anchor', label: 'Anchor Point', kind: 'kit', block: 'anchor', fits: ['layer', 'shapes', 'text'] },
-      { id: 'transform', label: 'Transform', kind: 'acts', fits: [], refs: ['quick:flipH', 'quick:flipV', 'quick:centerAnchor', 'quick:separate', 'quick:precompose'] },
-      { id: 'parent', label: 'Parent & Link', kind: 'acts', fits: ['layers'], refs: ['quick:parentNull', 'quick:k_parent', 'quick:k_delay', 'quick:k_stare'] },
+      { id: 'transform', label: 'Transform', kind: 'acts', fits: [], hero: ['quick:precompose', 'quick:centerAnchor'], refs: ['quick:precompose', 'quick:centerAnchor', 'quick:flipH', 'quick:flipV', 'quick:separate'] },
+      { id: 'parent', label: 'Parent & Link', kind: 'acts', fits: ['layers'], hero: ['quick:parentNull'], refs: ['quick:parentNull', 'quick:k_parent', 'quick:k_delay', 'quick:k_stare'] },
       { id: 'arrange', label: 'Arrange (Grid Builder)', kind: 'grid', section: 'layout', ids: ['grid', 'honey', 'wall', 'ring', 'fan', 'spiral', 'galaxy', 'path', 'globe'], more: 'layout', fits: ['layers', 'shapesMany'] },
       { id: 'select', label: 'Select & Clean up', kind: 'acts', fits: [], refs: ['quick:k_trash'], links: [['select', 'Select layers by type, name, label']] }
     ] },
@@ -67,7 +69,7 @@ const TABS = [
     groups: [
       { id: 'guides', label: 'Guides & Safe Areas', kind: 'tiles', section: 'layout', ids: ['g12', 'thirds', 'safe', 'split2', 'quad', 'wall6'], more: 'layout', fits: ['none'], open: true },
       { id: 'deliver', label: 'Deliver', kind: 'links', fits: [], links: [['deliver', 'Every format at once (16:9, 9:16, 1:1, 4:5…)']] },
-      { id: 'project', label: 'Project', kind: 'acts', fits: [], refs: ['quick:revealProject', 'quick:revealFolder', 'quick:openPrecomp', 'quick:dupComp', 'quick:purge'] },
+      { id: 'project', label: 'Project', kind: 'acts', fits: [], hero: ['quick:dupComp'], minor: ['quick:revealFolder', 'quick:purge'], refs: ['quick:dupComp', 'quick:revealProject', 'quick:openPrecomp', 'quick:revealFolder', 'quick:purge'] },
       { id: 'mine', label: 'Quick Bar & My Tools', kind: 'links', fits: [], links: [['quick', 'Customize the Quick Bar'], ['tools', 'My tools & Tool Factory']] }
     ] }
 ];
@@ -210,13 +212,14 @@ function twirl(app, t, g, kind, body, extra) {
     open ? h('div', { class: 'ae-gb' }, body()) : null);
 }
 
-function actButton(app, a, onRun) {
+/** size: 'l' primary (32 px) · undefined standard (28 px) · 's' minor chip (24 px). */
+function actButton(app, a, onRun, size) {
   const rd = a.ready(app);
   return h('button', {
-    class: `ae-act ${rd.ok || a.nav ? '' : 'off'}`, 'data-key': `a-${a.id}`, 'aria-label': a.label,
+    class: `${size === 's' ? 'ae-chip' : 'ae-act'} ${size === 'l' ? 'l' : ''} ${rd.ok || a.nav ? '' : 'off'}`, 'data-key': `a-${a.id}`, 'aria-label': a.label,
     title: rd.ok || a.nav ? a.label : `${a.label} — ${rd.hint}`,
     onclick: () => { if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else { if (onRun) onRun(); a.run(app); } }
-  }, icon(a.icon || 'bolt', 'sm'), h('span', {}, a.label));
+  }, icon(a.icon || 'bolt', size === 's' ? 'xs' : ''), h('span', {}, a.label));
 }
 const linkRow = (app, links) => (links || []).map(([id, label]) => h('button', { class: 'ae-link', 'data-key': `l-${id}`, onclick: () => app.go(id) }, h('span', {}, label), icon('chev', 'xs')));
 
@@ -254,7 +257,12 @@ function groupBody(app, g, t) {
   }
   if (g.kind === 'curves') return kit.curveLibrary(app, kit.matchPreset(kit.K.curve, app.services.store.get('kit-curves', [])));
   if (g.kind === 'kitTools') { const BAR = require('../../features/quick/bar'); const grp = BAR.KIT_GROUPS.find(([n]) => n === g.group); return kit.toolsBlock(app, { ids: grp ? grp[1] : [], title: g.group, cls: 'ae-kit', onRun: (id) => remember(app, t, `kit:${id}`) }); }
-  if (g.kind === 'acts') return [h('div', { class: 'ae-acts' }, g.refs.map((r) => [r, A.resolve(r)]).filter(([, a]) => a).map(([r, a]) => actButton(app, a, () => remember(app, t, r)))), ...linkRow(app, g.links)];
+  if (g.kind === 'acts') {
+    // importance decides size and place: primary first and larger, minor last as chips
+    const hero = g.hero || [], minor = g.minor || [];
+    const row = (cls, refs, size) => { const list = refs.map((r) => [r, A.resolve(r)]).filter(([, a]) => a); return list.length ? h('div', { class: cls }, list.map(([r, a]) => actButton(app, a, () => remember(app, t, r), size))) : null; };
+    return [row('ae-hero', hero, 'l'), row('ae-acts', g.refs.filter((r) => !hero.includes(r) && !minor.includes(r))), row('ae-minor', minor, 's'), ...linkRow(app, g.links)];
+  }
   if (g.kind === 'tiles') return [tileStrip(app, g, t), ...linkRow(app, g.links)];
   if (g.kind === 'grid') return [require('./gridPanel').render(app), tileStrip(app, g, t)];
   return linkRow(app, g.links);

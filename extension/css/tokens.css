@@ -24,7 +24,7 @@
 
   --text: #e6e6e6;
   --text-2: #b0b0b0;
-  --text-3: #8f8f8f;
+  --text-3: #999999;
 
   --accent: #ff7a59;
   --accent-hover: #ff8f73;
@@ -48,8 +48,21 @@
   --fs: 12px;
   --fs-lg: 13px;
 
-  --r: 4px;
-  --r-lg: 6px;
+  /* v0.23 design system (docs/features/DESIGN_SYSTEM.md): 3 control sizes, 4 icon sizes, 3 radii */
+  --r: 6px;
+  --r-lg: 8px;
+  --r-pill: 999px;
+  --h-s: 24px;
+  --h-m: 28px;
+  --h-l: 32px;
+  --ic-xs: 12px;
+  --ic-s: 14px;
+  --ic: 16px;
+  --ic-l: 20px;
+  --fs-xl: 15px;
+  --bg-elev: #303030;
+  --shadow-1: 0 1px 0 rgba(0, 0, 0, 0.28);
+  --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(0, 0, 0, 0.25);
   --s1: 4px;
   --s2: 8px;
   --s3: 12px;
@@ -81,6 +94,9 @@
   --err-soft: rgba(196, 43, 43, 0.1);
   --warn-soft: rgba(138, 97, 0, 0.1);
   --focus: 0 0 0 2px rgba(194, 65, 12, 0.45);
+  --bg-elev: #fafafa;
+  --shadow-1: 0 1px 0 rgba(0, 0, 0, 0.08);
+  --shadow-2: 0 12px 32px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 /* Midnight: deeper, slightly cool dark for dim rooms / OLED. */
@@ -94,7 +110,8 @@
   --line-strong: rgba(255, 255, 255, 0.15);
   --text: #ececf1;
   --text-2: #b3b3bf;
-  --text-3: #8e8e9c;
+  --text-3: #9a9aa8;
+  --bg-elev: #24242b;
 }
 
 /* Accent colours (Settings › Appearance). Dark/midnight values first, then light-theme variants. */

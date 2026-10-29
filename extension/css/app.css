@@ -1203,3 +1203,71 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .ae-mgrid .ae-mi span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ae-mi.off { opacity: .5; }
 .layout-moe .ae-tabmenu-btn { display: none; } /* MOE ★ reaches actions through its menus-by-object row */
+
+/* ===== v0.23 design system (docs/features/DESIGN_SYSTEM.md): one scale for icons, controls, radii ===== */
+.svg-i { width: var(--ic); height: var(--ic); }
+.svg-i.sm { width: var(--ic-s); height: var(--ic-s); }
+.svg-i.xs, .chip-btn .svg-i.xs { width: var(--ic-xs); height: var(--ic-xs); }
+.svg-i.lg { width: var(--ic-l); height: var(--ic-l); }
+.svg-i.lu { stroke-width: 2.25; } /* Lucide 24-grid → the same 1.5 px line as MOE's 16-grid icons */
+.qt-tile .svg-i, .kit-tool .svg-i { width: var(--ic); height: var(--ic); }
+.pie-slot .svg-i { width: var(--ic-l); height: var(--ic-l); }
+.st-thumb.icon .svg-i { width: 28px; height: 28px; }
+.qb-btn { width: var(--h-s); height: var(--h-s); }
+.icon-btn { border-radius: var(--r); }
+
+/* Classic: buttons by importance — primary 32 · standard 28 · minor 24 */
+.ae-gb { gap: 8px; }
+.ae-act { height: var(--h-m); border-radius: var(--r); font-size: var(--fs); box-shadow: var(--shadow-1); transition: background var(--t), border-color var(--t), color var(--t); }
+.ae-act .svg-i { color: var(--text-3); transition: color var(--t); }
+.ae-act:hover { background: var(--bg-elev); }
+.ae-act:hover .svg-i { color: var(--accent); }
+.ae-hero { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
+.ae-hero > .ae-act:only-child { grid-column: 1 / -1; } /* one primary action takes the row */
+.ae-act.l { height: var(--h-l); padding: 0 10px; gap: 8px; border-color: var(--line-strong); color: var(--text); font-weight: 600; }
+.ae-act.l .svg-i { color: var(--accent); }
+.ae-minor { display: flex; flex-wrap: wrap; gap: 4px; }
+.ae-chip { display: inline-flex; align-items: center; gap: 5px; height: var(--h-s); max-width: 100%; padding: 0 9px; border: 1px solid var(--line); border-radius: var(--r-pill); background: none; color: var(--text-3); font: inherit; font-size: var(--fs-sm); white-space: nowrap; cursor: pointer; transition: background var(--t), border-color var(--t), color var(--t); }
+.ae-chip span { overflow: hidden; text-overflow: ellipsis; }
+.ae-chip:hover { color: var(--text); border-color: var(--line-strong); background: var(--bg-hover); }
+.ae-chip.off { opacity: .5; }
+/* Motion Kit tools inside Classic groups look like every other action */
+.ae-gb .kit-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px; }
+.ae-gb .kit-tool { flex-direction: row; justify-content: flex-start; gap: 7px; height: var(--h-m); padding: 0 8px; background: var(--bg-raised); border-radius: var(--r); box-shadow: var(--shadow-1); }
+.ae-gb .kit-tool .svg-i { color: var(--text-3); }
+.ae-gb .kit-tool-l { font-size: var(--fs); }
+.app.kit-narrow .ae-gb .kit-grid, .app.kit-tiny .ae-gb .kit-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* links: quiet text rows, not boxes */
+.ae-link { min-height: var(--h-m); padding: 0 2px; border: 0; border-radius: 0; color: var(--text-2); }
+.ae-link .svg-i { color: var(--text-3); }
+.ae-link:hover { color: var(--accent); border-color: transparent; }
+.ae-link:hover .svg-i { color: var(--accent); }
+/* tiles, groups, tabs, search, menus */
+.ae-tile { border-radius: var(--r-lg); }
+.ae-tile-l { font-size: var(--fs-sm); }
+.ae-gh { min-height: var(--h-l); }
+.ae-twirl { font-size: var(--fs-lg); }
+.ae-twirl .svg-i { width: var(--ic-xs); height: var(--ic-xs); }
+.ae-grip { opacity: 0; transition: opacity var(--t); }
+.ae-gh:hover .ae-grip, .ae-gh:focus-within .ae-grip { opacity: .8; }
+.ae-tabs button[role=tab] { height: var(--h-l); font-size: var(--fs); }
+.ae-tabs button[role=tab][aria-selected="true"] { font-weight: 600; }
+/* the ▾ is quiet until wanted; only its glyph fades, so the active tab's underline stays one colour */
+.ae-tabmenu-btn .svg-i { width: 10px; height: 10px; opacity: .45; transition: opacity var(--t); }
+.ae-tab:hover .ae-tabmenu-btn .svg-i, .ae-tabmenu-btn[aria-expanded="true"] .svg-i, .ae-tabmenu-btn:focus-visible .svg-i { opacity: 1; }
+.ae-search { height: var(--h-m); border-radius: var(--r); }
+.ae-menu { border-radius: var(--r-lg); background: var(--bg-elev); box-shadow: var(--shadow-2); }
+.ae-mi { min-height: var(--h-m); }
+.ae-recent .kit-hint { margin-left: 0; color: var(--text-3); }
+/* v0.23: the Motion Kit's small controls on the same scale — a segmented control is one 24 px control */
+.icon-btn, .lay-logo { width: var(--h-m); height: var(--h-m); }
+.kit-tools-row.icons .kit-ib { height: var(--h-m); }
+.kit-seg { height: var(--h-s); }
+.kit-seg.wide button { min-height: 22px; } /* the curve filter wraps at narrow widths: its row grows, each segment stays 22 inside */
+.kit-seg button { border-radius: calc(var(--r) - 2px); }
+.kit-num { height: var(--h-s); }
+.kit-src { min-height: var(--h-s); }
+.ae-twirl { min-width: 0; }
+.ae-twirl span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.kit-axis { width: var(--ic); }
+.kit-ibgroup .kit-ib { height: var(--h-s); } /* a 28 px group of 24 px buttons */
