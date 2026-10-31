@@ -15,12 +15,13 @@ function swatchesFor(app) {
   return [...new Set([...(b ? b.colors.map((c) => c.hex.toUpperCase()) : []), ...own])].slice(0, 12);
 }
 
-function availability(tool, ctx, args) {
+function availability(tool, ctx, args, services) {
   const r = contextReq.evaluate(tool.requires, ctx);
   if (!r.ok) return { ok: false, hint: r.reasons[0] };
   if (!tool.prepare) return { ok: true, hint: '' };
   try {
-    const p = tool.prepare(args, ctx);
+    // services too, exactly like the executor (v0.26 fix: brand tools read the client from services.brands)
+    const p = tool.prepare(args, ctx, services);
     return p.ok ? { ok: true, hint: p.preview.summary, preview: p.preview } : { ok: false, hint: p.error };
   } catch (e) {
     return { ok: false, hint: 'Check the parameters' };
@@ -31,7 +32,7 @@ function renderTool(app, tool, { openByDefault = false } = {}) {
   const s = app.state.get();
   const args = s.args[tool.id] || defaults(tool.params || {});
   const open = s.open[tool.id] !== undefined ? s.open[tool.id] : openByDefault;
-  const av = s.ctx ? availability(tool, s.ctx, args) : { ok: false, hint: s.hostError ? 'After Effects not connected' : 'Reading After Effects…' };
+  const av = s.ctx ? availability(tool, s.ctx, args, app.services) : { ok: false, hint: s.hostError ? 'After Effects not connected' : 'Reading After Effects…' };
   const running = s.running === tool.id;
   const pinned = app.services.favorites.list().includes(tool.id);
   const result = s.results[tool.id];

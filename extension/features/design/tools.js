@@ -157,7 +157,7 @@ function gradientPoints(style, w, h, angle, spread) {
 function meshPoints(w, h) { return [[w * 0.12, h * 0.15], [w * 0.88, h * 0.12], [w * 0.15, h * 0.88], [w * 0.85, h * 0.85]]; }
 
 function backgroundPlan(args, comp) {
-  const pal = PAL.byId(args.palette);
+  const pal = PAL.resolve(args.palette, args.colors, args.paletteName);
   const col = (i) => pal.colors[((i % 5) + 5) % 5];
   const rgba = (hex) => B.hexToRgb(hex).concat([1]);
   const idxOf = (i) => ((i % 5) + 5) % 5;
@@ -216,7 +216,9 @@ const background = {
   keywords: ['background', 'gradient', 'ramp', 'mesh', 'bg', 'backdrop', 'palette', 'grain', 'noise', 'colour', 'animated', 'motion', 'loop', 'moving'],
   icon: 'background',
   params: {
-    palette: { type: 'enum', label: 'Palette', default: 'tomato', options: PAL.PALETTES.map((p) => ({ value: p.id, label: p.name })) },
+    palette: { type: 'enum', label: 'Palette', default: 'tomato', options: PAL.PALETTES.map((p) => ({ value: p.id, label: p.name })).concat([{ value: 'custom', label: 'Custom / brand colours' }]) },
+    colors: { type: 'string', label: 'Custom colours', default: '', maxLength: 80, advanced: true, description: '2–5 hex colours, e.g. a client brand: #0E7C66, #F2A541', showIf: (a) => a.palette === 'custom' },
+    paletteName: { type: 'string', label: 'Custom name', default: '', maxLength: 40, advanced: true, showIf: () => false },
     style: { type: 'enum', label: 'Style', default: 'linear', options: [{ value: 'linear', label: 'Linear' }, { value: 'radial', label: 'Radial' }, { value: 'mesh', label: 'Mesh' }, { value: 'solid', label: 'Flat' }] },
     from: { type: 'integer', label: 'Colour A', min: 0, max: 4, default: 0, description: 'Palette colour (1st = 0)' },
     to: { type: 'integer', label: 'Colour B', min: 0, max: 4, default: 2, showIf: (a) => a.style === 'linear' || a.style === 'radial' },
@@ -243,7 +245,7 @@ const background = {
   backgroundPlan,
 
   prepare(args, ctx) {
-    if (!PAL.byId(args.palette)) return { ok: false, error: 'Choose a palette' };
+    if (!PAL.resolve(args.palette, args.colors, args.paletteName)) return { ok: false, error: args.palette === 'custom' ? 'Custom palette needs 2–5 colours (#RRGGBB)' : 'Choose a palette' };
     const plan = backgroundPlan(args, ctx.comp);
     const name = (args.name || '').trim() || 'MOE Background';
     if (!/^MOE /.test(name)) return { ok: false, error: 'Layer name must start with "MOE " so it can be found and removed safely' };
@@ -339,7 +341,9 @@ const colorize = {
   keywords: ['colorize', 'colour', 'color', 'palette', 'fill', 'recolor', 'random colour', 'gradient', 'swatches'],
   icon: 'palette',
   params: {
-    palette: { type: 'enum', label: 'Palette', default: 'tomato', options: PAL.PALETTES.map((p) => ({ value: p.id, label: p.name })) },
+    palette: { type: 'enum', label: 'Palette', default: 'tomato', options: PAL.PALETTES.map((p) => ({ value: p.id, label: p.name })).concat([{ value: 'custom', label: 'Custom / brand colours' }]) },
+    colors: { type: 'string', label: 'Custom colours', default: '', maxLength: 80, advanced: true, description: '2–5 hex colours, e.g. a client brand: #0E7C66, #F2A541', showIf: (a) => a.palette === 'custom' },
+    paletteName: { type: 'string', label: 'Custom name', default: '', maxLength: 40, advanced: true, showIf: () => false },
     mode: { type: 'enum', label: 'Order', default: 'cycle', options: [{ value: 'cycle', label: 'Cycle' }, { value: 'shuffle', label: 'Shuffle' }, { value: 'blend', label: 'Blend' }] },
     target: { type: 'enum', label: 'Apply to', default: 'fill', options: [{ value: 'fill', label: 'Fill' }, { value: 'stroke', label: 'Stroke' }, { value: 'both', label: 'Both' }] },
     offset: { type: 'integer', label: 'Start at', min: 0, max: 4, default: 0, showIf: (a) => a.mode === 'cycle' },
@@ -355,7 +359,7 @@ const colorize = {
   paletteColor,
 
   prepare(args, ctx) {
-    const pal = PAL.byId(args.palette);
+    const pal = PAL.resolve(args.palette, args.colors, args.paletteName);
     if (!pal) return { ok: false, error: 'Choose a palette' };
     const layers = (ctx.layers || []).filter((l) => !l.locked && (l.type === 'text' || l.type === 'shape' || FILLABLE.has(l.type)));
     const skipped = (ctx.layers || []).filter((l) => !layers.includes(l)).map((l) => `${l.name} (${l.locked ? 'locked' : l.type})`);

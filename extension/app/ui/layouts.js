@@ -292,6 +292,7 @@ function moe(app, s, body) {
   p.overlay = s.layMenu ? menuPopover(app, s.layMenu) : p.overlay;
   return p;
 }
+let railDrag = null;
 // one picture per menu in the sidebar (the top-row menus shared the layers icon)
 const RAIL_ICON = { Comp: 'layout', Layout: 'grid', Finish: 'download', AI: 'spark' };
 /** MOE's sidebar: menus by object, then every Quick Bar shortcut; ⇔ shows names (remembered). */
@@ -309,8 +310,15 @@ function moeRail(app, s) {
     class: `rail-btn ${MENU_FOR[kind] === m.id ? 'hint' : ''}`, 'data-key': `rm-${m.id}`, 'aria-label': `${m.id} menu`, 'aria-haspopup': 'true', 'aria-expanded': String(!!(s.layMenu && s.layMenu.id === m.id)),
     title: `${m.id}${MENU_FOR[kind] === m.id ? ' — fits what you selected' : ''}`, onclick: (e) => openMenu(m, e.currentTarget)
   }, icon(RAIL_ICON[m.id] || m.icon, 'sm'), h('span', { class: 'rail-l' }, m.id), h('span', { class: 'rail-more', 'aria-hidden': 'true' }, '›'));
+  // v0.26: drag a shortcut onto another to reorder the Quick Bar (saved; same order everywhere)
+  const moveTo = (id, beforeId) => { const ids = qb.barIds(app).filter((x) => x !== id); const at = ids.indexOf(beforeId); ids.splice(at < 0 ? ids.length : at, 0, id); app.services.store.set('quick-bar', ids); app.render(); };
   const shortcut = (a) => h('button', {
-    class: 'rail-btn', 'data-key': `rq-${a.id}`, 'aria-label': a.label, title: `${a.label}\nRight-click: options`, disabled: !!s.running,
+    class: 'rail-btn', 'data-key': `rq-${a.id}`, 'aria-label': a.label, title: `${a.label}\nRight-click: options · drag to reorder`, disabled: !!s.running, draggable: 'true',
+    ondragstart: (e) => { railDrag = a.id; try { e.dataTransfer.setData('text/plain', a.id); e.dataTransfer.effectAllowed = 'move'; } catch (_) { /* old CEP */ } },
+    ondragover: (e) => { if (railDrag && railDrag !== a.id) { e.preventDefault(); e.currentTarget.classList.add('drop-before'); } },
+    ondragleave: (e) => e.currentTarget.classList.remove('drop-before'),
+    ondrop: (e) => { e.preventDefault(); e.currentTarget.classList.remove('drop-before'); const id = railDrag; railDrag = null; if (id && id !== a.id) moveTo(id, a.id); },
+    ondragend: () => { railDrag = null; },
     onclick: (e) => (e.altKey ? qb.openOptions(app, a) : qb.run(app, a)), oncontextmenu: (e) => { e.preventDefault(); qb.openOptions(app, a); }
   }, icon(a.icon || 'bolt', 'sm'), h('span', { class: 'rail-l' }, a.label));
   return h('nav', { class: `moe-rail ${wide ? 'wide' : ''}`, 'data-key': 'moe-rail', 'aria-label': 'Shortcuts' },

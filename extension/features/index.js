@@ -11,6 +11,7 @@ const assist = require('./expressions/assist');
 const compositing = require('./compositing/index');
 const brand = require('./brand/tools');
 const brandSource = require('./brand/fromSource');
+const brandAll = require('./brand/applyAll');
 const text = require('./text/tools');
 const proximity = require('./proximity/tools');
 const select = require('./select/tools');
@@ -31,7 +32,7 @@ const TOOLS = [
   smartEase, stagger, proximity.apply, proximity.centerAnchor, proximity.remove,
   zoom.focus, zoom.follow, zoom.cursor,
   text.animate, text.removeAnimation,
-  brand.applyColor, brand.applyFont, brand.extractPalette, brandSource.fromSource,
+  brand.applyColor, brand.applyFont, brand.extractPalette, brandSource.fromSource, brandAll.applyAll,
   select.selectLayers,
   grid.build, grid.update, grid.items, grid.remove, grid.guides, grid.placeInCells,
   adapt.resize, adapt.suggest,

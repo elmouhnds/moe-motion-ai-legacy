@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['brand', 'Your client\'s brand, in one click', 'Brand › Apply brand: client fonts by script (Arabic / English) and colours by role — headlines, body text, shapes and the background — on the selection or the whole comp, contrast-checked, one Undo. Saving a client from a website / PDF also adds its gradients to Backgrounds › Mine, and Brand ease moves keys the way the brand moves.'],
   ['sparkles', 'Brand from a website or PDF', 'Brand › From website / PDF: paste the client\'s site (or choose their brand book) and Claude fills the palette with roles, fonts matched to the ones you have installed, gradients, tone, how it should move and the rules. Review, then Save. Without an API key a website still gets a quick local scan.'],
   ['grid', 'Three styles: Bento, Glass, MOE', 'Bento is the default — pin any tile to NOW (right-click), fold sections, the index follows your scroll. Glass: Ctrl+1…4 between spaces, fold the Now card, Settings › Glass blur. MOE: every shortcut in a sidebar (menus by object + your whole Quick Bar), names with ⇔. Settings › Panel style.'],
   ['spark', 'Three new styles to choose from', '≡ › Panel layout (or Settings › New styles): Glass — frosted cards, four spaces by stage of work and a Now card; Apple — Settings-style lists with coloured icons and pages you open; Bento — one page where a tool\'s size is its importance and the big tool for your selection sits on top. Same tools in each; pick the one you like.'],

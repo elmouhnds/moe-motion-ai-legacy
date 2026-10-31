@@ -457,6 +457,9 @@ function createApp(root, services, env = {}) {
     app.state.set((s) => ({ expr: Object.assign({}, s.expr, { assist: Object.assign({}, s.expr.assist, { result: r }) }) }));
   };
 
+  /* v0.26: brand actions (Apply brand, Brand ease) use the client you work for */
+  require('./actions').setBrandSource(() => { try { return require('../../features/brand/kit').activeBrand(services.store, services.brands); } catch (e) { return null; } });
+
   /* ---------- fonts (cached once per session) ---------- */
   let fontsPromise = null;
   app.fonts = () => {

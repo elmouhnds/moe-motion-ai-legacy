@@ -193,7 +193,7 @@ const DRAW = {
    * through the same drawing as the Inspector preview. Swatches along the bottom.
    */
   bg(c, W, H, th, t) {
-    const pal = PAL.byId(th.palette);
+    const pal = PAL.resolve(th.palette, th.colors, th.paletteName) || PAL.byId('tomato');
     if (!pal) return;
     const { bgFrame, BG_DEFAULTS } = bgDraw || (bgDraw = require('../bgDraw'));
     const a = Object.assign({}, BG_DEFAULTS, th);
@@ -205,7 +205,7 @@ const DRAW = {
   },
   /** Palette strip (Colorize / palette pickers). */
   palette(c, W, H, th) {
-    const pal = PAL.byId(th.palette);
+    const pal = PAL.resolve(th.palette, th.colors, th.paletteName) || PAL.byId('tomato');
     if (!pal) return;
     const sw = W / pal.colors.length;
     pal.colors.forEach((hex, i) => { c.fillStyle = hex; c.fillRect(i * sw, 0, sw + 1, H); });

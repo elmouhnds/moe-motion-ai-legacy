@@ -14,11 +14,14 @@ const Bn = require('../../features/brand/brands');
 // The plan and palette only change when the args do: computed once, not on every frame.
 const memo = new Map();
 function planFor(a, comp) {
-  const key = `${a.palette}|${a.style}|${a.from}|${a.to}|${a.angle}|${a.spread}|${a.motion}|${a.colorMotion}|${a.drift}|${comp.width}x${comp.height}`;
+  const key = `${a.palette}|${a.colors || ''}|${a.style}|${a.from}|${a.to}|${a.angle}|${a.spread}|${a.motion}|${a.colorMotion}|${a.drift}|${comp.width}x${comp.height}`;
   let m = memo.get(key);
   if (!m) {
     if (memo.size > 200) memo.clear();
-    m = { plan: D.backgroundPlan(a, comp), P: PALS.byId(a.palette).colors.map((hx) => Bn.hexToRgb(hx).concat([1])) };
+    // v0.26: custom (brand) colours too; an unusable custom list falls back to the default palette
+    const pal = PALS.resolve(a.palette, a.colors, a.paletteName);
+    const args = pal ? a : Object.assign({}, a, { palette: 'tomato' });
+    m = { plan: D.backgroundPlan(args, comp), P: (pal || PALS.byId('tomato')).colors.map((hx) => Bn.hexToRgb(hx).concat([1])) };
     memo.set(key, m);
   }
   return m;

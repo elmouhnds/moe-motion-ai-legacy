@@ -2,6 +2,20 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.26.0] — 2026-10-31 — Brand in action
+Next Roadmap step (M1.30): use the client's brand in the comp. Details: `docs/features/BRAND_IN_ACTION.md`.
+### Added
+- **Apply Whole Brand** (`brand.applyAll`): selection or whole comp — fonts by script (Arabic + RTL / English), text colour by role (headline / body), shapes primary · secondary · accent, the background solid via *MOE Brand Fill*; colours by role contrast-checked against the background (4.5 : 1 body, 3 : 1 headlines); verified, one Undo, History › Restore.
+- **Active client** (the one shown on the Brand page or just imported) and brand actions everywhere: Brand page *Apply brand · Brand whole comp · Brand ease · Make backgrounds*, Design › Brand group (primary action), Bento NOW and Glass Now when layers are selected, search and My pie (`brand:apply`, `brand:applyComp`, `brand:ease`).
+- **Brand backgrounds**: saving a client from a website / PDF adds its gradients, a *Brand glow* and a drifting *Soft mesh* to Backgrounds › Mine (saving again replaces them). The Background and Colorize tools gain a **Custom / brand colours** palette (2–5 hex).
+- **Brand ease**: the brand's motion feel → the matching ease preset.
+- MOE sidebar: drag shortcuts to reorder the Quick Bar. Bento: drag pinned NOW tiles to reorder.
+### Fixed
+- Tool readiness (Inspector, tiles, one-click actions) ran `prepare` without services — brand tools said "Choose a client" while one was chosen.
+- "Mine" background tiles showed the original palette instead of the saved one.
+### Tests
+- `tests/brand.action.test.js` (6): roles and contrast (dark brands, hand-made clients), the plan (headline / body, Arabic, shapes in turn, background solid only, MOE gradients and locked layers left alone), Apply Whole Brand on the AE mock (fonts, RTL, colours, Brand Fill, shared solid untouched, full restore), whole comp with nothing selected and refusals, brand backgrounds accepted by the Background tool and never duplicated, brand ease and the active client. Playwright: import → backgrounds in Mine → Apply brand from the Brand page (verified) → brand tile in NOW; drag reorder in the MOE sidebar. **Mock / preview, not After Effects.**
+
 ## [0.25.0] — 2026-10-31 — Bento · Glass · MOE, and Brand from website / PDF
 The owner kept three styles and asked to study them again with all their tools and upgrade each — MOE with every shortcut in a sidebar — and asked for Brand import from a client's website or PDF via the API. Studies: `docs/features/STYLES_V2.md`, `docs/features/BRAND_IMPORT.md`.
 ### Added

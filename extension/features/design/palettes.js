@@ -44,4 +44,19 @@ const PALETTES = [
 const TAGS = ['All', ...Array.from(new Set(PALETTES.flatMap((p) => p.tags)))];
 const byId = (id) => PALETTES.find((p) => p.id === id) || null;
 
-module.exports = { PALETTES, TAGS, byId };
+/**
+ * v0.26: palette 'custom' = the colours given (2–5 hex, e.g. a client brand), padded to the 5 slots the
+ * background / colorize maths uses by repeating them in order. Anything else → a built-in palette.
+ */
+function parseColors(list) {
+  const arr = Array.isArray(list) ? list : String(list || '').split(/[\s,;]+/);
+  return arr.map((x) => String(x).trim().toUpperCase()).map((x) => (/^#?[0-9A-F]{6}$/.test(x) ? (x[0] === '#' ? x : `#${x}`) : null)).filter(Boolean).slice(0, 5);
+}
+function resolve(id, colors, name) {
+  if (id !== 'custom') return byId(id);
+  const c = parseColors(colors);
+  if (c.length < 2) return null;
+  return { id: 'custom', name: String(name || 'Custom').slice(0, 40), tags: ['Brand'], colors: Array.from({ length: 5 }, (_, i) => c[i % c.length]) };
+}
+
+module.exports = { PALETTES, TAGS, byId, resolve, parseColors };

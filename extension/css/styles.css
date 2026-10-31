@@ -251,3 +251,7 @@
 .gl-now-acts.mini { display: flex; flex-wrap: wrap; gap: 4px; }
 .gl-kbd { display: none; }
 .app.layout-glass:not(.kit-narrow):not(.kit-tiny) .gl-kbd { display: block; position: absolute; top: 6px; left: 12px; font: 600 9px/1 var(--mono); color: var(--text-3); opacity: 0.7; }
+/* v0.26: drop target while reordering (sidebar shortcuts, pinned NOW tiles) */
+.rail-btn.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.bt.drop-before { box-shadow: inset 3px 0 0 var(--accent); }
+.rail-btn[draggable="true"] { cursor: grab; }

@@ -185,3 +185,13 @@ test('v0.25: MOE puts every shortcut in its sidebar; Bento pins (max 4) and fold
   data['bento-pins'].push('quick:does_not_exist');
   assert.equal(Bn.pins(app).length, 3, 'a pin to a tool that no longer exists is ignored');
 });
+
+test('v0.26: pinned NOW tiles reorder (movePin), unknown target puts it last', () => {
+  const Bn = require('../extension/app/ui/layoutBento');
+  const data = { 'bento-pins': ['quick:k_easy', 'quick:reverse', 'quick:x_loopCycle'] };
+  const app = { render() {}, toast() {}, services: { store: { get: (k, f) => (k in data ? JSON.parse(JSON.stringify(data[k])) : f), set: (k, v) => { data[k] = v; } } } };
+  Bn.movePin(app, 'quick:x_loopCycle', 'quick:k_easy');
+  assert.deepEqual(data['bento-pins'], ['quick:x_loopCycle', 'quick:k_easy', 'quick:reverse']);
+  Bn.movePin(app, 'quick:x_loopCycle', 'nope');
+  assert.deepEqual(data['bento-pins'], ['quick:k_easy', 'quick:reverse', 'quick:x_loopCycle']);
+});

@@ -3,6 +3,8 @@
 const { h, icon } = require('../dom');
 const { renderReport } = require('../report');
 const B = require('../../../features/brand/brands');
+const K = require('../../../features/brand/kit');
+const A = require('../actions');
 
 /* ---------- v0.25: brand from a website / PDF (features/brand/fromSource.js) ---------- */
 const openUrl = (url) => { try { if (window.cep && window.cep.util && window.cep.util.openURLInDefaultBrowser) window.cep.util.openURLInDefaultBrowser(url); else window.open(url, '_blank', 'noopener'); } catch (e) { /* nothing to open with */ } };
@@ -55,7 +57,15 @@ function review(app, r) {
     p.motion && (p.motion.feel || p.motion.easing) ? [h('div', { class: 'section-h' }, 'Motion'), h('div', { class: 'explain' }, [p.motion.feel, p.motion.easing && `Easing: ${p.motion.easing}`, p.motion.pace && `Pace: ${p.motion.pace}`].filter(Boolean).join(' · '))] : null,
     (p.rules || []).length ? [h('div', { class: 'section-h' }, 'Rules'), h('ul', { class: 'bi-rules' }, p.rules.map((x) => h('li', {}, x)))] : null,
     h('div', { class: 'actions' },
-      h('button', { class: 'btn primary', onclick: () => { const sv = app.services.brands.save(d); if (!sv.ok) return app.toast(sv.errors.join(' · '), 5000, 'err'); app.clearResult('brand.fromSource'); app.state.set({ brandImport: null, brandId: sv.brand.id }); app.toast(`${sv.brand.name} saved — click a colour or Auto fonts to use it`, 3500, 'ok'); } }, icon('check', 'sm'), 'Save client'),
+      h('button', { class: 'btn primary', onclick: () => {
+        const sv = app.services.brands.save(d);
+        if (!sv.ok) return app.toast(sv.errors.join(' · '), 5000, 'err');
+        // v0.26: the new client becomes the one you work for, and its gradients / palette become Backgrounds presets
+        K.setActive(app.services.store, sv.brand.id);
+        const nBg = K.saveBrandBackgrounds(app.services.presets, sv.brand);
+        app.clearResult('brand.fromSource'); app.state.set({ brandImport: null, brandId: sv.brand.id });
+        app.toast(`${sv.brand.name} saved${nBg ? ` · ${nBg} backgrounds in Backgrounds › Mine` : ''} — Apply brand styles the selection`, 4200, 'ok');
+      } }, icon('check', 'sm'), 'Save client'),
       h('button', { class: 'btn ghost', onclick: () => { app.clearResult('brand.fromSource'); app.state.set({ brandImport: null, brandEdit: JSON.parse(JSON.stringify(d)) }); } }, icon('edit', 'sm'), 'Edit first')));
 }
 /** What import found, shown on a saved client (tone, motion, rules, gradients, fonts to install). */
@@ -136,7 +146,8 @@ function render(app) {
   if (s.brandEdit) return h('div', { class: 'view' }, editor(app, s.brandEdit));
   if (s.brandImport) return importPanel(app, s);
   const startImport = () => app.state.set({ brandImport: { source: 'website', url: '', file: '', deep: true } });
-  const brand = brands.find((b) => b.id === s.brandId) || brands[0] || null;
+  const active = K.activeBrand(app.services.store, app.services.brands);
+  const brand = brands.find((b) => b.id === s.brandId) || active || brands[0] || null;
   const target = s.brandTarget || 'fill';
   const colorResult = s.results['brand.applyColor'];
   const fontResult = s.results['brand.applyFont'];
@@ -145,7 +156,7 @@ function render(app) {
   const texts = sel.filter((l) => l.type === 'text').length;
 
   const head = h('div', { class: 'pad brand-head' },
-    h('select', { 'aria-label': 'Client', onchange: (e) => app.state.set({ brandId: e.target.value }) },
+    h('select', { 'aria-label': 'Client', onchange: (e) => { K.setActive(app.services.store, e.target.value); app.state.set({ brandId: e.target.value }); } },
       brands.length ? brands.map((b) => h('option', { value: b.id, selected: brand && b.id === brand.id }, b.name)) : h('option', {}, 'No clients yet')),
     h('button', { class: 'btn sm bi-start', 'data-key': 'bi-start', title: 'Paste the client website or choose their brand book PDF — colours, fonts, tone and rules filled in for you', onclick: startImport }, icon('sparkles', 'sm'), 'From website / PDF'),
     h('button', { class: 'icon-btn', title: 'New client (by hand)', 'aria-label': 'New client by hand', onclick: () => app.state.set({ brandEdit: { name: '', colors: [], fonts: { arabic: null, english: null, extra: [] }, notes: '' } }) }, icon('plus', 'sm')),
@@ -163,7 +174,13 @@ function render(app) {
   if (!brand) return h('div', { class: 'view' }, head, h('div', { class: 'empty' }, h('b', {}, 'Add your first client'), h('br'), 'Paste their website (or brand book PDF) and MOE fills the palette, fonts, tone and rules — or add them by hand. Then colour and style the selection in one click.',
     h('div', { class: 'actions', style: { justifyContent: 'center' } }, h('button', { class: 'btn primary', onclick: startImport }, icon('sparkles', 'sm'), 'From website / PDF'))));
 
-  return h('div', { class: 'view' }, head,
+  if (!active || active.id !== brand.id) setTimeout(() => K.setActive(app.services.store, brand.id), 0); // the client shown is the one you work for
+  const act = (ref, primary) => { const a = A.resolve(ref); if (!a) return null; const rd = a.ready(app); return h('button', { class: `btn ${primary ? 'primary' : ''} sm`, 'data-key': `ba-${ref}`, disabled: !!s.running, title: rd.ok ? a.where : `${a.label} — ${rd.hint}`, onclick: () => (rd.ok ? a.run(app) : app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn')) }, icon(a.icon, 'sm'), a.label); };
+  const useRow = h('div', { class: 'pad bi-use', 'data-key': 'bi-use' },
+    h('div', { class: 'why' }, `Working for ${brand.name} — Apply brand sets fonts by script and colours by role (headlines, body, shapes, background).`),
+    h('div', { class: 'actions' }, act('brand:apply', true), act('brand:applyComp'), act('brand:ease'),
+      h('button', { class: 'btn sm', 'data-key': 'ba-bg', title: 'Make Backgrounds presets from this client (its gradients, palette and a soft mesh) — Backgrounds › Mine', onclick: () => { const n = K.saveBrandBackgrounds(app.services.presets, brand); app.toast(n ? `${n} ${brand.name} backgrounds in Backgrounds › Mine` : `${brand.name} needs at least 2 colours`, 3500, n ? 'ok' : 'warn'); if (n) app.state.set((st) => ({ studio: Object.assign({}, st.studio, { backgrounds: Object.assign({}, (st.studio || {}).backgrounds, { filter: 'Mine' }) }) })); } }, icon('background', 'sm'), 'Make backgrounds')));
+  return h('div', { class: 'view' }, head, useRow,
     h('div', { class: 'section-h' }, 'Colours', h('span', { class: 'spacer' }),
       h('div', { class: 'seg mini' }, [['fill', 'Fill'], ['stroke', 'Stroke'], ['both', 'Both']].map(([v, l]) => h('button', { 'aria-pressed': String(target === v), onclick: () => app.state.set({ brandTarget: v }) }, l)))),
     h('div', { class: 'pad why', style: { marginBottom: '6px' } }, selProps ? `Applies to ${selProps} selected colour propert${selProps > 1 ? 'ies' : 'y'}` : sel.length ? `Applies to ${sel.length} selected layer${sel.length > 1 ? 's' : ''}` : 'Select layers or a colour property, then click a colour'),

@@ -68,6 +68,30 @@ const TILE_ICON = { fadeIn: 'fadeIn', fadeOut: 'fadeOut', popIn: 'scaleUp', gent
 /** Shorter names for slices and chips (the full name stays in the tooltip / Quick Bar). */
 const SHORT = { reverse: 'Reverse Keys', mirror: 'Mirror Keys', clone: 'Clone Keys', selectSame: 'Select Same', revealProject: 'Reveal', revealFolder: 'Open Folder', dupComp: 'Dup Comp', parentNull: 'Parent Null', centerAnchor: 'Center Anchor', separate: 'Separate XY', trimDraw: 'Draw On', trimErase: 'Erase', trimTravel: 'Travel', trimBoth: 'Draw + Erase', scaleUp: 'Pop In', scaleDown: 'Scale Out', counter: 'Counter', anchorB: 'Anchor Bottom', anchorC: 'Anchor Centre', anchorTL: 'Anchor TL', alignH: 'Align H', alignV: 'Align V', distH: 'Distribute H', distV: 'Distribute V', compCentre: 'Comp Centre', curveExpo: 'Out Expo', curveBack: 'Out Back', k_repeat: 'Repeat', k_excite: 'Excite', k_trimKeys: 'Trim keys', k_trash: 'Trash' };
 
+/* v0.26: brand actions follow the client you work for (set by the shell: kit.activeBrand) */
+let brandSource = () => null;
+const setBrandSource = (fn) => { brandSource = fn || (() => null); };
+function brandAction(ref, rest) {
+  const K = require('../../features/brand/kit');
+  const b = brandSource();
+  if (rest === 'apply' || rest === 'applyComp') {
+    const comp = rest === 'applyComp';
+    const label = comp ? 'Brand whole comp' : 'Apply brand';
+    const args = (bb) => Object.assign(require('../../core/schema').defaults(require('../../features/brand/applyAll').applyAll.params), { brandId: bb.id, scope: comp ? 'comp' : 'selection' });
+    return { id: ref, label, icon: 'brand', where: b ? `Brand · ${b.name}` : 'Brand',
+      run: (app) => { const bb = brandSource(); if (bb) app.runTool('brand.applyAll', args(bb), { label: `${label}: ${bb.name}` }); },
+      ready: (app) => { const bb = brandSource(); return bb ? require('./studio/library').readiness(app, { id: ref, label, tool: 'brand.applyAll', args: args(bb) }) : { ok: false, kind: 'input', hint: 'Choose a client in Brand first (or add one from their website / PDF)' }; } };
+  }
+  if (rest === 'ease') {
+    const er = K.brandEaseRef(b);
+    const inner = er ? resolve(er) : null;
+    return { id: ref, label: 'Brand ease', icon: 'easeCurve', where: b ? `Brand · ${b.name}${inner ? ` · ${b.profile.motion.easing}` : ''}` : 'Brand',
+      run: (app) => { if (inner) inner.run(app); },
+      ready: (app) => (!b ? { ok: false, kind: 'input', hint: 'Choose a client in Brand first' } : !inner ? { ok: false, kind: 'input', hint: `${b.name} has no motion feel yet — add it from their website / PDF` } : inner.ready(app)) };
+  }
+  return null;
+}
+
 /** Resolve a reference to { id, label, icon, run(app), ready(app) } — null if it no longer exists. */
 function resolve(ref) {
   if (!ref) return null;
@@ -94,6 +118,7 @@ function resolve(ref) {
     if (!sec) return null;
     return { id: ref, label: sec.label, icon: sec.icon, where: 'Open', nav: true, run: (app) => app.go(rest), ready: () => ({ ok: true }) };
   }
+  if (kind === 'brand') return brandAction(ref, rest);
   if (kind === 'cmd') {
     const CMD = {
       search: { label: 'Search', icon: 'search', run: (app) => require('./palette').open(app) },
@@ -113,7 +138,8 @@ function catalog() {
   for (const a of require('./quickbar').ACTIONS) out.push({ ref: `quick:${a.id}`, group: 'Quick Bar', label: a.label });
   for (const id of studio.NAV) out.push({ ref: `nav:${id}`, group: 'Open section', label: studio.byId(id).label });
   for (const [id, label] of [['search', 'Search'], ['copilot', 'Copilot'], ['repeat', 'Repeat last']]) out.push({ ref: `cmd:${id}`, group: 'Commands', label });
+  for (const [id, label] of [['apply', 'Apply brand'], ['applyComp', 'Brand whole comp'], ['ease', 'Brand ease']]) out.push({ ref: `brand:${id}`, group: 'Brand', label });
   return out;
 }
 
-module.exports = { SETS, FOCUS, FOCUS_BLOCKS, CONTEXT_LABEL, profile, slotsFor, resolve, catalog };
+module.exports = { SETS, FOCUS, FOCUS_BLOCKS, CONTEXT_LABEL, profile, slotsFor, resolve, catalog, setBrandSource };

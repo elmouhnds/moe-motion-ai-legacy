@@ -31,6 +31,9 @@ function nowCard(app, s, kind) {
   const what = !c ? 'Reading After Effects…' : !c.comp ? 'No active composition' : A.CONTEXT_LABEL[kind];
   const sub = c && c.comp ? `${c.comp.name} · ${(c.layers || []).length} layers${c.keys ? ` · ${c.keys} keys` : ''}` : '';
   const acts = (A.SETS[kind] || []).map((r) => A.resolve(r)).filter(Boolean).slice(0, 8);
+  // v0.26: the client you work for, one click away (when layers are selected)
+  const client = require('../../features/brand/kit').activeBrand(app.services.store, app.services.brands);
+  if (client && kind !== 'none' && kind !== 'keys') acts.push(A.resolve('brand:apply'));
   return h('section', { class: 'gl-now', 'data-key': 'gl-now', 'aria-label': 'Now' },
     h('div', { class: 'gl-now-h' }, h('span', { class: 'gl-now-k' }, 'NOW'), h('b', {}, what), h('span', { class: 'gl-now-s' }, sub), h('span', { class: 'spacer' }),
       h('button', { class: 'icon-btn gl-now-fold', 'data-key': 'gl-now-fold', 'aria-expanded': String(!fold), 'aria-label': fold ? 'Show the Now actions' : 'Fold the Now card', title: fold ? 'Show the eight best actions' : 'Fold to one line (more room for the cards)', onclick: () => { app.services.store.set('glass-now-folded', !fold); app.render(); } }, icon('chev', `xs gl-chev ${fold ? '' : 'open'}`))),

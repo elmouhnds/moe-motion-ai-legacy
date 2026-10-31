@@ -56,7 +56,7 @@ const TABS = [
       { id: 'shapes', label: 'Shapes & Icons', kind: 'links', fits: ['none'], open: true, links: [['shapes', '1,899 icons and 22 native shapes, editable in AE']] },
       { id: 'bg', label: 'Backgrounds', kind: 'tiles', section: 'backgrounds', ids: ['bg-tomato', 'bg-midnight', 'bg-ocean', 'bg-sunset', 'bg-aurora', 'bg-cyber'], more: 'backgrounds', fits: ['none'] },
       { id: 'looks', label: 'Looks & Glass', kind: 'tiles', section: 'looks', ids: ['glass-clear', 'glass-frosted', 'glass-liquid', 'glass-tinted', 'glass-smoke', 'glass-crystal'], more: 'looks', fits: [] },
-      { id: 'brand', label: 'Brand', kind: 'links', fits: [], links: [['brand', 'Client colours and fonts — apply in one click']] }
+      { id: 'brand', label: 'Brand', kind: 'acts', fits: ['layers', 'text'], hero: ['brand:apply'], refs: ['brand:apply', 'brand:applyComp', 'brand:ease'], links: [['brand', 'Brand Kit — clients, from website / PDF']] }
     ] },
   { id: 'ae-effect', label: 'Effect', title: 'Keying, colour, camera & zoom, stylize (Effect menu)', fits: [], owns: ['compositing', 'zoom'],
     groups: [

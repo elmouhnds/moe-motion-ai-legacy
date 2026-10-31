@@ -28,6 +28,15 @@ function togglePin(app, ref, label) {
   app.toast(on ? `${label} unpinned from NOW` : `${label} pinned to NOW`, 2200, 'ok');
   app.render();
 }
+let pinDrag = null;
+/** Put pinned ref before another pinned ref (saved). */
+function movePin(app, ref, beforeRef) {
+  const cur = (app.services.store.get(PIN_KEY, []) || []).filter((r) => r !== ref);
+  const at = cur.indexOf(beforeRef);
+  cur.splice(at < 0 ? cur.length : at, 0, ref);
+  app.services.store.set(PIN_KEY, cur);
+  app.render();
+}
 const folded = (app, id) => !!(app.services.store.get(FOLD_KEY, {}) || {})[id];
 function toggleFold(app, id) { const all = Object.assign({}, app.services.store.get(FOLD_KEY, {}) || {}); all[id] = !all[id]; app.services.store.set(FOLD_KEY, all); app.render(); }
 
@@ -39,7 +48,14 @@ function tile(app, a, size, t, ref, sub) {
     class: `bt b-${size} ${rd.ok || a.nav ? '' : 'off'} ${pinned ? 'pinned' : ''}`, 'data-key': `a-${a.id}`, 'aria-label': a.label,
     title: `${rd.ok || a.nav ? a.label : `${a.label} — ${rd.hint}`}\nRight-click: ${pinned ? 'unpin from' : 'pin to'} NOW`,
     onclick: () => { if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else { if (t && ref) AE.remember(app, t, ref); a.run(app); } },
-    oncontextmenu: (e) => { if (!ref) return; e.preventDefault(); togglePin(app, ref, a.label); }
+    oncontextmenu: (e) => { if (!ref) return; e.preventDefault(); togglePin(app, ref, a.label); },
+    // v0.26: pinned tiles reorder by drag (inside NOW)
+    draggable: pinned ? 'true' : undefined,
+    ondragstart: pinned ? (e) => { pinDrag = ref; try { e.dataTransfer.setData('text/plain', ref); e.dataTransfer.effectAllowed = 'move'; } catch (_) { /* old CEP */ } } : undefined,
+    ondragover: pinned ? (e) => { if (pinDrag && pinDrag !== ref) { e.preventDefault(); e.currentTarget.classList.add('drop-before'); } } : undefined,
+    ondragleave: pinned ? (e) => e.currentTarget.classList.remove('drop-before') : undefined,
+    ondrop: pinned ? (e) => { e.preventDefault(); e.currentTarget.classList.remove('drop-before'); const r = pinDrag; pinDrag = null; if (r && r !== ref) movePin(app, r, ref); } : undefined,
+    ondragend: pinned ? () => { pinDrag = null; } : undefined
   }, icon(a.icon || 'bolt', size === '2x1' ? 'lg' : ''), h('span', { class: 'bt-l' }, a.label), sub ? h('span', { class: 'bt-s' }, sub) : null,
   pinned ? h('span', { class: 'bt-pin', 'aria-hidden': 'true' }, icon('star', 'xs')) : null);
 }
@@ -48,6 +64,14 @@ const caption = (key, text, extra) => h('div', { class: 'b-cap', 'data-key': key
 
 /** The kit block that leads NOW for this kind of selection (and is then left out of its section). */
 const nowBlock = (kind) => (kind === 'keys' ? 'ease' : kind === 'layers' || kind === 'shapesMany' ? 'align' : kind === 'none' ? null : 'anchor');
+
+/** v0.26: the client you work for, one click away in NOW (when layers are selected). */
+function brandNow(app, kind) {
+  const b = require('../../features/brand/kit').activeBrand(app.services.store, app.services.brands);
+  if (!b || kind === 'none' || kind === 'keys' || pins(app).includes('brand:apply')) return null;
+  const a = A.resolve('brand:apply');
+  return a ? tile(app, a, '2x1', null, 'brand:apply', b.name) : null;
+}
 
 function now(app, s, kind) {
   const kit = require('./views/kit');
@@ -67,6 +91,7 @@ function now(app, s, kind) {
     h('div', { class: 'b-grid' }, block ? wide('now-block', block) : null,
       // your pinned tiles first (same size as primary), then the best actions for the selection — no duplicates
       mine.map(([r, a]) => tile(app, a, '2x1', null, r, 'pinned')),
+      brandNow(app, kind),
       acts.filter(([r]) => !mineRefs.includes(r)).map(([r, a], i) => tile(app, a, i < 2 && !mine.length ? '2x1' : '1x1', null, r))));
 }
 
@@ -128,4 +153,4 @@ function build(app, s, body) {
   return { top: [require('./quickbar').strip(app), AE.searchBox(app, s)], title, content, overlay: s.aeMenu ? AE.panelMenu(app, s) : null, menuBtn: AE.menuButton(app, s) };
 }
 
-module.exports = { build, nowBlock, pins, togglePin, PIN_MAX };
+module.exports = { build, nowBlock, pins, togglePin, movePin, PIN_MAX };

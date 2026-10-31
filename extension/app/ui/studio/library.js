@@ -48,7 +48,8 @@ function tileThumb(app, t) {
   if (t.thumb.k !== 'bg') return t;
   const a = t.user ? t.args : Object.assign({}, app.state.get().args['design.background'] || {}, { palette: t.thumb.palette });
   const pick = {};
-  ['style', 'motion', 'colorMotion', 'loop', 'amount', 'colourAmount', 'drift'].forEach((k) => { if (a[k] !== undefined) pick[k] = a[k]; });
+  // a saved preset (Mine) shows its own palette — custom brand colours too (v0.26)
+  ['style', 'motion', 'colorMotion', 'loop', 'amount', 'colourAmount', 'drift'].concat(t.user ? ['palette', 'colors', 'paletteName'] : []).forEach((k) => { if (a[k] !== undefined) pick[k] = a[k]; });
   if (pick.drift && (!pick.motion || pick.motion === 'none')) pick.motion = 'drift';
   delete pick.drift;
   return Object.assign({}, t, { thumb: Object.assign({}, t.thumb, pick) });
@@ -67,7 +68,7 @@ function readiness(app, tile, args) {
   // Settings first (a required description / layer / file), exactly as the executor validates them.
   const v = validateArgs(tool.params || {}, a);
   if (!v.ok) return { ok: false, kind: 'input', hint: v.errors[0] };
-  const r = availability(tool, s.ctx, a);
+  const r = availability(tool, s.ctx, a, app.services);
   if (r.ok) return { ok: true, hint: r.hint };
   // 'input' only when a setting is missing (a required pick or a setup tile); else the selection does not fit.
   const input = tile.needsInput || /is required|^Choose /i.test(r.hint || '');
@@ -123,7 +124,7 @@ async function removePreset(app, section, tile) {
 function paletteExtras(app, tile) {
   const PAL = require('../../../features/design/palettes');
   const args = app.state.get().args['design.background'] || {};
-  const pal = PAL.byId(args.palette || (tile.args && tile.args.palette));
+  const pal = PAL.resolve(args.palette || (tile.args && tile.args.palette), args.colors || (tile.args && tile.args.colors), args.paletteName || (tile.args && tile.args.paletteName));
   if (!pal) return null;
   const B = require('../../../features/brand/brands');
   return h('div', { class: 'pal-panel' },

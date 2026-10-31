@@ -1,4 +1,6 @@
-# Features (v0.25.0)
+# Features (v0.26.0)
+
+**Brand in action** (v0.26.0): Apply Whole Brand (fonts by script + colours by role on the selection or the whole comp, contrast-checked, one Undo), active client in NOW / Design › Brand, brand gradients as Backgrounds presets, Brand ease (docs/features/BRAND_IN_ACTION.md).
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 

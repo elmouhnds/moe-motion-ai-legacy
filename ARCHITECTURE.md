@@ -149,6 +149,12 @@ See `docs/features/STUDIO_v0.4.md`.
 - Host: `ops/kit.jsx` (`keyframes.setInterp`, `layers.trimToKeys` / `restoreTiming`, `rigs.find` / `rigs.remove`); `ops/transform.jsx` anchor rewritten (2D maths R·S·Δa; 3D / auto-orient through a toWorld / fromWorld probe with selection restore; keyed anchor; mask box; Alt placement via the parent chain), `layers.nudge` handles parented layers (comp → parent space, 2D parents).
 - Second CEP extension `tv.madtomato.moe.motionai.kit` (`kit.html` → `main.start({ mode: 'kit' })` → `shell.renderKitPanel`). Both panels share `%APPDATA%\MOE Motion AI`: `core/storage.js` re-reads a document whose file changed (mtime, checked ≤ 2×/s per document; `version(name)`), `core/settings.js` re-reads before `get` / `update`.
 
+## 6c. Brand in action (v0.26.0)
+- `features/brand/applyAll.js`: `brandRoles(brand)` (roles + contrast), `planApply(brand, layers, { fonts, colors })` (pure), tool `brand.applyAll` (`layers.describe` for the whole comp → `text.setStyle` font + fillColor → `props.colorTargets` + `props.setValues` for shapes → `S.writeEffects` *MOE Brand Fill* for the background solid; checkpoint / restore of all three).
+- `features/brand/kit.js`: `activeBrand` / `setActive` (store `brand-active`), `brandBackgrounds` / `saveBrandBackgrounds` (presets of `design.background`, ids `brand_<client>_<n>`), `brandEaseRef`. `actions.setBrandSource(fn)` (set by the shell) feeds the `brand:` refs (`apply`, `applyComp`, `ease`).
+- `design/palettes.resolve(id, colors, name)`: `custom` palette from 2–5 hex (padded to 5); used by the Background / Colorize tools, the Inspector palette panel, tile thumbnails and `bgDraw`.
+- `toolBlock.availability(tool, ctx, args, services)` passes services to `prepare` like the executor.
+
 ## 6b. Three styles + Brand import (v0.25.0)
 - `layouts.DEFAULT_LAYOUT = 'bento'`; `ae`, `studio`, `apple` gain `retired: true`. `moe()` drops the Quick Bar strip from `top` and returns `side: moeRail()`; the shell renders `p.side` before `.main` (row flex). Rail: `MENUS` (popover opens beside the rail via `layMenu.left`) + `quickbar.barIds()`; store `moe-rail-wide`.
 - Bento: store `bento-pins` (refs, max 4, stale ignored) and `bento-fold` (tab id → bool); one capture `scroll` listener (rAF) sets `bIx`. Glass: store `glass-now-folded`; `settings.ui.glassBlur` → `document.documentElement.dataset.glassBlur`; shell Ctrl+1…4 when the layout is glass.

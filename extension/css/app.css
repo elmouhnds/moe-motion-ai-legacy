@@ -1294,3 +1294,5 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .bi-profile { display: flex; flex-direction: column; gap: 8px; }
 .bi-notes { white-space: pre-line; }
 .bi-chips .chip, .bi-missing .chip { display: inline-flex; align-items: center; height: var(--h-s); padding: 0 9px; border: 1px solid var(--line); border-radius: var(--r-pill); color: var(--text-2); font-size: var(--fs-sm); }
+.bi-use { display: flex; flex-direction: column; gap: 6px; padding-top: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.bi-use .actions { margin-top: 0; flex-wrap: wrap; }

@@ -37,11 +37,16 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.31 — Brand in action ✅ (v0.26.0)
+- [x] Apply Whole Brand (selection / whole comp), active client, brand backgrounds, brand ease; drag to reorder sidebar shortcuts and NOW pins (docs/features/BRAND_IN_ACTION.md)
+- [ ] Inside AE 2025 on real client comps (TEST_REPORT 159–161)
+- Next: brand-aware presets (lower thirds / titles built from the brand fonts and colours), "rebrand" a finished comp to another client (map old colours → new by role), brand check (find off-brand colours / fonts in a comp), per-client motion defaults for Animate In / Out durations
+
 ## M1.30 — Three styles + Brand from website / PDF ✅ (v0.25.0)
 - [x] Bento (default) · Glass · MOE; MOE sidebar with every shortcut; upgrades for each (docs/features/STYLES_V2.md)
 - [x] Brand from website / PDF via the Claude API (docs/features/BRAND_IMPORT.md)
 - [ ] Inside AE 2025 with real client sites and brand books (TEST_REPORT 154–158)
-- Next: apply a brand to a whole comp in one click (text fonts + colours by role), brand gradients as Backgrounds presets, brand motion feel as the default ease; drag tiles in NOW; reorder sidebar shortcuts by drag
+- Next: ~~apply a brand to a whole comp, brand backgrounds, brand ease, drag in NOW / sidebar~~ (v0.26)
 
 ## M1.29 — New style (proposals) ✅ (v0.24.0) — owner kept Bento, Glass, MOE in v0.25
 - [x] Glass, Apple and Bento built live in the panel, timed on ten tasks (docs/features/STYLE_PROPOSALS.md)
