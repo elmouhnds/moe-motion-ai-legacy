@@ -118,14 +118,24 @@ function fromCompPt(layer, pt, t) {
   return q;
 }
 
+/** layer("matchName")(index)(...) — AE expressions reach any property by match name or index. */
+function callGroup(node, key, layerCtx, t) {
+  const child = node.property(key);
+  if (!child) throw new Error(`Expression error: property ${JSON.stringify(key)} is missing`);
+  if (child._expression !== undefined && child.valueAtTime) return wrapProp(child, layerCtx, t);
+  const f = (k) => callGroup(child, k, layerCtx, t);
+  f.__group = child;
+  return f;
+}
+
 function exprLayer(L, t) {
   if (!L) throw new Error('Expression error: layer does not exist');
   const comp = L._comp;
-  const self = {
+  const self = function (k) { return callGroup(L, k, self, t); };
+  Object.defineProperty(self, 'name', { value: L.name });
+  Object.assign(self, {
     __layer: L,
-    name: L.name, index: L.index, width: L.width, height: L.height, inPoint: L.inPoint, outPoint: L.outPoint, startTime: L.startTime,
-    get hasParent() { return !!L.parent; },
-    get parent() { if (!L.parent) throw new Error('Expression error: layer has no parent'); return exprLayer(L.parent, t); },
+    index: L.index, width: L.width, height: L.height, inPoint: L.inPoint, outPoint: L.outPoint, startTime: L.startTime,
     toComp: (p, tt = t) => toCompPt(L, unwrap(p), tt),
     fromComp: (p, tt = t) => fromCompPt(L, unwrap(p), tt),
     // 2D-only mock: toWorld / fromWorld behave like toComp / fromComp (no 3D rotation, no camera).
@@ -152,7 +162,9 @@ function exprLayer(L, t) {
       return { maskPath: wrapProp(m.property('ADBE Mask Shape'), self, t) };
     },
     content(name) { return contentNode(L.property('ADBE Root Vectors Group'), name, self, t); }
-  };
+  });
+  Object.defineProperty(self, 'hasParent', { get() { return !!L.parent; } });
+  Object.defineProperty(self, 'parent', { get() { if (!L.parent) throw new Error('Expression error: layer has no parent'); return exprLayer(L.parent, t); } });
   const T = { anchorPoint: 'ADBE Anchor Point', position: 'ADBE Position', scale: 'ADBE Scale', rotation: 'ADBE Rotate Z', opacity: 'ADBE Opacity', xRotation: 'ADBE Rotate X', yRotation: 'ADBE Rotate Y' };
   self.transform = {};
   for (const [k, mn] of Object.entries(T)) {
@@ -181,8 +193,14 @@ function evaluate(prop, t, extra = {}) {
     name: comp.name, width: comp.width, height: comp.height, frameDuration: comp.frameDuration, duration: comp.duration, numLayers: comp.numLayers,
     layer(k) { const L = typeof k === 'number' ? comp.layer(k) : comp._layers.find((x) => x.name === k); return Object.assign(exprLayer(L, t), extra.layerExtras ? extra.layerExtras(L) : {}); }
   };
+  const project = comp._project;
+  const compByName = (n) => {
+    const c = project && project._items.find((x) => x._layers && x.name === n);
+    if (!c) throw new Error(`Expression error: comp "${n}" is missing`);
+    return { name: c.name, width: c.width, height: c.height, numLayers: c.numLayers, layer(k) { return exprLayer(typeof k === 'number' ? c.layer(k) : c._layers.find((x) => x.name === k), t); } };
+  };
   const scope = Object.assign({}, vec, {
-    thisComp, thisLayer, time: t, value: prop.valueAtTime(t, true), index: layer.index,
+    comp: compByName, thisComp, thisLayer, time: t, value: prop.valueAtTime(t, true), index: layer.index,
     // AE: a property's own valueAtTime() inside its expression returns the pre-expression value.
     thisProperty: { numKeys: prop.numKeys, value: prop.valueAtTime(t, true), valueAtTime: (tt) => prop.valueAtTime(tt, true) },
     effect: thisLayer.effect, transform: thisLayer.transform, toComp: thisLayer.toComp, fromComp: thisLayer.fromComp,

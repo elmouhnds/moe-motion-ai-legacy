@@ -37,7 +37,7 @@ const KIND = {
   color: { matchName: 'ADBE Color Control', param: 'Color', type: 'COLOR' }
 };
 const TAG = '// MOE Glass';
-const GLASS_NAME = /^MOE Glass \d+( (Tint|Rim|Shadow))?$/;
+const GLASS_NAME = /^MOE Glass \d+( .+)?$/; // flat parts (Tint / Rim / Shadow) and Thick Glass parts (Map / Prism / ...)
 const esc = (s) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
 function lookValues(look, tintHex) {
@@ -115,7 +115,7 @@ const apply = {
     if (sources.length > 12) return { ok: false, error: 'Glass up to 12 layers at a time' };
     const used = new Set((ctx.compLayers || []).map((l) => l.name));
     let n = 1;
-    const names = sources.map(() => { while (used.has(`MOE Glass ${n}`)) n++; used.add(`MOE Glass ${n}`); return `MOE Glass ${n}`; });
+    const names = sources.map(() => { while (used.has(`MOE Glass ${n}`) || used.has(`MOE Glass ${n} Map`)) n++; used.add(`MOE Glass ${n}`); return `MOE Glass ${n}`; });
     return { ok: true, sources, names, preview: { summary: `${LOOKS[args.look].label} glass on ${sources.length} layer(s)`, items: sources.map((s, i) => `${s.name} → ${names[i]}`).concat(['Source layers are hidden and used as the glass shape (restorable)']) } };
   },
 
@@ -226,8 +226,9 @@ const look = {
   ui: { primaryLabel: 'Apply Look', presets: apply.ui.presets },
   prepare(args, ctx) {
     if (args.tint && !/^#[0-9a-fA-F]{6}$/.test(args.tint)) return { ok: false, error: 'Tint must be #RRGGBB' };
-    const glasses = (ctx.layers || []).filter((l) => /^MOE Glass \d+$/.test(l.name));
-    if (!glasses.length) return { ok: false, error: 'Select a MOE Glass layer' };
+    const thick = new Set((ctx.compLayers || []).map((l) => l.name).filter((n) => / Map$/.test(n)));
+    const glasses = (ctx.layers || []).filter((l) => /^MOE Glass \d+$/.test(l.name) && !thick.has(`${l.name} Map`));
+    if (!glasses.length) return { ok: false, error: (ctx.layers || []).some((l) => /^MOE Glass \d+$/.test(l.name)) ? 'That is a Thick Glass — use Thick Glass Look' : 'Select a MOE Glass layer' };
     return { ok: true, glasses, preview: { summary: `${LOOKS[args.look].label} on ${glasses.map((g) => g.name).join(', ')}`, items: [] } };
   },
   async execute({ args, ctx, prepared, host }) {

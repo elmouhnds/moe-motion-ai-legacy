@@ -2,6 +2,19 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.27.0] — 2026-10-31 — Thick Glass (Glaze-class)
+The owner asked for something like aescripts Glaze, in a suitable place, implemented with high precision. Study and design: `docs/features/THICK_GLASS.md`.
+### Added
+- **Thick Glass** (`glass.thick`) in Design › Looks & Glass (filter *Thick*): thick refractive glass from any shape, text, logo or footage alpha — CC Glass refraction of what is behind, bevel, frost, chromatic dispersion (Prism R / B), reflection / chrome, studio highlights (light angle, height, colour, highlight size, edge light), soft shadow and caustics. 21 animatable controls on *MOE Glass N*; seven looks: Thick Clear, Prism, Sugar Glass, Bubble, Arctic Ice, Chrome, Liquid Gold; tint from the Brand Kit; parts can be switched off.
+- **Live height map** (`MOE Glass N Map` pre-comp, host op `glass.map`): a white copy of the source linked by expressions — transform through `toComp` (parents, keys and flips included), shape paths / masks / text / time remap by property index — so the glass stays exactly on the shape and follows edits of the original.
+- **One piece** (one glass for all): several layers refract as one piece (one map, one stack; shadow / caustic per layer).
+- **Thick Glass Look** (`glass.thickLook`): change look / tint of an existing thick glass, controls only.
+### Changed
+- Looks & Glass shows the thick looks first; the Design tab's Looks & Glass group shows Thick Clear, Prism, Chrome, Liquid Gold, Frosted, Liquid. Flat Glass Look refuses a thick glass (and says which tool to use).
+- `effects.ensure` accepts layer parameters (`layerRef`); `layers.setAttrs` accepts Lighten.
+### Tests
+- `tests/glass.thick.test.js` (9): stack order, mattes, blend modes, every CC Glass reads the map; controls drive and clamp effect values; the map copy lands on the source to 1e-6 px with a rotated / scaled parent, a flipped and rotated child and animated position; a path edit reaches the map; one glass for two layers (bounds centre); dispersion scale vs the plain-JS reference and light direction; restore removes layers and the map comp; nothing left when CC Glass is missing; looks; 3D refused. **AE mock, not After Effects — CC Glass parameter names are unverified (TEST_REPORT 162).**
+
 ## [0.26.0] — 2026-10-31 — Brand in action
 Next Roadmap step (M1.30): use the client's brand in the comp. Details: `docs/features/BRAND_IN_ACTION.md`.
 ### Added

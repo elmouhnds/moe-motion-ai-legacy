@@ -6,6 +6,7 @@
 const L = require('../../../features/grid/layouts');
 const GX = require('../../../features/grid/expressions');
 const { LOOKS } = require('../../../features/glass/tools');
+const { thickValues } = require('../../../features/glass/thick');
 const { hexToRgb } = require('../../../features/brand/brands');
 const PAL = require('../../../features/design/palettes');
 
@@ -151,6 +152,53 @@ const DRAW = {
     c.fillStyle = `rgba(${tc.map((v) => Math.round(v * 255)).join(',')},${L0.tintAmount / 100})`; rrect(c, x, y, w, hh, 10); c.fill();
     const rim = c.createLinearGradient(x, y, x + w, y + hh); rim.addColorStop(0, `rgba(255,255,255,${0.2 + L0.rim / 160})`); rim.addColorStop(0.5, 'rgba(255,255,255,0.05)'); rim.addColorStop(1, `rgba(255,255,255,${L0.rim / 400})`);
     c.strokeStyle = rim; c.lineWidth = Math.max(1, L0.rimWidth / 2); rrect(c, x + 0.5, y + 0.5, w - 1, hh - 1, 10); c.stroke(); c.lineWidth = 1;
+  },
+  /* Thick Glass (v0.27): a thick pill over moving colour — flat centre, stronger refraction in the bevel band,
+     red / blue fringes for dispersion, studio highlight, reflection gradient, shadow and caustic below. */
+  thick(c, W, H, th, t) {
+    const V = thickValues(th.look);
+    const bg = c.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#16324f'); bg.addColorStop(1, '#4a2348');
+    const scene = (ctx) => {
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#ff7a59'; ctx.beginPath(); ctx.arc(W * (0.32 + 0.1 * Math.sin(t * 0.9)), H * 0.42, H * 0.26, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#4fc3f7'; ctx.beginPath(); ctx.arc(W * 0.7, H * (0.6 + 0.08 * Math.cos(t * 1.1)), H * 0.22, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ffe082'; for (let i = 0; i < 6; i++) ctx.fillRect(W * (0.06 + i * 0.16), H * 0.82, W * 0.07, H * 0.06);
+    };
+    scene(c);
+    const x = W * 0.18, y = H * 0.24, w = W * 0.64, hh = H * 0.5, r = hh * 0.45;
+    const bev = Math.max(2, hh * (0.1 + V.bevel / 220));
+    const ang = (V.angle + 90) * Math.PI / 180, d = V.distance / 5;
+    if (V.shadow) { c.save(); c.globalAlpha = V.shadow / 110; c.filter = `blur(${V.softness / 7}px)`; c.fillStyle = '#000'; rrect(c, x + d * Math.cos(ang), y + d * Math.sin(ang), w, hh, r); c.fill(); c.restore(); }
+    if (V.caustics) { const lc = hexToRgb(V.lightColor).map((k) => Math.round(k * 255)).join(','); c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = V.caustics / 160; c.filter = `blur(${V.softness / 6}px)`; c.fillStyle = `rgb(${lc})`; rrect(c, x + w * 0.2 + d * 0.6 * Math.cos(ang), y + hh * 0.3 + d * 0.6 * Math.sin(ang), w * 0.6, hh * 0.4, r * 0.5); c.fill(); c.restore(); }
+    const zoomed = (z, blur) => { c.save(); c.filter = `blur(${blur}px) brightness(${1 + V.brightness / 100})`; c.translate(W / 2, H / 2); c.scale(z, z); c.translate(-W / 2, -H / 2); scene(c); c.restore(); };
+    const zEdge = 1 + V.refraction / 260, zMid = 1 + V.refraction / 1400;
+    c.save(); rrect(c, x, y, w, hh, r); c.clip();
+    zoomed(zEdge, V.frost / 5);
+    if (V.dispersion) {
+      c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = Math.min(0.55, V.dispersion / 140);
+      c.strokeStyle = '#ff3030'; c.lineWidth = bev * 0.5; rrect(c, x + 1.5, y + 1.5, w - 3, hh - 3, r); c.stroke();
+      c.strokeStyle = '#3060ff'; rrect(c, x + bev * 0.55, y + bev * 0.55, w - bev * 1.1, hh - bev * 1.1, Math.max(1, r - bev * 0.55)); c.stroke();
+      c.restore();
+    }
+    c.save(); rrect(c, x + bev, y + bev, w - 2 * bev, hh - 2 * bev, Math.max(1, r - bev)); c.clip(); zoomed(zMid, V.frost / 5); c.restore();
+    if (V.tintAmount) { const tc = hexToRgb(V.tint).map((k) => Math.round(k * 255)).join(','); c.fillStyle = `rgba(${tc},${V.tintAmount / 130})`; c.fillRect(x, y, w, hh); }
+    if (V.reflection) {
+      const a = V.angle * Math.PI / 180, cx = x + w / 2, cy = y + hh / 2, R = Math.hypot(w, hh) / 2;
+      const g = c.createLinearGradient(cx + R * Math.sin(a), cy - R * Math.cos(a), cx - R * Math.sin(a), cy + R * Math.cos(a));
+      const lc = hexToRgb(V.lightColor).map((k) => Math.round(k * 255)).join(',');
+      g.addColorStop(0, `rgba(${lc},${V.reflection / 100})`); g.addColorStop(0.48, `rgba(${lc},${V.reflection / 260})`); g.addColorStop(0.52, `rgba(11,13,18,${V.reflection / 140})`); g.addColorStop(1, `rgba(11,13,18,${V.reflection / 110})`);
+      c.fillStyle = g; c.fillRect(x, y, w, hh);
+      if (V.tintAmount > 40) { const tc = hexToRgb(V.tint).map((k) => Math.round(k * 255)).join(','); c.globalCompositeOperation = 'multiply'; c.fillStyle = `rgba(${tc},${V.tintAmount / 100})`; c.fillRect(x, y, w, hh); c.globalCompositeOperation = 'source-over'; }
+    }
+    c.restore();
+    // Studio highlight: a bright arc on the lit edge, softer edge light round the rim.
+    const hs = 0.35 + V.roughness / 60;
+    c.save(); c.globalCompositeOperation = 'lighter';
+    c.strokeStyle = `rgba(255,255,255,${V.edgeLight / 300})`; c.lineWidth = 1; rrect(c, x + 0.5, y + 0.5, w - 1, hh - 1, r); c.stroke();
+    c.globalAlpha = V.highlights / 100; c.filter = `blur(${Math.max(0.3, V.roughness / 14)}px)`; c.strokeStyle = '#fff'; c.lineWidth = Math.max(1.2, bev * 0.45); c.lineCap = 'round';
+    c.beginPath(); c.arc(x + r, y + r, r - bev * 0.5, Math.PI * (1.08), Math.PI * (1.08 + hs)); c.stroke();
+    c.beginPath(); c.moveTo(x + r + bev, y + bev * 0.55); c.lineTo(x + r + w * 0.22 * hs, y + bev * 0.55); c.stroke();
+    c.restore(); c.filter = 'none'; c.lineWidth = 1; c.lineCap = 'butt';
   },
   zoom(c, W, H, th, t) {
     c.fillStyle = '#2f3740'; c.fillRect(0, 0, W, H);

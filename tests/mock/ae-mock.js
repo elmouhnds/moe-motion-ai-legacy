@@ -128,6 +128,13 @@ const EFFECTS = {
   'ADBE Noise': [{ name: 'Amount of Noise', valueType: 'OneD', value: 0 }, { name: 'Noise Type', valueType: 'OneD', value: 1 }, { name: 'Clipping', valueType: 'OneD', value: 1 }],
   'ADBE Fill': [{ name: 'Fill Mask', valueType: 'OneD', value: 0 }, { name: 'All Masks', valueType: 'OneD', value: 0 }, { name: 'Color', valueType: 'COLOR', value: [1, 0, 0, 1] }, { name: 'Invert', valueType: 'OneD', value: 0 }, { name: 'Horizontal Feather', valueType: 'OneD', value: 0 }, { name: 'Vertical Feather', valueType: 'OneD', value: 0 }, { name: 'Opacity', valueType: 'OneD', value: 1 }],
   'ADBE Slider Control': [{ name: 'Slider', valueType: 'OneD', value: 0 }],
+  // CC Glass (Cycore, bundled with AE). Names as shown in Effect Controls; topic headers are NO_VALUE entries.
+  // UNVERIFIED in After Effects - effects.ensure fails with the real list if a name differs.
+  'CC Glass': [{ name: 'Surface', valueType: 'NO_VALUE', value: 0 }, { name: 'Bump Map', valueType: 'LAYER_INDEX', value: 0 }, { name: 'Property', valueType: 'OneD', value: 4 },
+    { name: 'Softness', valueType: 'OneD', value: 10 }, { name: 'Height', valueType: 'OneD', value: 50 }, { name: 'Displacement', valueType: 'OneD', value: 100 },
+    { name: 'Light', valueType: 'NO_VALUE', value: 0 }, { name: 'Using', valueType: 'OneD', value: 1 }, { name: 'Light Intensity', valueType: 'OneD', value: 100 }, { name: 'Light Color', valueType: 'COLOR', value: [1, 1, 1, 1] },
+    { name: 'Light Type', valueType: 'OneD', value: 1 }, { name: 'Light Height', valueType: 'OneD', value: 50 }, { name: 'Light Position', valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Light Direction', valueType: 'OneD', value: -45 },
+    { name: 'Shading', valueType: 'NO_VALUE', value: 0 }, { name: 'Ambient', valueType: 'OneD', value: 75 }, { name: 'Diffuse', valueType: 'OneD', value: 0 }, { name: 'Specular', valueType: 'OneD', value: 25 }, { name: 'Roughness', valueType: 'OneD', value: 15 }, { name: 'Metal', valueType: 'OneD', value: 100 }],
   'ADBE Checkbox Control': [{ name: 'Checkbox', valueType: 'OneD', value: 0 }]
 };
 
@@ -463,7 +470,7 @@ class Shape {
   clone() { const c = new Shape(); c.vertices = this.vertices.map((v) => v.slice()); c.inTangents = this.inTangents.map((v) => v.slice()); c.outTangents = this.outTangents.map((v) => v.slice()); c.closed = this.closed; return c; }
 }
 const MaskMode = { NONE: 6812 + 100, ADD: 6913, SUBTRACT: 6914, INTERSECT: 6915, LIGHTEN: 6916, DARKEN: 6917, DIFFERENCE: 6918 };
-const BlendingMode = { NORMAL: 5212, ADD: 5220, SCREEN: 5222, OVERLAY: 5224, SOFT_LIGHT: 5225, MULTIPLY: 5216 };
+const BlendingMode = { NORMAL: 5212, ADD: 5220, SCREEN: 5222, OVERLAY: 5224, SOFT_LIGHT: 5225, MULTIPLY: 5216, LIGHTEN: 5219 };
 const TrackMatteType = { ALPHA: 5013, ALPHA_INVERTED: 5014, LUMA: 5015, LUMA_INVERTED: 5016, NO_TRACK_MATTE: 5012 };
 
 function deepClone(v) {
@@ -666,6 +673,13 @@ class MockLayer {
     comp._appliedPresets = comp._appliedPresets || [];
     comp._appliedPresets.push({ path: file.fsName, layers: comp._layers.filter((l) => l.selected).map((l) => l.name) });
   }
+  get timeRemapEnabled() { return !!this._timeRemap; }
+  /** Layer.copyToComp(intoComp): the copy goes to the top of the target comp; returns nothing. */
+  copyToComp(into) {
+    if (!(into instanceof CompItem)) throw new Error('After Effects error: copyToComp needs a composition');
+    const d = cloneLayer(this, into);
+    into._layers.unshift(d);
+  }
   remove() {
     const i = this._comp._layers.indexOf(this);
     if (i < 0) throw new Error('After Effects error: layer already removed');
@@ -761,6 +775,7 @@ class CompItem {
     return this.guides.length - 1;
   }
   removeGuide(i) { if (i < 0 || i >= this.guides.length) throw new Error('After Effects error: guide index out of range'); this.guides.splice(i, 1); }
+  get usedIn() { return this._project ? this._project._items.filter((c) => c instanceof CompItem && c._layers.some((L) => L.source === this)) : []; }
   openInViewer() { if (this._project) this._project.activeItem = this; return {}; }
   remove() { if (this._project) { const k = this._project._items.indexOf(this); if (k >= 0) this._project._items.splice(k, 1); if (this._project.activeItem === this) this._project.activeItem = null; } }
   get selectedLayers() {
@@ -803,6 +818,14 @@ function installAE(target, fixture, { readFile, evalCode }) {
   if (project) {
     Object.defineProperty(project, 'numItems', { get() { return project._items.length; } });
     project.item = (i) => project._items[i - 1];
+    project.items = {
+      addComp(name, w, h, pa, duration, rate) {
+        if (!(w >= 4 && h >= 4 && duration > 0 && rate > 0)) throw new Error('After Effects error: invalid composition settings');
+        const c = new CompItem({ name, width: w, height: h, duration, frameRate: rate, layers: [] });
+        c.pixelAspect = pa; c._project = project; project._items.push(c);
+        return c;
+      }
+    };
     project.itemByID = (id) => { const it = project._items.find((x) => x.id === id); if (!it) throw new Error('After Effects error: no item with id ' + id); return it; };
   }
   if (fixture && fixture.comp) {

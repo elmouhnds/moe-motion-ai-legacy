@@ -37,6 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.32 — Thick Glass (Glaze-class) ✅ (v0.27.0)
+- [x] `glass.thick` / `glass.thickLook`: thick refractive glass from a live height map (pre-comp linked to the source by expressions), CC Glass refraction, frost, dispersion, reflection / chrome, studio highlights, shadow, caustics, 7 looks, one glass for several layers (docs/features/THICK_GLASS.md)
+- [ ] Inside AE 2025: CC Glass parameter names and shading, precision on real logos / text, render time (TEST_REPORT 162–166)
+- Next: bevel profiles (round / flat / sharp via a Map choke + blur chain), an environment-image reflection slot (any layer as the studio), animated light sweep preset, glass text animator (per-word glass), "Refresh map" for shapes that gained new groups
+
 ## M1.31 — Brand in action ✅ (v0.26.0)
 - [x] Apply Whole Brand (selection / whole comp), active client, brand backgrounds, brand ease; drag to reorder sidebar shortcuts and NOW pins (docs/features/BRAND_IN_ACTION.md)
 - [ ] Inside AE 2025 on real client comps (TEST_REPORT 159–161)

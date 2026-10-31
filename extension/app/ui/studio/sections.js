@@ -7,6 +7,7 @@
  */
 const { PRESETS: EXPR } = require('../../../features/expressions/quick');
 const { LOOKS } = require('../../../features/glass/tools');
+const { THICK_LOOKS } = require('../../../features/glass/thick');
 const PAL = require('../../../features/design/palettes');
 
 const T = (id, label, tool, args, thumb, tags, badge) => ({ id, label, tool, args: args || {}, thumb, tags: tags || [], badge });
@@ -70,7 +71,9 @@ const LAYOUT = [
 ];
 
 const LOOK_FAMILY = { clear: 'Clear', crystal: 'Clear', frosted: 'Frosted', ice: 'Frosted', liquid: 'Liquid', tinted: 'Tinted', smoke: 'Tinted' };
-const LOOK_TILES = Object.entries(LOOKS).map(([id, l]) => T(`glass-${id}`, `${l.label} Glass`, 'glass.apply', { look: id }, { k: 'glass', look: id }, [LOOK_FAMILY[id] || 'Clear']));
+// Thick Glass (v0.27) first: the Glaze-class refractive looks, then the flat UI glass looks.
+const THICK_TILES = Object.entries(THICK_LOOKS).map(([id, l]) => T(`thick-${id}`, l.label, 'glass.thick', { look: id }, { k: 'thick', look: id }, ['Thick']));
+const LOOK_TILES = THICK_TILES.concat(Object.entries(LOOKS).map(([id, l]) => T(`glass-${id}`, `${l.label} Glass`, 'glass.apply', { look: id }, { k: 'glass', look: id }, [LOOK_FAMILY[id] || 'Clear'])));
 
 const ZOOM = [
   T('punch', 'Punch-in', 'zoom.focus', { level: 150, inDur: 0.25, ease: 'snappy', zoomOut: true, hold: 2, outDur: 0.3 }, { k: 'zoom', z: 1.5 }, ['Zoom']),
@@ -108,7 +111,7 @@ const SECTIONS = [
   { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true },
   { id: 'shapes', label: 'Shapes & Icons', icon: 'shapes', kind: 'view' },
   { id: 'backgrounds', label: 'Backgrounds', icon: 'background', kind: 'library', tiles: BACKGROUNDS, filters: PAL.TAGS, tools: (t) => /^design\.(background|colorize)$/.test(t.id), extras: 'palette' },
-  { id: 'looks', label: 'Looks & Glass', icon: 'glass', kind: 'library', tiles: LOOK_TILES, filters: ['All', 'Clear', 'Frosted', 'Liquid', 'Tinted'], tools: (t) => /^glass\./.test(t.id) },
+  { id: 'looks', label: 'Looks & Glass', icon: 'glass', kind: 'library', tiles: LOOK_TILES, filters: ['All', 'Thick', 'Clear', 'Frosted', 'Liquid', 'Tinted'], tools: (t) => /^glass\./.test(t.id) },
   { id: 'brand', label: 'Brand', icon: 'brand', kind: 'view' },
   { id: 'layout', label: 'Layout & Grid', icon: 'grid', kind: 'library', tiles: LAYOUT, filters: ['All', 'Grid', 'Radial', 'Path', '3D', 'Animated', 'Guides', 'Cells'], tools: (t) => /^grid\./.test(t.id) },
   { id: 'zoom', label: 'Zoom & Focus', icon: 'zoom', kind: 'library', tiles: ZOOM, filters: ['All', 'Zoom', 'Focus', 'Cursor'], tools: (t) => /^zoom\./.test(t.id) },

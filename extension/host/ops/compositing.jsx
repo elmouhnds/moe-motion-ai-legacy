@@ -161,7 +161,7 @@
 
     /*
      * args: { compId, label, layers: [{ layer: { layerId }, items: [
-     *   { key, matchName, before: [keys], expectParams, params: [{ id, value, names, suffix, nth }] } ] }] }
+     *   { key, matchName, before: [keys], expectParams, params: [{ id, value, layerRef, names, suffix, nth }] } ] }] }
      */
     ops['effects.ensure'] = {
         mutates: true,
@@ -209,7 +209,8 @@
                                 res = resolved[pi];
                                 var beforeVal = plain(res.r.prop.value);
                                 if (!created) { undoLog.push({ kind: 'param', layer: layer, key: item.key, matchName: item.matchName, index: res.r.index, value: beforeVal }); }
-                                res.r.prop.setValue(res.spec.value);
+                                /* layerRef: a layer parameter (e.g. CC Glass Bump Map) takes the layer's current index. */
+                                res.r.prop.setValue(res.spec.layerRef !== undefined && res.spec.layerRef !== null ? U.findLayer(comp, { layerId: res.spec.layerRef }).index : res.spec.value);
                                 entry.params.push({ id: res.spec.id, index: res.r.index, name: res.r.prop.name, matchName: res.r.prop.matchName, resolvedBy: res.r.method, before: beforeVal, after: plain(res.r.prop.value) });
                             }
                             /* Ordering: move before the earliest listed MOE effect present. */

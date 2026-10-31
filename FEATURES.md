@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Thick Glass** (v0.27.0): Design › Looks & Glass › Thick — Glaze-class refractive glass from native effects (docs/features/THICK_GLASS.md).
+
 **Three styles** (v0.25.0): Bento (default; pin to NOW, fold sections, scroll-following index) · Glass (Ctrl+1…4, foldable Now, blur switch) · MOE (every shortcut in a sidebar) — docs/features/STYLES_V2.md.
 
 **Three new styles** (v0.24.0, proposals): Glass (frosted cards, four spaces by stage of work, Now card, bottom capsule), Apple (Settings-style lists, coloured icons, categories you open), Bento ★ (one page, tile size = importance, the big tool for the selection on top). ≡ › Panel layout / Settings › New styles (docs/features/STYLE_PROPOSALS.md).
@@ -76,7 +78,8 @@ Legend: **Local** = no network. **AI** = uses Claude (optional). Host = verified
 | Layout | Resize & Adapt (`adapt.resize`) | Local (+ optional AI) | Fit/Fill/Keep/Smart re-frame to any size; keeps every keyframe; new comp by default; nested layout pre-comps; preview with overrides; measured read-back. | remove copy / exact in-place restore | ⏳ |
 | Layout | Layout from Claude (`adapt.suggestLayout`, via Ask Claude) | AI | Claude places elements for the new format (no pixels sent); shown in the preview before Adapt. | no project change | ⏳ |
 | Motion | Focus Zoom / Follow Zoom / Cursor Animator (`zoom.*`) | Local | ClickZoom-style zooms on a MOE Zoom rig (point or layer, in/hold/out, eases, pans, motion blur, spotlight); follow a layer; animated cursor with click pulse + ripple. | rig / keys / layers removed | ⏳ |
-| Comp | Glass / Glass Look (`glass.*`) | Local | Liquid/frosted glass from native effects (matte, frost, lens, brightness, tint, rim, shadow), 7 looks, Brand tints. | created layers removed, source re-enabled | ⏳ |
+| Comp | Glass / Glass Look (`glass.apply`, `glass.look`) | Local | Liquid/frosted UI glass from native effects (matte, frost, lens, brightness, tint, rim, shadow), 7 looks, Brand tints. | created layers removed, source re-enabled | ⏳ |
+| Comp | Thick Glass / Thick Glass Look (`glass.thick`, `glass.thickLook`) | Local | Glaze-class thick glass: live height-map pre-comp linked to the source (transform via toComp, shapes / masks / text by index), CC Glass refraction with bevel, frost, chromatic dispersion, reflection / chrome, studio highlights, shadow, caustics; 21 animatable controls, 7 looks, one glass for several layers. | layers + map comp removed, sources re-enabled | ⏳ |
 | Comp | Green-Screen Prompt (`generate.greenPrompt`) | AI | Claude prompt for your generator; chroma-green rules enforced locally. Claude does not generate images. | no project change | ⏳ |
 | Comp | Import & Key (`generate.importKey`) | Local | Import generated file at the playhead, fit, Screen Key chain. | imported layer + item removed | ⏳ |
 | Motion | Smart Ease (`motion.smartEase`) | Local | Sets temporal ease influence (speed 0) on selected keys or all keys of selected properties. Presets Easy/Smooth/Strong/Snappy/Launch. Correct ease array size per value type; HOLD sides preserved; sides set to Bezier. | 1 undo step + checkpoint restore | ⏳ |

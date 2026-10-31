@@ -19,6 +19,7 @@ const adapt = require('./adapt/tools');
 const grid = require('./grid/tools');
 const zoom = require('./zoom/tools');
 const glass = require('./glass/tools');
+const thickGlass = require('./glass/thickTools');
 const quick = require('./quick/tools');
 const exprQuick = require('./expressions/quick');
 const green = require('./generate/green');
@@ -40,7 +41,7 @@ const TOOLS = [
   quick.reveal, quick.purge, quick.duplicate, quick.flip, quick.parentNull, quick.precompose, quick.separate,
   quick.selectSame, quick.reverseKeys, quick.mirrorKeys, quick.animate, quick.trim, quick.typewriter, quick.counter,
   ...compositing,
-  glass.apply, glass.look,
+  glass.apply, glass.look, thickGlass.thick, thickGlass.thickLook,
   green.greenPrompt, green.importKey,
   design.insertShape, design.background, design.colorize,
   curves.easeCurve, transform.anchor, transform.align, transform.clone,

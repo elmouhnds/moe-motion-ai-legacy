@@ -486,6 +486,8 @@ const body = {
   'adapt.resize': adaptPreview,
   'glass.apply': glassTint,
   'glass.look': glassTint,
+  'glass.thick': glassTint,
+  'glass.thickLook': glassTint,
   'generate.importKey': filePicker
 };
 const result = { 'generate.greenPrompt': greenResult };
