@@ -37,7 +37,13 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
-## M1.29 — New style (proposals) ⏳ (v0.24.0)
+## M1.30 — Three styles + Brand from website / PDF ✅ (v0.25.0)
+- [x] Bento (default) · Glass · MOE; MOE sidebar with every shortcut; upgrades for each (docs/features/STYLES_V2.md)
+- [x] Brand from website / PDF via the Claude API (docs/features/BRAND_IMPORT.md)
+- [ ] Inside AE 2025 with real client sites and brand books (TEST_REPORT 154–158)
+- Next: apply a brand to a whole comp in one click (text fonts + colours by role), brand gradients as Backgrounds presets, brand motion feel as the default ease; drag tiles in NOW; reorder sidebar shortcuts by drag
+
+## M1.29 — New style (proposals) ✅ (v0.24.0) — owner kept Bento, Glass, MOE in v0.25
 - [x] Glass, Apple and Bento built live in the panel, timed on ten tasks (docs/features/STYLE_PROPOSALS.md)
 - [ ] Owner picks one → it becomes final, the other two are retired; library pages, Settings and the Motion Kit panel get the same style
 - [ ] Inside AE 2025: blur performance (Glass), scaling 100 / 150 % (TEST_REPORT items 151–153)

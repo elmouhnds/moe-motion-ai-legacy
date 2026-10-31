@@ -1,4 +1,8 @@
-# Features (v0.24.0)
+# Features (v0.25.0)
+
+**Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
+
+**Three styles** (v0.25.0): Bento (default; pin to NOW, fold sections, scroll-following index) · Glass (Ctrl+1…4, foldable Now, blur switch) · MOE (every shortcut in a sidebar) — docs/features/STYLES_V2.md.
 
 **Three new styles** (v0.24.0, proposals): Glass (frosted cards, four spaces by stage of work, Now card, bottom capsule), Apple (Settings-style lists, coloured icons, categories you open), Bento ★ (one page, tile size = importance, the big tool for the selection on top). ≡ › Panel layout / Settings › New styles (docs/features/STYLE_PROPOSALS.md).
 

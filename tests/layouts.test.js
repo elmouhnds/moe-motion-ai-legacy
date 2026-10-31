@@ -12,14 +12,15 @@ const studio = require('../extension/app/ui/studio/sections');
 
 const SECTIONS = [...new Set(studio.WORKSPACES.flatMap((w) => w.items))];
 
-test('layouts: Classic (AE) is the default; the others stay selectable', () => {
+test('layouts: Bento is the default (v0.25); retired layouts still render if a user had picked one', () => {
   assert.deepEqual(L.LAYOUTS.map((l) => l.id), ['ae', 'studio', 'hub', 'bar', 'workspace', 'moe', 'glass', 'apple', 'bento']);
   const app = (layout) => ({ services: { settings: { get: () => ({ ui: { layout } }) } } });
   assert.equal(L.layoutOf(app('bar')), 'bar');
   assert.equal(L.layoutOf(app('moe')), 'moe');
   assert.equal(L.layoutOf(app('studio')), 'studio');
-  assert.equal(L.layoutOf(app('nope')), 'ae');
-  assert.equal(L.layoutOf(app(undefined)), 'ae');
+  assert.equal(L.layoutOf(app('ae')), 'ae');
+  assert.equal(L.layoutOf(app('nope')), 'bento');
+  assert.equal(L.layoutOf(app(undefined)), 'bento');
 });
 
 test('Classic (AE): six tabs named after AE menus; every section reachable; every button and preset exists', () => {
@@ -91,8 +92,8 @@ test('final layout (v0.21): every Classic tab action and preset is in its ▾ qu
     assert.ok(menu, `${t.label}: tabItems builds without a live AE context`);
   }
   const shown = L.LAYOUTS.filter((x) => !x.retired).map((x) => x.id);
-  assert.deepEqual(shown, ['ae', 'studio', 'moe', 'glass', 'apple', 'bento']);
-  assert.ok(['hub', 'bar', 'workspace'].every((id) => L.LAYOUTS.find((x) => x.id === id).retired));
+  assert.deepEqual(shown, ['moe', 'glass', 'bento']);
+  assert.ok(['hub', 'bar', 'workspace', 'ae', 'studio', 'apple'].every((id) => L.LAYOUTS.find((x) => x.id === id).retired));
 });
 
 test('Classic groups (v0.22): your order is saved per tab, survives new / unknown groups, resets to default', () => {
@@ -160,4 +161,27 @@ test('style proposals (v0.24): every Classic group has one place in Glass, Apple
   // Bento: the NOW block exists for every kind, and is a kit block of a Classic group
   for (const k of ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany']) assert.ok(AE.TABS.some((t) => t.groups.some((g) => g.kind === 'kit' && g.block === B.nowBlock(k))), k);
   assert.equal(B.nowBlock('none'), null);
+});
+
+test('v0.25: MOE puts every shortcut in its sidebar; Bento pins (max 4) and folds are remembered', () => {
+  const L2 = require('../extension/app/ui/layouts');
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../extension/app/ui/layouts.js'), 'utf8');
+  // the sidebar lists every menu by object and the whole Quick Bar (no "+N"), and the strip leaves the top
+  assert.match(src, /p\.top = p\.top\.slice\(1\); \/\/ the Quick Bar strip moves into the sidebar/);
+  assert.match(src, /MENUS\.map\(menuBtn\)/);
+  assert.match(src, /qb\.barIds\(app\)\.map\(qb\.byId\)/);
+  assert.equal(L2.DEFAULT_LAYOUT, 'bento');
+  const Bn = require('../extension/app/ui/layoutBento');
+  const data = {};
+  const toasts = [];
+  const app = { render() {}, toast: (m) => toasts.push(m), services: { store: { get: (k, f) => (k in data ? JSON.parse(JSON.stringify(data[k])) : f), set: (k, v) => { data[k] = v; } } } };
+  ['quick:k_easy', 'quick:reverse', 'quick:x_loopCycle', 'quick:parentNull'].forEach((r) => Bn.togglePin(app, r, r));
+  assert.equal(Bn.pins(app).length, Bn.PIN_MAX);
+  Bn.togglePin(app, 'quick:precompose', 'Pre-compose');
+  assert.equal(Bn.pins(app).length, 4, 'a fifth pin is refused');
+  assert.match(toasts[toasts.length - 1], /unpin one first/);
+  Bn.togglePin(app, 'quick:reverse', 'Reverse');
+  assert.deepEqual(Bn.pins(app), ['quick:k_easy', 'quick:x_loopCycle', 'quick:parentNull']);
+  data['bento-pins'].push('quick:does_not_exist');
+  assert.equal(Bn.pins(app).length, 3, 'a pin to a tool that no longer exists is ignored');
 });

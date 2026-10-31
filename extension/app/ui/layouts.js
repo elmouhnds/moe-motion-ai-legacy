@@ -24,19 +24,21 @@ const A = require('./actions');
 const BAR = require('../../features/quick/bar');
 
 const LAYOUTS = [
-  { id: 'ae', label: 'Classic (AE style)', hint: 'Tabs named after AE menus, twirl-down groups, ≡ panel menu — the final layout (v0.21)' },
-  { id: 'studio', label: 'Sidebar (v0.15)', hint: 'Sidebar + workspaces (v0.15)' },
+  // v0.25: the owner kept three styles — Bento (default), Glass, MOE. The rest still render if a user had picked one.
+  { id: 'ae', label: 'Classic (AE style)', hint: 'Tabs named after AE menus, twirl-down groups, ≡ panel menu (v0.20–0.24 default)', retired: true },
+  { id: 'studio', label: 'Sidebar (v0.15)', hint: 'Sidebar + workspaces (v0.15)', retired: true },
   { id: 'hub', label: 'Hub', hint: 'Fixed Home + screens (Motion 4 style)', retired: true },
   { id: 'bar', label: 'Command Bar', hint: 'Menus by object + your bars (MoBar / KBar style)', retired: true },
   { id: 'workspace', label: 'Workspace', hint: 'Context bar + task tabs (AE Properties style)', retired: true },
-  { id: 'moe', label: 'MOE ★ (menus by object)', hint: 'Classic plus a row of menus by object, lit for the selection' },
+  { id: 'moe', label: 'MOE', hint: 'AE-named tabs and twirl-down groups, with every shortcut in a sidebar: menus by object + your whole Quick Bar' },
   // v0.24 style proposals (docs/features/STYLE_PROPOSALS.md): a new look AND a new organisation each
   { id: 'glass', label: 'Glass', hint: 'Frosted glass over a colour field · four spaces by stage of work · Now card · floating bottom bar', proposal: true },
-  { id: 'apple', label: 'Apple', hint: 'Settings-style lists · coloured icons · categories you open and come back from', proposal: true },
-  { id: 'bento', label: 'Bento ★', hint: 'One page, no tabs · tile size = importance · the big tool for your selection on top', proposal: true }
+  { id: 'apple', label: 'Apple', hint: 'Settings-style lists · coloured icons · categories you open and come back from', proposal: true, retired: true },
+  { id: 'bento', label: 'Bento', hint: 'One page, no tabs · tile size = importance · the big tool for your selection on top', proposal: true }
 ];
-/** The panel layout; anything unknown or unset is the default, Classic (v0.20). */
-const layoutOf = (app) => { const l = app.services.settings.get().ui.layout; return LAYOUTS.some((x) => x.id === l) ? l : 'ae'; };
+/** The panel layout; anything unknown or unset is the default, Bento (v0.25). */
+const DEFAULT_LAYOUT = 'bento';
+const layoutOf = (app) => { const l = app.services.settings.get().ui.layout; return LAYOUTS.some((x) => x.id === l) ? l : DEFAULT_LAYOUT; };
 
 /* ---------- shared pieces ---------- */
 /** One action reference (tile: / quick: / nav: / cmd:) as a button with readiness, like the pie. */
@@ -281,13 +283,44 @@ function workspace(app, s, body, opt = {}) {
  * Workspace's four task tabs with a fixed order and a crumb. No second context area and no
  * bottom bar: three rows above the content, so a docked panel keeps its height for the tools. */
 function moe(app, s, body) {
-  // v0.21: the same tabs and twirl-down groups as Classic, with MOE's own row on top — menus by
-  // object (Keys · Layer · Text · Shape · Comp …), the one for the selection lit: any action in two
-  // clicks without leaving the tab you are on. (Classic gets the same from its tab ▾ menus.)
+  // v0.25 (owner): the same tabs and twirl-down groups as Classic, and EVERY shortcut in a sidebar
+  // instead of two rows on top — menus by object (the one for the selection lit) + the whole Quick Bar
+  // (no "+N": every button, with its name when the sidebar is open wide).
   const p = require('./layoutAE').build(app, s, body);
-  p.top = [menusRow(app, s)].concat(p.top);
+  p.top = p.top.slice(1); // the Quick Bar strip moves into the sidebar
+  p.side = moeRail(app, s);
   p.overlay = s.layMenu ? menuPopover(app, s.layMenu) : p.overlay;
   return p;
+}
+// one picture per menu in the sidebar (the top-row menus shared the layers icon)
+const RAIL_ICON = { Comp: 'layout', Layout: 'grid', Finish: 'download', AI: 'spark' };
+/** MOE's sidebar: menus by object, then every Quick Bar shortcut; ⇔ shows names (remembered). */
+function moeRail(app, s) {
+  const qb = require('./quickbar');
+  const kind = A.profile(s.ctx);
+  const wide = !!app.services.store.get('moe-rail-wide', false);
+  const openMenu = (m, el) => {
+    if (s.layMenu && s.layMenu.id === m.id) { app.state.set({ layMenu: null }); return; }
+    const r = el.getBoundingClientRect(), box = qb.fixedBox(el.closest('.app') || document.body);
+    const left = Math.round(r.right - box.left + 4);
+    app.state.set({ layMenu: { id: m.id, top: Math.max(4, Math.min(Math.round(r.top - box.top), Math.round(box.height - 260))), left, right: null, maxW: Math.max(220, Math.round(box.width - left - 6)) } });
+  };
+  const menuBtn = (m) => h('button', {
+    class: `rail-btn ${MENU_FOR[kind] === m.id ? 'hint' : ''}`, 'data-key': `rm-${m.id}`, 'aria-label': `${m.id} menu`, 'aria-haspopup': 'true', 'aria-expanded': String(!!(s.layMenu && s.layMenu.id === m.id)),
+    title: `${m.id}${MENU_FOR[kind] === m.id ? ' — fits what you selected' : ''}`, onclick: (e) => openMenu(m, e.currentTarget)
+  }, icon(RAIL_ICON[m.id] || m.icon, 'sm'), h('span', { class: 'rail-l' }, m.id), h('span', { class: 'rail-more', 'aria-hidden': 'true' }, '›'));
+  const shortcut = (a) => h('button', {
+    class: 'rail-btn', 'data-key': `rq-${a.id}`, 'aria-label': a.label, title: `${a.label}\nRight-click: options`, disabled: !!s.running,
+    onclick: (e) => (e.altKey ? qb.openOptions(app, a) : qb.run(app, a)), oncontextmenu: (e) => { e.preventDefault(); qb.openOptions(app, a); }
+  }, icon(a.icon || 'bolt', 'sm'), h('span', { class: 'rail-l' }, a.label));
+  return h('nav', { class: `moe-rail ${wide ? 'wide' : ''}`, 'data-key': 'moe-rail', 'aria-label': 'Shortcuts' },
+    h('button', { class: 'rail-btn rail-toggle', 'data-key': 'rail-toggle', 'aria-label': wide ? 'Show icons only' : 'Show names', title: wide ? 'Icons only' : 'Show names', 'aria-pressed': String(wide), onclick: () => { app.services.store.set('moe-rail-wide', !wide); app.render(); } }, icon('chev', `xs rail-chev ${wide ? 'open' : ''}`), h('span', { class: 'rail-l' }, 'Shortcuts')),
+    h('div', { class: 'rail-cap' }, h('span', { class: 'rail-l' }, 'By object')),
+    MENUS.map(menuBtn),
+    h('div', { class: 'rail-sep', 'aria-hidden': 'true' }),
+    h('div', { class: 'rail-cap' }, h('span', { class: 'rail-l' }, 'Quick Bar')),
+    qb.barIds(app).map(qb.byId).filter(Boolean).map(shortcut),
+    h('button', { class: 'rail-btn rail-edit', 'data-key': 'rail-edit', 'aria-label': 'Customize shortcuts', title: 'Add, remove or reorder shortcuts (Quick Bar editor)', onclick: () => app.go('quick') }, icon('edit', 'sm'), h('span', { class: 'rail-l' }, 'Customize')));
 }
 
 /** Build a layout's parts: { top[], title, titleExtra, content, bottom, overlay }. */
@@ -298,4 +331,4 @@ function build(app, s, layout, body) {
   return parts;
 }
 
-module.exports = { LAYOUTS, layoutOf, build, HUB, MENUS, WS, DEFAULT_BARS, MENU_FOR };
+module.exports = { LAYOUTS, DEFAULT_LAYOUT, layoutOf, build, HUB, MENUS, WS, DEFAULT_BARS, MENU_FOR };

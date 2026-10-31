@@ -65,6 +65,44 @@ function request({ method = 'POST', url, headers = {}, body, timeoutMs = 120000 
 }
 
 /**
+ * GET a web page / stylesheet / image for Brand import (v0.25). HTTPS only (every redirect too, max 5),
+ * size-capped while streaming (truncate = keep the first maxBytes instead of failing), timed out.
+ * binary → body is base64 (images); otherwise UTF-8 text. Nothing fetched is ever executed.
+ */
+function get(url, { maxBytes = 3 * 1024 * 1024, timeoutMs = 20000, binary = false, truncate = false, accept = '*/*' } = {}) {
+  return new Promise((resolve, reject) => {
+    const go = (u, hops) => {
+      let parsed;
+      try { parsed = new URL(u); } catch (e) { return reject(Object.assign(new Error('Not a web address'), { code: 'BAD_URL' })); }
+      if (parsed.protocol !== 'https:') return reject(Object.assign(new Error('Only HTTPS addresses are read'), { code: 'NOT_HTTPS' }));
+      const req = https.get(u, { headers: { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) MOE-Motion-AI-Brand', accept, 'accept-language': 'en,ar;q=0.8' } }, (res) => {
+        if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
+          res.resume();
+          if (hops >= 5) return reject(Object.assign(new Error('Too many redirects'), { code: 'REDIRECTS' }));
+          return go(new URL(res.headers.location, u).toString(), hops + 1);
+        }
+        const chunks = [];
+        let got = 0, done = false;
+        const finish = () => { if (done) return; done = true; const buf = Buffer.concat(chunks); resolve({ status: res.statusCode, url: u, headers: res.headers, contentType: String(res.headers['content-type'] || ''), truncated: got > maxBytes, body: binary ? buf.toString('base64') : buf.toString('utf8') }); };
+        res.on('data', (c) => {
+          if (done) return;
+          got += c.length;
+          if (got > maxBytes) {
+            if (!truncate) { done = true; req.destroy(); return reject(Object.assign(new Error('The file is too large'), { code: 'TOO_LARGE' })); }
+            chunks.push(c.slice(0, c.length - (got - maxBytes))); req.destroy(); finish(); return;
+          }
+          chunks.push(c);
+        });
+        res.on('end', finish);
+      });
+      req.setTimeout(timeoutMs, () => req.destroy(Object.assign(new Error('The site took too long to answer'), { code: 'ETIMEDOUT' })));
+      req.on('error', (e) => reject(e));
+    };
+    go(url, 0);
+  });
+}
+
+/**
  * Download a file over HTTPS only (redirects followed, max 5, each must stay HTTPS).
  * Streams to "<dest>.part", enforces maxBytes, renames on success.
  */
@@ -190,7 +228,7 @@ function createNodePlatform() {
   return {
     kind: 'cep-node',
     fs: createFs(dataDir),
-    http: { request },
+    http: { request, get },
     system,
     secrets: createSecrets(dataDir),
     info: { platform: process.platform, node: process.version, dataDir }

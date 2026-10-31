@@ -285,6 +285,7 @@ function createApp(root, services, env = {}) {
     const body = (id) => [chrome.banner(app, id), (views[id] || views.home).render(app)];
     const p = L.build(app, s, layout, body);
     const appEl = h('div', { class: `app layout-${layout} ${s.kitBand || ''} ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.tilesCompact ? 'tiles-compact' : ''} ${(studio.byId(s.view) || {}).kind === 'library' || s.view === 'text' ? 'has-actbar' : ''}` },
+      p.side || null, // v0.25: a layout's own sidebar (MOE)
       h('div', { class: 'main' },
         p.header,
         contextStrip(s),
@@ -651,6 +652,10 @@ function createApp(root, services, env = {}) {
     else if (e.key === 'Escape' && app.state.get().layMenu) { e.preventDefault(); app.state.set({ layMenu: null }); }
     else if (e.key === 'Escape' && (app.state.get().aeMenu || app.state.get().aeTabMenu)) { e.preventDefault(); app.state.set({ aeMenu: false, aeTabMenu: null }); }
     else if (e.key === '?' && !typing) { e.preventDefault(); app.state.set({ modal: 'shortcuts' }); }
+    else if ((e.ctrlKey || e.metaKey) && /^Digit[1-4]$/.test(e.code) && require('./layouts').layoutOf(app) === 'glass') {
+      // Glass: Ctrl+1…4 = Motion · Arrange · Look · Deliver
+      e.preventDefault(); app.state.set({ aeQ: '' }); app.go(require('./layoutGlass').SPACE_IDS[Number(e.code.slice(5)) - 1]);
+    }
     else if ((e.ctrlKey || e.metaKey) && /^Digit[1-6]$/.test(e.code) && ['ae', 'moe'].includes(require('./layouts').layoutOf(app))) {
       // Classic: Ctrl+1…6 = the six tabs (Keys · Animate · Layer · Design · Effect · Comp)
       e.preventDefault(); app.state.set({ aeQ: '', aeTabMenu: null }); app.go(require('./layoutAE').TAB_IDS[Number(e.code.slice(5)) - 1]);

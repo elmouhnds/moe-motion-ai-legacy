@@ -1271,3 +1271,26 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .ae-twirl span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .kit-axis { width: var(--ic); }
 .kit-ibgroup .kit-ib { height: var(--h-s); } /* a 28 px group of 24 px buttons */
+/* v0.25 Brand from website / PDF */
+.bi { display: flex; flex-direction: column; gap: 10px; }
+.bi-h { display: flex; align-items: center; gap: 8px; font-size: var(--fs-lg); }
+.bi-h .svg-i { color: var(--accent); }
+.bi-deep { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: var(--fs); }
+.bi-start { gap: 5px; }
+.bi-review { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+.bi-review .section-h { padding: 8px 0 2px; }
+.bi-top { display: flex; align-items: center; gap: 12px; }
+.bi-logo { width: 56px; height: 56px; object-fit: contain; border-radius: var(--r-lg); background: #fff; padding: 6px; flex: none; }
+.bi-name { font-family: var(--display); font-size: var(--fs-xl); font-weight: 700; }
+.bi-grads { display: flex; flex-wrap: wrap; gap: 6px; }
+.bi-grad { flex: 1 1 120px; height: 28px; border-radius: var(--r); display: flex; align-items: flex-end; padding: 0 6px 3px; }
+.bi-grad span { font-size: 10px; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+.bi-fonts .list-row { gap: 8px; }
+.bi-ok { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; flex: none; }
+.bi-ok.yes { background: var(--ok-soft); color: var(--ok); }
+.bi-ok.no { background: var(--warn-soft); color: var(--warn); }
+.bi-chips, .bi-missing { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.bi-rules { margin: 0; padding-left: 18px; color: var(--text-2); display: flex; flex-direction: column; gap: 3px; }
+.bi-profile { display: flex; flex-direction: column; gap: 8px; }
+.bi-notes { white-space: pre-line; }
+.bi-chips .chip, .bi-missing .chip { display: inline-flex; align-items: center; height: var(--h-s); padding: 0 9px; border: 1px solid var(--line); border-radius: var(--r-pill); color: var(--text-2); font-size: var(--fs-sm); }

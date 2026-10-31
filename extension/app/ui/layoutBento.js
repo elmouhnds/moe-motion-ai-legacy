@@ -17,13 +17,31 @@ const A = require('./actions');
 const AE = require('./layoutAE');
 const studio = require('./studio/sections');
 
-/** An action as a bento tile. size: '2x1' (primary) | '1x1'. */
+/* v0.25: your own tiles on top (right-click a tile: pin / unpin to NOW), folded sections */
+const PIN_KEY = 'bento-pins', FOLD_KEY = 'bento-fold', PIN_MAX = 4;
+const pins = (app) => (app.services.store.get(PIN_KEY, []) || []).filter((r) => A.resolve(r)).slice(0, PIN_MAX);
+function togglePin(app, ref, label) {
+  const cur = app.services.store.get(PIN_KEY, []) || [];
+  const on = cur.includes(ref);
+  if (!on && cur.length >= PIN_MAX) { app.toast(`NOW holds ${PIN_MAX} pinned tiles — unpin one first (right-click it)`, 4000, 'warn'); return; }
+  app.services.store.set(PIN_KEY, on ? cur.filter((r) => r !== ref) : cur.concat([ref]));
+  app.toast(on ? `${label} unpinned from NOW` : `${label} pinned to NOW`, 2200, 'ok');
+  app.render();
+}
+const folded = (app, id) => !!(app.services.store.get(FOLD_KEY, {}) || {})[id];
+function toggleFold(app, id) { const all = Object.assign({}, app.services.store.get(FOLD_KEY, {}) || {}); all[id] = !all[id]; app.services.store.set(FOLD_KEY, all); app.render(); }
+
+/** An action as a bento tile. size: '2x1' (primary) | '1x1'. Right-click pins it to NOW. */
 function tile(app, a, size, t, ref, sub) {
   const rd = a.ready(app);
+  const pinned = ref && pins(app).includes(ref);
   return h('button', {
-    class: `bt b-${size} ${rd.ok || a.nav ? '' : 'off'}`, 'data-key': `a-${a.id}`, 'aria-label': a.label, title: rd.ok || a.nav ? a.label : `${a.label} — ${rd.hint}`,
-    onclick: () => { if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else { if (t && ref) AE.remember(app, t, ref); a.run(app); } }
-  }, icon(a.icon || 'bolt', size === '2x1' ? 'lg' : ''), h('span', { class: 'bt-l' }, a.label), sub ? h('span', { class: 'bt-s' }, sub) : null);
+    class: `bt b-${size} ${rd.ok || a.nav ? '' : 'off'} ${pinned ? 'pinned' : ''}`, 'data-key': `a-${a.id}`, 'aria-label': a.label,
+    title: `${rd.ok || a.nav ? a.label : `${a.label} — ${rd.hint}`}\nRight-click: ${pinned ? 'unpin from' : 'pin to'} NOW`,
+    onclick: () => { if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else { if (t && ref) AE.remember(app, t, ref); a.run(app); } },
+    oncontextmenu: (e) => { if (!ref) return; e.preventDefault(); togglePin(app, ref, a.label); }
+  }, icon(a.icon || 'bolt', size === '2x1' ? 'lg' : ''), h('span', { class: 'bt-l' }, a.label), sub ? h('span', { class: 'bt-s' }, sub) : null,
+  pinned ? h('span', { class: 'bt-pin', 'aria-hidden': 'true' }, icon('star', 'xs')) : null);
 }
 const wide = (key, ...kids) => h('div', { class: 'bt b-4 bt-block', 'data-key': key }, ...kids);
 const caption = (key, text, extra) => h('div', { class: 'b-cap', 'data-key': key }, h('span', {}, text), extra || null);
@@ -35,6 +53,8 @@ function now(app, s, kind) {
   const kit = require('./views/kit');
   const c = s.ctx;
   const nb = nowBlock(kind);
+  const mineRefs = pins(app);
+  const mine = mineRefs.map((r) => [r, A.resolve(r)]).filter(([, a]) => a);
   const acts = (A.SETS[kind] || []).map((r) => [r, A.resolve(r)]).filter(([, a]) => a).slice(0, 8);
   let block = null;
   if (nb && c && c.comp) {
@@ -44,7 +64,10 @@ function now(app, s, kind) {
   return h('section', { class: 'b-sec b-now', 'data-key': 'b-now', 'aria-label': 'Now' },
     h('div', { class: 'b-now-h' }, h('span', { class: 'b-kick' }, 'NOW'), h('b', {}, !c ? 'Reading After Effects…' : !c.comp ? 'No active composition' : A.CONTEXT_LABEL[kind]),
       c && c.comp ? h('span', { class: 'b-now-s' }, `${c.comp.name} · ${(c.layers || []).length} layers`) : null),
-    h('div', { class: 'b-grid' }, block ? wide('now-block', block) : null, acts.map(([r, a], i) => tile(app, a, i < 2 ? '2x1' : '1x1', null, r))));
+    h('div', { class: 'b-grid' }, block ? wide('now-block', block) : null,
+      // your pinned tiles first (same size as primary), then the best actions for the selection — no duplicates
+      mine.map(([r, a]) => tile(app, a, '2x1', null, r, 'pinned')),
+      acts.filter(([r]) => !mineRefs.includes(r)).map(([r, a], i) => tile(app, a, i < 2 && !mine.length ? '2x1' : '1x1', null, r))));
 }
 
 function groupTiles(app, t, g, kind, skipBlock) {
@@ -64,7 +87,21 @@ function groupTiles(app, t, g, kind, skipBlock) {
   return [cap, wide(`w-${g.id}`, AE.groupBody(app, g, t))];
 }
 
+/* scroll spy: the index chip follows the section you are reading (one listener, rAF-throttled, no host calls) */
+let spyApp = null, spyQueued = false;
+function spy() {
+  spyQueued = false;
+  const app = spyApp; if (!app) return;
+  const c = document.querySelector('.app.layout-bento .content'); if (!c) return;
+  const top = c.getBoundingClientRect().top + 60;
+  let cur = null;
+  for (const t of AE.TABS) { const el = c.querySelector(`[data-key="bs-${t.id}"]`); if (el && el.getBoundingClientRect().top <= top) cur = t.id; }
+  if (cur !== (app.state.get().bIx || null)) app.state.set({ bIx: cur });
+}
+if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener('scroll', (e) => { if (!spyQueued && e.target && e.target.classList && e.target.classList.contains('content')) { spyQueued = true; requestAnimationFrame(spy); } }, true);
+
 function build(app, s, body) {
+  spyApp = app;
   const kind = A.profile(s.ctx);
   const q = (s.aeQ || '').trim();
   let content, title;
@@ -75,12 +112,14 @@ function build(app, s, body) {
     const index = h('nav', { class: 'b-index', 'aria-label': 'Jump to' }, AE.TABS.map((t) => h('button', {
       class: `b-ix ${t.fits.includes(kind) ? 'fit' : ''} ${s.bIx === t.id ? 'on' : ''}`, 'data-key': `ix-${t.id}`, title: t.title, 'aria-pressed': String(s.bIx === t.id),
       // jump to the section and mark the chip, so you see where you are
-      onclick: () => { app.state.set({ bIx: t.id }); const el = document.querySelector(`[data-key="bs-${t.id}"]`); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+      onclick: () => { app.state.set({ bIx: t.id }); if (folded(app, t.id)) toggleFold(app, t.id); setTimeout(() => { const el = document.querySelector(`[data-key="bs-${t.id}"]`); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 0); }
     }, t.label)));
     content = h('div', { class: 'view kit b-page' }, now(app, s, kind), index,
-      AE.TABS.map((t) => h('section', { class: 'b-sec', 'data-key': `bs-${t.id}`, 'aria-label': t.label },
-        h('h2', { class: 'b-h' }, t.label, t.fits.includes(kind) ? h('span', { class: 'ae-dot', 'aria-hidden': 'true' }) : null),
-        h('div', { class: 'b-grid' }, t.groups.map((g) => groupTiles(app, t, g, kind, skip))))));
+      AE.TABS.map((t) => { const f = folded(app, t.id); return h('section', { class: `b-sec ${f ? 'folded' : ''}`, 'data-key': `bs-${t.id}`, 'aria-label': t.label },
+        h('h2', { class: 'b-h' }, h('button', { class: 'b-fold', 'data-key': `fold-${t.id}`, 'aria-expanded': String(!f), title: f ? `Open ${t.label}` : `Fold ${t.label} (shorter page)`, onclick: () => toggleFold(app, t.id) },
+          icon('chev', 'xs'), h('span', {}, t.label), t.fits.includes(kind) ? h('span', { class: 'ae-dot', 'aria-hidden': 'true' }) : null),
+          f ? h('span', { class: 'b-h-n' }, `${t.groups.length} groups folded`) : null),
+        f ? null : h('div', { class: 'b-grid' }, t.groups.map((g) => groupTiles(app, t, g, kind, skip)))); }));
   } else {
     const sec = studio.byId(s.view);
     title = (sec || { label: s.view.charAt(0).toUpperCase() + s.view.slice(1) }).label;
@@ -89,4 +128,4 @@ function build(app, s, body) {
   return { top: [require('./quickbar').strip(app), AE.searchBox(app, s)], title, content, overlay: s.aeMenu ? AE.panelMenu(app, s) : null, menuBtn: AE.menuButton(app, s) };
 }
 
-module.exports = { build, nowBlock };
+module.exports = { build, nowBlock, pins, togglePin, PIN_MAX };

@@ -2,6 +2,20 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.25.0] — 2026-10-31 — Bento · Glass · MOE, and Brand from website / PDF
+The owner kept three styles and asked to study them again with all their tools and upgrade each — MOE with every shortcut in a sidebar — and asked for Brand import from a client's website or PDF via the API. Studies: `docs/features/STYLES_V2.md`, `docs/features/BRAND_IMPORT.md`.
+### Added
+- **Brand from website / PDF** (`brand.fromSource`): website read safely (HTTPS only, size-capped, nothing executed: colours by use, CSS variables, fonts, font links, logo) or a PDF brand book (document block); Claude returns name, colours with roles, gradients, fonts, tone, motion feel, rules (structured output, re-validated); fonts matched to installed fonts (Bold for headings; *Get font* link or free fallback when missing); review card → Save client / Edit first. Local scan without AI for websites. Saved clients show their tone, motion, gradients and fonts to install.
+- **MOE sidebar**: the 9 menus by object (lit for the selection) and the whole Quick Bar in a left sidebar instead of two rows on top; ⇔ shows names; right-click a shortcut for options.
+- **Bento**: right-click a tile to pin it to NOW (up to 4); fold a section by its title; the index follows the scroll.
+- **Glass**: Ctrl+1…4 between spaces; fold the Now card; Settings › Glass blur on / off.
+- `platform.http.get` (HTTPS-only, redirects checked, streaming size cap, timeout, binary for images).
+### Changed
+- **Bento is the default.** Settings › Panel style: Bento · Glass · MOE. Classic, Apple and Sidebar are retired from the lists (still work for anyone who had picked one).
+- Bento glows and the Glass colour field follow the accent colour (were fixed to orange).
+### Tests
+- `tests/brand.import.test.js` (9): addresses, script content ignored, colours / fonts / logo / font links, local proposal, Claude answer re-validation, font matching, website and PDF end to end with mocked web / Claude / AE, no-key fallback, site errors. `tests/layouts.test.js`: MOE sidebar holds every shortcut, Bento pins (max 4, stale pins ignored). Playwright: MOE sidebar narrow / wide and menus, Bento pin / fold, Glass fold / Ctrl+3 / accent, Brand import → review → save in the preview (demo site). **Mock / preview, not After Effects, not real websites.**
+
 ## [0.24.0] — 2026-10-29 — Three new styles (proposals): Glass, Apple, Bento
 The product owner expected a different style altogether (glass, modern, Apple-like or my own idea) and a radical new organisation — not the small refinements of 0.23. Three complete proposals, each a new look **and** a new way to organise the tools, all live in the panel. Comparison and reasons: `docs/features/STYLE_PROPOSALS.md`.
 ### Added

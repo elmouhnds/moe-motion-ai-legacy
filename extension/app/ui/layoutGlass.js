@@ -27,22 +27,27 @@ const ownerOf = (view) => SPACES.find((sp) => tabsOf(sp).some((t) => t.owns.incl
 /** The Now card: what is selected, and the eight best actions for it. */
 function nowCard(app, s, kind) {
   const c = s.ctx;
+  const fold = !!app.services.store.get('glass-now-folded', false);
   const what = !c ? 'Reading After Effects…' : !c.comp ? 'No active composition' : A.CONTEXT_LABEL[kind];
   const sub = c && c.comp ? `${c.comp.name} · ${(c.layers || []).length} layers${c.keys ? ` · ${c.keys} keys` : ''}` : '';
   const acts = (A.SETS[kind] || []).map((r) => A.resolve(r)).filter(Boolean).slice(0, 8);
   return h('section', { class: 'gl-now', 'data-key': 'gl-now', 'aria-label': 'Now' },
-    h('div', { class: 'gl-now-h' }, h('span', { class: 'gl-now-k' }, 'NOW'), h('b', {}, what), h('span', { class: 'gl-now-s' }, sub)),
-    h('div', { class: 'gl-now-acts' }, acts.map((a, i) => AE.actButton(app, a, null, i < 2 ? 'l' : undefined))));
+    h('div', { class: 'gl-now-h' }, h('span', { class: 'gl-now-k' }, 'NOW'), h('b', {}, what), h('span', { class: 'gl-now-s' }, sub), h('span', { class: 'spacer' }),
+      h('button', { class: 'icon-btn gl-now-fold', 'data-key': 'gl-now-fold', 'aria-expanded': String(!fold), 'aria-label': fold ? 'Show the Now actions' : 'Fold the Now card', title: fold ? 'Show the eight best actions' : 'Fold to one line (more room for the cards)', onclick: () => { app.services.store.set('glass-now-folded', !fold); app.render(); } }, icon('chev', `xs gl-chev ${fold ? '' : 'open'}`))),
+    // folded: the two primary actions stay, as small buttons in the header line
+    h('div', { class: `gl-now-acts ${fold ? 'mini' : ''}` }, (fold ? acts.slice(0, 2) : acts).map((a, i) => AE.actButton(app, a, null, fold ? 's' : i < 2 ? 'l' : undefined))));
 }
 
 function nav(app, sp, kind) {
   return h('nav', { class: 'gl-nav', 'aria-label': 'Spaces', role: 'tablist' }, SPACES.map((x) => h('button', {
-    role: 'tab', class: `gl-tab ${sp && sp.id === x.id ? 'on' : ''}`, 'data-key': `gl-${x.id}`, 'aria-selected': String(!!(sp && sp.id === x.id)), title: `${x.title}${x.fits.includes(kind) ? ' — fits what you selected' : ''}`,
+    role: 'tab', class: `gl-tab ${sp && sp.id === x.id ? 'on' : ''}`, 'data-key': `gl-${x.id}`, 'aria-selected': String(!!(sp && sp.id === x.id)), title: `${x.title}${x.fits.includes(kind) ? ' — fits what you selected' : ''} · Ctrl+${SPACES.indexOf(x) + 1}`,
     onclick: () => { app.state.set({ aeQ: '' }); app.go(x.id); }
-  }, icon(x.icon, ''), h('span', {}, x.label), x.fits.includes(kind) ? h('span', { class: 'ae-dot', 'aria-hidden': 'true' }) : null)));
+  }, icon(x.icon, ''), h('span', {}, x.label), h('kbd', { class: 'gl-kbd', 'aria-hidden': 'true' }, `^${SPACES.indexOf(x) + 1}`), x.fits.includes(kind) ? h('span', { class: 'ae-dot', 'aria-hidden': 'true' }) : null)));
 }
 
 function build(app, s, body) {
+  // Settings › Glass blur (v0.25): the frosted blur can be turned off if AE feels slower on a machine
+  try { document.documentElement.dataset.glassBlur = app.services.settings.get().ui.glassBlur === false ? 'off' : 'on'; } catch (e) { /* no DOM in tests */ }
   const kind = A.profile(s.ctx);
   const first = (SPACES.find((x) => x.fits.includes(kind)) || SPACES[0]).id;
   const view = s.view === 'home' ? (s.glSpace || first) : s.view;

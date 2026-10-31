@@ -42,17 +42,28 @@ function validateBrand(b) {
   return errors;
 }
 
+function profileOf(p) {
+  if (!p || typeof p !== 'object') return null;
+  let text;
+  try { text = JSON.stringify(p); } catch (e) { return null; }
+  if (text.length > 12000) return null;
+  return JSON.parse(text);
+}
+
 function normalize(b) {
   return {
     id: b.id || `brand_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`,
     name: String(b.name).trim(),
-    colors: (b.colors || []).map((c, i) => ({ name: String(c.name || `Colour ${i + 1}`).slice(0, 30), hex: rgbToHex(hexToRgb(c.hex)) })),
+    colors: (b.colors || []).map((c, i) => Object.assign({ name: String(c.name || `Colour ${i + 1}`).slice(0, 30), hex: rgbToHex(hexToRgb(c.hex)) },
+      c.role ? { role: String(c.role).slice(0, 12) } : {}, c.usage ? { usage: String(c.usage).slice(0, 120) } : {})),
     fonts: {
       arabic: b.fonts && b.fonts.arabic ? Object.assign({}, b.fonts.arabic) : null,
       english: b.fonts && b.fonts.english ? Object.assign({}, b.fonts.english) : null,
       extra: ((b.fonts && b.fonts.extra) || []).filter((f) => f && f.ps).slice(0, 10)
     },
     notes: String(b.notes || '').slice(0, 1000),
+    // v0.25: what Brand import found (tone, motion feel, rules, gradients, fonts to install, source) — plain data, size-capped
+    profile: profileOf(b.profile),
     updatedAt: new Date().toISOString()
   };
 }

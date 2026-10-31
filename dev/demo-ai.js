@@ -6,10 +6,20 @@
 function reply(data) {
   return { status: 200, headers: {}, body: JSON.stringify({ model: 'claude-opus-5-5', stop_reason: 'end_turn', usage: { input_tokens: 2100, output_tokens: 310, cache_read_input_tokens: 1800, cache_creation_input_tokens: 0 }, content: [{ type: 'text', text: JSON.stringify(data) }] }) };
 }
+// Brand import demo (v0.25): any address returns this small studio site; Claude's answer is canned below.
+const DEMO_SITE = '<html lang="en"><head><title>Nile & Co. — Coffee roasters</title><meta property="og:site_name" content="Nile & Co."><meta name="theme-color" content="#0E7C66">'
+  + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&family=Inter&family=Tajawal"><style>:root{--brand:#0E7C66;--sand:#F4E9D8;--ink:#1F2421;--sun:#F2A541} body{font-family:Inter,sans-serif;color:#1F2421;background:#F4E9D8} h1{font-family:Fraunces,serif;color:#0E7C66} .btn{background:#F2A541}</style></head>'
+  + '<body><h1>Roasted by the river</h1><h2>Single-origin coffee from Cairo</h2></body></html>';
+const DEMO_BRAND = { name: 'Nile & Co.', tagline: 'Coffee roasted by the river', colors: [{ name: 'Nile Green', hex: '#0E7C66', role: 'primary', usage: 'Logo, headlines, buttons' }, { name: 'Sunset', hex: '#F2A541', role: 'accent', usage: 'Calls to action' }, { name: 'Sand', hex: '#F4E9D8', role: 'background', usage: 'Pages and packaging' }, { name: 'Ink', hex: '#1F2421', role: 'text', usage: 'Body text' }],
+  gradients: [{ name: 'Dawn', stops: ['#0E7C66', '#F2A541'] }], fonts: [{ family: 'Fraunces', role: 'heading', weights: [600], source: 'google', fallback: 'Georgia' }, { family: 'Inter', role: 'body', weights: [400, 600], source: 'google', fallback: '' }, { family: 'Tajawal', role: 'arabic', weights: [400, 700], source: 'google', fallback: '' }],
+  tone: { keywords: ['warm', 'crafted', 'local'], description: 'Warm, crafted and proudly local — calm confidence, never loud.' }, motion: { feel: 'Slow pours and gentle settles; nothing snaps.', easing: 'gentle', pace: 'slow' },
+  rules: ['Keep the logo on Sand or Nile Green only', 'Sunset is for one call to action per frame', 'Headlines in Fraunces, body in Inter, Arabic in Tajawal'], logo: { url: '', description: 'Green wordmark with a river line' }, notes: 'Demo answer (preview).' };
 module.exports = {
+  get: async (url) => { await new Promise((r) => setTimeout(r, 300)); return /fonts\.googleapis/.test(url) ? { status: 200, url, contentType: 'text/css', body: '' } : { status: 200, url, contentType: 'text/html', body: DEMO_SITE }; },
   request: async (req) => {
     const body = JSON.parse(req.body);
     await new Promise((r) => setTimeout(r, 400));
+    if (/brand strategist/.test(body.system[0].text)) return reply(DEMO_BRAND);
     if (/Expression Engineer/.test(body.system[0].text)) {
       return reply({ code: '// Scale overshoot after the last keyframe\nvar amp = 0.05, freq = 3, decay = 7;\nvar n = numKeys ? nearestKey(time).index : 0;\nif (n && key(n).time > time) n--;\nif (n > 0) {\n  var t = time - key(n).time;\n  var v = velocityAtTime(key(n).time - thisComp.frameDuration / 10);\n  value + v * amp * Math.sin(freq * t * 2 * Math.PI) / Math.exp(decay * t);\n} else value;', explanation: 'Adds a decaying overshoot after each keyframe, driven by the incoming velocity, so faster moves bounce more.', notes: ['Works on Scale and Position.', 'Tweak decay for a quicker settle.'], controls: [] });
     }

@@ -134,4 +134,4 @@ function view(app) {
     ]));
 }
 
-module.exports = { strip, popover, restPopover, view, ACTIONS, run, openOptions, button, fixedBox, byId };
+module.exports = { strip, popover, restPopover, view, ACTIONS, run, openOptions, button, fixedBox, byId, barIds };

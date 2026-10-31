@@ -94,7 +94,7 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
     <div class="pv-ctl"><label for="pv-w">Panel</label><div class="pv-seg" id="pv-w" role="group" aria-label="Panel width">
       <button data-w="280" data-mode="kit" title="The Motion Kit as its own slim panel (Window › Extensions › MOE Motion Kit)">Kit panel</button><button data-w="340">Narrow</button><button data-w="420">Docked</button><button data-w="640">Wide</button><button data-w="920">Full</button></div></div>
     <div class="pv-ctl pv-layout"><label for="pv-layout">Layout</label><div class="pv-seg" id="pv-layout" role="group" aria-label="Panel layout (the three proposals)">
-      <button data-layout="ae" title="The final layout — organised like After Effects: tabs named after AE menus, twirl-down groups, ▾ quick menus, ≡ panel menu">Classic ✓</button><button data-layout="moe" title="My recommendation — menus by object + your bar + four task tabs">MOE ★</button><button data-layout="studio" title="The v0.15 layout (sidebar + workspaces)">Sidebar (old)</button><button data-layout="glass" title="New style 1 — frosted glass, four spaces by stage of work, Now card, floating bottom bar">Glass</button><button data-layout="apple" title="New style 2 — like macOS / iOS Settings: lists, coloured icons, categories you open">Apple</button><button data-layout="bento" title="New style 3, my proposal — one page, no tabs, tile size = importance">Bento ★</button></div></div>
+      <button data-layout="bento" title="Default — one page, no tabs, tile size = importance; the big tool for your selection on top">Bento</button><button data-layout="glass" title="Frosted glass, four spaces by stage of work, Now card, floating bottom bar">Glass</button><button data-layout="moe" title="AE-named tabs and twirl-down groups, with every shortcut in a sidebar">MOE</button></div></div>
     <div class="pv-ctl"><label for="pv-scene">Comp</label><div class="pv-seg" id="pv-scene" role="group" aria-label="Sample composition">
       <button data-scene="title">Title</button><button data-scene="layout">9 cards</button><button data-scene="studio">Text</button></div></div>
     <div class="pv-ctl"><label for="pv-theme">Theme</label><div class="pv-seg" id="pv-theme" role="group" aria-label="Panel theme">
@@ -116,28 +116,27 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
         <li>The top <b>For this</b> bar <b>copies</b> the eight actions for what you selected (the same eight as the pie, same order) — change the <i>Comp</i> above and watch only this bar change. × hides it.</li>
         <li>Four <b>task tabs</b>, each with a fixed order: <b>Animate</b> (ease, anchor + align, rigs, keyframes, then Motion presets · Text · Expressions), <b>Design</b>, <b>Layout</b>, <b>Finish</b>. A card opens its section in place; the crumb takes you back.</li>
         <li><b>Your tools</b> stay at the bottom with <kbd>F4</kbd> (repeat) and ★ to choose them.</li></ol></div>
-      <div class="pv-lguide" data-for="glass"><h2>New style 1 · Glass</h2><ol>
-        <li><b>Frosted glass</b> cards over a deep colour field; try the <i>Light</i> theme above too.</li>
-        <li>Organised by <b>stage of work</b>, not AE menus: <b>Motion · Arrange · Look · Deliver</b> in the floating bar at the bottom (a dot marks the one that fits your selection).</li>
-        <li>The <b>Now</b> card on top: what you selected and the eight best actions for it — switch the <i>Comp</i> above and watch it change.</li></ol></div>
+      <div class="pv-lguide" data-for="glass"><h2>Glass</h2><ol>
+        <li>Four spaces by <b>stage of work</b> — Motion · Arrange · Look · Deliver — in the floating bar; <kbd>Ctrl</kbd> <kbd>1</kbd>–<kbd>4</kbd> switch them.</li>
+        <li>The <b>Now</b> card: what you selected and its best actions; the ⌄ folds it to one line.</li>
+        <li>The colour field follows the accent (try Electric in Settings); <b>Settings › Glass blur</b> turns the blur off.</li></ol></div>
       <div class="pv-lguide" data-for="apple"><h2>New style 2 · Apple</h2><ol>
         <li>Like <b>macOS / iOS Settings</b>: a large title, rounded cards of rows, coloured icons.</li>
         <li>Organised as <b>pages you open and come back from</b>: tap <i>Keys</i>, <i>Layer</i>… then <b>‹ MOE</b> to go back. The top card is the five best actions for your selection.</li>
         <li>In a category: the main actions are <b>big tinted buttons</b>, the rest are rows, presets are a shelf that scrolls sideways.</li></ol></div>
-      <div class="pv-lguide" data-for="bento"><h2>★ New style 3 · Bento — my proposal</h2><ol>
-        <li><b>One page, no tabs.</b> A tool's <b>size is its importance</b>: primary tools are wide glowing tiles, the rest square tiles, rare ones small chips.</li>
-        <li><b>NOW</b> on top is the big tool for what you selected — the <b>ease graph</b> for keys, <b>Align</b> for several layers, <b>Anchor</b> for one — plus the eight best actions.</li>
-        <li>The <b>chips</b> under it (Keys · Animate · Layer…) jump down the page; the one that fits your selection is outlined.</li></ol></div>
+      <div class="pv-lguide" data-for="bento"><h2>Bento — the default</h2><ol>
+        <li><b>One page, no tabs.</b> A tool's size is its importance; <b>NOW</b> on top is the big tool for your selection (ease graph for keys, Align for layers) + the best actions — switch the <i>Comp</i> above.</li>
+        <li><b>Right-click any tile</b> to pin it to NOW (up to 4). <b>Click a section title</b> to fold it; the index chips follow your scroll.</li>
+        <li>New: <b>Brand › From website / PDF</b> (Design section, or search "brand") — type any address and press Analyse to see the demo.</li></ol></div>
       <div class="pv-lguide" data-for="ae"><h2>Classic — organised like After Effects</h2><ol>
         <li><b>Tabs named after AE's menus</b>: Keys · Animate · Layer · Design · Effect · Comp. An orange <b>dot</b> marks the tabs that fit what you selected — switch the <i>Comp</i> above and watch it move.</li>
         <li>Inside a tab, <b>twirl-down groups like Effect Controls</b> (▸ Keyframe Assistant, ▸ Animate In, ▸ Align…). Groups that fit your selection open by themselves; what you open or fold is remembered.</li>
         <li><b>Preset tiles apply in one click</b> (right-click opens their settings); <b>All 37 ›</b> opens the full library, the crumb brings you back.</li>
         <li><b>Search</b> under the tabs works like Effects &amp; Presets (<kbd>Ctrl</kbd> <kbd>K</kbd> jumps there). The <b>≡</b> menu top-right holds What's new, shortcuts, pie, Quick Bar, layouts and Settings — like any AE panel.</li></ol></div>
-      <div class="pv-lguide" data-for="moe"><h2>★ MOE — my recommendation</h2><ol>
-        <li>Three rows, each with one job. <b>Menus by object</b> (from proposal 2): the one for your selection lights up orange — switch the <i>Comp</i> above and watch it move from Keys to Shape to Text. Nothing else moves.</li>
-        <li><b>Your bar</b> (from proposal 1): the Quick Bar, one row that fits the panel; <b>+N</b> shows the rest, right-click edits it.</li>
-        <li><b>Four task tabs</b> (from proposal 3): <b>Animate</b> opens on ease → anchor + align → rigs → keyframes → presets; <b>Design</b>, <b>Layout</b>, <b>Finish</b> are cards that open in place with a crumb back.</li>
-        <li>Why: one context area instead of two, nothing that moves under your hand, and the most height left for the graphs in a docked panel. <kbd>Ctrl</kbd> <kbd>K</kbd>, the pie (<kbd>Q</kbd>) and <kbd>F4</kbd> work everywhere.</li></ol></div>
+      <div class="pv-lguide" data-for="moe"><h2>MOE — every shortcut in a sidebar</h2><ol>
+        <li>The <b>sidebar</b> holds the menus by object (the one for your selection lit — click it, the menu opens beside it) and <b>your whole Quick Bar</b>.</li>
+        <li><b>⇔</b> at its top shows the names; right-click a shortcut for its options; <i>Customize</i> edits them.</li>
+        <li>Above the tools only the AE tabs (<kbd>Ctrl</kbd> <kbd>1</kbd>–<kbd>6</kbd>) and search remain — two rows freed for the graphs.</li></ol></div>
       <div class="pv-lguide" data-for="studio">
       <h2>Current layout (v0.15)</h2>
       <ol>
@@ -191,12 +190,13 @@ ${texts}
 
   /* ---------- options (kept for this tab only) ---------- */
   var KEY = 'moe-preview-options';
-  var opts = { w: 420, scene: 'title', theme: 'dark', mode: 'main', layout: 'ae' };
+  var opts = { w: 420, scene: 'title', theme: 'dark', mode: 'main', layout: 'bento' };
   var HASH = { classic: 'ae', p1: 'hub', p2: 'bar', p3: 'workspace', moe: 'moe', current: 'studio', sidebar: 'studio', glass: 'glass', apple: 'apple', bento: 'bento' };
   try { var saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); if (saved) for (var k in saved) opts[k] = saved[k]; } catch (e) { /* storage blocked: defaults */ }
   function save() { try { sessionStorage.setItem(KEY, JSON.stringify(opts)); } catch (e) { /* ignore */ } }
   var h0 = (location.hash || '').slice(1);
   if (HASH[h0]) opts.layout = HASH[h0];
+  if (['bento', 'glass', 'moe'].indexOf(opts.layout) < 0) opts.layout = 'bento';
   if (window.innerWidth < 560) opts.w = Math.min(opts.w, 420);
   var frame = document.getElementById('pv-frame');
   function mark() {
