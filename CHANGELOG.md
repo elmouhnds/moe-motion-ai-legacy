@@ -2,6 +2,18 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.31.0] — 2026-11-01 — Space follows content, in every tab
+The owner: continue the Motion Control approach and analyse every remaining tool — space by content, merged by job, ordered by the work. Details: `docs/features/SPACE_FOLLOWS_CONTENT.md`.
+### Changed
+- **25 groups → 15**, same tools: *Animate In* + *Animate Out* + *Draw On* = one **Animate In / Out** block with an *In · Out · Draw On* switch (shapes open on Draw On, your choice kept); *Keyframe Assistant* + *Loops* = **Keyframes & Loops** (a *Loop* line: Cycle · Ping-Pong · Offset · In + Out); *Keying* + *Color Correction* = **Key & Color** as buttons in the job's order (Screen Key, Analyze, Match, Grade, Look); *Deliver* + *Project* = **Deliver & Project**; Vignette joined Camera & Zoom; Trash MOE rigs joined the project chips.
+- **Motion Rigs merged**: Excite / Jump are Inertia / Bounce Land with the new **Sliders** switch on Expressions (numbers on Slider Controls); Delay and Stare stay in Parent & Link; Repeat moved to Arrange.
+- **No repeats of the Motion Control**: Easy / Linear / Hold, Center Anchor and the Curve Library group left the tabs (they are in the Motion Control row, the anchor grid and its ⊞ chip). Flip ↔ / ↕ is one control.
+- **Motion Control follows the selection**: the full graph when keys are selected; with layers only, the compact strip (curve · Copy / Paste ease · anchor · align) — ~200 px instead of ~690 at 420 px; open / fold remembered per kind of selection.
+- **Empty Recent takes no space**; **tile grids fit their count** (4 in a row, 6 in 3 × 2, 9 in 3 × 3; one row of 6 on a wide panel; 2 columns docked) — no tile alone on a row; the "for selection" badge hides on a docked panel.
+- Stages follow the merged groups (Animate: Animate In / Out → Keyframes & Loops → Text → Expressions; Finish: Key & Color → Camera & Zoom; Deliver: Deliver & Project). Customize Quick Bar and My tools are in the ≡ menu.
+### Tests
+- `tests/space.content.test.js` (6): 15 groups by tab; no tool twice and every ref resolves; the tabs do not repeat Motion Control tools; tile columns divide the count; Animate modes (shapes → Draw On, saved choice, bad value); Motion Control focus rule, empty Recent, Deliver lead, Flip pair, ≡ menu. Updated: tiers on preset groups, Key & Color, stage order. **Mock / preview, not After Effects.**
+
 ## [0.30.1] — 2026-11-01 — Motion Control: no empty space, Ease Copy you can find
 Owner's review of v0.30 (screenshot, Glass): empty space beside the anchor point, and the copy / paste ease buttons were not found.
 ### Changed

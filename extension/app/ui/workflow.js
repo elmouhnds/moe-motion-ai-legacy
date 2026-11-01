@@ -25,23 +25,23 @@
 
 /* ---------- stages: [tab id, group id, 'core' | 'more'] ---------- */
 const STAGES = [
+  // v0.31: the groups were merged by job (Animate In / Out / Draw On is one block, Keyframes & Loops, Key & Color,
+  // Deliver & Project); ease, anchor and align are in the Motion Control on top of every stage.
   { id: 'st-animate', label: 'Animate', icon: 'motion', fits: ['keys', 'layer', 'text', 'shapes'],
-    title: 'Keyframes and ease, animate in / out, draw on, text, loops — where most of the day goes',
-    groups: [['ae-keys', 'assist', 'core'], ['ae-animate', 'in', 'core'], ['ae-animate', 'out', 'core'], ['ae-animate', 'draw', 'core'], ['ae-animate', 'text', 'core'], ['ae-keys', 'loops', 'core'],
-      ['ae-animate', 'rigs', 'more'], ['ae-animate', 'expr', 'more'], ['ae-keys', 'curves', 'more']] },
+    title: 'Animate in / out, draw on, keyframes and loops, text — where most of the day goes',
+    groups: [['ae-animate', 'in', 'core'], ['ae-keys', 'assist', 'core'], ['ae-animate', 'text', 'core'], ['ae-animate', 'expr', 'more']] },
   { id: 'st-arrange', label: 'Arrange', icon: 'alignCenter', fits: ['layers', 'shapesMany'],
-    title: 'Align, anchor point, transform, parent, grids — putting layers where they belong',
-    groups: [['ae-layer', 'transform', 'core'], ['ae-layer', 'parent', 'core'], ['ae-layer', 'arrange', 'core'],
-      ['ae-comp', 'guides', 'more'], ['ae-layer', 'select', 'more']] },
+    title: 'Transform, parent and link, grids — putting layers where they belong (anchor and align: Motion Control)',
+    groups: [['ae-layer', 'transform', 'core'], ['ae-layer', 'parent', 'core'], ['ae-layer', 'arrange', 'core'], ['ae-comp', 'guides', 'more']] },
   { id: 'st-design', label: 'Design', icon: 'palette', fits: ['none'],
     title: 'Shapes and icons, backgrounds, looks and glass, the client brand',
     groups: [['ae-design', 'shapes', 'core'], ['ae-design', 'bg', 'core'], ['ae-design', 'looks', 'core'], ['ae-design', 'brand', 'core']] },
   { id: 'st-finish', label: 'Finish', icon: 'sparkles', fits: [],
-    title: 'Camera and zoom, colour, keying, stylize — the polish pass',
-    groups: [['ae-effect', 'zoom', 'core'], ['ae-effect', 'color', 'core'], ['ae-effect', 'keying', 'core'], ['ae-effect', 'stylize', 'more']] },
+    title: 'Key and colour, camera and zoom — the polish pass',
+    groups: [['ae-effect', 'keycolor', 'core'], ['ae-effect', 'zoom', 'core']] },
   { id: 'st-deliver', label: 'Deliver', icon: 'download', fits: [],
-    title: 'Every format at once, project housekeeping, your own tools',
-    groups: [['ae-comp', 'deliver', 'core'], ['ae-comp', 'project', 'core'], ['ae-comp', 'mine', 'more']] }
+    title: 'Every format at once, project housekeeping',
+    groups: [['ae-comp', 'project', 'core']] }
 ];
 const STAGE_IDS = STAGES.map((s) => s.id);
 
@@ -60,8 +60,9 @@ function stageOfView(view) {
   const tab = AE.ownerOf(view);
   if (!tab) return null;
   // the stage holding the group that opens this page (its "All …" link, a link, or its library), else the tab's first stage
-  const opens = (g) => !!g && (g.more === view || g.section === view || (g.links || []).some(([id]) => id === view));
+  const opens = (g) => !!g && (g.more === view || g.section === view || (g.links || []).concat(g.lead || []).some(([id]) => id === view));
   return STAGES.find((st) => st.groups.some(([t, gid]) => t === tab.id && opens(tab.groups.find((g) => g.id === gid))))
+    || STAGES.find((st) => st.groups.some(([t, , tier]) => t === tab.id && tier === 'core'))
     || STAGES.find((st) => st.groups.some(([t]) => t === tab.id)) || null;
 }
 

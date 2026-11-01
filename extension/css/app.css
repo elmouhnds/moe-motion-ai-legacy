@@ -1327,3 +1327,37 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .app.kit-slim .kit-rail > .kit-anchor, .app.kit-tiny .kit-rail > .kit-anchor { flex: none; }
 .app.kit-slim .kit-anchor.mini .kit-dots, .app.kit-tiny .kit-anchor.mini .kit-dots { min-height: 84px; max-height: 96px; }
 .kit-anchor.mini .kit-dots { max-height: 220px; }
+
+/* ---------- v0.31 space follows content (docs/features/SPACE_FOLLOWS_CONTENT.md) ---------- */
+/* tile grids: as many columns as fit the count, so no tile sits alone on a row */
+.ae-tiles.fit { grid-template-columns: repeat(var(--c, 3), minmax(0, 1fr)); }
+.app.kit-wide .ae-tiles.fit { grid-template-columns: repeat(var(--cw, 6), minmax(0, 1fr)); }
+.app.kit-slim .ae-tiles.fit, .app.kit-tiny .ae-tiles.fit { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* Animate In / Out / Draw On: one switch above one strip */
+.ae-modes { display: flex; width: 100%; margin-bottom: 6px; }
+.ae-modes > button { flex: 1 1 0; }
+/* two opposite actions as one control: [Flip ↔ | ↕] */
+.ae-pair { display: flex; align-items: stretch; min-width: 0; height: var(--h-m, 28px); border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-raised); overflow: hidden; box-shadow: var(--shadow-1); }
+.ae-pair-l { display: flex; align-items: center; flex: 1 1 auto; min-width: 0; padding: 0 8px; color: var(--text-3); font-size: var(--fs-sm, 11px); }
+.ae-pair-b { flex: 0 0 34px; display: grid; place-items: center; border: 0; border-left: 1px solid var(--line); background: none; color: var(--text-2); cursor: pointer; }
+.ae-pair-b:hover { background: var(--bg-hover); color: var(--text); }
+.ae-pair-b.off { opacity: .5; }
+/* a labelled row of related actions (Loop: Cycle · Ping-Pong · Offset · In + Out) */
+.ae-subrow { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 6px; margin-top: 6px; }
+.ae-sub-l { color: var(--text-3); font-size: var(--fs-sm, 11px); text-transform: uppercase; letter-spacing: .04em; }
+.ae-sub-b { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.ae-sub-b .ae-act { padding: 0 6px; gap: 5px; }
+.app.kit-mid .ae-sub-b, .app.kit-narrow .ae-sub-b, .app.kit-tiny .ae-sub-b { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.app.kit-slim .ae-subrow, .app.kit-tiny .ae-subrow { grid-template-columns: 1fr; }
+/* tool buttons in two equal columns (Key & Color) */
+.ae-acts-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.app.kit-wide .ae-acts-2 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.app.kit-tiny .ae-acts-2 { grid-template-columns: 1fr; }
+/* a page the group leads to (Deliver: every format at once) — full row, first */
+.ae-lead { display: flex; align-items: center; gap: 8px; width: 100%; height: var(--h-l, 32px); margin-bottom: 6px; padding: 0 10px; border: 1px solid var(--line-strong, var(--line)); border-radius: var(--r); background: var(--bg-raised); color: var(--text); font: inherit; font-size: var(--fs); text-align: left; cursor: pointer; }
+.ae-lead span { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ae-lead:hover { background: var(--bg-hover); }
+.ae-gb > .ae-minor { margin-top: 6px; }
+.ae-live { display: inline-flex; align-items: center; gap: 4px; }
+.ae-live.on { color: var(--accent); }
+.app.kit-slim .ae-gh .ae-fit, .app.kit-tiny .ae-gh .ae-fit { display: none; } /* the group name wins the space on a docked panel */

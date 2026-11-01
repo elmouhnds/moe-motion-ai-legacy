@@ -33,7 +33,9 @@ test('stages: Animate · Arrange · Design · Finish · Deliver; every group of 
   }
   assert.deepEqual([...placed].sort(), AE.TABS.flatMap((t) => t.groups.map((g) => `${t.id}/${g.id}`)).sort());
   // the most-used stage comes first; ease / anchor / align live in the Motion Control at the top (v0.30)
-  assert.deepEqual(W.STAGES[0].groups[0].slice(0, 2), ['ae-keys', 'assist']);
+  // v0.31: in the order of the job — make the move (Animate In / Out / Draw On), then refine its keys and loops
+  assert.deepEqual(W.STAGES[0].groups.slice(0, 2).map((g) => g.slice(0, 2).join('/')), ['ae-animate/in', 'ae-keys/assist']);
+  assert.equal(W.stageOfView('tools').id, 'st-deliver', 'a page of a tab gets the stage where that tab is core');
   // every page has a stage for its crumb
   for (const t of AE.TABS) for (const page of t.owns) assert.ok(W.stageOfView(page), `stage of ${page}`);
   assert.equal(W.stageOfView('looks').id, 'st-design');

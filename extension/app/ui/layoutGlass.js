@@ -63,7 +63,7 @@ function build(app, s, body) {
     // everyday groups first; the stage's rare groups follow, folded until you open them (remembered per group)
     content = h('div', { class: 'view kit ae-page gl-page' }, nowCard(app, s, kind),
       W.stageGroups(sp.stage).map(({ tab, group, tier }) => AE.twirl(app, tab, tier === 'more' && group.open ? Object.assign({}, group, { open: false }) : group, kind, () => AE.groupBody(app, group, tab),
-        tier === 'more' ? h('span', { class: 'gl-rare', title: 'Used less often' }, 'more') : group.more ? AE.moreLink(app, group) : null)));
+        tier === 'more' ? h('span', { class: 'gl-rare', title: 'Used less often' }, 'more') : AE.groupExtra(app, group))));
   } else {
     const back = sp || SPACES.find((x) => x.id === (s.glSpace || first));
     const sec = studio.byId(view);

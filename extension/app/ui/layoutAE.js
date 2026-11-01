@@ -26,27 +26,31 @@ const studio = require('./studio/sections');
 // one click applies), 'grid' (Your grid + layouts), 'links' (pages). fits = selection kinds it suits.
 const SEL = { keys: 'keys', layer: 'layer', layers: 'layers', text: 'text', shapes: 'shapes', shapesMany: 'shapesMany', none: 'none' };
 const TABS = [
-  { id: 'ae-keys', label: 'Keys', title: 'Keyframes: ease, keyframe assistant, loops (Animation › Keyframe Assistant)', fits: ['keys'], owns: [],
+  // v0.31 (docs/features/SPACE_FOLLOWS_CONTENT.md): every group is sized by what it holds and merged with the
+  // tools that do the same job; Easy / Linear / Hold, the anchor, align and the curve library live in the
+  // Motion Control on top, so the tabs no longer repeat them.
+  { id: 'ae-keys', label: 'Keys', title: 'Keyframes: timing, loops (Animation › Keyframe Assistant) — the ease is in Motion Control', fits: ['keys'], owns: [],
     groups: [
-      { id: 'assist', label: 'Keyframe Assistant', kind: 'acts', fits: ['keys'], hero: ['quick:k_easy', 'quick:reverse'], minor: ['quick:k_trimKeys', 'quick:selectSame'], refs: ['quick:k_easy', 'quick:reverse', 'quick:k_linear', 'quick:k_hold', 'quick:mirror', 'quick:clone', 'quick:k_stagger', 'quick:k_trimKeys', 'quick:selectSame'] },
-      { id: 'loops', label: 'Loops', kind: 'acts', fits: ['keys'], hero: ['tile:expressions/x-loopCycle'], refs: ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'] },
-      { id: 'curves', label: 'Curve Library', kind: 'curves', fits: [] }
+      { id: 'assist', label: 'Keyframes & Loops', kind: 'acts', fits: ['keys'], open: true, hero: ['quick:reverse', 'quick:k_stagger'], minor: ['quick:k_trimKeys', 'quick:selectSame'],
+        refs: ['quick:reverse', 'quick:k_stagger', 'quick:mirror', 'quick:clone', 'quick:k_trimKeys', 'quick:selectSame'],
+        rows: [['Loop', ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'], ['Cycle', 'Ping-Pong', 'Offset', 'In + Out']]] }
     ] },
-  { id: 'ae-animate', label: 'Animate', title: 'Animation presets, text, rigs, expressions (Animation menu)', fits: ['layer', 'layers', 'text', 'shapes', 'shapesMany'], owns: ['animate', 'text', 'expressions', 'kit'],
+  { id: 'ae-animate', label: 'Animate', title: 'Animate in / out, draw on, text, expressions (Animation menu)', fits: ['layer', 'layers', 'text', 'shapes', 'shapesMany'], owns: ['animate', 'text', 'expressions', 'kit'],
     groups: [
-      { id: 'in', label: 'Animate In', kind: 'tiles', section: 'animate', ids: ['inRL', 'inBT', 'fadeIn', 'popIn', 'riseIn', 'cascadeIn'], more: 'animate', fits: ['layer', 'layers', 'shapes', 'shapesMany'], open: true },
-      { id: 'out', label: 'Animate Out', kind: 'tiles', section: 'animate', ids: ['outRL', 'outTB', 'fadeOut', 'scaleOut', 'popOut', 'spinOut'], more: 'animate', fits: [] },
-      { id: 'draw', label: 'Draw On (shapes)', kind: 'tiles', section: 'animate', ids: ['trimDraw', 'trimErase', 'trimTravel', 'trimBoth'], more: 'animate', fits: ['shapes', 'shapesMany'] },
+      // one block, three modes: the In and Out presets are the same moves played the other way; Draw On is the shapes' in / out
+      { id: 'in', label: 'Animate In / Out', kind: 'animate', section: 'animate', more: 'animate', fits: ['layer', 'layers', 'shapes', 'shapesMany'], open: true,
+        modes: [['in', 'In', ['inRL', 'inBT', 'fadeIn', 'popIn', 'riseIn', 'cascadeIn']], ['out', 'Out', ['outRL', 'outTB', 'fadeOut', 'popOut', 'scaleOut', 'spinOut']], ['draw', 'Draw On', ['trimDraw', 'trimErase', 'trimTravel', 'trimBoth']]],
+        ids: ['inRL', 'inBT', 'fadeIn', 'popIn', 'riseIn', 'cascadeIn', 'outRL', 'outTB', 'fadeOut', 'popOut', 'scaleOut', 'spinOut', 'trimDraw', 'trimErase', 'trimTravel', 'trimBoth'] },
       { id: 'text', label: 'Text Animators', kind: 'acts', fits: ['text'], refs: ['quick:typewriter', 'quick:counter'], links: [['text', 'All text animators']] },
-      { id: 'rigs', label: 'Motion Rigs', kind: 'kitTools', group: 'Motion rigs', fits: ['layer'] },
-      { id: 'expr', label: 'Expressions', kind: 'tiles', section: 'expressions', ids: ['x-wiggle', 'x-float', 'x-pendulum', 'x-pulse', 'x-blink', 'x-timeRotate', 'x-inertia', 'x-bounceBack', 'x-orbit'], more: 'expressions', links: [['expressions', 'Expression editor']], fits: [] }
+      // Motion Rigs merged in: Excite = Inertia and Jump = Bounce Land with the numbers on sliders (the "Sliders" switch)
+      { id: 'expr', label: 'Expressions', kind: 'tiles', section: 'expressions', live: true, ids: ['x-wiggle', 'x-float', 'x-pendulum', 'x-pulse', 'x-blink', 'x-timeRotate', 'x-inertia', 'x-bounceBack', 'x-orbit'], more: 'expressions', links: [['expressions', 'Expression editor']], fits: [] }
     ] },
-  { id: 'ae-layer', label: 'Layer', title: 'Align, anchor, transform, parent, arrange (Layer menu + Align panel)', fits: ['layer', 'layers', 'shapes', 'shapesMany', 'text'], owns: ['layout', 'select'],
+  { id: 'ae-layer', label: 'Layer', title: 'Transform, parent & link, arrange (Layer menu) — anchor and align are in Motion Control', fits: ['layer', 'layers', 'shapes', 'shapesMany', 'text'], owns: ['layout', 'select'],
     groups: [
-      { id: 'transform', label: 'Transform', kind: 'acts', fits: [], hero: ['quick:precompose', 'quick:centerAnchor'], refs: ['quick:precompose', 'quick:centerAnchor', 'quick:flipH', 'quick:flipV', 'quick:separate'] },
+      { id: 'transform', label: 'Transform', kind: 'acts', fits: [], hero: ['quick:precompose'], refs: ['quick:precompose', 'quick:separate', 'quick:flipH', 'quick:flipV'],
+        pairs: [['Flip', 'quick:flipH', 'quick:flipV']], links: [['select', 'Select layers by type, name, label']] },
       { id: 'parent', label: 'Parent & Link', kind: 'acts', fits: ['layers'], hero: ['quick:parentNull'], refs: ['quick:parentNull', 'quick:k_parent', 'quick:k_delay', 'quick:k_stare'] },
-      { id: 'arrange', label: 'Arrange (Grid Builder)', kind: 'grid', section: 'layout', ids: ['grid', 'honey', 'wall', 'ring', 'fan', 'spiral', 'galaxy', 'path', 'globe'], more: 'layout', fits: ['layers', 'shapesMany'] },
-      { id: 'select', label: 'Select & Clean up', kind: 'acts', fits: [], refs: ['quick:k_trash'], links: [['select', 'Select layers by type, name, label']] }
+      { id: 'arrange', label: 'Arrange (Grid Builder)', kind: 'grid', section: 'layout', ids: ['grid', 'honey', 'wall', 'ring', 'fan', 'spiral', 'galaxy', 'path', 'globe'], more: 'layout', fits: ['layers', 'shapesMany'], minor: ['quick:k_repeat'] }
     ] },
   { id: 'ae-design', label: 'Design', title: 'Shapes & icons, backgrounds, looks, brand', fits: ['none'], owns: ['shapes', 'backgrounds', 'looks', 'brand'],
     groups: [
@@ -55,19 +59,17 @@ const TABS = [
       { id: 'looks', label: 'Looks & Glass', kind: 'tiles', section: 'looks', ids: ['thick-glaze', 'thick-prism', 'thick-chrome', 'thick-gold', 'glass-frosted', 'glass-liquid'], more: 'looks', fits: [] },
       { id: 'brand', label: 'Brand', kind: 'acts', fits: ['layers', 'text'], hero: ['brand:apply'], refs: ['brand:apply', 'brand:applyComp', 'brand:ease'], links: [['brand', 'Brand Kit — clients, from website / PDF']] }
     ] },
-  { id: 'ae-effect', label: 'Effect', title: 'Keying, colour, camera & zoom, stylize (Effect menu)', fits: [], owns: ['compositing', 'zoom'],
+  { id: 'ae-effect', label: 'Effect', title: 'Key & colour, camera & zoom (Effect menu)', fits: [], owns: ['compositing', 'zoom'],
     groups: [
-      { id: 'keying', label: 'Keying', kind: 'tiles', section: 'compositing', ids: ['c-compositing.keySetup'], more: 'compositing', fits: [], open: true },
-      { id: 'color', label: 'Color Correction', kind: 'tiles', section: 'compositing', ids: ['c-compositing.grade', 'c-compositing.matchColor', 'c-compositing.lookAssist', 'c-compositing.analyze'], more: 'compositing', fits: [] },
-      { id: 'zoom', label: 'Camera & Zoom', kind: 'tiles', section: 'zoom', ids: ['punch', 'smooth', 'detail', 'follow', 'spot', 'cursorArrow'], more: 'zoom', fits: [] },
-      { id: 'stylize', label: 'Stylize', kind: 'acts', fits: [], refs: ['quick:k_vignette'], links: [['looks', 'Looks & Glass']] }
+      // tool tiles with no picture are buttons, in the order of the job: read the shot, key it, match, grade, look
+      { id: 'keycolor', label: 'Key & Color', kind: 'tiles', compact: true, section: 'compositing', hero: ['c-compositing.keySetup'], ids: ['c-compositing.keySetup', 'c-compositing.analyze', 'c-compositing.matchColor', 'c-compositing.grade', 'c-compositing.lookAssist'], more: 'compositing', fits: [], open: true },
+      { id: 'zoom', label: 'Camera & Zoom', kind: 'tiles', section: 'zoom', ids: ['punch', 'smooth', 'detail', 'follow', 'spot', 'cursorArrow'], more: 'zoom', fits: [], minor: ['quick:k_vignette'] }
     ] },
-  { id: 'ae-comp', label: 'Comp', title: 'Guides, deliver, project, your tools (Composition menu)', fits: ['none'], owns: ['deliver', 'quick', 'tools'],
+  { id: 'ae-comp', label: 'Comp', title: 'Guides, deliver, project (Composition menu)', fits: ['none'], owns: ['deliver', 'quick', 'tools'],
     groups: [
       { id: 'guides', label: 'Guides & Safe Areas', kind: 'tiles', section: 'layout', ids: ['g12', 'thirds', 'safe', 'split2', 'quad', 'wall6'], more: 'layout', fits: ['none'], open: true },
-      { id: 'deliver', label: 'Deliver', kind: 'links', fits: [], links: [['deliver', 'Every format at once (16:9, 9:16, 1:1, 4:5…)']] },
-      { id: 'project', label: 'Project', kind: 'acts', fits: [], hero: ['quick:dupComp'], minor: ['quick:revealFolder', 'quick:purge'], refs: ['quick:dupComp', 'quick:revealProject', 'quick:openPrecomp', 'quick:revealFolder', 'quick:purge'] },
-      { id: 'mine', label: 'Quick Bar & My Tools', kind: 'links', fits: [], links: [['quick', 'Customize the Quick Bar'], ['tools', 'My tools & Tool Factory']] }
+      { id: 'project', label: 'Deliver & Project', kind: 'acts', fits: [], open: true, hero: ['quick:dupComp'], minor: ['quick:revealFolder', 'quick:purge', 'quick:k_trash'],
+        refs: ['quick:dupComp', 'quick:revealProject', 'quick:openPrecomp', 'quick:revealFolder', 'quick:purge', 'quick:k_trash'], lead: [['deliver', 'Every format at once (16:9, 9:16, 1:1, 4:5…)']] }
     ] }
 ];
 // tab ids are prefixed: 'animate' is also the Motion presets library page
@@ -220,11 +222,23 @@ function actButton(app, a, onRun, size) {
 }
 const linkRow = (app, links) => (links || []).map(([id, label]) => h('button', { class: 'ae-link', 'data-key': `l-${id}`, onclick: () => app.go(id) }, h('span', {}, label), icon('chev', 'xs')));
 
-function tileStrip(app, g, tab) {
+/** v0.31: columns that fit the count, so no tile sits alone on a row (normal width, wide panel). */
+function tileCols(n) {
+  const c = n % 3 === 0 ? 3 : n % 4 === 0 ? 4 : n % 2 === 0 ? 2 : Math.min(n, 3);
+  const cw = n <= 6 ? n : n % 2 === 0 ? n / 2 : n % 3 === 0 ? n / 3 : 6;
+  return { c, cw };
+}
+/** Expressions with "Sliders" on: the numbers go on Slider Controls (what the old Excite / Jump rigs did). */
+const liveOn = (app) => !!app.services.store.get('ae-x-live', false);
+const withLive = (app, g, t) => (g.live && liveOn(app) ? Object.assign({}, t, { args: Object.assign({}, t.args, { live: true }) }) : t);
+function tileStrip(app, g, tab, idsOverride) {
   const lib = require('./studio/library');
   const sec = studio.byId(g.section);
-  const tiles = g.ids.map((id) => sec.tiles.find((t) => t.id === id)).filter(Boolean);
-  return h('div', { class: 'ae-tiles' }, tiles.map((t) => {
+  const tiles = (idsOverride || g.ids).map((id) => sec.tiles.find((t) => t.id === id)).filter(Boolean);
+  if (g.compact) return compactTiles(app, g, tab, sec, tiles);
+  const { c, cw } = tileCols(tiles.length);
+  return h('div', { class: 'ae-tiles fit', style: { '--c': String(c), '--cw': String(cw) } }, tiles.map((t0) => {
+    const t = withLive(app, g, t0);
     const rd = lib.readiness(app, t);
     return h('button', {
       class: `ae-tile ${rd.ok ? '' : 'off'}`, 'data-key': `t-${t.id.slice(3)}`, 'aria-label': `Apply ${t.label}`,
@@ -233,6 +247,29 @@ function tileStrip(app, g, tab) {
       oncontextmenu: (e) => { e.preventDefault(); openTile(app, sec, t); }
     }, lib.thumbEl(lib.tileThumb(app, t)), h('span', { class: 'ae-tile-l' }, t.label));
   }));
+}
+/** Tool tiles whose thumbnail is only an icon: a button is the right size for them (primary first and larger). */
+function compactTiles(app, g, tab, sec, tiles) {
+  const lib = require('./studio/library');
+  const btn = (t, size) => {
+    const rd = lib.readiness(app, t);
+    return h('button', {
+      class: `ae-act ${size === 'l' ? 'l' : ''} ${rd.ok ? '' : 'off'}`, 'data-key': `t-${t.id.slice(3)}`, 'aria-label': `Apply ${t.label}`,
+      title: rd.ok ? `${t.label} — ${t.hint || 'click to apply'} · right-click: settings` : `${t.label} — ${rd.hint}`,
+      onclick: () => (rd.ok ? (remember(app, tab, `tile:${sec.id}:${t.id}`), lib.applyNow(app, t, sec)) : (t.needsInput ? openTile(app, sec, t) : app.toast(`${t.label}: ${rd.hint}`, 4500, 'warn'))),
+      oncontextmenu: (e) => { e.preventDefault(); openTile(app, sec, t); }
+    }, icon((t.thumb && t.thumb.icon) || sec.icon || 'bolt', size === 'l' ? '' : 'sm'), h('span', {}, t.label));
+  };
+  const hero = tiles.filter((t) => (g.hero || []).includes(t.id)), rest = tiles.filter((t) => !hero.includes(t));
+  return [hero.length ? h('div', { class: 'ae-hero' }, hero.map((t) => btn(t, 'l'))) : null, h('div', { class: 'ae-acts ae-acts-2' }, rest.map((t) => btn(t)))];
+}
+/** The right side of a group header: the Sliders switch (expressions) and "All n ›". */
+function groupExtra(app, g) {
+  const on = liveOn(app);
+  const live = g.live ? h('button', { class: `ae-more ae-live ${on ? 'on' : ''}`, 'data-key': `live-${g.id}`, 'aria-pressed': String(on),
+    title: on ? 'Sliders on: the numbers go on Slider Controls you can animate (Excite / Jump rigs)' : 'Sliders off: plain expressions — turn on to get Slider Controls',
+    onclick: (e) => { e.stopPropagation(); app.services.store.set('ae-x-live', !on); app.render(); } }, icon('sliders', 'xs'), 'Sliders') : null;
+  return live || g.more ? [live, g.more ? moreLink(app, g) : null] : null;
 }
 /** Open a tile in its library page (to change its settings first). */
 function openTile(app, sec, t) {
@@ -254,15 +291,52 @@ function groupBody(app, g, t) {
   }
   if (g.kind === 'curves') return kit.curveLibrary(app, kit.matchPreset(kit.K.curve, app.services.store.get('kit-curves', [])));
   if (g.kind === 'kitTools') { const BAR = require('../../features/quick/bar'); const grp = BAR.KIT_GROUPS.find(([n]) => n === g.group); return kit.toolsBlock(app, { ids: grp ? grp[1] : [], title: g.group, cls: 'ae-kit', onRun: (id) => remember(app, t, `kit:${id}`) }); }
+  const row = (cls, refs, size) => { const list = (refs || []).map((r) => [r, A.resolve(r)]).filter(([, a]) => a); return list.length ? h('div', { class: cls }, list.map(([r, a]) => actButton(app, a, () => remember(app, t, r), size))) : null; };
   if (g.kind === 'acts') {
-    // importance decides size and place: primary first and larger, minor last as chips
+    // importance decides size and place: primary first and larger, minor last as chips;
+    // v0.31: a pair (Flip ↔ / ↕) is one control, a labelled row (Loop: Cycle · Ping-Pong …) is one line
     const hero = g.hero || [], minor = g.minor || [];
-    const row = (cls, refs, size) => { const list = refs.map((r) => [r, A.resolve(r)]).filter(([, a]) => a); return list.length ? h('div', { class: cls }, list.map(([r, a]) => actButton(app, a, () => remember(app, t, r), size))) : null; };
-    return [row('ae-hero', hero, 'l'), row('ae-acts', g.refs.filter((r) => !hero.includes(r) && !minor.includes(r))), row('ae-minor', minor, 's'), ...linkRow(app, g.links)];
+    const paired = (g.pairs || []).flatMap(([, ...refs]) => refs);
+    const lead = (g.lead || []).map(([id, label]) => h('button', { class: 'ae-lead', 'data-key': `lead-${id}`, onclick: () => app.go(id) }, icon((studio.byId(id) || {}).icon || 'chev', 'sm'), h('span', {}, label), icon('chev', 'xs')));
+    const std = g.refs.filter((r) => !hero.includes(r) && !minor.includes(r) && !paired.includes(r));
+    return [...lead, row('ae-hero', hero, 'l'),
+      std.length || paired.length ? h('div', { class: 'ae-acts' }, std.map((r) => [r, A.resolve(r)]).filter(([, a]) => a).map(([r, a]) => actButton(app, a, () => remember(app, t, r))), (g.pairs || []).map((p) => pairControl(app, t, p))) : null,
+      ...(g.rows || []).map((rw) => subRow(app, t, rw)), row('ae-minor', minor, 's'), ...linkRow(app, g.links)];
   }
-  if (g.kind === 'tiles') return [tileStrip(app, g, t), ...linkRow(app, g.links)];
-  if (g.kind === 'grid') return [require('./gridPanel').render(app), tileStrip(app, g, t)];
+  if (g.kind === 'animate') return animateBlock(app, g, t);
+  if (g.kind === 'tiles') return [tileStrip(app, g, t), row('ae-minor', g.minor, 's'), ...linkRow(app, g.links)];
+  if (g.kind === 'grid') return [require('./gridPanel').render(app), tileStrip(app, g, t), row('ae-minor', g.minor, 's')];
   return linkRow(app, g.links);
+}
+
+/** One control for two opposite actions: [Flip  ↔ | ↕]. */
+function pairControl(app, t, [label, ...refs]) {
+  const acts = refs.map((r) => [r, A.resolve(r)]).filter(([, a]) => a);
+  return h('div', { class: 'ae-pair', role: 'group', 'aria-label': label, 'data-key': `pair-${label}` }, h('span', { class: 'ae-pair-l' }, label),
+    acts.map(([r, a]) => { const rd = a.ready(app); return h('button', { class: `ae-pair-b ${rd.ok ? '' : 'off'}`, 'data-key': `a-${a.id}`, 'aria-label': a.label, title: rd.ok ? a.label : `${a.label} — ${rd.hint}`,
+      onclick: () => (rd.ok ? (remember(app, t, r), a.run(app)) : app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn')) }, icon(a.icon || 'bolt', 'sm')); }));
+}
+/** A labelled line of related actions: "Loop  Cycle · Ping-Pong · Offset · In + Out" (labels shortened, the full name is the tooltip). */
+function subRow(app, t, [label, refs, short]) {
+  const acts = refs.map((r, i) => [r, A.resolve(r), (short || [])[i]]).filter(([, a]) => a);
+  return h('div', { class: 'ae-subrow', role: 'group', 'aria-label': label, 'data-key': `row-${label}` }, h('span', { class: 'ae-sub-l' }, label),
+    h('div', { class: 'ae-sub-b' }, acts.map(([r, a, s]) => { const rd = a.ready(app); return h('button', { class: `ae-act ${rd.ok ? '' : 'off'}`, 'data-key': `a-${a.id}`, 'aria-label': a.label, title: rd.ok ? a.label : `${a.label} — ${rd.hint}`,
+      onclick: () => (rd.ok ? (remember(app, t, r), a.run(app)) : app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn')) }, icon(a.icon || 'bolt', 'sm'), h('span', {}, s || a.label)); })));
+}
+/** Animate In / Out / Draw On — one block, the mode switch picks the six (or four) moves. Shapes open on Draw On. */
+const ANIM_KEY = 'ae-anim-mode';
+function animMode(app, g) {
+  const saved = app.services.store.get(ANIM_KEY, null);
+  if (g.modes.some(([m]) => m === saved)) return saved;
+  const kind = A.profile(app.state.get().ctx);
+  return kind === 'shapes' || kind === 'shapesMany' ? 'draw' : 'in';
+}
+function animateBlock(app, g, t) {
+  const mode = animMode(app, g);
+  const cur = g.modes.find(([m]) => m === mode);
+  return [h('div', { class: 'kit-seg ae-modes', role: 'group', 'aria-label': 'Animate', 'data-key': 'ae-modes' }, g.modes.map(([m, label]) => h('button', {
+    'aria-pressed': String(m === mode), 'data-key': `mode-${m}`, title: { in: 'Animate in: the layer arrives', out: 'Animate out: the layer leaves', draw: 'Draw On: trim paths for shape lines' }[m] || label,
+    onclick: () => { app.services.store.set(ANIM_KEY, m); app.render(); } }, label))), tileStrip(app, g, t, cur[2])];
 }
 
 /* ---------- v0.30 Motion Control: one block at the top of every style (keys + anchor + align) ---------- */
@@ -271,7 +345,9 @@ function controlTop(app, kind) {
   const c = app.state.get().ctx;
   if (!c || !c.comp || kind === 'none') return null;
   const kit = require('./views/kit');
-  const prev = kit.K.scope; kit.K.scope = { ctx: '__classic', focus: ['ease', 'pinned'] };
+  // v0.31: the graph opens when keys are selected; with layers only, the compact strip (curve · Copy / Paste ·
+  // anchor · align) keeps every placement tool in ~90 px. Open or fold it yourself: remembered per kind of selection.
+  const prev = kit.K.scope; kit.K.scope = { ctx: `__ctl-${kind}`, focus: kind === 'keys' ? ['ease', 'pinned'] : ['pinned'] };
   try { return kit.controlBlock(app); } finally { kit.K.scope = prev; }
 }
 
@@ -312,9 +388,11 @@ function tabItems(app, t) {
     let items = [];
     if (g.kind === 'acts') items = g.refs.map((r) => [r, A.resolve(r)]).filter(([, a]) => a).map(([r, a]) => ({ id: a.id, ref: r, label: a.label, icon: a.icon, run: () => a.run(app), ready: a.ready(app) }));
     else if (g.kind === 'kitTools') { const grp = BAR.KIT_GROUPS.find(([n]) => n === g.group); items = (grp ? grp[1] : []).map((id) => qb.byId(id)).filter(Boolean).map((a) => ({ id: a.id, ref: `kit:${a.id}`, label: BAR.KIT_LABEL[a.id] || a.label, icon: a.icon, run: () => qb.run(app, a), ready: { ok: true } })); }
-    else if (g.kind === 'tiles' || g.kind === 'grid') { const sec = studio.byId(g.section); items = g.ids.map((id) => sec.tiles.find((x) => x.id === id)).filter(Boolean).map((x) => ({ id: x.id, ref: `tile:${sec.id}:${x.id}`, label: x.label, icon: sec.icon, run: () => lib.applyNow(app, x, sec), ready: lib.readiness(app, x) })); }
-    const open = { id: `open-${g.id}`, label: g.kind === 'tiles' || g.kind === 'grid' ? `All ${g.label}…` : `Open ${g.label}`, icon: 'chev', nav: true, run: () => { const kind = A.profile(app.state.get().ctx); setOpen(app, g, kind, true); app.go(t.id); } };
+    else if (g.kind === 'tiles' || g.kind === 'grid' || g.kind === 'animate') { const sec = studio.byId(g.section); items = g.ids.map((id) => sec.tiles.find((x) => x.id === id)).filter(Boolean).map((x) => ({ id: x.id, ref: `tile:${sec.id}:${x.id}`, label: x.label, icon: sec.icon, run: () => lib.applyNow(app, x, sec), ready: lib.readiness(app, x) })); }
+    const open = { id: `open-${g.id}`, label: g.kind === 'tiles' || g.kind === 'grid' || g.kind === 'animate' ? `All ${g.label}…` : `Open ${g.label}`, icon: 'chev', nav: true, run: () => { const kind = A.profile(app.state.get().ctx); setOpen(app, g, kind, true); app.go(t.id); } };
     if (g.kind === 'links') items = (g.links || []).map(([id, label]) => ({ id: `l-${id}`, label, icon: 'chev', nav: true, run: () => app.go(id), ready: { ok: true } }));
+    const extra = (g.minor && g.kind !== 'acts' ? g.minor : []).concat((g.rows || []).flatMap(([, refs]) => refs)).map((r) => [r, A.resolve(r)]).filter(([, a]) => a).map(([r, a]) => ({ id: a.id, ref: r, label: a.label, icon: a.icon, run: () => a.run(app), ready: a.ready(app) }));
+    items = items.concat(extra);
     return { g, items: items.concat(g.kind === 'links' ? [] : [Object.assign(open, { ready: { ok: true } })]) };
   });
 }
@@ -355,6 +433,7 @@ function panelMenu(app, s) {
       item('star', 'Favorites', () => app.go('favorites'), 'fav'),
       item('history', 'History', () => app.go('history'), 'history'),
       item('bolt', 'Customize Quick Bar', () => app.go('quick'), 'qb'),
+      item('tools', 'My tools & Tool Factory', () => app.go('tools'), 'tools'),
       h('div', { class: 'ae-msep' }),
       h('div', { class: 'ae-mh' }, 'Panel layout'),
       ...L.LAYOUTS.filter((x) => !x.retired).map((x) => h('button', { class: 'ae-mi', role: 'menuitemradio', 'aria-checked': String(L.layoutOf(app) === x.id), 'data-key': `mi-l-${x.id}`, onclick: () => { close(); app.services.settings.update({ ui: { layout: x.id } }); app.render(); } }, icon(L.layoutOf(app) === x.id ? 'check' : 'dot', 'sm'), h('span', {}, x.label))),
@@ -378,8 +457,8 @@ function build(app, s, body) {
   const q = (s.aeQ || '').trim();
   let content;
   if (q) content = h('div', { class: 'view ae-page' }, searchResults(app, q));
-  else if (isTab) content = h('div', { class: 'view kit ae-page' }, h('div', { class: 'ae-control', 'data-key': 'ae-control' }, controlTop(app, kind), nextStrip(app, s)), groupsOf(app, tab).map((g) => twirl(app, tab, g, kind, () => groupBody(app, g, tab),
-    g.kind === 'recent' ? (recentRefs(app, tab).length ? h('button', { class: 'ae-more', 'data-key': `clear-${tab.id}`, title: `Clear Recent in ${tab.label}`, onclick: () => clearRecent(app, tab) }, 'Clear') : null) : g.more ? moreLink(app, g) : null)));
+  else if (isTab) content = h('div', { class: 'view kit ae-page' }, h('div', { class: 'ae-control', 'data-key': 'ae-control' }, controlTop(app, kind), nextStrip(app, s)), groupsOf(app, tab).filter((g) => g.kind !== 'recent' || recentRefs(app, tab).length).map((g) => twirl(app, tab, g, kind, () => groupBody(app, g, tab),
+    g.kind === 'recent' ? h('button', { class: 'ae-more', 'data-key': `clear-${tab.id}`, title: `Clear Recent in ${tab.label}`, onclick: () => clearRecent(app, tab) }, 'Clear') : groupExtra(app, g))));
   else {
     const sec = studio.byId(view);
     const back = tab || TABS.find((t) => t.id === (s.aeTab || firstTab));
@@ -415,6 +494,6 @@ function menuButton(app, s) {
     onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(), box = require('./quickbar').fixedBox(e.currentTarget.closest('.app') || document.body); app.state.set({ aeMenu: !s.aeMenu, aeMenuAt: { top: Math.round(r.bottom - box.top + 2), right: Math.max(4, Math.round(box.left + box.width - r.right)) } }); } }, icon('menu', 'sm'));
 }
 
-module.exports = { controlTop, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
+module.exports = { controlTop, tileCols, animMode, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
   // building blocks reused by the v0.24 style proposals (layoutGlass / layoutApple / layoutBento)
-  twirl, actButton, groupBody, tileStrip, moreLink, linkRow, searchBox, searchResults, panelMenu, menuButton, openTile };
+  twirl, actButton, groupBody, tileStrip, moreLink, groupExtra, subRow, pairControl, linkRow, searchBox, searchResults, panelMenu, menuButton, openTile };

@@ -64,8 +64,10 @@ test('Motion Kit rigs keep only what only they do; Keying shows Key Setup, Gener
   assert.deepEqual(rigs, ['k_excite', 'k_delay', 'k_jump', 'k_stare', 'k_repeat']);
   B.KIT_TOOLS.forEach((id) => assert.ok(qb.byId(id), id));
   const AE = require('../extension/app/ui/layoutAE');
-  const keying = AE.TABS.find((t) => t.id === 'ae-effect').groups.find((g) => g.id === 'keying');
-  assert.deepEqual(keying.ids, ['c-compositing.keySetup']);
+  // v0.31: Keying + Color Correction are one "Key & Color" group, Key Setup first (the job's order)
+  const keying = AE.TABS.find((t) => t.id === 'ae-effect').groups.find((g) => g.id === 'keycolor');
+  assert.equal(keying.ids[0], 'c-compositing.keySetup');
+  assert.ok(!keying.ids.some((id) => /generate/.test(id)));
   assert.ok(studio.byId('compositing').tiles.some((t) => /generate/.test(t.id)), 'still one search / "All" away');
 });
 

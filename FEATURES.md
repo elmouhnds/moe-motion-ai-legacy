@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Space follows content** (v0.31.0): every tab sized by what it holds and merged by job — 25 groups became 15 with the same tools (Animate In / Out / Draw On in one block, Keyframes & Loops, Key & Color, Deliver & Project, Expressions with Sliders); Motion Control compact until keys are selected (docs/features/SPACE_FOLLOWS_CONTENT.md).
+
 **Motion Control** (v0.30.0): the speed / value graph with the anchor point and align beside it, Ease Copy (copy the ease of keys, paste on others), and Next steps after each run (docs/features/MOTION_CONTROL.md).
 
 **Fewer, clearer** (v0.29.0): one place per tool — the Quick Bar holds 41 own actions and any library preset as the tile itself; three styles only (docs/features/FEWER_CLEARER.md).

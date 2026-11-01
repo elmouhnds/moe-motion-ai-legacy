@@ -115,7 +115,7 @@ function now(app, s, kind) {
 
 function groupTiles(app, t, g, kind, skipBlock) {
   if (g.kind === 'kit' && g.block === skipBlock) return [];
-  const cap = caption(`cap-${g.id}`, g.label, g.more ? AE.moreLink(app, g) : g.fits.includes(kind) ? h('span', { class: 'ae-fit' }, 'for selection') : null);
+  const cap = caption(`cap-${g.id}`, g.label, g.more || g.live ? AE.groupExtra(app, g) : g.fits.includes(kind) ? h('span', { class: 'ae-fit' }, 'for selection') : null);
   if (g.kind === 'acts') {
     const hero = g.hero || [], minor = g.minor || [];
     const pick = (refs) => refs.map((r) => [r, A.resolve(r)]).filter(([, a]) => a);
@@ -124,7 +124,8 @@ function groupTiles(app, t, g, kind, skipBlock) {
       ...pick(hero).map(([r, a]) => tile(app, a, '2x1', t, r)),
       ...pick(g.refs.filter((r) => !hero.includes(r) && !minor.includes(r))).map(([r, a]) => tile(app, a, '1x1', t, r)),
       minorTiles.length ? h('div', { class: 'b-4 b-chips', 'data-key': `minor-${g.id}` }, minorTiles.map(([r, a]) => AE.actButton(app, a, () => AE.remember(app, t, r), 's'))) : null,
-      ...(g.links || []).map(([id, label]) => h('button', { class: 'bt b-2x1 bt-link', 'data-key': `l-${id}`, 'aria-label': label, onclick: () => app.go(id) }, icon('chev', ''), h('span', { class: 'bt-l' }, label)))];
+      ...(g.rows || []).map((rw) => wide(`row-${g.id}-${rw[0]}`, AE.subRow(app, t, rw))),
+      ...(g.lead || []).concat(g.links || []).map(([id, label]) => h('button', { class: 'bt b-2x1 bt-link', 'data-key': `l-${id}`, 'aria-label': label, onclick: () => app.go(id) }, icon((studio.byId(id) || {}).icon || 'chev', ''), h('span', { class: 'bt-l' }, label)))];
   }
   if (g.kind === 'links') return [cap, ...(g.links || []).map(([id, label]) => { const sec = studio.byId(id); return h('button', { class: 'bt b-2x1 bt-link', 'data-key': `l-${id}`, 'aria-label': `Open ${sec ? sec.label : label}`, onclick: () => app.go(id) }, icon((sec && sec.icon) || 'chev', 'lg'), h('span', { class: 'bt-l' }, sec ? sec.label : label), h('span', { class: 'bt-s' }, label)); })];
   return [cap, wide(`w-${g.id}`, AE.groupBody(app, g, t))];

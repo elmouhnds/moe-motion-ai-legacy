@@ -32,7 +32,13 @@ test('design system: importance tiers in Classic — primary and minor are parts
   for (const t of AE.TABS) {
     for (const g of t.groups) {
       if (!g.hero && !g.minor) continue;
-      assert.equal(g.kind, 'acts', `${g.id}: tiers only on action groups`);
+      if (g.kind !== 'acts') {
+        // v0.31: a preset group may lead with a primary tile (Key & Color) and end with minor action chips (Repeat, Vignette)
+        assert.ok(['tiles', 'grid'].includes(g.kind), `${g.id}: tiers only on action and preset groups`);
+        (g.hero || []).forEach((id) => assert.ok(g.ids.includes(id), `${g.id}: primary ${id} is one of its tiles`));
+        (g.minor || []).forEach((r) => assert.ok(A.resolve(r), `${g.id}: ${r} resolves`));
+        continue;
+      }
       const hero = g.hero || [], minor = g.minor || [];
       assert.ok(hero.length <= 2, `${g.id}: at most two primary actions`);
       [...hero, ...minor].forEach((r) => { assert.ok(g.refs.includes(r), `${g.id}: ${r} is in refs`); assert.ok(A.resolve(r), `${g.id}: ${r} resolves`); });
