@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.30.1] — 2026-11-01 — Motion Control: no empty space, Ease Copy you can find
+Owner's review of v0.30 (screenshot, Glass): empty space beside the anchor point, and the copy / paste ease buttons were not found.
+### Changed
+- **The rail fills its space**: it is as tall as the graph; the anchor grid takes what align leaves (dots spread over the rail's width), the align buttons fill their rows, Masks sits on the anchor's title line. Beside the graph only from 560 px; under it (anchor + align side by side) from 330 to 560 px; anchor above align under 330 px — never cut, never stretched. Same in Bento, Glass, MOE and the docked Motion Kit.
+- **Ease Copy is named**: *Copy ease* / *Paste ease* buttons with Lucide clipboard icons (the old paste icon read as a bin) and what is copied beside them ("2 segments", the curve) — in the open block and in the folded strip.
+- Curve presets fill their row (no half-empty last line of fixed-width chips).
+### Tests
+- `tests/motion.control.test.js` +1: named Ease Copy buttons (open + folded), clipboard icons, anchor grid fills the rail, rail under the graph below 560 px. **Preview, not After Effects.**
+
 ## [0.30.0] — 2026-11-01 — Motion Control: graph + anchor + align, Ease Copy, Next
 The owner: the anchor (a tiny cube) and align (small buttons) belong inside the speed / value graph control, sized by their content and fitted to each style; that part should copy and paste the ease of keyframes like Ease Copy; and tools should follow their function and the sequence of the work. Details: `docs/features/MOTION_CONTROL.md`.
 ### Added

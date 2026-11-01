@@ -599,7 +599,7 @@ function createApp(root, services, env = {}) {
     const tiles = services.settings.get().ui.tiles || 'auto';
     const tilesCompact = tiles === 'compact' || (tiles === 'auto' && w < 520);
     // Motion Kit layout follows the panel's own width (not the window's — they differ in the web preview).
-    const kitBand = w >= 760 ? 'kit-wide' : w < 250 ? 'kit-tiny' : w < 330 ? 'kit-narrow kit-slim' : w < 400 ? 'kit-narrow' : '';
+    const kitBand = w >= 760 ? 'kit-wide' : w < 250 ? 'kit-tiny' : w < 330 ? 'kit-narrow kit-slim' : w < 400 ? 'kit-narrow' : w < 560 ? 'kit-mid' : '';
     // Quick Bar "fit" mode: how wide the bar is (its width does not depend on its buttons → no loop)
     const qb = root.querySelector('.qbar');
     const qbarW = qb ? Math.round(qb.clientWidth) : 0;

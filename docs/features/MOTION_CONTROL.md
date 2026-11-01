@@ -20,6 +20,13 @@ Narrow panel (< 400 px): the rail drops under the graph and anchor + align sit s
 (click the title): the compact strip — the curve, what it was read from, Copy / Paste ease — and anchor +
 align in one row, so a docked panel keeps every placement tool for ~90 px of height.
 
+## v0.30.1 — after the owner's review
+- No empty space: the rail is as tall as the graph, the anchor grid fills what align leaves and spreads its
+  dots over the rail's width; align buttons fill their rows; Masks sits on the anchor's title line.
+- Widths: rail beside the graph from 560 px; under it with anchor and align side by side from 330 to 560 px;
+  anchor above align under 330 px (docked).
+- Ease Copy is named: **Copy ease** / **Paste ease** (Lucide clipboard icons) with what is copied beside them.
+
 ## Where it lives (one place per style)
 - **Bento**: NOW, first thing, for any selection (nothing selected → no block; NOW is then about creating).
 - **Glass**: the Now card, under its header.

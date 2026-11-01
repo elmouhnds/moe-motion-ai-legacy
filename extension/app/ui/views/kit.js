@@ -150,6 +150,16 @@ function clipOf(pr) {
   return null;
 }
 const clipLabel = (c) => (c.curves.length > 1 ? `${c.curves.length} segments from ${c.from}` : `${c.curves[0].hold ? 'hold' : BZ.css(c.curves[0])}${c.from && c.from !== 'curve' ? ` from ${c.from}` : ''}`);
+/** v0.30.1: Ease Copy as named buttons (the icons alone were not found), with what is on the clipboard. */
+function easeCopyBar(app, pr, slim) {
+  const c = clipOf(pr);
+  const short = c ? (c.curves.length > 1 ? `${c.curves.length} segments` : c.curves[0].hold ? 'hold' : BZ.css(c.curves[0]).replace('cubic-bezier', '')) : 'nothing copied';
+  return h('div', { class: `kit-easecopy ${slim ? 'slim' : ''}`, 'data-key': 'kit-easecopy', role: 'group', 'aria-label': 'Ease Copy' },
+    h('button', { class: 'btn sm kit-ec', 'data-key': 'kit-copy', 'aria-label': 'Copy ease', title: 'Ease Copy: copy the ease of the selected keys, every segment (or the curve on the graph when no keys are selected)', onclick: () => copyEase(app) }, icon('easeCopy', 'sm'), h('span', {}, 'Copy ease')),
+    h('button', { class: 'btn sm kit-ec', 'data-key': 'kit-paste', 'aria-label': 'Paste ease', disabled: !c,
+      title: c ? `Paste ${clipLabel(c)} on the selected keys — any property, any distance (${pr.side === 'both' ? 'in + out' : `ease ${pr.side} only`})` : 'Copy an ease first', onclick: () => pasteEase(app) }, icon('easePaste', 'sm'), h('span', {}, 'Paste ease')),
+    slim ? null : h('span', { class: `kit-ec-clip ${c ? '' : 'dim'}`, title: c ? clipLabel(c) : 'Select keys and press Copy ease' }, short));
+}
 function copyEase(app) {
   const segs = keyed(ctxOf(app)).length && K.segs && K.segs.length ? K.segs : null;
   const curves = segs ? segs.map((sg) => (sg.hold ? { hold: true } : { x1: sg.curve.x1, y1: sg.curve.y1, x2: sg.curve.x2, y2: sg.curve.y2 })) : [{ x1: K.curve.x1, y1: K.curve.y1, x2: K.curve.x2, y2: K.curve.y2 }];
@@ -370,8 +380,7 @@ function easeBlock(app, opts = {}) {
         h('span', { class: 'kit-chip-g kit-fold-cv', html: curveSvg(K.curve), title: BZ.css(K.curve) }),
         h('span', { class: `kit-src ${K.src ? '' : 'dim'}` }, K.src || (nKeys ? 'select 2+ keys on one property' : 'no keys selected')),
         opts.rail ? h('span', { class: 'spacer' }) : null,
-        opts.rail ? tool('copy', 'Copy ease', 'Ease Copy: copy the ease of the selected keys', () => copyEase(app)) : null,
-        opts.rail ? tool('kPaste', 'Paste ease', clipOf(pr) ? `Paste ${clipLabel(clipOf(pr))}` : 'Copy an ease first', () => pasteEase(app), { disabled: !clipOf(pr) }) : null),
+        opts.rail ? easeCopyBar(app, pr, true) : null),
       opts.rail ? rail(app) : null);
   }
   return h('section', { class: `kit-block kit-ease ${opts.rail ? 'kit-control' : ''}`, 'aria-label': opts.rail ? 'Motion control' : 'Ease' },
@@ -392,9 +401,7 @@ function easeBlock(app, opts = {}) {
       tool('kLinear', 'Linear', `Linear keys (${pr.side})`, () => run(app, 'kit.interp', { mode: 'linear', side: pr.side }, 'Linear')),
       tool('kHold', 'Hold', `Hold keys (${pr.side})`, () => run(app, 'kit.interp', { mode: 'hold', side: pr.side }, 'Hold'))),
       h('div', { class: 'kit-ibgroup' },
-      tool('copy', 'Copy ease', 'Ease Copy: copy the ease of the selected keys, every segment (or the curve on the graph when no keys are selected)', () => copyEase(app)),
-      tool('kPaste', 'Paste ease', clipOf(pr) ? `Paste ${clipLabel(clipOf(pr))} on the selected keys — any property, any distance (${pr.side === 'both' ? 'in + out' : `ease ${pr.side} only`})` : 'Copy an ease first', () => pasteEase(app), { disabled: !clipOf(pr), 'data-key': 'kit-paste' }),
-      tool('reverse', 'Flip', 'Flip the curve: the same ease played backwards (ease-out ↔ ease-in)', () => { const cv = KG.flipCurve(K.curve); K.curve = cv; if (K.graph) K.graph.set(cv); if (pr.auto) applyCurve(app, cv, pr.side, 'Flip curve'); else app.render(); }))),
+      tool('reverse', 'Flip', 'Flip the curve: the same ease played backwards (ease-out ↔ ease-in)', () => { const cv = KG.flipCurve(K.curve); K.curve = cv; if (K.graph) K.graph.set(cv); if (pr.auto) applyCurve(app, cv, pr.side, 'Flip curve'); else app.render(); })), easeCopyBar(app, pr)),
     h('div', { class: 'kit-chips', role: 'toolbar', 'aria-label': 'Ease presets' },
       chips.map((p) => chip(app, p, match === p.id)),
       mine.length ? h('span', { class: 'kit-chip-sep', 'aria-hidden': 'true' }) : null,
@@ -419,7 +426,8 @@ function anchorBlock(app, mini) {
   const pr = prefs(app);
   const rd = library.readiness(app, { tool: 'transform.anchor', args: { point: 'c' } });
   return h('section', { class: `kit-block kit-anchor ${mini ? 'mini' : ''}`, 'aria-label': 'Anchor point' },
-    mini ? h('div', { class: 'kit-cap' }, 'Anchor') : h('div', { class: 'kit-h' }, foldTitle(app, 'anchor', 'Anchor')),
+    mini ? h('div', { class: 'kit-cap-row' }, h('span', { class: 'kit-cap' }, 'Anchor'), h('span', { class: 'spacer' }),
+      h('label', { class: 'kit-check mini', title: 'Use the layer\'s masks for the box instead of its content' }, h('input', { type: 'checkbox', checked: pr.masks, onchange: (e) => setPref(app, { masks: e.target.checked }) }), 'Masks')) : h('div', { class: 'kit-h' }, foldTitle(app, 'anchor', 'Anchor')),
     !mini && folded(app, 'anchor') ? null : h('div', { class: 'kit-anchor-body' },
     h('div', { class: `kit-dots ${rd.ok ? '' : 'off'}`, role: 'group', 'aria-label': 'Anchor point' },
       ORDER.map((p) => h('button', {
@@ -427,7 +435,7 @@ function anchorBlock(app, mini) {
         title: `${TM.POINT_LABEL[p]}\nClick: anchor here (the layer does not move)\nAlt-click: also place the layer at the ${TM.POINT_LABEL[p].toLowerCase()} of the comp${rd.ok ? '' : `\n— ${rd.hint}`}`,
         onclick: (e) => run(app, 'transform.anchor', { point: p, masks: pr.masks, place: !!e.altKey }, `Anchor ${TM.POINT_LABEL[p]}${e.altKey ? ' + place' : ''}`)
       }, h('span')))),
-    h('label', { class: 'kit-check', title: 'Use the layer\'s masks for the box instead of its content' }, h('input', { type: 'checkbox', checked: pr.masks, onchange: (e) => setPref(app, { masks: e.target.checked }) }), 'Masks')));
+    mini ? null : h('label', { class: 'kit-check', title: 'Use the layer\'s masks for the box instead of its content' }, h('input', { type: 'checkbox', checked: pr.masks, onchange: (e) => setPref(app, { masks: e.target.checked }) }), 'Masks')));
 }
 /**
  * Align (v0.13): two rows — ↔ and ↕ — each with align (edges / centre) and spread (distribute

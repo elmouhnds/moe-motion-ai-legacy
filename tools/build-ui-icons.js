@@ -23,7 +23,9 @@ const MAP = {
   drop: 'droplet', palette: 'palette', type: 'type', target: 'crosshair', cursor: 'mouse-pointer-2',
   edit: 'pencil', sliders: 'sliders-horizontal', menu: 'menu', grip: 'grip-vertical', repeat: 'repeat',
   dots: 'ellipsis', code: 'code', expr: 'braces', zoom: 'zoom-in', contrast: 'contrast', presets: 'bookmark',
-  pulse: 'activity', layout: 'layout-template'
+  pulse: 'activity', layout: 'layout-template',
+  // v0.30.1 Ease Copy (the old paste icon read as a bin)
+  easeCopy: 'clipboard-copy', easePaste: 'clipboard-paste'
 };
 
 const SRC = path.join(__dirname, '..', 'extension', 'assets', 'icons', 'lucide.json');

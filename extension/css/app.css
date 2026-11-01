@@ -1283,3 +1283,47 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .b-next-after { color: var(--text-3); font-weight: 400; max-width: 180px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .gl-next { margin-top: 8px; }
 .ae-next { margin-top: 8px; }
+
+/* ---------- v0.30.1: no empty space inside the Motion Control (owner's review) ---------- */
+/* the rail is as tall as the graph; the anchor takes what align leaves, and every button row fills its width */
+.kit-graph-row { align-items: stretch; }
+.kit-rail { width: clamp(156px, 32%, 220px); }
+.kit-anchor.mini { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.kit-cap-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.kit-check.mini { margin: 0; font-size: var(--fs-xs); }
+.kit-anchor.mini .kit-anchor-body { flex: 1 1 auto; display: flex; min-height: 0; }
+.kit-anchor.mini .kit-dots { flex: 1 1 auto; width: auto; min-height: 78px; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+.kit-anchor.mini .kit-dot { width: 100%; height: 100%; min-height: 22px; }
+.kit-align.mini .kit-align-row2 { display: grid; grid-template-columns: 3fr 2fr; }
+.kit-align.mini .kit-ibgroup { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.kit-align.mini .kit-ibgroup .kit-ib { width: 100%; }
+.kit-align.mini .kit-gapl .kit-gap { flex: 1 1 auto; width: auto; min-width: 0; }
+.kit-align.mini > .kit-h { display: flex; align-items: center; }
+/* narrow panel and folded strip: anchor and align side by side, same height, full width */
+.app.kit-narrow .kit-rail, .app.kit-tiny .kit-rail, .kit-control.folded .kit-rail { width: 100%; align-items: stretch; flex-wrap: nowrap; }
+.app.kit-narrow .kit-rail > .kit-anchor, .app.kit-tiny .kit-rail > .kit-anchor, .kit-control.folded .kit-rail > .kit-anchor { flex: 0 0 38%; }
+.app.kit-narrow .kit-rail > .kit-align, .app.kit-tiny .kit-rail > .kit-align, .kit-control.folded .kit-rail > .kit-align { flex: 1 1 auto; min-width: 0; }
+/* Ease Copy: named buttons that share the row with Easy / Linear / Hold / Flip */
+.kit-control .kit-tools-row.icons { align-items: center; }
+.kit-easecopy { display: flex; align-items: center; gap: 6px; flex: 1 1 220px; min-width: 0; }
+.kit-easecopy .kit-ec { flex: 1 1 0; justify-content: center; min-width: 0; white-space: nowrap; }
+.kit-easecopy .kit-ec:disabled { opacity: 0.5; }
+.kit-ec-clip { flex: 1 1 0; min-width: 0; overflow: hidden; color: var(--accent); font-size: var(--fs-xs); white-space: nowrap; text-overflow: ellipsis; }
+.kit-ec-clip.dim { color: var(--text-3); }
+.kit-easecopy.slim { flex: 0 1 auto; }
+.kit-easecopy.slim .kit-ec { flex: none; }
+/* curve presets fill the row (no half-empty last line of fixed-width chips) */
+.kit-control .kit-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(26px, 1fr)); }
+.kit-control .kit-chips > .kit-chip { width: 100%; }
+.kit-control .kit-chips > .kit-chip-sep { display: none; }
+/* v0.30.1: the rail sits beside the graph only when there is room (≥ 560 px); under 560 it goes under the graph,
+   anchor and align side by side; under 330 px anchor above align, each full width — never cut, never stretched */
+.app.kit-mid .kit-graph-row { flex-direction: column; }
+.app.kit-mid .kit-graph-row > .kit-graph-wrap { flex: none; width: 100%; }
+.app.kit-mid .kit-rail { flex-direction: row; width: 100%; padding: 8px 0 0; border-left: 0; border-top: 1px solid var(--line); flex-wrap: nowrap; align-items: stretch; }
+.app.kit-mid .kit-rail > .kit-anchor { flex: 0 0 36%; }
+.app.kit-mid .kit-rail > .kit-align { flex: 1 1 auto; min-width: 0; }
+.app.kit-slim .kit-rail, .app.kit-tiny .kit-rail { flex-direction: column; }
+.app.kit-slim .kit-rail > .kit-anchor, .app.kit-tiny .kit-rail > .kit-anchor { flex: none; }
+.app.kit-slim .kit-anchor.mini .kit-dots, .app.kit-tiny .kit-anchor.mini .kit-dots { min-height: 84px; max-height: 96px; }
+.kit-anchor.mini .kit-dots { max-height: 220px; }

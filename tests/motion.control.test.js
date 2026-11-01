@@ -110,3 +110,20 @@ test('Next: the steps that follow a run resolve, are few and never repeat the to
   assert.deepEqual(W.nextAfter({ toolId: 'nope' }), []);
   assert.deepEqual(W.nextAfter({ toolId: 'quick.animate', label: 'Slide In' }).slice(0, 2), ['quick:curveExpo', 'quick:k_stagger'], 'animate in → shape the ease → offset the layers');
 });
+
+test('v0.30.1: Ease Copy has named buttons with the clipboard status; the rail fills its space at every width', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const kit = fs.readFileSync(path.join(__dirname, '../extension/app/ui/views/kit.js'), 'utf8');
+  assert.match(kit, /icon\('easeCopy', 'sm'\), h\('span', \{\}, 'Copy ease'\)/);
+  assert.match(kit, /icon\('easePaste', 'sm'\), h\('span', \{\}, 'Paste ease'\)/);
+  assert.match(kit, /easeCopyBar\(app, pr, true\)/, 'the folded strip keeps the named buttons');
+  const icons = require('../extension/app/ui/icons-ui');
+  assert.ok(icons.easeCopy && icons.easePaste, 'Lucide clipboard icons (the old paste icon read as a bin)');
+  const css = fs.readFileSync(path.join(__dirname, '../extension/css/app.css'), 'utf8');
+  assert.match(css, /\.kit-anchor\.mini \.kit-dots \{ flex: 1 1 auto;[^}]*grid-template-columns: repeat\(3, 1fr\)/, 'the anchor grid fills the rail');
+  assert.match(css, /\.app\.kit-mid \.kit-graph-row \{ flex-direction: column; \}/, 'under 560 px the rail goes under the graph');
+  const shell = fs.readFileSync(path.join(__dirname, '../extension/app/ui/shell.js'), 'utf8');
+  assert.match(shell, /w < 560 \? 'kit-mid'/);
+});
+
