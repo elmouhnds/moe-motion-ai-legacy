@@ -14,7 +14,9 @@ const art = require('../art');
 const TOOL = 'design.insertShape';
 const PAGE = 96;
 
-function st(app) { return Object.assign({ tab: 'icons', cat: 'all', q: '', limit: PAGE }, app.state.get().shapesLib); }
+function st(app) { return Object.assign({ tab: 'icons', cat: 'all', q: '', limit: PAGE, open: false }, app.state.get().shapesLib); }
+/** v0.32: icon / shape columns per panel band, so the inline settings can open under the clicked row. */
+function colsFor(band, prim) { const b = band || ''; return /kit-tiny/.test(b) ? (prim ? 2 : 3) : /kit-slim/.test(b) ? (prim ? 3 : 4) : /kit-narrow/.test(b) ? (prim ? 3 : 5) : (prim ? 4 : 6); }
 function setSt(app, patch) { app.state.set((s) => ({ shapesLib: Object.assign({}, st(app), patch) })); }
 
 function toolArgs(app) {
@@ -103,21 +105,39 @@ function render(app) {
 
   if (S.tab === 'all') return h('div', { class: 'view studio-sec' }, tabs, renderTool(app, tool, { openByDefault: true }));
 
+  const isIcon = args.source !== 'primitive';
+  const name = isIcon ? args.icon : args.primitive;
+  const meta = isIcon ? LIB.icon(name) : LIB.primitive(name);
+  const inline = !wide && S.open;
+  const inspector = h('aside', { class: `st-inspector ${inline ? 'inline' : ''}`, 'aria-label': 'Inspector', 'data-key': 'sh-ins' },
+    h('div', { class: 'st-ins-h' }, h('span', { class: 'st-kicker' }, isIcon ? 'ICON' : 'NATIVE SHAPE'), h('span', { class: 'spacer' }),
+      isIcon ? h('button', { class: 'icon-btn pin', 'aria-pressed': String(stars.includes(name)), title: stars.includes(name) ? 'Unstar icon' : 'Star icon', onclick: () => toggleStar(app, name) }, icon('star', 'sm')) : null,
+      isIcon ? h('button', { class: 'icon-btn', title: 'Copy SVG', onclick: () => copyText(app, iconSvg(name), 'SVG copied') }, icon('copy', 'sm')) : null,
+      inline ? h('button', { class: 'icon-btn', 'data-key': 'sh-ins-close', title: 'Close the settings', 'aria-label': 'Close settings', onclick: () => setSt(app, { open: false }) }, icon('x', 'sm')) : null),
+    stylePreview(args, isIcon),
+    h('div', { class: 'st-ins-title' }, isIcon ? LIB.pretty(name) : (meta ? meta.label : name)),
+    isIcon && meta ? h('div', { class: 'sh-tags' }, meta.t.slice(0, 8).map((t) => h('button', { class: 'tag', onclick: () => setSt(app, { q: t, cat: 'all', limit: PAGE }) }, t))) : h('div', { class: 'why st-ins-desc' }, 'Rectangle / Ellipse / Polystar — size, roundness, points and radii stay editable in After Effects.'),
+    h('div', { class: 'st-ins-tool' }, renderTool(app, tool, { openByDefault: true })));
+
+  // v0.32: settings beside the grid from 600 px; narrower, under the row of the icon / shape you click
+  const place = (cells, list, sel, c) => { if (!inline) return cells; const i = list.indexOf(sel); if (i < 0) return cells; const out = cells.slice(); out.splice(Math.min(list.length, (Math.floor(i / c) + 1) * c), 0, inspector); return out; };
+  const pick = (patch, same) => { if (same) setSt(app, { open: !S.open }); else { setArgs(app, patch); setSt(app, { open: true }); } };
   let grid, chips = null, more = null;
   if (S.tab === 'icons') {
     const cats = LIB.categories();
-    chips = h('div', { class: 'st-chips' },
+    chips = h('div', { class: 'st-chips one-line' },
       h('button', { class: 'chip-btn', 'aria-pressed': String(S.cat === 'all'), onclick: () => setSt(app, { cat: 'all', limit: PAGE }) }, 'All'),
       h('button', { class: 'chip-btn', 'aria-pressed': String(S.cat === 'starred'), onclick: () => setSt(app, { cat: 'starred', limit: PAGE }) }, icon('star', 'xs'), ` Starred ${stars.length || ''}`),
       cats.map((c) => h('button', { class: 'chip-btn', 'aria-pressed': String(S.cat === c.id), onclick: () => setSt(app, { cat: c.id, limit: PAGE }) }, c.label, h('span', { class: 'chip-n' }, c.count))));
     const names = S.cat === 'starred' ? stars.filter((n) => !S.q || n.includes(S.q.toLowerCase())) : LIB.search(S.q, S.cat);
     const shown = names.slice(0, S.limit);
-    grid = shown.length ? h('div', { class: 'sh-grid' }, shown.map((name) => h('button', {
+    const ci = colsFor(s.kitBand, false);
+    grid = shown.length ? h('div', { class: 'sh-grid fit', style: wide ? null : { '--c': String(ci) } }, place(shown.map((name) => h('button', {
       class: `sh-tile ${args.source === 'icon' && args.icon === name ? 'on' : ''}`, 'data-key': name, title: `${LIB.pretty(name)} — double-click to insert`,
       'aria-pressed': String(args.icon === name),
-      onclick: () => setArgs(app, { source: 'icon', icon: name }),
+      onclick: () => pick({ source: 'icon', icon: name }, args.source === 'icon' && args.icon === name),
       ondblclick: () => { setArgs(app, { source: 'icon', icon: name }); app.runTool(TOOL, Object.assign(toolArgs(app), { source: 'icon', icon: name })).then((r) => r && app.toast(r.summary || r.status)); }
-    }, h('span', { class: 'sh-ic', html: iconSvg(name) }), stars.includes(name) ? h('span', { class: 'sh-star' }, icon('star', 'xs')) : null)))
+    }, h('span', { class: 'sh-ic', html: iconSvg(name) }), stars.includes(name) ? h('span', { class: 'sh-star' }, icon('star', 'xs')) : null)), shown, isIcon ? args.icon : null, ci))
       : h('div', { class: 'empty' }, h('div', { html: art.empty('search') }), h('b', {}, 'No icons match'), h('br'), 'Try another word — tags like "money", "weather" or "arrow" work too.');
     if (names.length > shown.length) more = h('div', { class: 'sh-more' }, h('button', { class: 'btn', onclick: () => setSt(app, { limit: S.limit + PAGE * 2 }) }, `Show more (${(names.length - shown.length).toLocaleString('en-US')} left)`));
     else if (names.length) more = h('div', { class: 'sh-more why' }, `${names.length.toLocaleString('en-US')} icon${names.length === 1 ? '' : 's'}`);
@@ -126,27 +146,16 @@ function render(app) {
     const groups = [...new Set(LIB.PRIMITIVES.flatMap((p) => p.tags))];
     grid = h('div', {}, groups.map((g) => h('div', {},
       h('div', { class: 'sh-group' }, g),
-      h('div', { class: 'sh-grid prim' }, LIB.PRIMITIVES.filter((p) => p.tags[0] === g).map((p) => h('button', {
+      (() => { const list = LIB.PRIMITIVES.filter((p) => p.tags[0] === g); const cp = colsFor(s.kitBand, true); return h('div', { class: 'sh-grid prim fit', style: wide ? null : { '--c': String(cp) } }, place(list.map((p) => h('button', {
         class: `sh-tile prim ${args.source === 'primitive' && args.primitive === p.id ? 'on' : ''}`, 'data-key': p.id, title: `${p.label} — native AE shape (stays editable). Double-click to insert`,
-        onclick: () => setArgs(app, { source: 'primitive', primitive: p.id }),
+        onclick: () => pick({ source: 'primitive', primitive: p.id }, args.source === 'primitive' && args.primitive === p.id),
         ondblclick: () => { setArgs(app, { source: 'primitive', primitive: p.id }); app.runTool(TOOL, Object.assign(toolArgs(app), { source: 'primitive', primitive: p.id })).then((r) => r && app.toast(r.summary || r.status)); }
-      }, h('span', { class: 'sh-ic', html: primSvg(p, { fill: look.fill === 'none' ? 'none' : 'currentColor', stroke: 'currentColor', sw: look.fill === 'none' ? 4 : 0 }) }), h('span', { class: 'sh-name' }, p.label)))))));
+      }, h('span', { class: 'sh-ic', html: primSvg(p, { fill: look.fill === 'none' ? 'none' : 'currentColor', stroke: 'currentColor', sw: look.fill === 'none' ? 4 : 0 }) }), h('span', { class: 'sh-name' }, p.label))), list.map((p) => p.id), isIcon ? null : args.primitive, cp)); })())));
   }
 
-  const isIcon = args.source !== 'primitive';
-  const name = isIcon ? args.icon : args.primitive;
-  const meta = isIcon ? LIB.icon(name) : LIB.primitive(name);
-  const inspector = h('aside', { class: 'st-inspector', 'aria-label': 'Inspector' },
-    h('div', { class: 'st-ins-h' }, h('span', { class: 'st-kicker' }, isIcon ? 'ICON' : 'NATIVE SHAPE'), h('span', { class: 'spacer' }),
-      isIcon ? h('button', { class: 'icon-btn pin', 'aria-pressed': String(stars.includes(name)), title: stars.includes(name) ? 'Unstar icon' : 'Star icon', onclick: () => toggleStar(app, name) }, icon('star', 'sm')) : null,
-      isIcon ? h('button', { class: 'icon-btn', title: 'Copy SVG', onclick: () => copyText(app, iconSvg(name), 'SVG copied') }, icon('copy', 'sm')) : null),
-    stylePreview(args, isIcon),
-    h('div', { class: 'st-ins-title' }, isIcon ? LIB.pretty(name) : (meta ? meta.label : name)),
-    isIcon && meta ? h('div', { class: 'sh-tags' }, meta.t.slice(0, 8).map((t) => h('button', { class: 'tag', onclick: () => setSt(app, { q: t, cat: 'all', limit: PAGE }) }, t))) : h('div', { class: 'why st-ins-desc' }, 'Rectangle / Ellipse / Polystar — size, roundness, points and radii stay editable in After Effects.'),
-    h('div', { class: 'st-ins-tool' }, renderTool(app, tool, { openByDefault: true })));
-
   return h('div', { class: 'view studio-sec shapes' }, tabs, chips,
-    h('div', { class: `st-body ${wide ? 'wide' : ''}` }, h('div', { class: 'st-main' }, grid, more), inspector));
+    h('div', { class: `st-body ${wide ? 'wide' : ''}` }, h('div', { class: 'st-main' }, grid, more,
+      wide || inline ? null : h('div', { class: 'st-hint' }, S.tab === 'icons' ? 'Click an icon for its style and Insert · double-click inserts it now' : 'Click a shape for its style and Insert · double-click inserts it now')), wide ? inspector : null));
 }
 
 function copyText(app, text, done) {
@@ -163,4 +172,4 @@ function copyText(app, text, done) {
   }
 }
 
-module.exports = { render, primSvg, lookOf };
+module.exports = { colsFor, render, primSvg, lookOf };

@@ -1361,3 +1361,40 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .ae-live { display: inline-flex; align-items: center; gap: 4px; }
 .ae-live.on { color: var(--accent); }
 .app.kit-slim .ae-gh .ae-fit, .app.kit-tiny .ae-gh .ae-fit { display: none; } /* the group name wins the space on a docked panel */
+
+/* ---------- v0.32 library pages (docs/features/LIBRARY_PAGES.md) ---------- */
+/* columns that fit the count; the inline Inspector spans the row under the tile you clicked */
+.app .st-grid.fit { grid-template-columns: repeat(var(--c, 3), minmax(0, 1fr)); }
+.app .st-body.wide .st-grid.fit { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
+.st-body.wide { grid-template-columns: minmax(0, 1fr) clamp(260px, 44%, 340px); }
+.st-inspector.inline { grid-column: 1 / -1; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.st-ins-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: var(--fs-sm); }
+/* tools whose tile is only an icon: one row each, with what it does */
+.app .st-grid.list { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.st-cell.row .st-tile { flex-direction: row; align-items: center; min-height: 40px; }
+.st-cell.row .st-thumb.icon { flex: 0 0 40px; width: 40px; height: 40px; }
+.st-cell.row .st-thumb.icon .svg-i { width: 18px; height: 18px; }
+.st-cell.row .st-meta { flex: 1 1 auto; min-width: 0; border-top: 0; padding: 4px 36px 4px 0; }
+.st-cell.row .st-name { flex: 0 0 auto; max-width: 45%; }
+.st-desc { flex: 1 1 auto; min-width: 0; color: var(--text-3); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-cell.row .st-play { top: 50%; transform: translateY(-50%); }
+/* filters on one line (Mine first); mode sections show one switch */
+.st-chips.one-line { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+.st-chips.one-line > .chip-btn { flex: 0 0 auto; }
+.st-modes { align-items: center; flex-wrap: wrap; }
+.st-seg { display: flex; flex: 1 1 220px; min-width: 0; }
+.st-seg > button { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; }
+.st-seg-n { color: var(--text-3); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+.st-away { display: inline-flex; align-items: center; gap: 3px; }
+.st-cell.row .st-why { position: static; } /* a list row says "setup" in its text line, not over the icon */
+.app .sh-grid.fit { grid-template-columns: repeat(var(--c, 6), minmax(0, 1fr)); }
+.app .st-body.wide .sh-grid.fit { grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); }
+.app .st-body.wide .sh-grid.prim.fit { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); }
+.sh-grid > .st-inspector.inline { grid-column: 1 / -1; }
+/* Quick Bar customize: each action is a one-line row with its ★ (a catalogue to pin from, not a set of pictures) */
+.qt-grid.rows { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 4px; }
+.qt-grid.rows .qt-tile { flex-direction: row; justify-content: flex-start; gap: 7px; min-height: 30px; padding: 0 28px 0 9px; text-align: left; font-size: var(--fs-sm); }
+.qt-grid.rows .qt-tile span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qt-grid.rows .qt-tile .svg-i { flex: 0 0 auto; width: 15px; height: 15px; }
+.qt-grid.rows .qt-pin { top: 50%; right: 5px; transform: translateY(-50%); }
+.app:not(.has-actbar) .view { padding-bottom: 64px; } /* v0.32: the last control of a page can scroll clear of the floating Assistant button */

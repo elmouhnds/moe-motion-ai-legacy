@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Library pages** (v0.32.0): settings open where you click (under the row, or beside the tiles from 600 px); Motion shows In · Out · Draw On · Proximity one at a time, Layout shows Arrange · Guides · Cells; tool lists as rows; filters on one line (docs/features/LIBRARY_PAGES.md).
+
 **Space follows content** (v0.31.0): every tab sized by what it holds and merged by job — 25 groups became 15 with the same tools (Animate In / Out / Draw On in one block, Keyframes & Loops, Key & Color, Deliver & Project, Expressions with Sliders); Motion Control compact until keys are selected (docs/features/SPACE_FOLLOWS_CONTENT.md).
 
 **Motion Control** (v0.30.0): the speed / value graph with the anchor point and align beside it, Ease Copy (copy the ease of keys, paste on others), and Next steps after each run (docs/features/MOTION_CONTROL.md).

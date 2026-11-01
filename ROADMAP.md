@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.37 — Library pages ✅ (v0.32.0)
+- Inspector beside the tiles from 600 px, under the clicked row when narrower (libraries + Shapes); Motion / Layout modes; icon tools as rows; one-line filters; columns that fit; compact Quick Bar customize.
+- Next: remember the open settings per page; the same inline settings in Text.
+
 ## M1.36 — Space follows content, every tab ✅ (v0.31.0)
 - 25 → 15 groups: Animate In / Out / Draw On one block, Keyframes & Loops, Key & Color, Deliver & Project; Motion Rigs merged (Sliders switch); no Motion Control repeats; Motion Control compact without keys; tile grids fit their count; empty Recent hidden.
 - Next: the library pages (Motion, Expressions, Compositing…) with the same rule — filters as the In / Out switch, Inspector beside the tiles on a wide panel.

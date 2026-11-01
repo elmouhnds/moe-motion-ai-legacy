@@ -15,8 +15,22 @@ const art = require('../art');
 
 function stateOf(app, section) {
   const s = app.state.get();
-  return Object.assign({ tab: 'library', filter: 'All', q: '', tile: section.tiles[0].id, filled: null }, (s.studio || {})[section.id]);
+  const st = Object.assign({ tab: 'library', filter: section.modes ? section.modes[0][0] : 'All', q: '', tile: section.tiles[0].id, filled: null, open: false }, (s.studio || {})[section.id]);
+  // v0.32: a section with modes (Motion: In · Out · Draw On · Proximity) always shows one mode (or Mine)
+  if (section.modes && st.filter !== 'Mine' && !section.modes.some(([m]) => m === st.filter)) st.filter = section.modes[0][0];
+  return st;
 }
+/** v0.32: columns that fit the count (no tile alone on a row), at most `max`. */
+function fitCols(n, max) {
+  if (max <= 2) return 2;
+  if (n > 12) return n % 4 === 0 && max >= 4 ? 4 : 3;
+  if (n % 3 === 0) return 3;
+  if (n % 4 === 0 && max >= 4) return 4;
+  if (n % 2 === 0) return 2;
+  return 3;
+}
+const HINT_KEY = 'lib-hint-n';
+const HINT_UNTIL = 3; // the "click to inspect · ▶ applies" line goes once you have applied three presets
 function setSt(app, section, patch) {
   app.state.set((s) => ({ studio: Object.assign({}, s.studio, { [section.id]: Object.assign({}, stateOf(app, section), patch) }) }));
 }
@@ -87,6 +101,7 @@ async function applyNow(app, tile, section, args) {
   }
   const r = await app.runTool(tile.tool, runArgs, { label: tile.label });
   if (!r) return r;
+  try { const n = app.services.store.get(HINT_KEY, 0) || 0; if (n < HINT_UNTIL) app.services.store.set(HINT_KEY, n + 1); } catch (_) { /* store optional in tests */ }
   const ok = r.status === 'success' || r.status === 'partial';
   app.toast(ok ? (r.summary || tile.label) : `${tile.label}: ${(r.errors || r.reasons || [r.status]).join(' · ')}`, ok ? 2600 : 5000, ok ? (r.status === 'partial' ? 'warn' : 'ok') : 'err');
   return r;
@@ -154,6 +169,7 @@ function copy(app, text) {
 function pickFilter(app, section, all, f) {
   const st = stateOf(app, section);
   const visible = all.filter((t) => f === 'All' || t.tags.includes(f));
+  if (section.modes) { setSt(app, section, visible.some((t) => t.id === st.tile) || !visible.length ? { filter: f, open: false } : { filter: f, tile: visible[0].id, filled: null, open: false }); return; }
   const keep = visible.some((t) => t.id === st.tile);
   setSt(app, section, keep || !visible.length ? { filter: f } : { filter: f, tile: visible[0].id, filled: null });
 }
@@ -175,43 +191,82 @@ function render(app, section) {
   }
 
   const q = (st.q || '').toLowerCase();
-  const tiles = all.filter((t) => (st.filter === 'All' || t.tags.includes(st.filter)) && (!q || t.label.toLowerCase().includes(q) || t.tags.some((g) => g.toLowerCase().includes(q))));
+  // a search looks through the whole section (every mode); without one, the mode / filter decides
+  const tiles = all.filter((t) => (q ? true : st.filter === 'All' || t.tags.includes(st.filter)) && (!q || t.label.toLowerCase().includes(q) || t.tags.some((g) => g.toLowerCase().includes(q))));
   const tile = all.find((t) => t.id === st.tile) || section.tiles[0];
   if (st.filled !== tile.id) setTimeout(() => { fill(app, tile); setSt(app, section, { filled: tile.id }); }, 0);
   const tool = app.services.registry.get(tile.tool);
   const pinned = app.services.favorites.list().includes(tool.id);
 
-  const grid = h('div', { class: 'st-grid' }, tiles.length ? tiles.map((t) => {
+  // v0.32 (docs/features/LIBRARY_PAGES.md): the Inspector sits beside the tiles from 600 px; narrower, it opens
+  // right under the row of the tile you click (click it again to close) instead of under the whole library.
+  const wideIns = !!s.studioWide;
+  const inline = !wideIns && st.open;
+  const listLike = tiles.length > 0 && tiles.every((t) => t.thumb && t.thumb.k === 'icon');
+  const band = s.kitBand || '';
+  const cols = listLike ? 1 : fitCols(tiles.length, /kit-slim|kit-tiny/.test(band) ? 2 : /kit-narrow/.test(band) ? 3 : 4);
+  const cell = (t) => {
     const rd = readiness(app, t);
-    return h('div', { class: `st-cell ${rd.ok ? '' : `blocked ${rd.kind}`}`, 'data-key': t.id },
+    const on = t.id === tile.id;
+    return h('div', { class: `st-cell ${rd.ok ? '' : `blocked ${rd.kind}`} ${listLike ? 'row' : ''}`, 'data-key': t.id },
       h('button', {
-        class: `st-tile ${t.id === tile.id ? 'on' : ''} ${t.user ? 'mine' : ''}`, title: `${t.label}${rd.ok ? '' : ` — ${rd.hint}`} · ▶ or double-click to apply now${t.user ? ' · right-click to delete' : ''}`, 'aria-pressed': String(t.id === tile.id),
-        onclick: () => { setSt(app, section, { tile: t.id, filled: null }); },
+        class: `st-tile ${on ? 'on' : ''} ${t.user ? 'mine' : ''}`, title: `${t.label}${rd.ok ? '' : ` — ${rd.hint}`} · click: settings · ▶ or double-click to apply now${t.user ? ' · right-click to delete' : ''}`, 'aria-pressed': String(on), 'aria-expanded': wideIns ? undefined : String(on && inline),
+        onclick: () => { setSt(app, section, on ? { open: !st.open } : { tile: t.id, filled: null, open: true }); },
         ondblclick: () => applyNow(app, t, section),
         oncontextmenu: t.user ? (e) => { e.preventDefault(); removePreset(app, section, t); } : undefined
       }, thumbEl(tileThumb(app, t)), t.isNew ? h('span', { class: 'st-new' }, 'NEW') : null,
-      h('span', { class: 'st-meta' }, h('span', { class: 'st-name' }, t.label), rd.ok || rd.kind !== 'input' ? null : h('span', { class: 'st-why', title: rd.hint }, 'setup'), t.badge ? h('span', { class: `st-badge ${t.badge.toLowerCase()}` }, t.badge) : null)),
+      h('span', { class: 'st-meta' }, h('span', { class: 'st-name' }, t.label), listLike && t.hint ? h('span', { class: 'st-desc', title: t.hint }, t.hint) : null, rd.ok || rd.kind !== 'input' ? null : h('span', { class: 'st-why', title: rd.hint }, 'setup'), t.badge ? h('span', { class: `st-badge ${t.badge.toLowerCase()}` }, t.badge) : null)),
       h('button', { class: 'st-play', title: rd.ok ? `Apply ${t.label} now` : rd.hint, 'aria-label': `Apply ${t.label} now`, onclick: () => applyNow(app, t, section) }, icon('play', 'sm')));
-  })
-    : h('div', { class: 'empty' }, h('div', { html: art.empty(st.filter === 'Mine' ? 'star' : 'search') }), st.filter === 'Mine' ? [h('b', {}, 'No presets of your own yet'), h('br'), 'Tune a tile in the Inspector, then click ', icon('presets', 'xs'), ' Save as preset.'] : 'Nothing matches'));
+  };
 
-  const inspector = h('aside', { class: 'st-inspector', 'aria-label': 'Inspector' },
-    h('div', { class: 'st-ins-h' }, h('span', { class: 'st-kicker' }, tile.user ? 'MY PRESET' : 'INSPECTOR'), h('span', { class: 'spacer' }),
+  const inspector = h('aside', { class: `st-inspector ${inline ? 'inline' : ''}`, 'aria-label': 'Inspector', 'data-key': 'st-ins' },
+    h('div', { class: 'st-ins-h' }, inline ? h('span', { class: 'st-ins-name' }, tile.user ? `My preset · ${tile.label}` : tile.label) : h('span', { class: 'st-kicker' }, tile.user ? 'MY PRESET' : 'INSPECTOR'), h('span', { class: 'spacer' }),
       h('button', { class: 'icon-btn', title: 'Save these settings as my preset', 'aria-label': 'Save as preset', onclick: () => saveAsPreset(app, section, tile) }, icon('presets', 'sm')),
       tile.user ? h('button', { class: 'icon-btn', title: 'Delete this preset', 'aria-label': 'Delete preset', onclick: () => removePreset(app, section, tile) }, icon('trash', 'sm')) : null,
-      h('button', { class: 'icon-btn pin', 'aria-pressed': String(pinned), title: pinned ? 'Unpin from Favorites' : 'Pin to Favorites', onclick: () => { app.services.favorites.toggle(tool.id); app.render(); } }, icon('star', 'sm'))),
-    widgets.body[tool.id] || (tool.ui && tool.ui.renderBody) ? null : thumbEl(tile, 'big'),
-    h('div', { class: 'st-ins-title' }, tile.label),
+      h('button', { class: 'icon-btn pin', 'aria-pressed': String(pinned), title: pinned ? 'Unpin from Favorites' : 'Pin to Favorites', onclick: () => { app.services.favorites.toggle(tool.id); app.render(); } }, icon('star', 'sm')),
+      inline ? h('button', { class: 'icon-btn', 'data-key': 'st-ins-close', title: 'Close the settings', 'aria-label': 'Close settings', onclick: () => setSt(app, section, { open: false }) }, icon('x', 'sm')) : null),
+    // inline, the tile itself is right above: no second big picture and no repeated title
+    inline || widgets.body[tool.id] || (tool.ui && tool.ui.renderBody) ? null : thumbEl(tile, 'big'),
+    inline ? null : h('div', { class: 'st-ins-title' }, tile.label),
     section.extras === 'palette' ? paletteExtras(app, tile) : h('div', { class: 'why st-ins-desc', title: tool.description }, tile.hint || tool.description),
     h('div', { class: 'st-ins-tool' }, renderTool(app, tool, { openByDefault: true })));
 
-  const filters = section.filters.concat(['Mine']);
+  let cells = tiles.map(cell);
+  if (inline) {
+    const i = tiles.findIndex((t) => t.id === tile.id);
+    if (i >= 0) { const end = Math.min(tiles.length, (Math.floor(i / cols) + 1) * cols); cells.splice(end, 0, inspector); } else cells.push(inspector);
+  }
+  const grid = h('div', { class: `st-grid ${listLike ? 'list' : 'fit'}`, style: wideIns || listLike ? null : { '--c': String(cols) } }, tiles.length ? cells
+    : h('div', { class: 'empty' }, h('div', { html: art.empty(st.filter === 'Mine' ? 'star' : 'search') }), st.filter === 'Mine' ? [h('b', {}, 'No presets of your own yet'), h('br'), 'Tune a tile in the Inspector, then click ', icon('presets', 'xs'), ' Save as preset.'] : 'Nothing matches'));
+
+  const learned = (app.services.store.get(HINT_KEY, 0) || 0) >= HINT_UNTIL;
+  const hint = learned ? null : h('div', { class: 'st-hint' }, wideIns ? 'Click to inspect' : 'Click a tile for its settings', ' · ▶ applies now · F4 repeats the last change · save your own settings with ', icon('presets', 'xs'));
   return h('div', { class: 'view studio-sec' }, tabs,
-    h('div', { class: 'st-chips' }, filters.map((f) => h('button', { class: `chip-btn ${f === 'Mine' ? 'mine' : ''}`, 'aria-pressed': String(st.filter === f), onclick: () => pickFilter(app, section, all, f) }, f === 'Mine' ? [icon('presets', 'xs'), ` Mine${mine.length ? ` ${mine.length}` : ''}`] : f))),
+    filterRow(app, section, all, st, mine),
     // v0.19: a selected MOE Grid shows its live controls above the library (Layout section)
     section.id === 'layout' ? require('../gridPanel').render(app) : null,
-    h('div', { class: `st-body ${s.studioWide ? 'wide' : ''}` }, h('div', { class: 'st-main' }, grid, h('div', { class: 'st-hint' }, 'Click to inspect · ▶ applies now · F4 repeats the last change · save your own settings with ', icon('presets', 'xs'))), inspector),
+    h('div', { class: `st-body ${wideIns ? 'wide' : ''}` }, h('div', { class: 'st-main' }, grid, hint), wideIns ? inspector : null),
     actionBar(app, section, tile, tool));
+}
+
+/**
+ * v0.32: the filter row. A section with modes (Motion, Layout) shows one switch — the modes are what the
+ * tiles are for (In / Out / Draw On…), so only that set shows; the rest keep chips on one line, Mine first.
+ */
+function filterRow(app, section, all, st, mine) {
+  const mineChip = h('button', { class: 'chip-btn mine', 'data-key': 'f-Mine', 'aria-pressed': String(st.filter === 'Mine'), onclick: () => pickFilter(app, section, all, 'Mine') }, icon('presets', 'xs'), ` Mine${mine.length ? ` ${mine.length}` : ''}`);
+  if (section.modes) {
+    const count = (tag) => all.filter((t) => t.tags.includes(tag)).length;
+    return h('div', { class: 'st-chips st-modes' },
+      h('div', { class: 'kit-seg st-seg', role: 'group', 'aria-label': `${section.label}: show` }, section.modes.map(([m, label, title]) => h('button', {
+        'aria-pressed': String(st.filter === m), 'data-key': `m-${m}`, title: `${title || label} · ${count(m)}`, onclick: () => pickFilter(app, section, all, m) }, label))),
+      mineChip,
+      (section.elsewhere || []).map(([id, label, title]) => h('button', { class: 'chip-btn st-away', 'data-key': `away-${id}`, title, onclick: () => app.go(id) }, label, icon('chev', 'xs'))));
+  }
+  const filters = section.filters.filter((f) => f !== 'All');
+  return h('div', { class: 'st-chips one-line' },
+    h('button', { class: 'chip-btn', 'data-key': 'f-All', 'aria-pressed': String(st.filter === 'All'), onclick: () => pickFilter(app, section, all, 'All') }, 'All'), mineChip,
+    filters.map((f) => h('button', { class: 'chip-btn', 'data-key': `f-${f}`, 'aria-pressed': String(st.filter === f), onclick: () => pickFilter(app, section, all, f) }, f)));
 }
 
 /**
@@ -237,9 +292,10 @@ function actionBar(app, section, tile, tool) {
       return h('button', { class: `btn ghost st-qbpin ${on ? 'on' : ''}`, 'data-key': `qbpin-${tile.id}`, 'aria-pressed': String(on), 'aria-label': on ? `Remove ${tile.label} from the Quick Bar` : `Add ${tile.label} to the Quick Bar`,
         title: on ? 'On your Quick Bar — click to remove' : 'Add this preset to your Quick Bar', onclick: () => { qb.togglePin(app, ref); app.toast(on ? `${tile.label} removed from the Quick Bar` : `${tile.label} added to the Quick Bar`, 2200, 'ok'); } }, icon('star', 'sm'));
     })(),
-    s.studioWide ? null : h('button', { class: 'btn ghost', title: 'Show the settings of this tile', onclick: () => { const el = document.querySelector('.st-inspector'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } }, icon('sliders', 'sm'), h('span', { class: 'label' }, 'Settings')),
+    s.studioWide || !section || !section.tiles ? (s.studioWide ? null : h('button', { class: 'btn ghost', title: 'Show the settings of this tile', onclick: () => { const el = document.querySelector('.st-inspector'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } }, icon('sliders', 'sm'), h('span', { class: 'label' }, 'Settings')))
+      : h('button', { class: `btn ghost ${stateOf(app, section).open ? 'on' : ''}`, 'data-key': 'act-settings', 'aria-pressed': String(!!stateOf(app, section).open), title: 'Show the settings of this tile under its row', onclick: () => { const open = !stateOf(app, section).open; setSt(app, section, { open }); if (open) setTimeout(() => { const el = document.querySelector('.st-inspector.inline'); if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 30); } }, icon('sliders', 'sm'), h('span', { class: 'label' }, 'Settings')),
     h('button', { class: 'btn primary', disabled: !rd.ok || !!s.running, title: rd.ok ? `${(tool.ui && tool.ui.primaryLabel) || 'Apply'} (${tile.label})` : rd.hint, onclick: () => applyNow(app, tile, section, args) },
       running ? h('span', { class: 'spin' }) : icon('play', 'sm'), (tool.ui && tool.ui.primaryLabel) || 'Apply'));
 }
 
-module.exports = { render, stateOf, setSt, fill, applyNow, readiness, userTiles, actionBar, thumbEl, tileThumb };
+module.exports = { fitCols, filterRow, HINT_KEY, render, stateOf, setSt, fill, applyNow, readiness, userTiles, actionBar, thumbEl, tileThumb };

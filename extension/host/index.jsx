@@ -10,7 +10,7 @@
     if (!root) { throw new Error('MOE_ROOT is not set'); }
 
     G.MOE = G.MOE || {};
-    G.MOE.version = '0.31.0';
+    G.MOE.version = '0.32.0';
     G.MOE.ops = {};
 
     var files = [

@@ -160,14 +160,14 @@ function view(app) {
       })()),
     B.GROUPS.map((g) => [
       h('div', { class: 'section-h' }, g),
-      h('div', { class: 'qt-grid pad' }, ACTIONS.filter((a) => a.group === g).map((a) => pinTile(app, a, pinned)))
+      h('div', { class: 'qt-grid rows pad' }, ACTIONS.filter((a) => a.group === g).map((a) => pinTile(app, a, pinned)))
     ]),
     // v0.29: presets live in their library; the bar holds the tile itself (one source, no copies here)
     h('div', { class: 'section-h' }, 'Presets on your bar'),
     (() => {
       const tiles = [...pinned].filter((id) => id.indexOf('tile:') === 0).map(byId).filter(Boolean);
       return h('div', { class: 'pad' },
-        tiles.length ? h('div', { class: 'qt-grid' }, tiles.map((a) => pinTile(app, a, pinned, a.group))) : null,
+        tiles.length ? h('div', { class: 'qt-grid rows' }, tiles.map((a) => pinTile(app, a, pinned, a.group))) : null,
         h('p', { class: 'why' }, 'Any preset can sit on the bar: open it in its library (Animate, Expressions, Layout…) and click ☆ next to Apply. ',
           ['animate', 'expressions', 'layout', 'zoom'].map((id) => h('button', { class: 'btn ghost sm', 'data-key': `qb-lib-${id}`, onclick: () => app.go(id) }, require('./studio/sections').byId(id).label))));
     })());

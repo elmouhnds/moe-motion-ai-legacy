@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.32.0] — 2026-11-01 — Library pages: settings where you click, modes instead of a wall
+The owner: continue the same approach on the library pages. Details: `docs/features/LIBRARY_PAGES.md`.
+### Changed
+- **Settings where you click**: the Inspector sits beside the tiles from 600 px (was 760); narrower it opens right under the clicked tile's row (click again or ✕ to close; the sticky bar's *Settings* toggles it). Same in Shapes & Icons. Before, it was under the whole library (~1,100 px down on Motion).
+- **Modes instead of a wall**: Motion shows **In · Out · Draw On · Proximity** (12 / 8 / 4 / 2 instead of 33); the 7 ease tiles are one click away (*Ease ›* → Motion Control) and still found by search. Layout & Grid: **Arrange · Guides · Cells**. Search covers every mode.
+- **Icon-only tools are rows** with what they do (Compositing); **filters on one line** with *Mine* first (Backgrounds 3 rows → 1); **columns fit the count** (no tile alone on a row; two columns docked); the how-to line goes after three applied presets.
+- **Quick Bar · Customize**: one-line rows with ★ in two columns (was 60 px picture tiles).
+### Tests
+- `tests/library.pages.test.js` (5): modes and their tiles (every Layout tile in one mode, Motion's outside tiles are the ease presets), `stateOf` lands on a mode, columns divide the count, inline / beside Inspector and icon rows, the how-to line rule. `tests/studio-ui.test.js`: a tag is a chip or a mode. **Mock / preview, not After Effects.**
+
 ## [0.31.0] — 2026-11-01 — Space follows content, in every tab
 The owner: continue the Motion Control approach and analyse every remaining tool — space by content, merged by job, ordered by the work. Details: `docs/features/SPACE_FOLLOWS_CONTENT.md`.
 ### Changed

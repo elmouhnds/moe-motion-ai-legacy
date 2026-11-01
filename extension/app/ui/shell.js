@@ -592,9 +592,9 @@ function createApp(root, services, env = {}) {
     // Auto: compact when narrow, or when the header measurably overflows (fonts/locales vary).
     const compact = d === 'compact' || (d === 'auto' && w < 340);
     const wide = d === 'expanded' || (d === 'auto' && w >= 500);
-    // Studio: labelled sidebar from 600 px, inspector beside the library from 760 px.
+    // Studio: labelled sidebar and the inspector beside the library from 600 px.
     const navWide = w >= 600;
-    const studioWide = w >= 760;
+    const studioWide = w >= 600; // v0.32: Inspector beside the tiles from 600 px (was 760)
     // Tiles (Settings › Appearance): compact = 3–4 columns of smaller tiles; auto = compact under 520 px.
     const tiles = services.settings.get().ui.tiles || 'auto';
     const tilesCompact = tiles === 'compact' || (tiles === 'auto' && w < 520);

@@ -25,7 +25,8 @@ test('Studio: every tile is a registered tool with valid preset args', () => {
       const errs = v.errors.filter((e) => !layerPicks.includes(e) && !userInputs.includes(e));
       assert.deepEqual(errs, [], `${sec.id}/${t.id}`);
       assert.ok(t.thumb && t.thumb.k, `${t.id} needs a thumbnail recipe`);
-      for (const tag of t.tags) assert.ok(sec.filters.includes(tag), `${t.id}: filter chip missing for tag ${tag}`);
+      // v0.32: a mode section (Motion, Layout) shows one mode at a time — a tag is a filter chip or a mode
+      for (const tag of t.tags) assert.ok(sec.filters.includes(tag) || (sec.modes || []).some(([m]) => m === tag), `${t.id}: filter chip missing for tag ${tag}`);
     }
   }
 });
