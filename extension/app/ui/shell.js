@@ -28,18 +28,12 @@ const views = {
   select: require('./views/select'),
   quick: { render: (app) => quickbar.view(app) },
   deliver: require('./views/deliver'),
-  home: require('./views/home'),
   kit: { render: (app) => require('./views/kit').renderToolbox(app) },
   shapes: require('./views/shapes')
 };
 // Studio library sections (tiles + inspector).
 for (const sec of studio.SECTIONS.filter((x) => x.kind === 'library')) views[sec.id] = { render: (app) => library.render(app, sec) };
 
-// Studio sidebar: creative sections, then helpers; utilities at the bottom. Diagnostics opens from Settings / search.
-const MAIN = studio.NAV.map((id) => { const x = studio.byId(id); return [x.id, x.label, x.icon]; });
-/** Ctrl 1–7: Home + the workspaces (Motion Kit first). */
-const JUMPS = ['home', ...studio.WORKSPACES.map((w) => w.id)];
-const SECONDARY = studio.UTILITY;
 const resolveView = (v) => studio.ALIAS[v] || v;
 const TOAST_ICON = { ok: 'check', err: 'x', warn: 'pulse', info: 'info' };
 
@@ -50,6 +44,9 @@ function createApp(root, services, env = {}) {
     services.settings.update({ ui: { motion: !m || m === 'full' ? 'calm' : m, motionV: 2 } });
     theme.apply(services.settings.get().ui);
   }
+  // v0.29: the retired styles are gone — a panel that still had one opens in Bento (told once, below)
+  const retiredStyle = require('./layouts').RETIRED.includes(services.settings.get().ui.layout) ? services.settings.get().ui.layout : null;
+  if (retiredStyle) services.settings.update({ ui: { layout: 'bento' } });
   const ui = services.settings.get().ui;
   const app = {
     services,
@@ -79,80 +76,10 @@ function createApp(root, services, env = {}) {
     const active = document.activeElement;
     const fk = active && active.getAttribute && active.getAttribute('data-fk');
     const kept = fk ? { fk, value: active.value, a: active.selectionStart, b: active.selectionEnd } : null;
-    const hiddenSections = services.settings.get().ui.hiddenSections || [];
-    const isSection = (id) => s.view === id || (id === 'settings' && s.view === 'diagnostics');
-    const navBtn = ([id, label, ic]) => h('button', { class: 'nav-btn', role: 'tab', 'aria-selected': String(isSection(id)), title: label, 'aria-label': label, onclick: () => app.go(id) }, icon(ic), h('span', { class: 'nav-label' }, label));
-    const current = [...MAIN, ...SECONDARY, ['diagnostics', 'Diagnostics']].find(([id]) => id === s.view) || MAIN[0];
-    const ws = studio.workspaceOf(s.view);
-    const visibleItems = (w) => w.items.filter((id) => !hiddenSections.includes(id) || s.view === id);
-    const wsBtn = (w) => h('button', { class: 'nav-btn', role: 'tab', 'aria-selected': String(ws === w), title: `${w.label} — ${w.items.map((id) => studio.byId(id).label).join(' · ')}`, 'aria-label': w.label, onclick: () => app.goWorkspace(w.id) }, icon(w.icon), h('span', { class: 'nav-label' }, w.label));
-    const tabs = ws && visibleItems(ws).length > 1 ? h('div', { class: 'ws-tabs', role: 'tablist', 'aria-label': `${ws.label} sections` }, visibleItems(ws).map((id) => {
-      const sec = studio.byId(id);
-      return h('button', { role: 'tab', 'aria-selected': String(s.view === id), 'data-key': `wst-${id}`, onclick: () => app.go(id) }, icon(sec.icon, 'sm'), h('span', {}, sec.label));
-    })) : null;
     if (env.mode === 'kit') return renderKitPanel(s);
-    const layout = require('./layouts').layoutOf(app);
-    if (layout !== 'studio') return renderLayout(s, layout, kept);
-    const client = clientCard(s);
-    const seen = services.settings.get().ui.seenVersion === services.version;
-    const appEl = h('div', { class: `app ${s.kitBand || ''} ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.navWide ? 'nav-wide' : ''} ${s.tilesCompact ? 'tiles-compact' : ''} ${(studio.byId(s.view) || {}).kind === 'library' || s.view === 'text' ? 'has-actbar' : ''}` },
-      h('nav', { class: 'sidebar', role: 'tablist', 'aria-label': 'Sections' },
-        h('button', { class: 'sb-brand', title: `MOE Motion AI ${services.version} — About`, onclick: () => app.state.set({ modal: 'about' }) }, h('span', { class: 'brand-mark', html: art.logo(22) }), h('span', { class: 'nav-label' }, h('span', { class: 'sb-name' }, 'MOE Studio'), h('span', { class: 'sb-ver' }, services.version))),
-        h('div', { class: 'sb-scroll' },
-          navBtn(MAIN[0]),
-          h('div', { class: 'sb-group-h', 'aria-hidden': 'true' }, h('span', { class: 'nav-label' }, 'Workspaces')),
-          studio.WORKSPACES.filter((w) => visibleItems(w).length).map(wsBtn)),
-        h('span', { class: 'spacer' }),
-        client,
-        h('div', { class: 'sb-utility' }, SECONDARY.map(navBtn))),
-      h('div', { class: 'main' },
-        h('div', { class: 'hdr' },
-          h('span', { class: 'hdr-ic' }, icon(ws ? ws.icon : current[2] || 'home', 'sm')),
-          h('div', { class: 'title' }, ws ? ws.label : current[1]),
-          h('span', { class: 'spacer' }),
-          ['available', 'ready'].includes(s.update.phase) ? h('button', { class: 'hdr-update', title: `Update to ${s.update.info.version}`, onclick: () => app.go('settings') }, icon('download', 'sm'), h('span', { class: 'label' }, s.update.info.version)) : null,
-          h('button', { class: `icon-btn hdr-new ${seen ? '' : 'dot'}`, title: "What's new", 'aria-label': "What's new", onclick: () => app.state.set({ modal: 'whatsnew' }) }, icon('gift', 'sm')),
-          h('button', { class: 'icon-btn', title: 'Shortcuts (?)', 'aria-label': 'Keyboard shortcuts', onclick: () => app.state.set({ modal: 'shortcuts' }) }, icon('keyboard', 'sm')),
-          h('button', { class: 'icon-btn hdr-pie', title: 'Pie menu (hold Q, or hold the right mouse button)', 'aria-label': 'Pie menu', onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(); app.openPie(r.left + r.width / 2, r.bottom + 120, { mode: 'click' }); } }, icon('pie', 'sm')),
-          h('button', { class: 'search-btn', title: 'Search tools (Ctrl+K)', onclick: () => palette.open(app) }, icon('search', 'sm'), h('span', { class: 'label' }, 'Search'), h('span', { class: 'kbd' }, 'Ctrl K'))),
-        contextStrip(s),
-        quickbar.strip(app),
-        tabs,
-        h('div', { class: 'content' }, chrome.banner(app, s.view), (views[s.view] || views.home).render(app)),
-        require('./assistant').render(app)),
-      quickbar.popover(app),
-      quickbar.restPopover(app),
-      s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, s.toastKind ? h('span', { class: 'toast-ic' }, icon(TOAST_ICON[s.toastKind] || 'info', 'sm')) : null, h('span', {}, s.toast)) : null,
-      s.modal ? chrome.sheet(app, s.modal) : null);
-    // Update in place: what is on screen stays the same element (no flicker, clicks never lost).
-    if (root.firstChild && root.firstChild.classList && root.firstChild.classList.contains('app')) morph(root.firstChild, appEl);
-    else { clear(root); root.appendChild(appEl); }
-    // Calm / reduced motion: illustrations hold still (SMIL paused) — fewer repaints inside AE.
-    if (theme.stillArt()) root.querySelectorAll('svg.moe-art').forEach((s) => { if (s.pauseAnimations && !s.__paused) { s.pauseAnimations(); try { s.setCurrentTime(2.2); } catch (e) { /* older engines */ } s.__paused = true; } });
-    else root.querySelectorAll('svg.moe-art').forEach((s) => { if (s.__paused) { s.unpauseAnimations(); s.__paused = false; } });
-    const c2 = root.querySelector('.content');
-    if (c2) c2.scrollTop = scrollTop;
-    if (!app._densityPending) { app._densityPending = true; setTimeout(() => { app._densityPending = false; app.applyDensity(); }, 0); }
-    if (kept) {
-      const el = root.querySelector(`[data-fk="${kept.fk}"]`);
-      if (el) {
-        el.value = kept.value;
-        el.focus();
-        try { el.setSelectionRange(kept.a, kept.b); } catch (e) { /* not a text field */ }
-      }
-    }
+    // v0.29: three styles only (Bento, Glass, MOE) — the Sidebar layout and the other retired ones are gone
+    return renderLayout(s, require('./layouts').layoutOf(app), kept);
   };
-
-  /** Active client (Brand Kit) — a click opens Brand; colours also feed Glass tints and previews. */
-  function clientCard(s) {
-    const brands = services.brands.list();
-    if (!brands.length) return h('button', { class: 'sb-client empty', title: 'Add a client in Brand', onclick: () => app.go('brand') }, icon('brand'), h('span', { class: 'nav-label' }, 'Add client'));
-    const b = brands.find((x) => x.id === services.store.get('active-client', null)) || brands[0];
-    return h('button', { class: 'sb-client', title: `Client: ${b.name} — open Brand`, onclick: () => app.go('brand') },
-      h('span', { class: 'sb-kicker nav-label' }, 'CLIENT'),
-      h('span', { class: 'sb-client-name nav-label' }, b.name),
-      h('span', { class: 'sb-swatches' }, b.colors.slice(0, 5).map((c) => h('span', { class: 'sb-sw', style: { background: c.hex } }))));
-  }
 
   /** One line for the strip: which file/line or what kind of failure. */
   function shortReason(msg) {
@@ -282,14 +209,13 @@ function createApp(root, services, env = {}) {
   /* v0.16: the three proposal layouts (app/ui/layouts.js) — same views, other organisation. */
   function renderLayout(s, layout, kept) {
     const L = require('./layouts');
-    const body = (id) => [chrome.banner(app, id), (views[id] || views.home).render(app)];
+    const body = (id) => [chrome.banner(app, id), views[id] ? views[id].render(app) : h('div', { class: 'empty' }, 'This page moved — open it from Home or search (Ctrl+K)')];
     const p = L.build(app, s, layout, body);
     const appEl = h('div', { class: `app layout-${layout} ${s.kitBand || ''} ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.tilesCompact ? 'tiles-compact' : ''} ${(studio.byId(s.view) || {}).kind === 'library' || s.view === 'text' ? 'has-actbar' : ''}` },
       p.side || null, // v0.25: a layout's own sidebar (MOE)
       h('div', { class: 'main' },
         p.header,
         contextStrip(s),
-        layout === 'hub' ? quickbar.strip(app) : null,
         p.top,
         h('div', { class: 'content' }, p.content),
         p.bottom || null,
@@ -303,6 +229,9 @@ function createApp(root, services, env = {}) {
     const top = content ? content.scrollTop : 0;
     if (root.firstChild && root.firstChild.classList && root.firstChild.classList.contains('app')) morph(root.firstChild, appEl);
     else { clear(root); root.appendChild(appEl); }
+    // Calm / reduced motion: illustrations hold still (SMIL paused) — fewer repaints inside AE.
+    if (theme.stillArt()) root.querySelectorAll('svg.moe-art').forEach((el) => { if (el.pauseAnimations && !el.__paused) { el.pauseAnimations(); el.__paused = true; } });
+    else root.querySelectorAll('svg.moe-art').forEach((el) => { if (el.__paused) { el.unpauseAnimations(); el.__paused = false; } });
     const c2 = root.querySelector('.content');
     if (c2 && content) c2.scrollTop = top;
     if (!app._densityPending) { app._densityPending = true; setTimeout(() => { app._densityPending = false; app.applyDensity(); }, 0); }
@@ -705,14 +634,9 @@ function createApp(root, services, env = {}) {
       // Bento: Ctrl+1…5 jumps to a stage on the page
       e.preventDefault(); require('./layoutBento').jumpTo(app, require('./workflow').STAGE_IDS[Number(e.code.slice(5)) - 1]);
     }
-    else if ((e.ctrlKey || e.metaKey) && /^Digit[1-6]$/.test(e.code) && ['ae', 'moe'].includes(require('./layouts').layoutOf(app))) {
+    else if ((e.ctrlKey || e.metaKey) && /^Digit[1-6]$/.test(e.code) && require('./layouts').layoutOf(app) === 'moe') {
       // Classic: Ctrl+1…6 = the six tabs (Keys · Animate · Layer · Design · Effect · Comp)
       e.preventDefault(); app.state.set({ aeQ: '', aeTabMenu: null }); app.go(require('./layoutAE').TAB_IDS[Number(e.code.slice(5)) - 1]);
-    } else if ((e.ctrlKey || e.metaKey) && /^Digit[1-9]$/.test(e.code)) {
-      const hidden = services.settings.get().ui.hiddenSections || [];
-      const visible = JUMPS.filter((id) => id === 'home' || studio.WORKSPACES.find((w) => w.id === id).items.some((x) => !hidden.includes(x)));
-      const target = visible[Number(e.code.slice(5)) - 1];
-      if (target) { e.preventDefault(); if (target === 'home') app.go('home'); else app.goWorkspace(target); }
     } else if (e.key === 'F4' && !e.ctrlKey && !e.altKey) { e.preventDefault(); app.repeatLast(); }
     else if ((e.key === 'q' || e.key === 'Q') && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat && !app.paletteOpen && !app.state.get().modal) {
       const pieUi = services.settings.get().ui.pie || {};
@@ -758,6 +682,7 @@ function createApp(root, services, env = {}) {
   poll = setTimeout(pollTick, 2500);
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => app.applyDensity()).observe(root);
 
+  if (retiredStyle) setTimeout(() => app.toast('Your panel style was retired in v0.29 — now Bento (≡ › Panel layout: Glass or MOE)', 6000, 'info'), 1200);
   return app;
 }
 

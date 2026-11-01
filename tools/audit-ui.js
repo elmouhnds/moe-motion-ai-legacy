@@ -31,24 +31,15 @@ const OUT = path.resolve(__dirname, '../dev/audit');
 const VARIANTS = {
   seed: { qs: '&seedBrand=1' },
   runs: { setup: async () => { const a = window.__app; const d = (id) => require('/extension/core/schema.js').defaults(a.services.registry.get(id).params || {}); await a.runTool('motion.smartEase', d('motion.smartEase')); await a.runTool('expressions.quick', Object.assign(d('expressions.quick'), { preset: 'wiggle' })); } },
-  // v0.16 layout proposals: the same panel arranged as Hub / Command Bar / Workspace
-  hub: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'hub' } }); a.render(); } },
-  bar: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'bar' } }); a.render(); } },
-  workspace: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'workspace' } }); a.render(); } },
   // v0.19: a built MOE Grid with its null selected — audits the "Your grid" panel
   gridsel: { setup: async () => { const a = window.__app; const d = require('/extension/core/schema.js').defaults(a.services.registry.get('grid.build').params); await a.services.executor.run('grid.build', Object.assign(d, { mode: 'rect', columns: 3, morphTo: 'radial' })); const c = window.app.project.activeItem; for (let i = 1; i <= c.numLayers; i++) c.layer(i).selected = /^MOE Grid/.test(c.layer(i).name); await a.refreshContext(true); a.render(); } },
-  // v0.20 Classic: each tab of the default layout (home = the first tab that fits the selection)
-  tkeys: { setup: () => window.__app.go('ae-keys') }, tanimate: { setup: () => window.__app.go('ae-animate') }, tlayer: { setup: () => window.__app.go('ae-layer') },
-  tdesign: { setup: () => window.__app.go('ae-design') }, teffect: { setup: () => window.__app.go('ae-effect') }, tcomp: { setup: () => window.__app.go('ae-comp') },
   moe: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'moe' } }); a.render(); } },
-  // v0.24 style proposals: Glass (Now + a space), Apple (root + a category page), Bento (one page)
+  // the three styles (v0.29): Glass (Now + a space), Bento (one page), MOE (AE tabs + sidebar)
   glass: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'glass' } }); a.render(); } },
   glook: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'glass' } }); a.go('gl-design'); } },
   // v0.28: the floating assistant open (suggestions, prompts, offline + demo answers), and the Power cards learned (chips)
   assist: { setup: () => { window.__app.openCopilot(); } },
   learned: { setup: () => { const a = window.__app; const W = require('/extension/app/ui/workflow.js'); W.POWER.forEach((p) => W.gotIt(a.services.store, p.id)); a.render(); } },
-  apple: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'apple' } }); a.render(); } },
-  aplayer: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'apple' } }); a.go('ap-ae-layer'); } },
   bento: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'bento' } }); a.render(); } },
   pins: { setup: async () => { const f = window.__app.services.favorites; ['motion.smartEase', 'quick.animate', 'grid.build'].forEach((id) => f.toggle(id)); window.__app.render(); } }
 };

@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Fewer, clearer** (v0.29.0): one place per tool — the Quick Bar holds 41 own actions and any library preset as the tile itself; three styles only (docs/features/FEWER_CLEARER.md).
+
 **Organised the way you work + Assistant** (v0.28.0): Home by how often you use things — Everyday (Alt+1…0), NOW with the comp format, Power tools cards, stages Animate · Arrange · Design · Finish · Deliver — and a floating Assistant that answers and plans (docs/features/WORKFLOW_HOME.md, docs/features/ASSISTANT.md).
 
 **Thick Glass** (v0.27.0): Design › Looks & Glass › Thick — Glaze-class refractive glass from native effects (docs/features/THICK_GLASS.md).

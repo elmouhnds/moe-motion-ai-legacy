@@ -46,7 +46,7 @@ function saveBrandBackgrounds(presets, brand) {
 }
 
 /** The ease that matches the brand's motion feel (the refs are existing presets / quick actions). */
-const EASE_REF = { smooth: 'tile:animate/easeSmooth', snappy: 'tile:animate/easeSnappy', gentle: 'tile:animate/easeGentle', bouncy: 'quick:curveBack', elastic: 'quick:curveBack', linear: 'quick:k_linear' };
+const EASE_REF = { smooth: 'tile:animate/easeSmooth', snappy: 'tile:animate/easeSnappy', gentle: 'quick:k_easy', bouncy: 'quick:curveBack', elastic: 'quick:curveBack', linear: 'quick:k_linear' };
 const brandEaseRef = (brand) => { const e = brand && brand.profile && brand.profile.motion && brand.profile.motion.easing; return EASE_REF[e] || null; };
 
 module.exports = { ACTIVE_KEY, activeBrand, setActive, brandBackgrounds, saveBrandBackgrounds, brandEaseRef, EASE_REF };

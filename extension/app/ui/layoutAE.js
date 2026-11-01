@@ -30,7 +30,7 @@ const TABS = [
     groups: [
       { id: 'ease', label: 'Ease', kind: 'kit', block: 'ease', fits: ['keys'], open: true },
       { id: 'assist', label: 'Keyframe Assistant', kind: 'acts', fits: ['keys'], hero: ['quick:k_easy', 'quick:reverse'], minor: ['quick:k_trimKeys', 'quick:selectSame'], refs: ['quick:k_easy', 'quick:reverse', 'quick:k_linear', 'quick:k_hold', 'quick:mirror', 'quick:clone', 'quick:k_stagger', 'quick:k_trimKeys', 'quick:selectSame'] },
-      { id: 'loops', label: 'Loops', kind: 'acts', fits: ['keys'], hero: ['quick:x_loopCycle'], refs: ['quick:x_loopCycle', 'quick:x_loopPingPong', 'quick:x_loopOffset', 'quick:x_loopInOut'] },
+      { id: 'loops', label: 'Loops', kind: 'acts', fits: ['keys'], hero: ['tile:expressions/x-loopCycle'], refs: ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'] },
       { id: 'curves', label: 'Curve Library', kind: 'curves', fits: [] }
     ] },
   { id: 'ae-animate', label: 'Animate', title: 'Animation presets, text, rigs, expressions (Animation menu)', fits: ['layer', 'layers', 'text', 'shapes', 'shapesMany'], owns: ['animate', 'text', 'expressions', 'kit'],
@@ -60,7 +60,7 @@ const TABS = [
     ] },
   { id: 'ae-effect', label: 'Effect', title: 'Keying, colour, camera & zoom, stylize (Effect menu)', fits: [], owns: ['compositing', 'zoom'],
     groups: [
-      { id: 'keying', label: 'Keying', kind: 'tiles', section: 'compositing', ids: ['c-compositing.keySetup', 'c-generate.greenPrompt', 'c-generate.importKey'], more: 'compositing', fits: [], open: true },
+      { id: 'keying', label: 'Keying', kind: 'tiles', section: 'compositing', ids: ['c-compositing.keySetup'], more: 'compositing', fits: [], open: true },
       { id: 'color', label: 'Color Correction', kind: 'tiles', section: 'compositing', ids: ['c-compositing.grade', 'c-compositing.matchColor', 'c-compositing.lookAssist', 'c-compositing.analyze'], more: 'compositing', fits: [] },
       { id: 'zoom', label: 'Camera & Zoom', kind: 'tiles', section: 'zoom', ids: ['punch', 'smooth', 'detail', 'follow', 'spot', 'cursorArrow'], more: 'zoom', fits: [] },
       { id: 'stylize', label: 'Stylize', kind: 'acts', fits: [], refs: ['quick:k_vignette'], links: [['looks', 'Looks & Glass']] }
@@ -146,7 +146,7 @@ function clearRecent(app, t) {
 /** A Recent ref → a runnable item: 'tile:<section>:<tile id>', 'kit:<Motion Kit tool>', or an actions ref ('quick:…'). */
 function recentItem(app, ref) {
   const lib = require('./studio/library');
-  if (ref.indexOf('tile:') === 0) {
+  if (ref.indexOf('tile:') === 0 && ref.indexOf('/') < 0) {
     const [, secId, id] = ref.split(':'); const sec = studio.byId(secId); const x = sec && sec.tiles && sec.tiles.find((y) => y.id === id);
     return x ? { id: ref, label: x.label, icon: sec.icon, ready: lib.readiness(app, x), run: () => lib.applyNow(app, x, sec) } : null;
   }

@@ -67,7 +67,7 @@ function stageOfView(view) {
 
 /* ---------- Everyday: the ten things a motion designer does all day (Quick Bar slots 1–10, Alt+1…0) ---------- */
 // Ordered by how often, not by menu: ease, curve, anchor, parent, pre-compose, sequence, loop, wiggle, reverse, duplicate.
-const EVERYDAY = ['k_easy', 'curveExpo', 'centerAnchor', 'parentNull', 'precompose', 'k_stagger', 'x_loopCycle', 'x_wiggle', 'reverse', 'dupComp'];
+const EVERYDAY = ['k_easy', 'curveExpo', 'centerAnchor', 'parentNull', 'precompose', 'k_stagger', 'tile:expressions/x-loopCycle', 'tile:expressions/x-wiggle', 'reverse', 'dupComp'];
 const SLOT_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
 /* ---------- Power tools: deep features that deserve a big card with an explanation ---------- */

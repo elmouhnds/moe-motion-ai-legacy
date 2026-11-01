@@ -39,15 +39,11 @@ const ANIMATE = [
   T('gentlePop', 'Soft Pop', 'quick.animate', { kind: 'scale', dir: 'in', ease: 'gentle', duration: 0.8 }, { k: 'scale', dir: 'in' }, ['In', 'Scale'], 'IN'),
   T('spinOut', 'Spin Out', 'quick.animate', { kind: 'spin', dir: 'out' }, { k: 'spin', dir: 'out' }, ['Out'], 'OUT'),
   T('popOut', 'Pop Out', 'quick.animate', { kind: 'scale', dir: 'out', overshoot: true, duration: 0.45 }, { k: 'scale', dir: 'out', over: true }, ['Out', 'Scale'], 'OUT'),
-  T('easeGentle', 'Gentle Ease', 'motion.smartEase', { influenceIn: 33.33, influenceOut: 33.33 }, { k: 'ease', a: 0.33, b: 0.33 }, ['Keys', 'Ease'], 'EASE'),
   T('easeExpo', 'Expo Ease', 'motion.smartEase', { influenceIn: 95, influenceOut: 95 }, { k: 'ease', a: 0.95, b: 0.95 }, ['Keys', 'Ease'], 'EASE'),
   T('easeDecel', 'Decelerate', 'motion.smartEase', { influenceIn: 85, influenceOut: 10 }, { k: 'ease', a: 0.1, b: 0.85 }, ['Keys', 'Ease'], 'EASE'),
   T('easeHard', 'Hard Stop', 'motion.smartEase', { influenceIn: 100, influenceOut: 5 }, { k: 'ease', a: 0.05, b: 1 }, ['Keys', 'Ease'], 'EASE'),
   T('easeAccel', 'Accelerate', 'motion.smartEase', { influenceIn: 10, influenceOut: 85 }, { k: 'ease', a: 0.85, b: 0.1 }, ['Keys', 'Ease'], 'EASE'),
   T('easeLaunch', 'Launch', 'motion.smartEase', { influenceIn: 5, influenceOut: 100 }, { k: 'ease', a: 1, b: 0.05 }, ['Keys', 'Ease'], 'EASE'),
-  T('stagger', 'Stagger', 'motion.stagger', {}, { k: 'stagger' }, ['Keys'], 'KEYS'),
-  T('reverse', 'Reverse Keys', 'quick.reverseKeys', {}, { k: 'icon', icon: 'reverse' }, ['Keys'], 'KEYS'),
-  T('mirror', 'Mirror Keys', 'quick.mirrorKeys', { mode: 'mirror' }, { k: 'icon', icon: 'mirror' }, ['Keys'], 'KEYS'),
   T('proxGrow', 'Proximity Grow', 'proximity.apply', { scaleUp: true, scaleDown: false, pushAway: false }, { k: 'prox', mode: 'grow' }, ['Proximity'], 'FX'),
   T('proxRepel', 'Proximity Repel', 'proximity.apply', { scaleUp: false, pushAway: true, pullToward: false }, { k: 'prox', mode: 'repel' }, ['Proximity'], 'FX')
 ];
@@ -168,7 +164,7 @@ function sectionOf(tool) {
 }
 
 /* v0.6 tiles get a NEW corner badge. */
-const NEW_TILES = new Set(['riseIn', 'dropIn', 'cascadeIn', 'cascadeFade', 'gentlePop', 'spinOut', 'popOut', 'easeGentle', 'easeExpo', 'easeDecel', 'easeHard', 'easeAccel', 'easeLaunch',
+const NEW_TILES = new Set(['riseIn', 'dropIn', 'cascadeIn', 'cascadeFade', 'gentlePop', 'spinOut', 'popOut', 'easeExpo', 'easeDecel', 'easeHard', 'easeAccel', 'easeLaunch',
   ...['bounceBack', 'squash', 'orbit', 'swing', 'heartbeat', 'breathe', 'wiggleRot', 'wiggleScale', 'organic', 'loopWiggle', 'drift', 'clock', 'faceMotion', 'scatter', 'popIn', 'slideIn'].map((x) => `x-${x}`)]);
 for (const sec of SECTIONS) for (const t of sec.tiles || []) if (NEW_TILES.has(t.id)) t.isNew = true;
 

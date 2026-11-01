@@ -123,14 +123,16 @@ test('Ease Curve: "in" only touches the incoming side, "out" only the outgoing s
 });
 
 test('Quick Bar expression buttons carry the preset\'s own numbers (Excite overshoot stays 0.06, not the form default 30)', () => {
-  const { ACTIONS } = require('../extension/app/ui/quickbar');
+  const qb = require('../extension/app/ui/quickbar');
   const { PRESETS } = require('../extension/features/expressions/quick');
-  const excite = ACTIONS.find((a) => a.id === 'k_excite');
+  const excite = qb.ACTIONS.find((a) => a.id === 'k_excite');
   assert.equal(excite.args.amp, PRESETS.inertia.nums.amp);
   assert.equal(excite.args.live, true);
-  const x = ACTIONS.find((a) => a.id === 'x_inertia');
+  // v0.29: the expression buttons are the library tiles themselves (old x_ ids migrate to them)
+  const x = qb.byId('x_inertia');
+  assert.equal(x.id, 'tile:expressions/x-inertia');
   assert.equal(x.args.amp, PRESETS.inertia.nums.amp);
-  assert.equal(x.label, PRESETS.inertia.label);
+  assert.equal(x.tool, 'expressions.quick');
   assert.equal(excite.label, 'Excite (overshoot)', 'kit buttons keep their Motion 4 names');
 });
 
@@ -152,13 +154,10 @@ test('two panels on one data folder: each sees the other\'s writes; settings cha
   assert.equal(merged.kit.side, 'out');
 });
 
-test('Home starts with the ease graph, the anchor grid, align and the pinned tools (owner\'s direction)', () => {
+test('Motion Kit default pins are kit tools', () => {
   const kit = require('../extension/app/ui/views/kit');
   const QB = require('../extension/features/quick/bar');
-  assert.deepEqual(kit.DEFAULT_PINS.filter((id) => !QB.KIT_TOOLS.includes(id)), [], 'every default pin is a kit tool');
-  const home = require('fs').readFileSync(require.resolve('../extension/app/ui/views/home'), 'utf8');
-  const body = home.slice(home.indexOf("return h('div', { class: 'view home' }"));
-  assert.ok(body.indexOf('homeTop(app)') > 0 && body.indexOf('homeTop(app)') < body.indexOf('suggestions('), 'kit blocks come before the rest of Home');
+  assert.deepEqual(kit.DEFAULT_PINS.filter((id) => !QB.KIT_TOOLS.includes(QB.migrate(id))), [], 'every default pin is a kit tool');
 });
 
 test('Ease graph maths: speed handles round-trip, ranges grow for overshoot, numbers parse', () => {
@@ -434,19 +433,14 @@ test('overview per segment: only the selected segment shows the edited curve; se
   const g = KG.ovGeom(216, segs); assert.equal(g.T(g.X(1.5)), 1.5);
 });
 
-test('Smart Home: every focus row resolves, no action twice in one card, the right blocks are in focus', () => {
+test('selection kinds: every kind has a label and a pie set that resolves (Smart Home view removed in v0.29)', () => {
   const A = require('../extension/app/ui/actions');
-  const kinds = ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany', 'none'];
-  for (const k of kinds) {
-    assert.ok(A.FOCUS[k] && A.FOCUS_BLOCKS[k], `focus for ${k}`);
-    const refs = A.FOCUS[k].flatMap(([, r]) => r);
-    assert.equal(new Set(refs).size, refs.length, `${k}: no duplicates`);
-    refs.forEach((r) => assert.ok(A.resolve(r), `${k}: ${r} resolves`));
+  for (const k of ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany', 'none']) {
     assert.ok(A.CONTEXT_LABEL[k]);
+    assert.equal(new Set(A.SETS[k]).size, A.SETS[k].length, `${k}: no duplicates in the pie`);
+    A.SETS[k].forEach((r) => assert.ok(A.resolve(r), `${k}: ${r} resolves`));
   }
-  assert.deepEqual(A.FOCUS_BLOCKS.keys, ['ease']);
-  assert.ok(!A.FOCUS.shapesMany.flatMap(([, r]) => r).some((r) => /dist[HV]$/.test(r)), 'distribute only in the Align block');
-  // profile → kind
+  assert.equal(A.FOCUS, undefined);
   const ctx = (layers, keys) => ({ comp: { id: 1 }, layers, properties: keys ? [{ selectedKeys: [1, 2] }] : [] });
   assert.equal(A.profile(ctx([{ type: 'shape' }], true)), 'keys');
   assert.equal(A.profile(ctx([{ type: 'text' }, { type: 'text' }])), 'text');

@@ -13,11 +13,40 @@ const B = require('../../features/quick/bar');
 const { PRESETS } = require('../../features/expressions/quick');
 
 const ACTIONS = B.resolve(PRESETS);
-const byId = (id) => ACTIONS.find((a) => a.id === id);
+/**
+ * v0.29: a bar button is a Quick action ('reverse') or a library tile ('tile:animate/fadeIn') — the tile
+ * itself, so the preset has one source (its numbers, label and icon). Old ids are migrated (B.MIGRATE).
+ */
+const tileCache = new Map();
+function tileAction(ref) {
+  if (tileCache.has(ref)) return tileCache.get(ref);
+  const studio = require('./studio/sections');
+  const [secId, tileId] = ref.slice(5).split('/');
+  const sec = studio.byId(secId);
+  const t = sec && (sec.tiles || []).find((x) => x.id === tileId);
+  let a = null;
+  if (t && t.tool) {
+    const p = t.tool === 'expressions.quick' && t.args ? PRESETS[t.args.preset] : null;
+    // expression presets keep their own numbers (the form's generic defaults must not replace them)
+    const args = Object.assign({}, p ? p.nums : {}, t.args || {});
+    const icon = p ? p.icon : require('./actions').resolve(`tile:${secId}/${tileId}`).icon;
+    a = { id: ref, tool: t.tool, args, icon, label: t.label, group: sec.label, tile: true, section: secId };
+  }
+  tileCache.set(ref, a);
+  return a;
+}
+const byId = (id) => { if (!id) return null; const m = B.migrate(id); return m.indexOf('tile:') === 0 ? tileAction(m) : ACTIONS.find((a) => a.id === m); };
 
-function barIds(app) { return app.services.store.get('quick-bar', B.DEFAULT_BAR).filter((id) => byId(id)); }
+/** The bar's ids (old ids migrated, duplicates and missing ones dropped). */
+function barIds(app) {
+  const out = [];
+  for (const id of app.services.store.get('quick-bar', B.DEFAULT_BAR) || []) { const m = B.migrate(id); if (!out.includes(m) && byId(m)) out.push(m); }
+  return out;
+}
 function togglePin(app, id) {
-  app.services.store.update('quick-bar', B.DEFAULT_BAR, (list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
+  const m = B.migrate(id);
+  const cur = barIds(app);
+  app.services.store.set('quick-bar', cur.includes(m) ? cur.filter((x) => x !== m) : cur.concat([m]));
   app.render();
 }
 
@@ -131,13 +160,25 @@ function view(app) {
       })()),
     B.GROUPS.map((g) => [
       h('div', { class: 'section-h' }, g),
-      h('div', { class: 'qt-grid pad' }, ACTIONS.filter((a) => a.group === g).map((a) => h('div', { class: 'qt-wrap' },
-        button(app, a, 'qt-tile'),
-        h('button', { class: 'qt-pin', 'aria-pressed': String(pinned.has(a.id)), title: pinned.has(a.id) ? 'Remove from bar' : 'Add to bar', onclick: () => togglePin(app, a.id) }, icon('star', 'sm')))))
-    ]));
+      h('div', { class: 'qt-grid pad' }, ACTIONS.filter((a) => a.group === g).map((a) => pinTile(app, a, pinned)))
+    ]),
+    // v0.29: presets live in their library; the bar holds the tile itself (one source, no copies here)
+    h('div', { class: 'section-h' }, 'Presets on your bar'),
+    (() => {
+      const tiles = [...pinned].filter((id) => id.indexOf('tile:') === 0).map(byId).filter(Boolean);
+      return h('div', { class: 'pad' },
+        tiles.length ? h('div', { class: 'qt-grid' }, tiles.map((a) => pinTile(app, a, pinned, a.group))) : null,
+        h('p', { class: 'why' }, 'Any preset can sit on the bar: open it in its library (Animate, Expressions, Layout…) and click ☆ next to Apply. ',
+          ['animate', 'expressions', 'layout', 'zoom'].map((id) => h('button', { class: 'btn ghost sm', 'data-key': `qb-lib-${id}`, onclick: () => app.go(id) }, require('./studio/sections').byId(id).label))));
+    })());
+}
+function pinTile(app, a, pinned, sub) {
+  return h('div', { class: 'qt-wrap', 'data-key': `qt-${a.id}` },
+    button(app, a, 'qt-tile'),
+    h('button', { class: 'qt-pin', 'aria-pressed': String(pinned.has(a.id)), 'aria-label': `${pinned.has(a.id) ? 'Remove' : 'Add'} ${a.label}${sub ? ` (${sub})` : ''} ${pinned.has(a.id) ? 'from' : 'to'} the bar`, title: pinned.has(a.id) ? 'Remove from bar' : 'Add to bar', onclick: () => togglePin(app, a.id) }, icon('star', 'sm')));
 }
 
 /** Run Everyday slot n (0-based) of the bar — Alt+1…0. */
 function runSlot(app, n) { const a = byId(barIds(app)[n]); if (!a) return false; run(app, a); return a; }
 
-module.exports = { runSlot, strip, popover, restPopover, view, ACTIONS, run, openOptions, button, fixedBox, byId, barIds };
+module.exports = { tileAction, togglePin, runSlot, strip, popover, restPopover, view, ACTIONS, run, openOptions, button, fixedBox, byId, barIds };

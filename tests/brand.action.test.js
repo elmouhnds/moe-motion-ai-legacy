@@ -115,7 +115,7 @@ test('brand backgrounds: gradients + palette become custom Backgrounds presets t
 });
 
 test('brand ease + active client: motion feel → the matching ease; brand actions resolve with or without a client', () => {
-  assert.equal(K.brandEaseRef(NILE), 'tile:animate/easeGentle');
+  assert.equal(K.brandEaseRef(NILE), 'quick:k_easy');
   assert.equal(K.brandEaseRef({ profile: { motion: { easing: 'snappy' } } }), 'tile:animate/easeSnappy');
   assert.equal(K.brandEaseRef({ profile: {} }), null);
   const A = require('../extension/app/ui/actions');

@@ -15,32 +15,14 @@
 const studio = require('./studio/sections');
 
 const SETS = {
-  keys: ['tile:animate/easeSmooth', 'tile:animate/easeSnappy', 'quick:curveExpo', 'quick:x_loopCycle', 'quick:reverse', 'quick:x_loopPingPong', 'quick:curveBack', 'tile:animate/stagger'],
-  text: ['quick:typewriter', 'tile:animate/riseIn', 'quick:inRL', 'quick:counter', 'tile:animate/fadeOut', 'nav:brand', 'nav:text', 'tile:animate/popIn'],
-  shapes: ['quick:trimDraw', 'quick:trimTravel', 'tile:animate/popIn', 'quick:x_wiggle', 'quick:trimErase', 'quick:k_repeat', 'tile:animate/spinIn', 'tile:animate/fadeIn'],
-  shapesMany: ['quick:trimDraw', 'tile:layout/grid', 'tile:layout/ring', 'quick:x_wiggle', 'quick:trimErase', 'quick:distH', 'tile:animate/cascadeIn', 'tile:animate/popIn'],
-  layers: ['tile:animate/cascadeIn', 'tile:layout/grid', 'tile:layout/ring', 'quick:parentNull', 'tile:animate/stagger', 'quick:distH', 'quick:alignV', 'tile:animate/fadeIn'],
-  layer: ['tile:animate/fadeIn', 'tile:animate/popIn', 'quick:inRL', 'quick:x_wiggle', 'tile:animate/fadeOut', 'quick:anchorB', 'quick:flipH', 'tile:zoom/punch'],
+  keys: ['tile:animate/easeSmooth', 'tile:animate/easeSnappy', 'quick:curveExpo', 'tile:expressions/x-loopCycle', 'quick:reverse', 'tile:expressions/x-loopPingPong', 'quick:curveBack', 'quick:k_stagger'],
+  text: ['quick:typewriter', 'tile:animate/riseIn', 'tile:animate/inRL', 'quick:counter', 'tile:animate/fadeOut', 'nav:brand', 'nav:text', 'tile:animate/popIn'],
+  shapes: ['tile:animate/trimDraw', 'tile:animate/trimTravel', 'tile:animate/popIn', 'tile:expressions/x-wiggle', 'tile:animate/trimErase', 'quick:k_repeat', 'tile:animate/spinIn', 'tile:animate/fadeIn'],
+  shapesMany: ['tile:animate/trimDraw', 'tile:layout/grid', 'tile:layout/ring', 'tile:expressions/x-wiggle', 'tile:animate/trimErase', 'quick:distH', 'tile:animate/cascadeIn', 'tile:animate/popIn'],
+  layers: ['tile:animate/cascadeIn', 'tile:layout/grid', 'tile:layout/ring', 'quick:parentNull', 'quick:k_stagger', 'quick:distH', 'quick:alignV', 'tile:animate/fadeIn'],
+  layer: ['tile:animate/fadeIn', 'tile:animate/popIn', 'tile:animate/inRL', 'tile:expressions/x-wiggle', 'tile:animate/fadeOut', 'quick:anchorB', 'quick:flipH', 'tile:zoom/punch'],
   none: ['cmd:search', 'nav:shapes', 'nav:backgrounds', 'tile:layout/g12', 'cmd:copilot', 'tile:layout/safe', 'nav:text', 'nav:kit']
 };
-/**
- * Smart Home (v0.15): what the focus card offers for each kind of selection — curated rows, each
- * action in one row only (docs/features/SMART_HOME.md). Same references as SETS (tile: / quick: /
- * nav: / cmd:), so readiness and running go through resolve() exactly like the pie.
- */
-const LINK = ['quick:parentNull', 'quick:k_parent', 'quick:k_delay', 'quick:k_stare'];
-const ARRANGE = ['tile:layout/grid', 'tile:layout/ring', 'tile:layout/honey', 'tile:layout/spiral', 'tile:layout/fan']; // distribute lives in the Align block right below
-const FOCUS = {
-  keys: [['Keys', ['quick:reverse', 'quick:mirror', 'quick:clone', 'quick:k_stagger', 'quick:k_trimKeys']], ['Loop', ['quick:x_loopCycle', 'quick:x_loopPingPong', 'quick:x_loopOffset', 'quick:x_loopInOut']]],
-  layer: [['Animate in', ['quick:inRL', 'quick:inLR', 'quick:inBT', 'tile:animate/fadeIn', 'tile:animate/popIn', 'tile:animate/riseIn', 'tile:animate/spinIn']], ['Animate out', ['quick:outRL', 'quick:outLR', 'tile:animate/fadeOut', 'tile:animate/popOut', 'tile:animate/scaleOut', 'tile:animate/spinOut']], ['Rig', ['quick:k_excite', 'quick:k_wiggle', 'quick:k_swing', 'quick:k_spin', 'quick:k_orbit', 'quick:x_float']]],
-  layers: [['Animate in, one after another', ['tile:animate/cascadeIn', 'tile:animate/cascadeFade', 'tile:animate/stagger', 'quick:inRL', 'tile:animate/popIn']], ['Arrange', ARRANGE], ['Link', LINK]],
-  text: [['Text in', ['quick:typewriter', 'tile:animate/riseIn', 'tile:animate/cascadeIn', 'tile:animate/fadeIn', 'quick:counter']], ['Text tools', ['nav:text', 'nav:brand']]],
-  shapes: [['Draw', ['quick:trimDraw', 'quick:trimErase', 'quick:trimTravel', 'quick:trimBoth']], ['Motion', ['quick:k_repeat', 'quick:x_wiggle', 'tile:animate/popIn', 'tile:animate/spinIn', 'quick:k_excite']]],
-  shapesMany: [['Draw', ['quick:trimDraw', 'quick:trimErase', 'quick:trimTravel', 'quick:trimBoth']], ['Arrange', ARRANGE], ['Animate in, one after another', ['tile:animate/cascadeIn', 'tile:animate/stagger', 'tile:animate/popIn']]],
-  none: [['Create', ['nav:shapes', 'nav:backgrounds', 'nav:text', 'tile:layout/g12', 'tile:layout/safe']], ['Find', ['cmd:search', 'cmd:copilot', 'nav:kit']]]
-};
-/** Which kit blocks are the focus for each kind of selection (the rest go under "More", folded). */
-const FOCUS_BLOCKS = { keys: ['ease'], layer: ['anchorAlign'], layers: ['anchorAlign'], text: ['anchorAlign'], shapes: ['anchorAlign'], shapesMany: ['anchorAlign'], none: [] };
 const CONTEXT_LABEL = { keys: 'Keyframes', text: 'Text layers', shapes: 'Shape layer', shapesMany: 'Several shapes', layers: 'Several layers', layer: 'One layer', none: 'Nothing selected' };
 
 /** What is selected, in one word (pure). */
@@ -97,17 +79,23 @@ function resolve(ref) {
   if (!ref) return null;
   const [kind, rest] = [ref.slice(0, ref.indexOf(':')), ref.slice(ref.indexOf(':') + 1)];
   if (kind === 'tile') {
+    const mq = require('../../features/quick/bar').migrate(ref);
+    if (mq !== ref) return resolve(mq.indexOf('tile:') === 0 ? mq : `quick:${mq}`); // v0.29: a removed copy → the one that stayed
     const [secId, tileId] = rest.split('/');
     const sec = studio.byId(secId);
     const tile = sec && (sec.tiles || []).find((t) => t.id === tileId);
     if (!tile) return null;
     const lib = () => require('./studio/library');
-    return { id: ref, label: tile.label, icon: TILE_ICON[tile.id] || (/^(ease|curve-)/.test(tile.id) ? 'easeCurve' : /^anchor-/.test(tile.id) ? 'anchor' : /^align-dist/.test(tile.id) ? 'distribute' : /^align/.test(tile.id) ? 'alignCenter' : /^clone/.test(tile.id) ? 'clone' : tile.thumb && tile.thumb.k === 'icon' ? tile.thumb.icon : sec.icon), where: sec.label,
+    // v0.29: expression presets show their own icon (they replaced the Quick Bar copies)
+    const xp = tile.tool === 'expressions.quick' && tile.args ? require('../../features/expressions/quick').PRESETS[tile.args.preset] : null;
+    return { id: ref, label: tile.label, icon: (xp && xp.icon) || TILE_ICON[tile.id] || (/^(ease|curve-)/.test(tile.id) ? 'easeCurve' : /^anchor-/.test(tile.id) ? 'anchor' : /^align-dist/.test(tile.id) ? 'distribute' : /^align/.test(tile.id) ? 'alignCenter' : /^clone/.test(tile.id) ? 'clone' : tile.thumb && tile.thumb.k === 'icon' ? tile.thumb.icon : sec.icon), where: sec.label,
       run: (app) => lib().applyNow(app, tile, sec), ready: (app) => lib().readiness(app, tile) };
   }
   if (kind === 'quick') {
     const q = require('./quickbar');
-    const a = q.ACTIONS.find((x) => x.id === rest);
+    const m = require('../../features/quick/bar').migrate(rest);
+    if (m.indexOf('tile:') === 0) return resolve(m); // v0.29: the action became its library tile
+    const a = q.ACTIONS.find((x) => x.id === m);
     if (!a) return null;
     const short = SHORT[a.id] || a.label.replace(/\s*\(.*\)\s*$/, '');
     return { id: ref, label: short, icon: a.icon || 'bolt', where: 'Quick Bar',
@@ -142,4 +130,4 @@ function catalog() {
   return out;
 }
 
-module.exports = { SETS, FOCUS, FOCUS_BLOCKS, CONTEXT_LABEL, profile, slotsFor, resolve, catalog, setBrandSource };
+module.exports = { SETS, CONTEXT_LABEL, profile, slotsFor, resolve, catalog, setBrandSource };

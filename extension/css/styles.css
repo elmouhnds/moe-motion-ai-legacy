@@ -82,65 +82,6 @@
 .app.layout-glass .ae-menu { border-radius: 16px; background: var(--bg-elev); backdrop-filter: blur(20px) saturate(150%); }
 .app.layout-glass .gl-crumb, .app.layout-glass .lay-crumb { background: none; border-color: transparent; }
 
-/* ================================================================== APPLE */
-:root:not([data-theme="light"]) .app.layout-apple {
-  --bg: #1c1c1e; --bg-raised: #2c2c2e; --bg-sunken: #1c1c1e; --bg-elev: #2c2c2e; --bg-hover: rgba(255, 255, 255, 0.06); --bg-active: rgba(255, 255, 255, 0.1);
-  --line: rgba(84, 84, 88, 0.6); --line-strong: rgba(120, 120, 128, 0.6);
-  --text: #ffffff; --text-2: #ebebf5; --text-3: #a1a1a8; --ap-fill: rgba(118, 118, 128, 0.24); --ap-card: #2c2c2e;
-}
-:root[data-theme="light"] .app.layout-apple {
-  --bg: #f2f2f7; --bg-raised: #ffffff; --bg-sunken: #f2f2f7; --bg-elev: #ffffff; --bg-hover: rgba(0, 0, 0, 0.04); --bg-active: rgba(0, 0, 0, 0.07);
-  --line: rgba(60, 60, 67, 0.18); --line-strong: rgba(60, 60, 67, 0.29);
-  --text: #000000; --text-2: #3c3c43; --text-3: #6c6c70; --ap-fill: rgba(118, 118, 128, 0.12); --ap-card: #ffffff;
-}
-.app.layout-apple { --r: 10px; --r-lg: 12px; --font: -apple-system, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; font-family: var(--font); background: var(--bg); }
-.app.layout-apple .main { background: var(--bg); }
-.app.layout-apple .hdr, .app.layout-apple .ctx, .app.layout-apple .qbar, .app.layout-apple .ae-searchrow, .app.layout-apple .copilot { background: var(--bg); border-color: transparent; }
-.app.layout-apple .hdr .title { font-size: 13px; font-weight: 600; }
-.app.layout-apple .ae-searchrow { padding: 2px 12px 8px; }
-.app.layout-apple .ae-search { height: 32px; border: 0; border-radius: 10px; background: var(--ap-fill); font-size: 14px; }
-.ap-page { padding: 0 0 18px; }
-.ap-large { display: flex; align-items: center; gap: 10px; margin: 4px 16px 14px; font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
-.ap-nav { display: flex; align-items: center; height: 34px; padding: 0 8px; }
-.ap-back { display: inline-flex; align-items: center; gap: 2px; height: 30px; padding: 0 6px; border: 0; border-radius: 8px; background: none; color: var(--accent); font: inherit; font-size: 15px; cursor: pointer; }
-.ap-back:hover { background: var(--bg-hover); }
-.ap-back-i { transform: rotate(180deg); width: 14px; height: 14px; }
-.ap-sec { margin: 0 12px 20px; }
-.ap-sec-h { display: flex; align-items: center; gap: 6px; padding: 0 14px 6px; color: var(--text-3); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.02em; }
-.ap-sec-f { padding: 6px 14px 0; color: var(--text-3); font-size: 11.5px; }
-.ap-fit { padding: 0 6px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 10px; text-transform: none; letter-spacing: 0; }
-.ap-more { display: inline-flex; align-items: center; gap: 2px; border: 0; background: none; color: var(--accent); font: inherit; font-size: 12px; text-transform: none; letter-spacing: 0; cursor: pointer; }
-.ap-card { border-radius: 12px; background: var(--ap-card); overflow: hidden; }
-.ap-row { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 6px 14px 6px 12px; border: 0; background: none; color: var(--text); font: inherit; font-size: 14px; text-align: left; cursor: pointer; transition: background var(--t); }
-.ap-row:not(:last-child)::after { content: ""; position: absolute; left: 52px; right: 0; bottom: 0; height: 1px; background: var(--line); transform: scaleY(0.5); transform-origin: bottom; }
-.ap-row:hover { background: var(--bg-hover); }
-.ap-row.off { opacity: 0.45; }
-.ap-row.strong .ap-row-l { font-weight: 600; }
-.ap-row-t { display: flex; flex-direction: column; min-width: 0; }
-.ap-row-l { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ap-row-s { color: var(--text-3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ap-chev { color: var(--text-3); opacity: 0.7; }
-.ap-trail { color: var(--text-3); font-size: 13px; }
-.ap-sq { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 7px; color: #fff; flex: none; }
-.ap-sq .svg-i { color: #fff; }
-.ap-sq.lg { width: 34px; height: 34px; border-radius: 9px; }
-.ap-sq.lg .svg-i { width: 20px; height: 20px; }
-.ap-heros { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
-.ap-hero { display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; border: 0; border-radius: 10px; background: var(--tint, var(--accent)); color: #fff; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: filter var(--t); }
-.ap-hero .svg-i { color: #fff; }
-.ap-hero:hover { filter: brightness(1.08); }
-.ap-hero.off { opacity: 0.45; }
-.ap-inner { padding: 10px 12px; }
-.ap-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px; }
-.ap-sec.shelf .ae-tiles { display: flex; gap: 8px; padding: 10px 12px; overflow-x: auto; scrollbar-width: thin; }
-.ap-sec.shelf .ae-tile { flex: 0 0 104px; border-radius: 10px; border: 0; background: var(--ap-fill); }
-.ap-inner > .gp { margin-bottom: 8px; }
-.app.layout-apple .ae-act, .app.layout-apple .ae-gb .kit-tool, .app.layout-apple .ap-inner .kit-tool { border: 0; background: var(--ap-fill); box-shadow: none; border-radius: 8px; }
-.app.layout-apple .ae-chip { border: 0; background: var(--ap-fill); color: var(--text-2); }
-.app.layout-apple .kit-graph, .app.layout-apple .kit-ib, .app.layout-apple .kit-seg, .app.layout-apple .kit-vfield, .app.layout-apple .kit-num { border: 0; background: var(--ap-fill); }
-.app.layout-apple .kit-seg button[aria-pressed="true"] { background: var(--ap-card); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
-.app.layout-apple .ae-menu { border-radius: 12px; }
-
 /* ================================================================== BENTO */
 .app.layout-bento {
   --bg: #0b0b0d; --bg-raised: #17171c; --bg-sunken: #0f0f12; --bg-elev: #1d1d23; --bg-hover: rgba(255, 255, 255, 0.05); --bg-active: rgba(255, 255, 255, 0.09);
@@ -204,9 +145,6 @@
 .app.layout-bento .lay-crumb { background: var(--bg); border-color: var(--line); }
 .app.kit-narrow.layout-bento .b-grid, .app.kit-tiny.layout-bento .b-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 /* kit blocks inside an Apple card / Glass card: the card is the frame and the title */
-.ap-inner .kit-block { border: 0; background: none; padding: 0; margin: 0; }
-.ap-inner .kit-block > .kit-h > .kit-fold, .ap-inner .kit-block.ae-kit > .kit-h { display: none; }
-.ap-inner .kit-block > .kit-h { margin-bottom: 6px; }
 .b-ix.on { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
 
 /* ================================================================== MOE (v0.25): every shortcut in a sidebar */
@@ -301,3 +239,7 @@
 .app.layout-glass .assistant { bottom: 72px; }
 .app.layout-glass .gl-tab { font-size: 10.5px; }
 .app.layout-glass:not(.kit-wide) .gl-kbd { left: 6px; }
+/* v0.29: anchor in NOW = a 2×2 cell, not a full-width card */
+.b-tall { grid-row: span 2; }
+.bt-anchor .kit-anchor-body { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.bt-anchor .kit-block > .kit-h { margin-bottom: 4px; }

@@ -238,7 +238,8 @@ test('v0.10 wiring: the Motion Kit owns the ease / anchor / align / kit tools; p
   assert.equal(S.byId('curves'), null, 'v0.9 tile section removed');
   assert.equal(S.byId('transform'), null, 'v0.9 tile section removed');
   const QB = require('../extension/features/quick/bar');
-  for (const id of QB.KIT_TOOLS) { const a = QB.ACTIONS.find((x) => x.id === id); assert.ok(a, id); assert.ok(ids.has(a.tool), `${id} → ${a.tool}`); }
+  const qb = require('../extension/app/ui/quickbar');
+  for (const id of QB.KIT_TOOLS) { const a = qb.byId(id); assert.ok(a, id); assert.ok(ids.has(a.tool), `${id} → ${a.tool}`); }
   const actions = require('../extension/app/ui/actions');
   for (const ref of ['quick:curveExpo', 'quick:anchorB', 'quick:distH', 'quick:k_repeat', 'nav:kit']) assert.ok(actions.resolve(ref), ref);
 });

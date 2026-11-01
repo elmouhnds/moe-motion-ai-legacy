@@ -227,6 +227,16 @@ function actionBar(app, section, tile, tool) {
     h('div', { class: 'st-act-text' },
       h('div', { class: 'st-act-name' }, tile.label),
       h('div', { class: `st-act-hint ${rd.ok ? '' : 'warn'}`, title: rd.hint }, rd.hint || tool.name)),
+    // v0.29: any built-in preset can sit on the Quick Bar — the bar holds this tile itself (one source)
+    (() => {
+      if (tile.user || !section || !tile.tool) return null;
+      const qb = require('../quickbar');
+      const ref = `tile:${section.id}/${tile.id}`;
+      if (!qb.tileAction(ref)) return null;
+      const on = qb.barIds(app).includes(ref);
+      return h('button', { class: `btn ghost st-qbpin ${on ? 'on' : ''}`, 'data-key': `qbpin-${tile.id}`, 'aria-pressed': String(on), 'aria-label': on ? `Remove ${tile.label} from the Quick Bar` : `Add ${tile.label} to the Quick Bar`,
+        title: on ? 'On your Quick Bar — click to remove' : 'Add this preset to your Quick Bar', onclick: () => { qb.togglePin(app, ref); app.toast(on ? `${tile.label} removed from the Quick Bar` : `${tile.label} added to the Quick Bar`, 2200, 'ok'); } }, icon('star', 'sm'));
+    })(),
     s.studioWide ? null : h('button', { class: 'btn ghost', title: 'Show the settings of this tile', onclick: () => { const el = document.querySelector('.st-inspector'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } }, icon('sliders', 'sm'), h('span', { class: 'label' }, 'Settings')),
     h('button', { class: 'btn primary', disabled: !rd.ok || !!s.running, title: rd.ok ? `${(tool.ui && tool.ui.primaryLabel) || 'Apply'} (${tile.label})` : rd.hint, onclick: () => applyNow(app, tile, section, args) },
       running ? h('span', { class: 'spin' }) : icon('play', 'sm'), (tool.ui && tool.ui.primaryLabel) || 'Apply'));

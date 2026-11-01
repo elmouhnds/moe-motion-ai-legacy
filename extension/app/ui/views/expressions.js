@@ -48,13 +48,7 @@ function render(app) {
       : h('div', { class: 'notice' }, s.ctx && s.ctx.comp ? 'Select a property (e.g. press P, S, R or T on a layer) to target expressions.' : 'Open a composition and select a property.'),
     t && t.expressionError ? h('div', { class: 'pad' }, h('div', { class: 'engine-err' }, t.expressionError)) : null,
 
-    h('div', { class: 'section-h' }, icon('bolt', 'sm'), 'One-click'),
-    h('div', { class: 'qt-grid pad xq' }, quickbar.ACTIONS.filter((a) => a.group === 'Expressions').map((a) => h('button', {
-      class: 'qt-tile', title: `${a.label} — on selected properties, or the natural property of selected layers.\nRight-click: options (amounts, live controls)`, disabled: !!s.running,
-      onclick: (e) => (e.altKey ? quickbar.openOptions(app, a) : quickbar.run(app, a)),
-      oncontextmenu: (e) => { e.preventDefault(); quickbar.openOptions(app, a); }
-    }, icon(a.icon), h('span', { class: 'qt-label' }, a.label)))),
-
+    // v0.29: the one-click expression grid was a copy of the Library tab's tiles — removed (one place per preset)
     h('div', { class: 'section-h' }, 'Editor'),
     h('div', { class: 'pad' }, editor,
       h('div', { class: 'actions' },

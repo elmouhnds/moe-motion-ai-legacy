@@ -217,7 +217,7 @@ test('UI sources: one floating assistant in every style, Alt slots, stage jumps,
   const fs = require('fs');
   const path = require('path');
   const shell = fs.readFileSync(path.join(__dirname, '../extension/app/ui/shell.js'), 'utf8');
-  assert.equal((shell.match(/require\('\.\/assistant'\)\.render\(app\)/g) || []).length, 2, 'both renders show the assistant');
+  assert.equal((shell.match(/require\('\.\/assistant'\)\.render\(app\)/g) || []).length, 1, 'the one style render shows the assistant (v0.29)');
   assert.ok(!/copilot\.render\(app\)/.test(shell), 'the old bottom bar is gone');
   assert.match(shell, /quickbar\.runSlot\(app, n\)/);
   assert.match(shell, /e\.code === 'Backquote'/);

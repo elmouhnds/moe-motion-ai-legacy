@@ -96,7 +96,7 @@ test('Expressions: 33 presets, all tagged, tiles carry their own numbers, every 
 
 test('NEW badges only mark existing tiles; Home / Shapes are sidebar views', () => {
   const all = S.SECTIONS.flatMap((s) => s.tiles || []);
-  assert.ok(all.filter((t) => t.isNew).length >= 29);
+  assert.ok(all.filter((t) => t.isNew).length >= 28); // v0.29: Gentle Ease left (a copy of Easy Ease)
   assert.equal(S.byId('home').kind, 'view');
   assert.equal(S.byId('shapes').kind, 'view');
   assert.equal(S.sectionOf(reg.get('design.insertShape')), 'shapes');

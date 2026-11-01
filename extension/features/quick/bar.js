@@ -23,25 +23,7 @@ const ACTIONS = [
   A('reverse', 'quick.reverseKeys', {}, 'reverse', 'Reverse Keyframes', 'Keys'),
   A('mirror', 'quick.mirrorKeys', { mode: 'mirror' }, 'mirror', 'Mirror Keys at Playhead', 'Keys'),
   A('clone', 'quick.mirrorKeys', { mode: 'clone' }, 'copy', 'Clone Keys at Playhead', 'Keys'),
-  A('ease', 'motion.smartEase', {}, 'ease', 'Smart Ease', 'Keys'),
 
-  A('inRL', 'quick.animate', { kind: 'moveRL', dir: 'in' }, 'moveRL', 'Slide In ← (from right)', 'Animate'),
-  A('inLR', 'quick.animate', { kind: 'moveLR', dir: 'in' }, 'moveLR', 'Slide In → (from left)', 'Animate'),
-  A('inTB', 'quick.animate', { kind: 'moveTB', dir: 'in' }, 'moveTB', 'Slide In ↓ (from top)', 'Animate'),
-  A('inBT', 'quick.animate', { kind: 'moveBT', dir: 'in' }, 'moveBT', 'Slide In ↑ (from bottom)', 'Animate'),
-  A('outRL', 'quick.animate', { kind: 'moveRL', dir: 'out' }, 'moveRL', 'Slide Out ← (to left)', 'Animate'),
-  A('outLR', 'quick.animate', { kind: 'moveLR', dir: 'out' }, 'moveLR', 'Slide Out → (to right)', 'Animate'),
-  A('outTB', 'quick.animate', { kind: 'moveTB', dir: 'out' }, 'moveTB', 'Slide Out ↓ (to bottom)', 'Animate'),
-  A('outBT', 'quick.animate', { kind: 'moveBT', dir: 'out' }, 'moveBT', 'Slide Out ↑ (to top)', 'Animate'),
-  A('fadeIn', 'quick.animate', { kind: 'fade', dir: 'in' }, 'fadeIn', 'Fade In', 'Animate'),
-  A('fadeOut', 'quick.animate', { kind: 'fade', dir: 'out' }, 'fadeOut', 'Fade Out', 'Animate'),
-  A('scaleUp', 'quick.animate', { kind: 'scale', dir: 'in', overshoot: true }, 'scaleUp', 'Scale Up (pop in)', 'Animate'),
-  A('scaleDown', 'quick.animate', { kind: 'scale', dir: 'out' }, 'scaleDown', 'Scale Down (out)', 'Animate'),
-  A('spinIn', 'quick.animate', { kind: 'spin', dir: 'in' }, 'spin', 'Spin In', 'Animate'),
-  A('trimDraw', 'quick.trimPaths', { mode: 'draw' }, 'trim', 'Trim: Draw On', 'Animate'),
-  A('trimErase', 'quick.trimPaths', { mode: 'erase' }, 'scaleDown', 'Trim: Erase', 'Animate'),
-  A('trimTravel', 'quick.trimPaths', { mode: 'travel' }, 'xOffset', 'Trim: Travel (start + end)', 'Animate'),
-  A('trimBoth', 'quick.trimPaths', { mode: 'drawErase' }, 'mirror', 'Trim: Draw then Erase', 'Animate'),
 
   // v0.9 Anchor & Align (Motion-4-style one-clickers)
   A('anchorTL', 'transform.anchor', { point: 'tl' }, 'anchor', 'Anchor → Top Left', 'Align'),
@@ -63,10 +45,6 @@ const ACTIONS = [
   A('k_parent', 'kit.parent', {}, 'kChain', 'Parent chain (Alt: reverse)', 'Kit'),
   A('k_excite', 'expressions.quick', { preset: 'inertia', live: true }, 'kExcite', 'Excite (overshoot)', 'Kit'),
   A('k_jump', 'expressions.quick', { preset: 'bounceBack', live: true }, 'xBounceLand', 'Jump (bounce)', 'Kit'),
-  A('k_orbit', 'expressions.quick', { preset: 'orbit', live: true }, 'xOrbit', 'Orbit', 'Kit'),
-  A('k_spin', 'expressions.quick', { preset: 'timeRotate', live: true }, 'xSpin', 'Spin', 'Kit'),
-  A('k_swing', 'expressions.quick', { preset: 'swing', live: true }, 'xSwing', 'Swing', 'Kit'),
-  A('k_wiggle', 'expressions.quick', { preset: 'wiggle', live: true }, 'xWiggle', 'Wiggle', 'Kit'),
   A('k_stare', 'kit.stare', {}, 'kStare', 'Stare (face a layer)', 'Kit'),
   A('k_delay', 'kit.delay', { mode: 'spring' }, 'kDelay', 'Delay (MoGraph)', 'Kit'),
   A('k_stagger', 'motion.stagger', {}, 'stagger', 'Stagger layers', 'Kit'),
@@ -76,18 +54,35 @@ const ACTIONS = [
   A('k_trash', 'kit.trash', {}, 'trash', 'Trash MOE rigs', 'Kit'),
 
   A('typewriter', 'quick.typewriter', {}, 'typewriter', 'Typewriter', 'Text'),
-  A('counter', 'quick.counter', {}, 'counter', 'Number Counter', 'Text'),
-
-  ...['wiggle', 'wiggleX', 'wiggleY', 'jitter', 'blink', 'flicker', 'autoFade', 'loopCycle', 'loopPingPong', 'loopOffset', 'loopInOut', 'timeRotate', 'pendulum', 'pulse', 'float', 'inertia', 'posterize']
-    .map((p) => A(`x_${p}`, 'expressions.quick', { preset: p }, null, null, 'Expressions'))
+  A('counter', 'quick.counter', {}, 'counter', 'Number Counter', 'Text')
 ];
+
+/**
+ * v0.29 (docs/features/FEWER_CLEARER.md): one source per preset. These Quick Bar actions were copies of
+ * library tiles (Slide In / Out, Fade, Pop, Spin, Draw On, every expression) or of another action (the
+ * Motion Kit's Wiggle / Orbit / Swing / Spin = the expression presets with live sliders; Smart Ease =
+ * Easy Ease). The bar now holds the tile itself ("tile:<section>/<id>"); old ids in a saved bar, a pin
+ * or a pie still work through this map.
+ */
+const MIGRATE = {
+  inRL: 'tile:animate/inRL', inLR: 'tile:animate/inLR', inTB: 'tile:animate/inTB', inBT: 'tile:animate/inBT',
+  outRL: 'tile:animate/outRL', outLR: 'tile:animate/outLR', outTB: 'tile:animate/outTB', outBT: 'tile:animate/outBT',
+  fadeIn: 'tile:animate/fadeIn', fadeOut: 'tile:animate/fadeOut', scaleUp: 'tile:animate/popIn', scaleDown: 'tile:animate/scaleOut', spinIn: 'tile:animate/spinIn',
+  trimDraw: 'tile:animate/trimDraw', trimErase: 'tile:animate/trimErase', trimTravel: 'tile:animate/trimTravel', trimBoth: 'tile:animate/trimBoth',
+  ease: 'k_easy', k_wiggle: 'tile:expressions/x-wiggle', k_orbit: 'tile:expressions/x-orbit', k_swing: 'tile:expressions/x-swing', k_spin: 'tile:expressions/x-timeRotate'
+};
+['wiggle', 'wiggleX', 'wiggleY', 'jitter', 'blink', 'flicker', 'autoFade', 'loopCycle', 'loopPingPong', 'loopOffset', 'loopInOut', 'timeRotate', 'pendulum', 'pulse', 'float', 'inertia', 'posterize']
+  .forEach((p) => { MIGRATE[`x_${p}`] = `tile:expressions/x-${p}`; });
+// …and the other way: four "Motion presets" tiles were copies of Kit actions (keyframe tools, not presets)
+Object.assign(MIGRATE, { 'tile:animate/easeGentle': 'k_easy', 'tile:animate/stagger': 'k_stagger', 'tile:animate/reverse': 'reverse', 'tile:animate/mirror': 'mirror' });
+const migrate = (id) => MIGRATE[id] || id;
 
 // v0.28 (docs/features/WORKFLOW_HOME.md): ordered by how often a motion designer needs it, not by menu.
 // The first ten are the Everyday slots (Alt+1…0, workflow.EVERYDAY); housekeeping (Purge, Open Folder) is
 // no longer in the default bar — it lives in Deliver › Project and in search.
-const DEFAULT_BAR = ['k_easy', 'curveExpo', 'centerAnchor', 'parentNull', 'precompose', 'k_stagger', 'x_loopCycle', 'x_wiggle', 'reverse', 'dupComp',
-  'trimDraw', 'fadeIn', 'fadeOut', 'inBT', 'scaleUp', 'mirror', 'flipH', 'separate', 'selectSame', 'typewriter', 'x_loopPingPong', 'revealProject'];
-const GROUPS = ['Project', 'Layer', 'Kit', 'Align', 'Keys', 'Animate', 'Text', 'Expressions'];
+const DEFAULT_BAR = ['k_easy', 'curveExpo', 'centerAnchor', 'parentNull', 'precompose', 'k_stagger', 'tile:expressions/x-loopCycle', 'tile:expressions/x-wiggle', 'reverse', 'dupComp',
+  'tile:animate/trimDraw', 'tile:animate/fadeIn', 'tile:animate/fadeOut', 'tile:animate/inBT', 'tile:animate/popIn', 'mirror', 'flipH', 'separate', 'selectSame', 'typewriter', 'tile:expressions/x-loopPingPong', 'revealProject'];
+const GROUPS = ['Project', 'Layer', 'Kit', 'Align', 'Keys', 'Text'];
 
 /** Fill icon/label for expression actions from the expression library (kit actions keep their own). */
 function resolve(PRESETS) {
@@ -101,17 +96,19 @@ function resolve(PRESETS) {
   });
 }
 
-/* Motion Kit layout: the tool grid (Motion 4 Toolbox order: layer helpers, rigs, keys, looks, clean-up). */
-const KIT_TOOLS = ['parentNull', 'k_parent', 'k_excite', 'k_delay', 'k_jump', 'k_orbit', 'k_spin', 'k_swing', 'k_wiggle', 'k_stare', 'clone', 'reverse', 'k_stagger', 'k_trimKeys', 'separate', 'trimDraw', 'k_repeat', 'k_vignette', 'k_trash'];
+/* Motion Kit layout: the tool grid (Motion 4 Toolbox order: layer helpers, rigs, keys, looks, clean-up).
+   v0.29: Wiggle / Orbit / Swing / Spin left the rigs — they are the expression presets (Expressions,
+   with "Live controls" in their options); the rigs keep what only they do. */
+const KIT_TOOLS = ['parentNull', 'k_parent', 'k_excite', 'k_delay', 'k_jump', 'k_stare', 'clone', 'reverse', 'k_stagger', 'k_trimKeys', 'separate', 'tile:animate/trimDraw', 'k_repeat', 'k_vignette', 'k_trash'];
 /* v0.14: the Toolbox shows the same tools grouped by what they do. */
 const KIT_GROUPS = [
-  ['Motion rigs', ['k_excite', 'k_delay', 'k_jump', 'k_orbit', 'k_spin', 'k_swing', 'k_wiggle', 'k_stare', 'k_repeat']],
-  ['Keyframes', ['clone', 'reverse', 'k_stagger', 'k_trimKeys', 'trimDraw']],
+  ['Motion rigs', ['k_excite', 'k_delay', 'k_jump', 'k_stare', 'k_repeat']],
+  ['Keyframes', ['clone', 'reverse', 'k_stagger', 'k_trimKeys', 'tile:animate/trimDraw']],
   ['Layers', ['parentNull', 'k_parent', 'separate', 'k_vignette']],
   ['Clean up', ['k_trash']]
 ];
 /* Alt-click variants (Motion 4 / Flow convention: the modifier gives the second most common intent). */
 const KIT_ALT = { k_parent: { reverse: true }, clone: { mode: 'mirror' }, k_delay: { mode: 'blend' } };
-const KIT_LABEL = { parentNull: 'Null', k_parent: 'Parent', k_excite: 'Excite', k_delay: 'Delay', k_jump: 'Jump', k_orbit: 'Orbit', k_spin: 'Spin', k_swing: 'Swing', k_wiggle: 'Wiggle', k_stare: 'Stare', clone: 'Clone keys', reverse: 'Reverse', k_stagger: 'Stagger', k_trimKeys: 'Trim keys', separate: 'Separate', trimDraw: 'Trim path', k_repeat: 'Repeat', k_vignette: 'Vignette', k_trash: 'Trash' };
+const KIT_LABEL = { parentNull: 'Null', k_parent: 'Parent', k_excite: 'Excite', k_delay: 'Delay', k_jump: 'Jump', k_stare: 'Stare', clone: 'Clone keys', reverse: 'Reverse', k_stagger: 'Stagger', k_trimKeys: 'Trim keys', separate: 'Separate', 'tile:animate/trimDraw': 'Draw On', k_repeat: 'Repeat', k_vignette: 'Vignette', k_trash: 'Trash' };
 
-module.exports = { ACTIONS, DEFAULT_BAR, GROUPS, resolve, KIT_TOOLS, KIT_GROUPS, KIT_ALT, KIT_LABEL };
+module.exports = { MIGRATE, migrate, ACTIONS, DEFAULT_BAR, GROUPS, resolve, KIT_TOOLS, KIT_GROUPS, KIT_ALT, KIT_LABEL };

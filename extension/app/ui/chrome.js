@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['check', 'Fewer, clearer', 'One place per tool: the Quick Bar has 41 own actions and holds any preset as the tile itself (☆ next to Apply in a library); the Motion Kit rigs keep only what only they do; the anchor point takes half the space in NOW; the old styles are gone — Bento, Glass and MOE stay. Your saved bar, pins and pie keep working.'],
   ['sparkles', 'Organised the way you work', 'Home is now arranged by how often a motion designer reaches for things: the ten everyday tools first (Quick Bar, Alt+1…0), NOW for your selection, Power tools as big cards that explain themselves until you know them, then the stages Animate · Arrange · Design · Finish · Deliver — rare groups wait behind "More in…". Ctrl+1…5 jumps to a stage.'],
   ['sparkles', 'The Assistant — bottom-right corner', 'Press ` (or click the round button): ask anything about After Effects in Arabic or English, or describe a change — Claude answers and plans it with MOE tools, you approve, each step is verified. No key or offline? It still finds the right MOE tool from your words. A small number on the button = suggestions for your selection.'],
   ['layout', 'Knows your comp and your project', 'NOW shows the comp\'s shape and size (9:16 Reels, 1:1 feed, 16:9 YouTube, 4K…) and suggests the matching safe area. Each AE project remembers its client: switch projects and the client follows.'],

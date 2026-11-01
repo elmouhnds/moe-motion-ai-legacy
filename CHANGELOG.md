@@ -2,6 +2,20 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.29.0] — 2026-11-01 — Fewer, clearer: one place per tool
+The owner asked what could go in exchange for an easier organisation (the anchor point as an example). The answer: the copies, not the tools. Details: `docs/features/FEWER_CLEARER.md`.
+### Removed
+- **Copies**: 39 Quick Bar actions that were copies of library tiles or of each other (Slide In / Out, Fade, Pop, Scale, Spin, Draw On, 17 expressions, Smart Ease, the Kit's Wiggle / Orbit / Swing / Spin) → 80 → 41 Quick actions; 4 Motion-preset tiles that copied Kit actions (Reverse, Mirror, Stagger, Gentle Ease); the Expressions page's "One-click" grid (a copy of its Library tab).
+- **Six retired styles** (Classic, Apple, Sidebar, Hub, Command Bar, Workspace), the Sidebar's Smart Home, Settings › Sidebar and the old Copilot bar — about 1,360 lines. A panel that had one opens in Bento (one notice).
+### Changed
+- The Quick Bar can hold any library preset **as the tile itself** (☆ next to Apply in the library); the default bar's presets are tiles. Old ids in saved bars, pins, My pie and Recent migrate automatically (`bar.MIGRATE`).
+- Motion Kit › Motion rigs: Excite, Delay, Jump, Stare, Repeat (Orbit / Spin / Swing / Wiggle are the expression presets, with Live controls in their options).
+- NOW: the Anchor Point is half width (2×2) for single layers; Finish › Keying shows Key Setup (Generate on Green stays in the Compositing library and search).
+### Fixed (found by the v0.29 audit)
+- On library pages the floating assistant button covered the sticky Apply button → it sits above the Apply bar. Ctrl+4 lit the stage above Finish after the jump → the stage you jump to stays lit while it is on screen.
+### Tests
+- `tests/fewer.test.js` (5): no Quick action copies a tile or another action; every old id migrates and resolves (bars dedupe old + new ids, pin / unpin from the library); tile buttons carry the tile's tool, numbers, label, icon; rigs and Keying; three styles, the removed code is gone. Updated layouts / kit / transform / brand tests. **Mock / preview, not After Effects.**
+
 ## [0.28.0] — 2026-10-31 — Organised the way you work + the Assistant
 The owner: the tools were arranged "like a bot that memorised a menu"; he asked for an organisation built on how a motion artist with years in AE really works — big explained cards for important things, everyday tools bigger and first, secondary and rare ones treated as such, fast access, useful shortcuts, an AI agent inside AE as a floating assistant, and many projects of different shapes and sizes. Design: `docs/features/WORKFLOW_HOME.md`, `docs/features/ASSISTANT.md`.
 ### Added

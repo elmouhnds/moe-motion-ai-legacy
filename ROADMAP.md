@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.34 — Fewer, clearer ✅ (v0.29.0)
+- One place per tool: Quick Bar 80 → 41 own actions (presets are the tiles themselves), rigs without expression copies, 4 duplicate preset tiles out, retired styles and Smart Home removed (~1,360 lines), anchor half width in NOW.
+- Next: measure real use (local, opt-in counts) to decide the next things to fold away.
+
 ## M1.33 — Organised the way you work + Assistant ✅ (v0.28.0)
 - Home by distance = frequency: Everyday (Alt+1…0) → NOW + format chip → Power tools (explained until learned) → stages Animate · Arrange · Design · Finish · Deliver (rare groups behind *More*) → search.
 - Floating Assistant: ask + do (Claude answers and plans with MOE tools, approval + verify), offline word → tool matching (Arabic / English), quiet suggestions.

@@ -96,11 +96,13 @@ function now(app, s, kind) {
     h('div', { class: 'b-now-h' }, h('span', { class: 'b-kick' }, 'NOW'), h('b', {}, !c ? 'Reading After Effects…' : !c.comp ? 'No active composition' : A.CONTEXT_LABEL[kind]),
       c && c.comp ? h('span', { class: 'b-now-s' }, `${c.comp.name} · ${(c.layers || []).length} selected`) : null,
       c && c.comp ? formatChip(require('./workflow').formatOf(c.comp)) : null),
-    h('div', { class: 'b-grid' }, block ? wide('now-block', block) : null,
+    // v0.29: the anchor point is a one-second action — half the width (2×2 cell), the actions fill the rest;
+    // ease (keys) and align (several layers) are real working surfaces and keep the full width
+    h('div', { class: 'b-grid' }, block ? (nb === 'anchor' ? h('div', { class: 'bt b-2x1 b-tall bt-block bt-anchor', 'data-key': 'now-block' }, block) : wide('now-block', block)) : null,
       // your pinned tiles first (same size as primary), then the best actions for the selection — no duplicates
       mine.map(([r, a]) => tile(app, a, '2x1', null, r, 'pinned')),
       brandNow(app, kind),
-      acts.filter(([r]) => !mineRefs.includes(r)).map(([r, a], i) => tile(app, a, i < 2 && !mine.length ? '2x1' : '1x1', null, r))));
+      acts.filter(([r]) => !mineRefs.includes(r)).map(([r, a], i) => tile(app, a, i < 2 && !mine.length && nb !== 'anchor' ? '2x1' : '1x1', null, r))));
 }
 
 function groupTiles(app, t, g, kind, skipBlock) {
@@ -179,23 +181,33 @@ function stageSection(app, st, kind, skip) {
 }
 
 /* scroll spy: the index chip follows the section you are reading (one listener, rAF-throttled, no host calls) */
-let spyApp = null, spyQueued = false, spyHoldUntil = 0;
+let spyApp = null, spyQueued = false, spyHoldUntil = 0, spyJump = null;
 function spy() {
   spyQueued = false;
   const app = spyApp; if (!app) return;
   // after a jump (chip / Ctrl+1…5) the chip you chose stays lit while the page scrolls there
   if (Date.now() < spyHoldUntil) return;
+  // a stage you jumped to stays lit while it is on screen — near the end of the page it cannot reach the top
+  if (spyJump) {
+    const el = document.querySelector(`[data-key="bs-${spyJump}"]`);
+    const cr = document.querySelector('.app.layout-bento .content');
+    if (el && cr) { const r = el.getBoundingClientRect(), b = cr.getBoundingClientRect(); if (r.top < b.bottom - 40 && r.bottom > b.top) return; }
+    spyJump = null;
+  }
   const c = document.querySelector('.app.layout-bento .content'); if (!c) return;
   const top = c.getBoundingClientRect().top + 60;
   let cur = null;
   for (const st of require('./workflow').STAGES) { const el = c.querySelector(`[data-key="bs-${st.id}"]`); if (el && el.getBoundingClientRect().top <= top) cur = st.id; }
   if (cur !== (app.state.get().bIx || null)) app.state.set({ bIx: cur });
 }
+// your own scrolling (wheel, touch, keys) ends a jump: the chip follows what you read again
+if (typeof document !== 'undefined' && document.addEventListener) ['wheel', 'touchmove', 'keydown'].forEach((t) => document.addEventListener(t, () => { spyJump = null; }, { passive: true, capture: true }));
 if (typeof document !== 'undefined' && document.addEventListener) document.addEventListener('scroll', (e) => { if (!spyQueued && e.target && e.target.classList && e.target.classList.contains('content')) { spyQueued = true; requestAnimationFrame(spy); } }, true);
 
 /** Jump to a stage (index chips and Ctrl+1…5): unfold it and scroll it to the top. */
 function jumpTo(app, id) {
   spyHoldUntil = Date.now() + 1200;
+  setTimeout(() => { spyJump = id; }, 0); // after the key that asked for the jump
   app.state.set({ bIx: id, aeQ: '' });
   if (app.state.get().view !== 'home') app.go('home');
   if (folded(app, id)) toggleFold(app, id);

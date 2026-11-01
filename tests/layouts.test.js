@@ -12,15 +12,17 @@ const studio = require('../extension/app/ui/studio/sections');
 
 const SECTIONS = [...new Set(studio.WORKSPACES.flatMap((w) => w.items))];
 
-test('layouts: Bento is the default (v0.25); retired layouts still render if a user had picked one', () => {
-  assert.deepEqual(L.LAYOUTS.map((l) => l.id), ['ae', 'studio', 'hub', 'bar', 'workspace', 'moe', 'glass', 'apple', 'bento']);
+test('styles (v0.29): only Bento (default), Glass and MOE; a retired style opens in Bento', () => {
+  assert.deepEqual(L.LAYOUTS.map((l) => l.id), ['bento', 'glass', 'moe']);
   const app = (layout) => ({ services: { settings: { get: () => ({ ui: { layout } }) } } });
-  assert.equal(L.layoutOf(app('bar')), 'bar');
   assert.equal(L.layoutOf(app('moe')), 'moe');
-  assert.equal(L.layoutOf(app('studio')), 'studio');
-  assert.equal(L.layoutOf(app('ae')), 'ae');
+  assert.equal(L.layoutOf(app('glass')), 'glass');
+  for (const old of L.RETIRED) assert.equal(L.layoutOf(app(old)), 'bento', `${old} → bento`);
   assert.equal(L.layoutOf(app('nope')), 'bento');
   assert.equal(L.layoutOf(app(undefined)), 'bento');
+  const fs = require('fs'), path = require('path');
+  assert.ok(!fs.existsSync(path.join(__dirname, '../extension/app/ui/layoutApple.js')), 'Apple style removed');
+  assert.ok(!fs.existsSync(path.join(__dirname, '../extension/app/ui/views/home.js')), 'Sidebar Smart Home removed');
 });
 
 test('Classic (AE): six tabs named after AE menus; every section reachable; every button and preset exists', () => {
@@ -49,32 +51,24 @@ test('Classic (AE): six tabs named after AE menus; every section reachable; ever
   for (const k of ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany', 'none']) assert.ok(AE.TABS.some((t) => t.fits.includes(k)), `a tab fits ${k}`);
 });
 
-test('layouts: every section stays reachable in every layout', () => {
-  const hub = new Set(['kit', ...L.HUB.flatMap((x) => x.items || [])]);
-  const ws = new Set(L.WS.flatMap((x) => x.owns));
-  const bar = new Set(['kit', ...L.MENUS.flatMap((m) => m.open.map(([id]) => id))]);
+test('every section stays reachable: Bento / Glass stages, MOE tabs and menus', () => {
+  const AE = require('../extension/app/ui/layoutAE');
+  const W = require('../extension/app/ui/workflow');
+  const reach = new Set(['kit']);
+  for (const t of AE.TABS) t.owns.forEach((id) => reach.add(id));
   for (const id of SECTIONS) {
-    assert.ok(hub.has(id), `Hub reaches ${id}`);
-    assert.ok(ws.has(id), `Workspace reaches ${id}`);
-    assert.ok(bar.has(id), `Command Bar reaches ${id}`);
+    assert.ok(reach.has(id), `MOE tabs reach ${id}`);
+    assert.ok(W.stageOfView(id), `a stage reaches ${id}`);
   }
-  // a section belongs to one Workspace tab only (the crumb and the selected tab must agree)
-  const owned = L.WS.flatMap((x) => x.owns);
-  assert.equal(new Set(owned).size, owned.length, 'no section owned by two tabs');
-});
-
-test('layouts: menu actions resolve, bars use real quick actions, no duplicates inside a menu', () => {
   for (const m of L.MENUS) {
     assert.equal(new Set(m.refs).size, m.refs.length, `${m.id}: no duplicates`);
     m.refs.forEach((r) => assert.ok(A.resolve(r), `${m.id}: ${r} resolves`));
-    m.open.forEach(([id]) => assert.ok(studio.byId(id) || id === 'bar-ease', `${m.id}: opens ${id}`));
+    m.open.forEach(([id]) => assert.ok(studio.byId(id), `${m.id}: opens ${id}`));
   }
-  for (const [name, ids] of L.DEFAULT_BARS) ids.forEach((id) => assert.ok(qb.byId(id), `bar ${name}: ${id}`));
-  // the highlighted menu exists for every selection kind
   for (const k of ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany', 'none']) assert.ok(L.MENUS.some((m) => m.id === L.MENU_FOR[k]), `hint for ${k}`);
 });
 
-test('final layout (v0.21): every Classic tab action and preset is in its ▾ quick menu; retired layouts stay hidden', () => {
+test('MOE tabs: every tab action and preset is in its ▾ quick menu', () => {
   const AE = require('../extension/app/ui/layoutAE');
   const fake = { state: { get: () => ({ ctx: null }) }, services: { settings: { get: () => ({ ui: {} }) }, registry: { get: () => null, list: () => [] } } };
   for (const t of AE.TABS) {
@@ -91,9 +85,6 @@ test('final layout (v0.21): every Classic tab action and preset is in its ▾ qu
     }
     assert.ok(menu, `${t.label}: tabItems builds without a live AE context`);
   }
-  const shown = L.LAYOUTS.filter((x) => !x.retired).map((x) => x.id);
-  assert.deepEqual(shown, ['moe', 'glass', 'bento']);
-  assert.ok(['hub', 'bar', 'workspace', 'ae', 'studio', 'apple'].every((id) => L.LAYOUTS.find((x) => x.id === id).retired));
 });
 
 test('Classic groups (v0.22): your order is saved per tab, survives new / unknown groups, resets to default', () => {
@@ -144,10 +135,9 @@ test('Classic ▸ Recent (v0.22): newest first, no duplicates, at most 6, per ta
   for (const tab of AE.TABS) for (const { items } of AE.tabItems(app, tab)) for (const it of items) if (it.ref) assert.ok(AE.recentItem(app, it.ref), `${tab.label}: ${it.ref}`);
 });
 
-test('style proposals (v0.24): every Classic group has one place in Glass, Apple and Bento; ids never collide with pages', () => {
+test('style proposals (v0.24): every group has one place in Glass and Bento; ids never collide with pages', () => {
   const AE = require('../extension/app/ui/layoutAE');
   const G = require('../extension/app/ui/layoutGlass');
-  const AP = require('../extension/app/ui/layoutApple');
   const B = require('../extension/app/ui/layoutBento');
   // Glass (v0.28): the spaces are the five workflow stages, which place every Classic group exactly once
   const W = require('../extension/app/ui/workflow');
@@ -157,9 +147,7 @@ test('style proposals (v0.24): every Classic group has one place in Glass, Apple
   assert.equal(new Set(covered).size, covered.length);
   // every page a tab owns is owned by one space (crumb and active space agree)
   for (const t of AE.TABS) for (const page of t.owns) assert.ok(G.ownerOf(page), `glass owns ${page}`);
-  // Apple: one coloured category per tab
-  assert.deepEqual(Object.keys(AP.CAT).sort(), [...AE.TAB_IDS].sort());
-  for (const ids of [G.SPACE_IDS, AP.CAT_IDS]) for (const id of ids) assert.ok(!studio.byId(id) && !AE.TAB_IDS.includes(id), `${id} is not a page id`);
+  for (const ids of [G.SPACE_IDS]) for (const id of ids) assert.ok(!studio.byId(id) && !AE.TAB_IDS.includes(id), `${id} is not a page id`);
   // Bento: the NOW block exists for every kind, and is a kit block of a Classic group
   for (const k of ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany']) assert.ok(AE.TABS.some((t) => t.groups.some((g) => g.kind === 'kit' && g.block === B.nowBlock(k))), k);
   assert.equal(B.nowBlock('none'), null);
