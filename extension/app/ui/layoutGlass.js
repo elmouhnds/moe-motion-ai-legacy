@@ -33,6 +33,9 @@ function nowCard(app, s, kind) {
   return h('section', { class: 'gl-now', 'data-key': 'gl-now', 'aria-label': 'Now' },
     h('div', { class: 'gl-now-h' }, h('span', { class: 'gl-now-k' }, 'NOW'), h('b', {}, what), h('span', { class: 'gl-now-s' }, sub), h('span', { class: 'spacer' }),
       h('button', { class: 'icon-btn gl-now-fold', 'data-key': 'gl-now-fold', 'aria-expanded': String(!fold), 'aria-label': fold ? 'Show the Now actions' : 'Fold the Now card', title: fold ? 'Show the eight best actions' : 'Fold to one line (more room for the cards)', onclick: () => { app.services.store.set('glass-now-folded', !fold); app.render(); } }, icon('chev', `xs gl-chev ${fold ? '' : 'open'}`))),
+    // v0.30: the Motion Control (graph + anchor + align) leads the Now card
+    fold ? null : AE.controlTop(app, kind),
+    fold ? null : (() => { const refs = require('./workflow').nextAfter(s.last); return refs.length ? h('div', { class: 'gl-next', 'data-key': 'gl-next', role: 'group', 'aria-label': `Next after ${s.last.label}` }, h('span', { class: 'b-next-h' }, h('span', {}, 'Next'), h('span', { class: 'b-next-after' }, `after ${s.last.label}`)), refs.map((r) => AE.actButton(app, A.resolve(r), null, 's'))) : null; })(),
     // folded: the two primary actions stay, as small buttons in the header line
     h('div', { class: `gl-now-acts ${fold ? 'mini' : ''}` }, (fold ? acts.slice(0, 2) : acts).map((a, i) => AE.actButton(app, a, null, fold ? 's' : i < 2 ? 'l' : undefined))));
 }

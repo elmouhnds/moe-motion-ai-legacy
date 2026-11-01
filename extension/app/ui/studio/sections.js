@@ -102,7 +102,7 @@ const BACKGROUNDS = PAL.PALETTES.map((p) => T(`bg-${p.id}`, p.name, 'design.back
 const SECTIONS = [
   { id: 'home', label: 'Home', icon: 'home', kind: 'view' },
   { id: 'kit', label: 'Toolbox', icon: 'kExcite', kind: 'view' },
-  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Trim', 'Ease', 'Keys', 'Proximity'], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) && t.id !== 'motion.easeCurve' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
+  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Trim', 'Ease', 'Keys', 'Proximity'], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) && t.id !== 'motion.easeCurve' && t.id !== 'motion.pasteEase' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },
   { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true },
   { id: 'shapes', label: 'Shapes & Icons', icon: 'shapes', kind: 'view' },
@@ -146,7 +146,7 @@ const ALIAS = { motion: 'animate', diagnostics: 'diagnostics' };
 function sectionOf(tool) {
   const id = tool.id;
   if (/^zoom\./.test(id)) return 'zoom';
-  if (/^(transform|kit)\./.test(id) || id === 'motion.easeCurve') return 'kit';
+  if (/^(transform|kit)\./.test(id) || id === 'motion.easeCurve' || id === 'motion.pasteEase') return 'kit';
   if (/^glass\./.test(id)) return 'looks';
   if (/^adapt\./.test(id)) return 'deliver';
   if (id === 'design.insertShape') return 'shapes';

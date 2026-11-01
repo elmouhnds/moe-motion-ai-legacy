@@ -75,11 +75,16 @@ const easeCurve = {
       const t = prepared.targets[i];
       const byIndex = new Map(read.targets[i].keys.map((k) => [k.index, k]));
       const plan = new Map();
+      let j = -1;
       for (const { a, b } of B.segments(t.keys)) {
+        j++;
         const ka = byIndex.get(a), kb = byIndex.get(b);
         if (!ka || !kb || ka.value === null || kb.value === null) continue;
+        // v0.30 Ease Copy: a pasted clip gives each segment its own curve (repeating when shorter); null = keep (hold)
+        const cv = prepared.curves ? prepared.curves[j % prepared.curves.length] : prepared.curve;
+        if (!cv) continue;
         const va = asArray(ka.value), vb = asArray(kb.value);
-        const te = B.toTemporal(prepared.curve, { dt: kb.time - ka.time, dv: vb.map((v, d) => v - va[d]), spatial: t.spatial });
+        const te = B.toTemporal(cv, { dt: kb.time - ka.time, dv: vb.map((v, d) => v - va[d]), spatial: t.spatial });
         if (te.clamped) clamped = true;
         const side = prepared.side || 'both';
         if (side !== 'in') plan.set(a, Object.assign(plan.get(a) || { index: a, easeIn: null }, { easeOut: te.out }));
@@ -100,7 +105,7 @@ const easeCurve = {
       if (plan.size) targets.push({ address: t.address, keys: [...plan.values()].map((k) => Object.assign({ easeIn: null, easeOut: null }, k)) });
     }
     if (!targets.length) throw new Error('No segments with numeric keyframes to shape');
-    const res = await host.call('keyframes.setEase', { compId: prepared.compId, label: 'MOE: Ease Curve', targets });
+    const res = await host.call('keyframes.setEase', { compId: prepared.compId, label: prepared.curves ? 'MOE: Paste Ease' : 'MOE: Ease Curve', targets });
     return Object.assign(res, { sent: targets, clamped });
   },
 
@@ -136,4 +141,53 @@ const easeCurve = {
   }
 };
 
-module.exports = { easeCurve };
+/**
+ * Paste Ease (v0.30, docs/features/MOTION_CONTROL.md) — Ease Copy: the Motion Control copies the ease of the
+ * selected keys segment by segment (read from AE, normalised so it fits any property and any distance) and
+ * pastes it here: segment n of the target gets curve n of the clip, repeating when the clip is shorter
+ * (one copied segment = the same ease everywhere). A copied hold segment is left as it is.
+ */
+const CLIP_MAX = 24;
+function parseClip(raw) {
+  let list;
+  try { list = JSON.parse(raw); } catch (e) { return { error: 'The copied ease is not readable — copy it again' }; }
+  if (!Array.isArray(list) || !list.length || list.length > CLIP_MAX) return { error: `Copy 1–${CLIP_MAX} segments of ease first` };
+  const out = [];
+  for (const c of list) {
+    if (c === null || (c && c.hold)) { out.push(null); continue; }
+    const n = ['x1', 'y1', 'x2', 'y2'].map((k) => Number(c && c[k]));
+    if (n.some((v) => !Number.isFinite(v))) return { error: 'The copied ease has a broken curve — copy it again' };
+    out.push(B.normalize({ x1: n[0], y1: n[1], x2: n[2], y2: n[3] }));
+  }
+  if (out.every((c) => !c)) return { error: 'The copied keys were all hold keys — nothing to paste' };
+  return { curves: out };
+}
+const pasteEase = Object.assign({}, easeCurve, {
+  id: 'motion.pasteEase',
+  version: '1.0.0',
+  name: 'Paste Ease',
+  description: 'Ease Copy: paste the ease copied from other keyframes — every segment its own curve (repeating when you copied fewer), on any numeric property, at any distance and duration.',
+  keywords: ['ease copy', 'copy ease', 'paste ease', 'easecopy', 'speed graph', 'influence', 'same ease', 'match ease'],
+  icon: 'kPaste',
+  params: {
+    clip: { type: 'string', label: 'Copied ease', maxLength: 4000, description: 'JSON list of curves {x1,y1,x2,y2} (null or {hold:true} = keep that segment)' },
+    side: easeCurve.params.side
+  },
+  ai: { callable: false },
+  ui: { primaryLabel: 'Paste Ease' },
+  prepare(args, ctx) {
+    const c = parseClip(args.clip || '');
+    if (c.error) return { ok: false, error: c.error };
+    const base = easeCurve.prepare(Object.assign({ x1: 0.333, y1: 0, x2: 0.667, y2: 1, segment: 0, through: false }, { side: args.side }), ctx);
+    if (!base.ok) return base;
+    const n = c.curves.length;
+    const segs = base.targets.reduce((sum, t) => sum + t.keys.length - 1, 0);
+    return Object.assign(base, { curves: c.curves, preview: { summary: `${n} copied segment${n > 1 ? 's' : ''} → ${segs} segment${segs > 1 ? 's' : ''}${n > 1 && segs > n ? ' (repeating)' : ''}${(args.side || 'both') === 'both' ? '' : ` (ease ${args.side})`}`, items: base.preview.items } });
+  },
+  summarize(result) {
+    const n = result.targets.reduce((sum, t) => sum + t.after.length, 0);
+    return `Ease pasted on ${n} keyframe${n === 1 ? '' : 's'}${result.clamped ? ' (Position: no anticipation)' : ''}`;
+  }
+});
+
+module.exports = { easeCurve, pasteEase, parseClip, CLIP_MAX };

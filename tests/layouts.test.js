@@ -102,14 +102,15 @@ test('Classic groups (v0.22): your order is saved per tab, survives new / unknow
   const k = AE.TABS.find((x) => x.id === 'ae-keys');
   assert.deepEqual(AE.groupsOf(app, k).map((g) => g.id), ['recent'].concat(k.groups.map((g) => g.id)));
   // a stored order from an older version: unknown ids ignored, missing groups keep their default place, no duplicates
-  data['ae-order'] = { 'ae-layer': ['gone', 'parent', 'parent', 'align'] };
+  data['ae-order'] = { 'ae-layer': ['gone', 'align', 'parent', 'parent', 'transform'] }; // 'align' left in v0.30 (Motion Control)
   const ids = AE.groupsOf(app, t).map((g) => g.id);
   assert.equal(ids.length, def.length);
   assert.deepEqual([...ids].sort(), [...def].sort());
-  assert.ok(ids.indexOf('parent') < ids.indexOf('align'));
+  assert.ok(ids.indexOf('parent') < ids.indexOf('transform'));
+  assert.ok(!ids.includes('align'));
   // moving back to the default order stores nothing
   data['ae-order'] = {};
-  AE.moveGroup(app, t, 'align', 3); AE.moveGroup(app, t, 'align', 1);
+  AE.moveGroup(app, t, 'transform', 3); AE.moveGroup(app, t, 'transform', 1);
   assert.equal(data['ae-order']['ae-layer'], undefined);
   AE.moveGroup(app, t, 'select', 0); AE.resetOrder(app, t);
   assert.deepEqual(AE.groupsOf(app, t).map((g) => g.id), def);
@@ -149,8 +150,10 @@ test('style proposals (v0.24): every group has one place in Glass and Bento; ids
   for (const t of AE.TABS) for (const page of t.owns) assert.ok(G.ownerOf(page), `glass owns ${page}`);
   for (const ids of [G.SPACE_IDS]) for (const id of ids) assert.ok(!studio.byId(id) && !AE.TAB_IDS.includes(id), `${id} is not a page id`);
   // Bento: the NOW block exists for every kind, and is a kit block of a Classic group
-  for (const k of ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany']) assert.ok(AE.TABS.some((t) => t.groups.some((g) => g.kind === 'kit' && g.block === B.nowBlock(k))), k);
+  // v0.30: one Motion Control (graph + anchor + align) for every selection, never also a group of a tab
+  for (const k of ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany']) assert.equal(B.nowBlock(k), 'control', k);
   assert.equal(B.nowBlock('none'), null);
+  assert.ok(!AE.TABS.some((t) => t.groups.some((g) => g.kind === 'kit')), 'ease / anchor / align are not separate groups any more');
 });
 
 test('v0.25: MOE puts every shortcut in its sidebar; Bento pins (max 4) and folds are remembered', () => {

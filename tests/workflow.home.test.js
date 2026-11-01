@@ -32,8 +32,8 @@ test('stages: Animate · Arrange · Design · Finish · Deliver; every group of 
     assert.ok(!studio.byId(st.id) && !AE.TAB_IDS.includes(st.id), `${st.id} is not a page or tab id`);
   }
   assert.deepEqual([...placed].sort(), AE.TABS.flatMap((t) => t.groups.map((g) => `${t.id}/${g.id}`)).sort());
-  // the most-used stage comes first and leads with Ease
-  assert.deepEqual(W.STAGES[0].groups[0].slice(0, 2), ['ae-keys', 'ease']);
+  // the most-used stage comes first; ease / anchor / align live in the Motion Control at the top (v0.30)
+  assert.deepEqual(W.STAGES[0].groups[0].slice(0, 2), ['ae-keys', 'assist']);
   // every page has a stage for its crumb
   for (const t of AE.TABS) for (const page of t.owns) assert.ok(W.stageOfView(page), `stage of ${page}`);
   assert.equal(W.stageOfView('looks').id, 'st-design');

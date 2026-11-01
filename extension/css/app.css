@@ -1252,3 +1252,34 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 /* v0.29 audit: on pages with the sticky Apply bar the assistant button sits above it, never on Apply */
 .app.has-actbar .assistant:not(.open) { bottom: 62px; }
 .app.layout-glass.has-actbar .assistant:not(.open) { bottom: 122px; }
+
+/* ---------- v0.30 Motion Control: graph + anchor + align in one block (docs/features/MOTION_CONTROL.md) ---------- */
+/* each part takes the room its content needs: the graph grows, the anchor is a 3×3, align is two rows of icons */
+.kit-graph-row { display: flex; align-items: flex-start; gap: 10px; }
+.kit-graph-row > .kit-graph-wrap { flex: 1 1 240px; min-width: 0; }
+.kit-rail { flex: 0 0 auto; display: flex; flex-direction: column; gap: 10px; padding-left: 10px; border-left: 1px solid var(--line); }
+.kit-block.mini { margin: 0; padding: 0; border: 0; background: none; box-shadow: none; }
+.kit-block.mini > .kit-h { margin: 0 0 4px; min-height: 0; }
+.kit-cap { color: var(--text-3); font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.kit-anchor.mini .kit-cap { display: block; margin-bottom: 4px; }
+.kit-anchor.mini .kit-dots { grid-template-columns: repeat(3, var(--h-s)); grid-template-rows: repeat(3, var(--h-s)); gap: 2px; padding: 4px; }
+.kit-anchor.mini .kit-dot { width: var(--h-s); height: var(--h-s); }
+.kit-anchor.mini .kit-check { margin-top: 4px; font-size: var(--fs-xs); }
+.kit-align.mini .kit-axis { display: none; }
+.kit-align.mini .kit-align-row2 { gap: 4px; }
+.kit-align.mini .kit-seg button { padding: 0 6px; }
+.kit-align.mini .kit-gapl { margin-top: 4px; }
+/* narrow panel: the rail goes under the graph, anchor and align side by side */
+.app.kit-narrow .kit-graph-row, .app.kit-tiny .kit-graph-row { flex-direction: column; }
+.app.kit-narrow .kit-graph-row > .kit-graph-wrap, .app.kit-tiny .kit-graph-row > .kit-graph-wrap { flex: none; width: 100%; }
+.app.kit-narrow .kit-rail, .app.kit-tiny .kit-rail { flex-direction: row; flex-wrap: wrap; width: 100%; padding: 8px 0 0; border-left: 0; border-top: 1px solid var(--line); }
+/* folded = the compact strip: curve + copy / paste, then anchor and align in one row */
+.kit-control.folded .kit-rail { flex-direction: row; flex-wrap: wrap; margin-top: 8px; padding: 8px 0 0; border-left: 0; border-top: 1px solid var(--line); }
+.ae-control:empty { display: none; }
+.ae-control { margin: 0 0 8px; }
+/* v0.30 Next: what usually follows the last run */
+.b-next, .gl-next { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; border: 1px dashed var(--line-strong); border-radius: var(--r-lg); }
+.b-next-h { display: inline-flex; align-items: center; gap: 4px; margin-right: 4px; color: var(--accent); font-size: var(--fs-sm); font-weight: 700; }
+.b-next-after { color: var(--text-3); font-weight: 400; max-width: 180px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.gl-next { margin-top: 8px; }
+.ae-next { margin-top: 8px; }

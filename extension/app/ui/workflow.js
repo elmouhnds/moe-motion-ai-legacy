@@ -27,11 +27,11 @@
 const STAGES = [
   { id: 'st-animate', label: 'Animate', icon: 'motion', fits: ['keys', 'layer', 'text', 'shapes'],
     title: 'Keyframes and ease, animate in / out, draw on, text, loops — where most of the day goes',
-    groups: [['ae-keys', 'ease', 'core'], ['ae-keys', 'assist', 'core'], ['ae-animate', 'in', 'core'], ['ae-animate', 'out', 'core'], ['ae-animate', 'draw', 'core'], ['ae-animate', 'text', 'core'], ['ae-keys', 'loops', 'core'],
+    groups: [['ae-keys', 'assist', 'core'], ['ae-animate', 'in', 'core'], ['ae-animate', 'out', 'core'], ['ae-animate', 'draw', 'core'], ['ae-animate', 'text', 'core'], ['ae-keys', 'loops', 'core'],
       ['ae-animate', 'rigs', 'more'], ['ae-animate', 'expr', 'more'], ['ae-keys', 'curves', 'more']] },
   { id: 'st-arrange', label: 'Arrange', icon: 'alignCenter', fits: ['layers', 'shapesMany'],
     title: 'Align, anchor point, transform, parent, grids — putting layers where they belong',
-    groups: [['ae-layer', 'align', 'core'], ['ae-layer', 'anchor', 'core'], ['ae-layer', 'transform', 'core'], ['ae-layer', 'parent', 'core'], ['ae-layer', 'arrange', 'core'],
+    groups: [['ae-layer', 'transform', 'core'], ['ae-layer', 'parent', 'core'], ['ae-layer', 'arrange', 'core'],
       ['ae-comp', 'guides', 'more'], ['ae-layer', 'select', 'more']] },
   { id: 'st-design', label: 'Design', icon: 'palette', fits: ['none'],
     title: 'Shapes and icons, backgrounds, looks and glass, the client brand',
@@ -73,11 +73,11 @@ const SLOT_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 /* ---------- Power tools: deep features that deserve a big card with an explanation ---------- */
 // open = where it lives (nav:…), try = the one-click start (optional), fits = selections it suits.
 const POWER = [
-  { id: 'ease', title: 'Ease & Speed Graph', icon: 'easeCurve', open: 'nav:kit', try: 'quick:curveExpo', fits: ['keys'],
-    what: 'See the speed between keyframes and drag it like the Graph Editor — or click a curve preset.',
-    when: 'Every animation: snappy UI, soft logo moves, overshoot.',
-    needs: 'Select two or more keyframes',
-    steps: ['Select keyframes in the timeline', 'Drag a handle or click a preset', 'It applies at once — Ctrl+Z undoes it'] },
+  { id: 'ease', title: 'Motion Control', icon: 'easeCurve', open: 'nav:kit', try: 'quick:curveExpo', fits: ['keys'],
+    what: 'One block for how it moves and where it sits: the speed / value graph, Ease Copy (copy the ease of keys, paste it on others), the anchor point and align — right beside the graph.',
+    when: 'Every animation: shape the ease, reuse it on other layers, then place and line them up.',
+    needs: 'Select two or more keyframes (anchor / align: layers)',
+    steps: ['Select keys — the graph reads their ease', 'Drag a handle, or Copy and Paste the ease onto other keys', 'Anchor and align from the rail beside the graph'] },
   { id: 'grid', title: 'Grid Builder', icon: 'grid', open: 'nav:layout', try: 'tile:layout/grid', fits: ['layers', 'shapesMany'],
     what: 'Lay many layers out as a live grid, ring, spiral, honeycomb or globe — one controller animates them all.',
     when: 'Logo walls, icon grids, galleries, data cards.',
@@ -259,5 +259,36 @@ const PROMPTS = {
   none: ['How do I make a 9:16 version of this?', 'Add safe-area guides', 'What can MOE do with screen recordings?']
 };
 
-module.exports = { AR_WORDS, keywordsOf, powerFor, PROMPTS, STAGES, STAGE_IDS, stageGroups, stageOfView, EVERYDAY, SLOT_KEYS, POWER, LEARN_KEY, LEARNED_AT, isLearned, learn, gotIt, explainAgain,
+/* ---------- v0.30: what usually comes next (tools ordered by the job, not by name) ---------- */
+/**
+ * After a tool runs, NOW offers the steps that usually follow it in a motion designer's job — the
+ * sequence of the work: animate in → shape the ease → offset the layers → animate out; draw on → ease →
+ * stagger; anchor → scale / rotate moves; align → distribute → animate them in one after another.
+ * Keyed by the tool id of the last run (state.last.toolId). Fixed lists (memory), at most four.
+ */
+const NEXT = {
+  'quick.animate': ['quick:curveExpo', 'quick:k_stagger', 'tile:animate/fadeOut', 'quick:precompose'],
+  'quick.trimPaths': ['quick:curveExpo', 'quick:k_stagger', 'tile:animate/trimErase', 'tile:expressions/x-wiggle'],
+  'motion.smartEase': ['quick:k_stagger', 'tile:expressions/x-loopCycle', 'quick:mirror', 'quick:reverse'],
+  'motion.easeCurve': ['quick:k_stagger', 'tile:expressions/x-loopCycle', 'quick:mirror', 'quick:reverse'],
+  'motion.pasteEase': ['quick:k_stagger', 'tile:expressions/x-loopCycle', 'quick:mirror', 'quick:reverse'],
+  'motion.stagger': ['tile:animate/fadeOut', 'quick:precompose', 'quick:parentNull', 'quick:k_delay'],
+  'transform.anchor': ['tile:animate/popIn', 'tile:animate/spinIn', 'tile:expressions/x-pendulum', 'tile:expressions/x-pulse'],
+  'proximity.centerAnchor': ['tile:animate/popIn', 'tile:animate/spinIn', 'tile:expressions/x-pendulum', 'tile:expressions/x-pulse'],
+  'transform.align': ['quick:distH', 'quick:parentNull', 'tile:animate/cascadeIn', 'tile:layout/grid'],
+  'grid.build': ['tile:animate/cascadeIn', 'quick:k_stagger', 'quick:precompose', 'tile:zoom/punch'],
+  'quick.parentToNull': ['tile:expressions/x-float', 'quick:k_delay', 'tile:animate/popIn', 'quick:precompose'],
+  'quick.precompose': ['tile:animate/fadeIn', 'tile:zoom/punch', 'quick:dupComp', 'quick:revealProject'],
+  'quick.typewriter': ['tile:animate/fadeOut', 'brand:apply', 'quick:counter', 'quick:k_stagger'],
+  'quick.reverseKeys': ['quick:curveExpo', 'quick:mirror', 'quick:k_stagger', 'tile:expressions/x-loopPingPong'],
+  'transform.clone': ['tile:expressions/x-timeRotate', 'quick:k_stagger', 'quick:parentNull', 'tile:animate/popIn']
+};
+/** The next steps after the last run (refs that resolve), or [] (pure apart from actions.resolve). */
+function nextAfter(last) {
+  if (!last || !NEXT[last.toolId]) return [];
+  const A = require('./actions');
+  return NEXT[last.toolId].filter((r) => A.resolve(r)).slice(0, 4);
+}
+
+module.exports = { NEXT, nextAfter, AR_WORDS, keywordsOf, powerFor, PROMPTS, STAGES, STAGE_IDS, stageGroups, stageOfView, EVERYDAY, SLOT_KEYS, POWER, LEARN_KEY, LEARNED_AT, isLearned, learn, gotIt, explainAgain,
   formatOf, safeArgs, tips, dismissedTips, dismissTip, TIP_KEY, syncProject, PROJ_KEY };

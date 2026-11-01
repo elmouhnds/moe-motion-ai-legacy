@@ -63,7 +63,8 @@ const wide = (key, ...kids) => h('div', { class: 'bt b-4 bt-block', 'data-key': 
 const caption = (key, text, extra) => h('div', { class: 'b-cap', 'data-key': key }, h('span', {}, text), extra || null);
 
 /** The kit block that leads NOW for this kind of selection (and is then left out of its section). */
-const nowBlock = (kind) => (kind === 'keys' ? 'ease' : kind === 'layers' || kind === 'shapesMany' ? 'align' : kind === 'none' ? null : 'anchor');
+// v0.30: one Motion Control (graph + anchor + align) for every selection; nothing selected → no block
+const nowBlock = (kind) => (kind === 'none' ? null : 'control');
 
 /** v0.26: the client you work for, one click away in NOW (when layers are selected). */
 function brandNow(app, kind) {
@@ -80,6 +81,16 @@ function formatChip(f) {
     h('span', { class: 'b-fmt-box', 'aria-hidden': 'true' }), h('span', {}, `${f.ratio} · ${f.size}${f.fps ? ` · ${f.fps}` : ''}`), h('span', { class: 'b-fmt-use' }, f.use));
 }
 
+/** v0.30: after a run, the steps that usually follow it — the job's sequence, one click each. */
+function nextRow(app, s) {
+  const W = require('./workflow');
+  const refs = W.nextAfter(s.last);
+  if (!refs.length) return null;
+  return h('div', { class: 'b-4 b-next', 'data-key': 'b-next', role: 'group', 'aria-label': `Next after ${s.last.label}` },
+    h('span', { class: 'b-next-h' }, icon('chev', 'xs'), h('span', {}, 'Next'), h('span', { class: 'b-next-after' }, `after ${s.last.label}`)),
+    refs.map((r) => AE.actButton(app, A.resolve(r), null, 's')));
+}
+
 function now(app, s, kind) {
   const kit = require('./views/kit');
   const c = s.ctx;
@@ -87,22 +98,19 @@ function now(app, s, kind) {
   const mineRefs = pins(app);
   const mine = mineRefs.map((r) => [r, A.resolve(r)]).filter(([, a]) => a);
   const acts = (A.SETS[kind] || []).map((r) => [r, A.resolve(r)]).filter(([, a]) => a).slice(0, 8);
-  let block = null;
-  if (nb && c && c.comp) {
-    const prev = kit.K.scope; kit.K.scope = { ctx: '__classic', focus: ['ease', 'anchorAlign', 'anchor', 'align', 'pinned'] };
-    try { block = nb === 'ease' ? kit.easeBlock(app) : nb === 'align' ? kit.alignBlock(app) : kit.anchorBlock(app); } finally { kit.K.scope = prev; }
-  }
+  const block = nb ? AE.controlTop(app, kind) : null;
   return h('section', { class: 'b-sec b-now', 'data-key': 'b-now', 'aria-label': 'Now' },
     h('div', { class: 'b-now-h' }, h('span', { class: 'b-kick' }, 'NOW'), h('b', {}, !c ? 'Reading After Effects…' : !c.comp ? 'No active composition' : A.CONTEXT_LABEL[kind]),
       c && c.comp ? h('span', { class: 'b-now-s' }, `${c.comp.name} · ${(c.layers || []).length} selected`) : null,
       c && c.comp ? formatChip(require('./workflow').formatOf(c.comp)) : null),
     // v0.29: the anchor point is a one-second action — half the width (2×2 cell), the actions fill the rest;
     // ease (keys) and align (several layers) are real working surfaces and keep the full width
-    h('div', { class: 'b-grid' }, block ? (nb === 'anchor' ? h('div', { class: 'bt b-2x1 b-tall bt-block bt-anchor', 'data-key': 'now-block' }, block) : wide('now-block', block)) : null,
+    h('div', { class: 'b-grid' }, block ? wide('now-block', block) : null,
+      nextRow(app, s),
       // your pinned tiles first (same size as primary), then the best actions for the selection — no duplicates
       mine.map(([r, a]) => tile(app, a, '2x1', null, r, 'pinned')),
       brandNow(app, kind),
-      acts.filter(([r]) => !mineRefs.includes(r)).map(([r, a], i) => tile(app, a, i < 2 && !mine.length && nb !== 'anchor' ? '2x1' : '1x1', null, r))));
+      acts.filter(([r]) => !mineRefs.includes(r)).map(([r, a], i) => tile(app, a, i < 2 && !mine.length ? '2x1' : '1x1', null, r))));
 }
 
 function groupTiles(app, t, g, kind, skipBlock) {

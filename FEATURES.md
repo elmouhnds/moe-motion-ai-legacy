@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Motion Control** (v0.30.0): the speed / value graph with the anchor point and align beside it, Ease Copy (copy the ease of keys, paste on others), and Next steps after each run (docs/features/MOTION_CONTROL.md).
+
 **Fewer, clearer** (v0.29.0): one place per tool — the Quick Bar holds 41 own actions and any library preset as the tile itself; three styles only (docs/features/FEWER_CLEARER.md).
 
 **Organised the way you work + Assistant** (v0.28.0): Home by how often you use things — Everyday (Alt+1…0), NOW with the comp format, Power tools cards, stages Animate · Arrange · Design · Finish · Deliver — and a floating Assistant that answers and plans (docs/features/WORKFLOW_HOME.md, docs/features/ASSISTANT.md).
@@ -83,6 +85,7 @@ Legend: **Local** = no network. **AI** = uses Claude (optional). Host = verified
 | Layout | Layout from Claude (`adapt.suggestLayout`, via Ask Claude) | AI | Claude places elements for the new format (no pixels sent); shown in the preview before Adapt. | no project change | ⏳ |
 | Motion | Focus Zoom / Follow Zoom / Cursor Animator (`zoom.*`) | Local | ClickZoom-style zooms on a MOE Zoom rig (point or layer, in/hold/out, eases, pans, motion blur, spotlight); follow a layer; animated cursor with click pulse + ripple. | rig / keys / layers removed | ⏳ |
 | Comp | Glass / Glass Look (`glass.apply`, `glass.look`) | Local | Liquid/frosted UI glass from native effects (matte, frost, lens, brightness, tint, rim, shadow), 7 looks, Brand tints. | created layers removed, source re-enabled | ⏳ |
+| Motion | Paste Ease (`motion.pasteEase`) | Local | Ease Copy: paste the ease copied from other keys — every segment its own curve (repeating), any property and distance; hold segments kept; in / both / out. | ease restored from the checkpoint | ⏳ |
 | Panel | Assistant (`assistant.ask`) | Claude (optional) · local fallback | Floating helper: answers AE / motion questions (Arabic or English) and plans changes with MOE tools; offline it matches your words to tools and Power cards; suggestions for the selection. | plans need approval; steps verified, roll back | ⏳ |
 | Comp | Thick Glass / Thick Glass Look (`glass.thick`, `glass.thickLook`) | Local | Glaze-class thick glass: live height-map pre-comp linked to the source (transform via toComp, shapes / masks / text by index), CC Glass refraction with bevel, frost, chromatic dispersion, reflection / chrome, studio highlights, shadow, caustics; 21 animatable controls, 7 looks, one glass for several layers. | layers + map comp removed, sources re-enabled | ⏳ |
 | Comp | Green-Screen Prompt (`generate.greenPrompt`) | AI | Claude prompt for your generator; chroma-green rules enforced locally. Claude does not generate images. | no project change | ⏳ |

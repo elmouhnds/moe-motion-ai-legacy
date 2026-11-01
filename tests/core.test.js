@@ -26,7 +26,8 @@ test('registry rejects incomplete or unsafe definitions', () => {
 
 test('search ranks name matches first', () => {
   const r = registerAll(new Registry());
-  assert.deepEqual(r.search('ease').slice(0, 2).map((t) => t.id).sort(), ['motion.easeCurve', 'motion.smartEase']);
+  const top = r.search('ease').slice(0, 3).map((t) => t.id); // v0.30: Paste Ease is an ease tool too
+  ['motion.easeCurve', 'motion.smartEase'].forEach((id) => assert.ok(top.includes(id), id));
   assert.equal(r.search('cascade')[0].id, 'motion.stagger');
   assert.equal(r.search('expr fix')[0].id, 'expressions.assist');
   assert.equal(r.search('zzzz').length, 0);

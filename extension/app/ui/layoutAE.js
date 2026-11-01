@@ -28,7 +28,6 @@ const SEL = { keys: 'keys', layer: 'layer', layers: 'layers', text: 'text', shap
 const TABS = [
   { id: 'ae-keys', label: 'Keys', title: 'Keyframes: ease, keyframe assistant, loops (Animation › Keyframe Assistant)', fits: ['keys'], owns: [],
     groups: [
-      { id: 'ease', label: 'Ease', kind: 'kit', block: 'ease', fits: ['keys'], open: true },
       { id: 'assist', label: 'Keyframe Assistant', kind: 'acts', fits: ['keys'], hero: ['quick:k_easy', 'quick:reverse'], minor: ['quick:k_trimKeys', 'quick:selectSame'], refs: ['quick:k_easy', 'quick:reverse', 'quick:k_linear', 'quick:k_hold', 'quick:mirror', 'quick:clone', 'quick:k_stagger', 'quick:k_trimKeys', 'quick:selectSame'] },
       { id: 'loops', label: 'Loops', kind: 'acts', fits: ['keys'], hero: ['tile:expressions/x-loopCycle'], refs: ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'] },
       { id: 'curves', label: 'Curve Library', kind: 'curves', fits: [] }
@@ -44,8 +43,6 @@ const TABS = [
     ] },
   { id: 'ae-layer', label: 'Layer', title: 'Align, anchor, transform, parent, arrange (Layer menu + Align panel)', fits: ['layer', 'layers', 'shapes', 'shapesMany', 'text'], owns: ['layout', 'select'],
     groups: [
-      { id: 'align', label: 'Align', kind: 'kit', block: 'align', fits: ['layers', 'shapesMany'], open: true },
-      { id: 'anchor', label: 'Anchor Point', kind: 'kit', block: 'anchor', fits: ['layer', 'shapes', 'text'] },
       { id: 'transform', label: 'Transform', kind: 'acts', fits: [], hero: ['quick:precompose', 'quick:centerAnchor'], refs: ['quick:precompose', 'quick:centerAnchor', 'quick:flipH', 'quick:flipV', 'quick:separate'] },
       { id: 'parent', label: 'Parent & Link', kind: 'acts', fits: ['layers'], hero: ['quick:parentNull'], refs: ['quick:parentNull', 'quick:k_parent', 'quick:k_delay', 'quick:k_stare'] },
       { id: 'arrange', label: 'Arrange (Grid Builder)', kind: 'grid', section: 'layout', ids: ['grid', 'honey', 'wall', 'ring', 'fan', 'spiral', 'galaxy', 'path', 'globe'], more: 'layout', fits: ['layers', 'shapesMany'] },
@@ -268,6 +265,24 @@ function groupBody(app, g, t) {
   return linkRow(app, g.links);
 }
 
+/* ---------- v0.30 Motion Control: one block at the top of every style (keys + anchor + align) ---------- */
+/** The Motion Control for the selection, or null when nothing is selected (then the page is about creating). */
+function controlTop(app, kind) {
+  const c = app.state.get().ctx;
+  if (!c || !c.comp || kind === 'none') return null;
+  const kit = require('./views/kit');
+  const prev = kit.K.scope; kit.K.scope = { ctx: '__classic', focus: ['ease', 'pinned'] };
+  try { return kit.controlBlock(app); } finally { kit.K.scope = prev; }
+}
+
+/** v0.30: the steps that usually follow the last run (MOE puts them under the Motion Control). */
+function nextStrip(app, s) {
+  const refs = require('./workflow').nextAfter(s.last);
+  if (!refs.length) return null;
+  return h('div', { class: 'b-next ae-next', 'data-key': 'ae-next', role: 'group', 'aria-label': `Next after ${s.last.label}` },
+    h('span', { class: 'b-next-h' }, h('span', {}, 'Next'), h('span', { class: 'b-next-after' }, `after ${s.last.label}`)), refs.map((r) => actButton(app, A.resolve(r), null, 's')));
+}
+
 /* ---------- search (Effects & Presets › Contains) ---------- */
 function searchBox(app, s) {
   const input = h('input', { class: 'txt ae-search', type: 'search', 'data-fk': 'ae-q', placeholder: 'Search tools & presets', 'aria-label': 'Search tools and presets', value: s.aeQ || '' });
@@ -363,7 +378,7 @@ function build(app, s, body) {
   const q = (s.aeQ || '').trim();
   let content;
   if (q) content = h('div', { class: 'view ae-page' }, searchResults(app, q));
-  else if (isTab) content = h('div', { class: 'view kit ae-page' }, groupsOf(app, tab).map((g) => twirl(app, tab, g, kind, () => groupBody(app, g, tab),
+  else if (isTab) content = h('div', { class: 'view kit ae-page' }, h('div', { class: 'ae-control', 'data-key': 'ae-control' }, controlTop(app, kind), nextStrip(app, s)), groupsOf(app, tab).map((g) => twirl(app, tab, g, kind, () => groupBody(app, g, tab),
     g.kind === 'recent' ? (recentRefs(app, tab).length ? h('button', { class: 'ae-more', 'data-key': `clear-${tab.id}`, title: `Clear Recent in ${tab.label}`, onclick: () => clearRecent(app, tab) }, 'Clear') : null) : g.more ? moreLink(app, g) : null)));
   else {
     const sec = studio.byId(view);
@@ -400,6 +415,6 @@ function menuButton(app, s) {
     onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(), box = require('./quickbar').fixedBox(e.currentTarget.closest('.app') || document.body); app.state.set({ aeMenu: !s.aeMenu, aeMenuAt: { top: Math.round(r.bottom - box.top + 2), right: Math.max(4, Math.round(box.left + box.width - r.right)) } }); } }, icon('menu', 'sm'));
 }
 
-module.exports = { TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
+module.exports = { controlTop, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
   // building blocks reused by the v0.24 style proposals (layoutGlass / layoutApple / layoutBento)
   twirl, actButton, groupBody, tileStrip, moreLink, linkRow, searchBox, searchResults, panelMenu, menuButton, openTile };

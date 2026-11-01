@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.30.0] — 2026-11-01 — Motion Control: graph + anchor + align, Ease Copy, Next
+The owner: the anchor (a tiny cube) and align (small buttons) belong inside the speed / value graph control, sized by their content and fitted to each style; that part should copy and paste the ease of keyframes like Ease Copy; and tools should follow their function and the sequence of the work. Details: `docs/features/MOTION_CONTROL.md`.
+### Added
+- **Motion Control**: one block — the speed / value graph with a rail beside it holding the anchor 3×3 and align (under the graph in a narrow panel); folded, it is a compact strip with Copy / Paste ease and anchor + align in one row. On top of every style: Bento NOW, Glass Now card, MOE above the tab's groups, the docked Motion Kit.
+- **Ease Copy** (`motion.pasteEase`): Copy reads the ease of the selected keys segment by segment (normalised, so it fits any property and distance); Paste gives segment n curve n (a shorter copy repeats; hold segments kept); In / Both / Out; verified by read-back, History › Restore.
+- **Next**: after a run, the steps that usually follow it (animate in → shape the ease → stagger → animate out …), one click each, in all three styles (`workflow.NEXT`).
+### Changed
+- The separate Ease, Align and Anchor Point groups left the tabs and the stages (they are the Motion Control). The Power card "Ease & Speed Graph" is now "Motion Control".
+### Tests
+- `tests/motion.control.test.js` (6): clip parsing; per-segment paste (10 / 90 / 60 / 30 % influences), one-segment clip everywhere, ease out only, restore; hold kept and speed recomputed for another distance (40 px/s); Paste Ease lives in the Kit and is not AI-callable; one control block at the top of every style; Next lists resolve. **Mock / preview, not After Effects.**
+
 ## [0.29.0] — 2026-11-01 — Fewer, clearer: one place per tool
 The owner asked what could go in exchange for an easier organisation (the anchor point as an example). The answer: the copies, not the tools. Details: `docs/features/FEWER_CLEARER.md`.
 ### Removed

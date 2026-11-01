@@ -140,6 +140,29 @@ function applyCurve(app, cv, side, label) {
 }
 const sideOf = (e, p) => (e && e.shiftKey ? 'in' : e && (e.ctrlKey || e.metaKey) ? 'out' : p.side);
 
+/* ---------- Ease Copy (v0.30, docs/features/MOTION_CONTROL.md) ---------- */
+/** The copied ease: { curves: [curve | {hold:true}], from }. v0.29 stored one curve — still read. */
+function clipOf(pr) {
+  const c = pr.clip;
+  if (!c) return null;
+  if (Array.isArray(c.curves) && c.curves.length) return c;
+  if (Number.isFinite(c.x1)) return { curves: [{ x1: c.x1, y1: c.y1, x2: c.x2, y2: c.y2 }], from: 'curve' };
+  return null;
+}
+const clipLabel = (c) => (c.curves.length > 1 ? `${c.curves.length} segments from ${c.from}` : `${c.curves[0].hold ? 'hold' : BZ.css(c.curves[0])}${c.from && c.from !== 'curve' ? ` from ${c.from}` : ''}`);
+function copyEase(app) {
+  const segs = keyed(ctxOf(app)).length && K.segs && K.segs.length ? K.segs : null;
+  const curves = segs ? segs.map((sg) => (sg.hold ? { hold: true } : { x1: sg.curve.x1, y1: sg.curve.y1, x2: sg.curve.x2, y2: sg.curve.y2 })) : [{ x1: K.curve.x1, y1: K.curve.y1, x2: K.curve.x2, y2: K.curve.y2 }];
+  const from = segs ? (K.srcBase || 'keys') : 'curve';
+  setPref(app, { clip: { curves, from } });
+  app.toast(segs ? `Ease copied: ${curves.length} segment${curves.length > 1 ? 's' : ''} from ${from}` : `Curve copied: ${BZ.css(K.curve)}`, 2400, 'ok');
+}
+function pasteEase(app) {
+  const c = clipOf(prefs(app));
+  if (!c) { app.toast('Copy an ease first (select keys, then Copy)', 3000, 'warn'); return null; }
+  return Promise.resolve(run(app, 'motion.pasteEase', { clip: JSON.stringify(c.curves), side: prefs(app).side }, `Paste ease${c.curves.length > 1 ? ` (${c.curves.length} segments)` : ''}`)).then((r) => { setTimeout(() => autoRead(app, true), 0); return r; });
+}
+
 /* ---------- ease block ---------- */
 /** Small picture of a curve (fits overshoot / anticipation), used as the preset's only face. */
 function curveSvg(cv) {
@@ -321,7 +344,15 @@ function velocity(app) {
     field('Incoming influence', String(Math.round((1 - K.curve.x2) * 100)), '%', (v) => KG.fromSpeed(K.curve, 2, 1 - v / 100, sp.in)));
 }
 
-function easeBlock(app) {
+/**
+ * v0.30 Motion Control: the anchor 3×3 and the align buttons are small, so they live INSIDE the ease block,
+ * in a rail beside the graph (under it in a narrow panel) — one control surface for "where it is" and
+ * "how it moves". opts.rail = show them (NOW / Now card / MOE top / docked Motion Kit).
+ */
+function rail(app) {
+  return h('div', { class: 'kit-rail', 'data-key': 'kit-rail', role: 'group', 'aria-label': 'Anchor and align' }, anchorBlock(app, true), alignBlock(app, true));
+}
+function easeBlock(app, opts = {}) {
   const pr = prefs(app);
   const ctx = ctxOf(app);
   autoRead(app);
@@ -331,22 +362,28 @@ function easeBlock(app) {
   const tool = (ic, label, title, onclick, extra = {}) => h('button', Object.assign({ class: 'kit-ib', title: `${label} — ${title}`, 'aria-label': label, onclick }, extra), icon(ic, 'sm'));
   const chips = CHIPS.map((id) => BZ.PRESETS.find((p) => p.id === id)).filter(Boolean);
   const mine = userCurves(app);
+  const title = opts.rail ? 'Motion' : 'Ease';
   if (folded(app, 'ease')) {
-    return h('section', { class: 'kit-block kit-ease folded', 'aria-label': 'Ease' },
-      h('div', { class: 'kit-h' }, foldTitle(app, 'ease', 'Ease'),
+    // folded = the compact strip: the curve, what it was read from, and (Motion Control) anchor + align
+    return h('section', { class: `kit-block kit-ease folded ${opts.rail ? 'kit-control' : ''}`, 'aria-label': opts.rail ? 'Motion control' : 'Ease' },
+      h('div', { class: 'kit-h' }, foldTitle(app, 'ease', title),
         h('span', { class: 'kit-chip-g kit-fold-cv', html: curveSvg(K.curve), title: BZ.css(K.curve) }),
-        h('span', { class: `kit-src ${K.src ? '' : 'dim'}` }, K.src || (nKeys ? 'select 2+ keys on one property' : 'no keys selected'))));
+        h('span', { class: `kit-src ${K.src ? '' : 'dim'}` }, K.src || (nKeys ? 'select 2+ keys on one property' : 'no keys selected')),
+        opts.rail ? h('span', { class: 'spacer' }) : null,
+        opts.rail ? tool('copy', 'Copy ease', 'Ease Copy: copy the ease of the selected keys', () => copyEase(app)) : null,
+        opts.rail ? tool('kPaste', 'Paste ease', clipOf(pr) ? `Paste ${clipLabel(clipOf(pr))}` : 'Copy an ease first', () => pasteEase(app), { disabled: !clipOf(pr) }) : null),
+      opts.rail ? rail(app) : null);
   }
-  return h('section', { class: 'kit-block kit-ease', 'aria-label': 'Ease' },
+  return h('section', { class: `kit-block kit-ease ${opts.rail ? 'kit-control' : ''}`, 'aria-label': opts.rail ? 'Motion control' : 'Ease' },
     h('div', { class: 'kit-h' },
-      foldTitle(app, 'ease', 'Ease'),
+      foldTitle(app, 'ease', title),
       h('button', { class: `kit-src ${K.src ? '' : 'dim'}`, title: `${K.src || 'No curve read'} — click to read the selected keys again`, onclick: () => (keyed(ctxOf(app)).length ? autoRead(app, true) : app.toast('Select two or more keyframes on one property — the graph then shows their curve', 3500, 'info')) }, K.src || (nKeys ? 'select 2+ keys on one property' : 'no keys selected')),
       match ? h('span', { class: 'kit-match', title: 'The curve matches this preset' }, `≈ ${(BZ.PRESETS.concat(userCurves(app)).find((p) => p.id === match) || {}).label || ''}`) : null,
       h('span', { class: 'spacer' }),
       h('div', { class: 'kit-seg', role: 'group', 'aria-label': 'Apply to' }, seg('in', 'In', 'Ease in only (incoming side)'), seg('both', 'Both', 'In and out'), seg('out', 'Out', 'Ease out only (outgoing side)')),
       h('button', { class: `icon-btn ${pr.link ? 'on' : ''}`, 'aria-pressed': String(pr.link), title: 'Mirror: the two handles move together (symmetric ease)', 'aria-label': 'Mirror handles', onclick: () => setPref(app, { link: !pr.link }) }, icon('mirror', 'sm')),
       h('button', { class: `icon-btn kit-auto ${pr.auto ? 'on' : ''}`, 'aria-pressed': String(pr.auto), title: pr.auto ? 'Auto on: graph edits land on the selected keys when you let go' : 'Auto off: shape the curve, then press Apply', 'aria-label': 'Auto apply', onclick: () => setPref(app, { auto: !pr.auto }) }, icon('kAuto', 'sm'))),
-    h('div', { class: 'kit-graph-wrap' }, graph(app)),
+    opts.rail ? h('div', { class: 'kit-graph-row' }, h('div', { class: 'kit-graph-wrap' }, graph(app)), rail(app)) : h('div', { class: 'kit-graph-wrap' }, graph(app)),
     pr.auto ? null : h('div', { class: 'kit-row' }, h('span', { class: 'spacer' }), h('button', { class: 'btn primary sm', onclick: () => applyCurve(app, K.curve, pr.side, 'Ease Curve') }, icon('play', 'xs'), 'Apply curve')),
     pr.graph === 'value' ? h('div', { class: 'kit-sliders' }, slider(app, 'Out', 'out'), slider(app, 'In', 'in')) : velocity(app),
     h('div', { class: 'kit-tools-row icons' },
@@ -355,8 +392,8 @@ function easeBlock(app) {
       tool('kLinear', 'Linear', `Linear keys (${pr.side})`, () => run(app, 'kit.interp', { mode: 'linear', side: pr.side }, 'Linear')),
       tool('kHold', 'Hold', `Hold keys (${pr.side})`, () => run(app, 'kit.interp', { mode: 'hold', side: pr.side }, 'Hold'))),
       h('div', { class: 'kit-ibgroup' },
-      tool('copy', 'Copy', 'Copy this curve', () => { setPref(app, { clip: Object.assign({}, K.curve) }); app.toast(`Copied ${BZ.css(K.curve)}`, 2000, 'ok'); }),
-      tool('kPaste', 'Paste', pr.clip ? `Paste ${BZ.css(pr.clip)} on the selected keys` : 'Copy a curve first', () => applyCurve(app, pr.clip, pr.side, 'Paste ease'), { disabled: !pr.clip }),
+      tool('copy', 'Copy ease', 'Ease Copy: copy the ease of the selected keys, every segment (or the curve on the graph when no keys are selected)', () => copyEase(app)),
+      tool('kPaste', 'Paste ease', clipOf(pr) ? `Paste ${clipLabel(clipOf(pr))} on the selected keys — any property, any distance (${pr.side === 'both' ? 'in + out' : `ease ${pr.side} only`})` : 'Copy an ease first', () => pasteEase(app), { disabled: !clipOf(pr), 'data-key': 'kit-paste' }),
       tool('reverse', 'Flip', 'Flip the curve: the same ease played backwards (ease-out ↔ ease-in)', () => { const cv = KG.flipCurve(K.curve); K.curve = cv; if (K.graph) K.graph.set(cv); if (pr.auto) applyCurve(app, cv, pr.side, 'Flip curve'); else app.render(); }))),
     h('div', { class: 'kit-chips', role: 'toolbar', 'aria-label': 'Ease presets' },
       chips.map((p) => chip(app, p, match === p.id)),
@@ -378,12 +415,12 @@ function curveLibrary(app, match) {
 }
 
 /* ---------- anchor + align ---------- */
-function anchorBlock(app) {
+function anchorBlock(app, mini) {
   const pr = prefs(app);
   const rd = library.readiness(app, { tool: 'transform.anchor', args: { point: 'c' } });
-  return h('section', { class: 'kit-block kit-anchor', 'aria-label': 'Anchor point' },
-    h('div', { class: 'kit-h' }, foldTitle(app, 'anchor', 'Anchor')),
-    folded(app, 'anchor') ? null : h('div', { class: 'kit-anchor-body' },
+  return h('section', { class: `kit-block kit-anchor ${mini ? 'mini' : ''}`, 'aria-label': 'Anchor point' },
+    mini ? h('div', { class: 'kit-cap' }, 'Anchor') : h('div', { class: 'kit-h' }, foldTitle(app, 'anchor', 'Anchor')),
+    !mini && folded(app, 'anchor') ? null : h('div', { class: 'kit-anchor-body' },
     h('div', { class: `kit-dots ${rd.ok ? '' : 'off'}`, role: 'group', 'aria-label': 'Anchor point' },
       ORDER.map((p) => h('button', {
         class: 'kit-dot', 'data-key': `ap-${p}`, 'aria-label': `Anchor ${TM.POINT_LABEL[p]}`,
@@ -397,7 +434,7 @@ function anchorBlock(app) {
  * centres / space evenly). Target: the selection, the key layer (first selected stays) or the comp.
  * Alt-click = to the comp, Shift-click = to the key layer (one-off). Gap: empty = even, a number = fixed px.
  */
-function alignBlock(app) {
+function alignBlock(app, mini) {
   const pr = prefs(app);
   const to = (v, l, t) => h('button', { 'aria-pressed': String(pr.to === v), title: t, onclick: () => setPref(app, { to: v }) }, l);
   const btn = ([mode, ic, label]) => {
@@ -419,17 +456,18 @@ function alignBlock(app) {
   const setGap = () => { const t = String(gap.value).trim().replace(',', '.'); const v = t === '' ? null : Number(t); if (t !== '' && !Number.isFinite(v)) { app.toast('Type a number of pixels, or leave it empty for even gaps', 3000, 'warn'); return; } if (v !== pr.gap) setPref(app, { gap: v }); };
   gap.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); setGap(); } });
   gap.addEventListener('change', setGap);
-  return h('section', { class: 'kit-block kit-align', 'aria-label': 'Align' },
-    h('div', { class: 'kit-h' }, foldTitle(app, 'align', 'Align'), h('span', { class: 'spacer' }),
+  const f = !mini && folded(app, 'align');
+  return h('section', { class: `kit-block kit-align ${mini ? 'mini' : ''}`, 'aria-label': 'Align' },
+    h('div', { class: 'kit-h' }, mini ? h('span', { class: 'kit-cap' }, 'Align') : foldTitle(app, 'align', 'Align'), h('span', { class: 'spacer' }),
       h('div', { class: 'kit-seg', role: 'group', 'aria-label': 'Align to' },
         to('selection', 'Sel', 'Align to the selection\'s bounds'),
         to('key', 'Key', 'Align to the key layer: the first selected layer stays, the others line up with it'),
         to('comp', 'Comp', 'Align to the comp'))),
-    folded(app, 'align') ? null : ALIGN_ROWS.map((r) => h('div', { class: 'kit-align-row2', 'data-key': `ar-${r.axis}` },
+    f ? null : ALIGN_ROWS.map((r) => h('div', { class: 'kit-align-row2', 'data-key': `ar-${r.axis}` },
       h('span', { class: 'kit-axis', 'aria-hidden': 'true' }, r.axis),
       h('div', { class: 'kit-ibgroup' }, r.align.map(btn)),
       h('div', { class: 'kit-ibgroup' }, r.spread.map(btn)))),
-    folded(app, 'align') ? null : h('label', { class: 'kit-gapl' }, h('span', {}, 'Gap'), gap, h('span', { class: 'kit-vunit' }, 'px')));
+    f ? null : h('label', { class: 'kit-gapl' }, h('span', {}, 'Gap'), gap, h('span', { class: 'kit-vunit' }, 'px')));
 }
 
 /* ---------- tools ---------- */
@@ -469,10 +507,11 @@ function toolsBlock(app, opts = {}) {
 /** Docked Motion Kit panel: everything, compact. */
 function render(app) {
   return h('div', { class: 'view kit' },
-    easeBlock(app),
-    h('div', { class: 'kit-pair' }, anchorBlock(app), alignBlock(app)),
+    easeBlock(app, { rail: true }),
     toolsBlock(app, { foldId: 'kitTools' }));
 }
+/** Motion Control (v0.30): the one block for keys + anchor + align, used at the top of every style. */
+const controlBlock = (app) => easeBlock(app, { rail: true });
 
 function pinnedBlock(app) {
   const pr = prefs(app);
@@ -489,6 +528,6 @@ function renderToolbox(app) {
       curveLibrary(app, match)));
 }
 
-module.exports = { render, renderToolbox, matchPreset, keyed, K, DEFAULT_PINS, prefs, setPref, isFolded,
+module.exports = { controlBlock, copyEase, pasteEase, clipOf, render, renderToolbox, matchPreset, keyed, K, DEFAULT_PINS, prefs, setPref, isFolded,
   // v0.16 layouts (app/ui/layouts.js) build their screens from the same blocks
   easeBlock, anchorBlock, alignBlock, toolsBlock, pinnedBlock, curveLibrary, toolButton };

@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['easeCurve', 'Motion Control + Ease Copy', 'The speed / value graph now holds the anchor point and align beside it — one block on top of every style, each part as big as it needs. Copy the ease of selected keys (every segment) and Paste it on other keys or properties. After each tool, Next shows the steps that usually follow it.'],
   ['check', 'Fewer, clearer', 'One place per tool: the Quick Bar has 41 own actions and holds any preset as the tile itself (☆ next to Apply in a library); the Motion Kit rigs keep only what only they do; the anchor point takes half the space in NOW; the old styles are gone — Bento, Glass and MOE stay. Your saved bar, pins and pie keep working.'],
   ['sparkles', 'Organised the way you work', 'Home is now arranged by how often a motion designer reaches for things: the ten everyday tools first (Quick Bar, Alt+1…0), NOW for your selection, Power tools as big cards that explain themselves until you know them, then the stages Animate · Arrange · Design · Finish · Deliver — rare groups wait behind "More in…". Ctrl+1…5 jumps to a stage.'],
   ['sparkles', 'The Assistant — bottom-right corner', 'Press ` (or click the round button): ask anything about After Effects in Arabic or English, or describe a change — Claude answers and plans it with MOE tools, you approve, each step is verified. No key or offline? It still finds the right MOE tool from your words. A small number on the button = suggestions for your selection.'],

@@ -86,5 +86,5 @@ test('three styles, one render path; the retired styles and Smart Home are gone 
   const expr = fs.readFileSync(path.join(__dirname, '../extension/app/ui/views/expressions.js'), 'utf8');
   assert.ok(!/'One-click'/.test(expr), 'the Expressions page no longer repeats its own tiles');
   const bento = fs.readFileSync(path.join(__dirname, '../extension/app/ui/layoutBento.js'), 'utf8');
-  assert.match(bento, /nb === 'anchor' \? h\('div', \{ class: 'bt b-2x1 b-tall bt-block bt-anchor'/, 'anchor in NOW is half width');
+  assert.match(bento, /AE\.controlTop\(app, kind\)/, 'NOW leads with the Motion Control (v0.30)');
 });
