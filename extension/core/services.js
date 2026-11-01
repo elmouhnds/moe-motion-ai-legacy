@@ -13,13 +13,14 @@ const { createExecutor } = require('./executor');
 const { createCostMonitor } = require('./ai/cost');
 const { createClaudeClient } = require('./ai/client');
 const planner = require('./ai/planner');
+const assistant = require('./ai/assistant');
 const { registerAll } = require('../features/index');
 const recipes = require('../features/toolfactory/recipes');
 const { createBrandStore } = require('../features/brand/brands');
 const { createTextLibrary } = require('../features/text/library');
 const { createSelector } = require('../features/select/service');
 
-const VERSION = '0.27.0';
+const VERSION = '0.28.0';
 
 function createServices({ platform, evalScript, rootPath, hostTimeoutMs }) {
   const store = createStore(platform.fs);
@@ -44,6 +45,14 @@ function createServices({ platform, evalScript, rootPath, hostTimeoutMs }) {
     validate: (plan, ctx) => planner.validatePlan({ plan, registry, executor: services.executor, ctx }),
     run: (plan, onStep) => planner.runPlan({ plan, executor: services.executor, onStep }),
     rollback: (results) => planner.rollbackPlan({ results, executor: services.executor })
+  };
+  // v0.28: the floating assistant — answers questions and/or plans tool steps (same validation and approval as the Copilot)
+  services.assistant = {
+    ask: (request, ctx, history, format) => assistant.ask({ ai, registry, request, history, format, ctx: Object.assign({}, ctx, {
+      brands: services.brands.summary(),
+      textPresets: services.textLibrary.all().map((p) => `${p.id} (${p.kind}, ${p.name}${p.arabicSafe ? ', arabic-safe' : ''})`)
+    }) }),
+    validate: (plan, ctx) => planner.validatePlan({ plan, registry, executor: services.executor, ctx })
   };
   services.factory = {
     draft: (description) => recipes.draftRecipe({ ai, registry, description, catalogText: planner.catalogText })

@@ -32,6 +32,19 @@ module.exports = {
     if (/chroma-key green/.test(body.system[0].text) || /green background/.test(body.system[0].text)) {
       return reply({ title: 'Gold coin', prompt: 'Photoreal spinning gold coin, studio light', negative: 'text', keying: { spillRisk: 'high', choke: 1, advice: 'Gold reflects green — keep spill suppression on.' } });
     }
+    if (/MOE Assistant/.test(body.system[0].text)) {
+      // v0.28 assistant demo: a question gets an answer only; a change gets a short answer + the demo plan
+      const u = JSON.parse(body.messages[0].content);
+      const q = String(u.request || '');
+      const ar = /[\u0600-\u06FF]/.test(q);
+      if (/\?|؟|^how|^what|^why|ازاي|إزاي|ايه|إيه|ليه/i.test(q)) {
+        return reply({ answer: ar ? 'عشان تعمل نسخة 9:16 من نفس الكومب: افتح Deliver واختار 9:16، MOE بيعمل كومب جديدة ويرتب العناصر جوه المقاس الجديد. بعدها راجع المنطقة الآمنة (Social safe area) عشان الكلام ميتغطاش بزراير التطبيق.' : 'Open Deliver and tick 9:16 — MOE builds a new comp and re-fits the layout. Then add the Social safe area so text stays clear of the app buttons. Render each version from the Render Queue as usual.', summary: '', steps: [], warnings: [], clarification: '' });
+      }
+      return reply({ answer: ar ? 'تمام — هخلي الكيز سريعة في البداية وهادية في الآخر، وبعدين أعمل تتابع للطبقات.' : 'Snappy keys, then a 3-frame cascade.', summary: 'Give the selected keys a snappy feel, then cascade the layers 3 frames apart.', warnings: [], clarification: '', steps: [
+        { tool: 'motion.smartEase', args_json: '{"influenceIn":90,"influenceOut":15,"sides":"both","scope":"selected"}', reason: 'Snappy = quick out of each key, long ease into the next.' },
+        { tool: 'motion.stagger', args_json: '{"frames":3,"order":"index","mode":"offset","seed":1}', reason: 'Sequential reveal, top to bottom.' }
+      ] });
+    }
     if (/Tool Factory/.test(body.system[0].text)) {
       return reply({ name: 'Soft cascade', description: 'Stagger the selected layers by N frames, then give their keys a smooth ease.', limitations: '', params: [{ key: 'step', type: 'integer', label: 'Frames apart', default_json: '3', min: 1, max: 30, options: [] }], steps: [{ tool: 'motion.stagger', args_json: '{"frames":{"$param":"step"},"order":"index","mode":"offset","seed":1}', note: 'Cascade top to bottom' }, { tool: 'motion.smartEase', args_json: '{"influenceIn":70,"influenceOut":70,"sides":"both","scope":"all"}', note: 'Smooth every key' }] });
     }

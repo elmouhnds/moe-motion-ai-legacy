@@ -122,7 +122,7 @@ function resolve(ref) {
   if (kind === 'cmd') {
     const CMD = {
       search: { label: 'Search', icon: 'search', run: (app) => require('./palette').open(app) },
-      copilot: { label: 'Copilot', icon: 'spark', run: (app) => app.openCopilot() },
+      copilot: { label: 'Assistant', icon: 'sparkles', run: (app) => app.openCopilot() },
       repeat: { label: 'Repeat last', icon: 'repeat', run: (app) => app.repeatLast() }
     };
     const c = CMD[rest];
@@ -137,7 +137,7 @@ function catalog() {
   for (const sec of studio.SECTIONS.filter((x) => x.kind === 'library')) for (const t of sec.tiles) out.push({ ref: `tile:${sec.id}/${t.id}`, group: sec.label, label: t.label });
   for (const a of require('./quickbar').ACTIONS) out.push({ ref: `quick:${a.id}`, group: 'Quick Bar', label: a.label });
   for (const id of studio.NAV) out.push({ ref: `nav:${id}`, group: 'Open section', label: studio.byId(id).label });
-  for (const [id, label] of [['search', 'Search'], ['copilot', 'Copilot'], ['repeat', 'Repeat last']]) out.push({ ref: `cmd:${id}`, group: 'Commands', label });
+  for (const [id, label] of [['search', 'Search'], ['copilot', 'Assistant'], ['repeat', 'Repeat last']]) out.push({ ref: `cmd:${id}`, group: 'Commands', label });
   for (const [id, label] of [['apply', 'Apply brand'], ['applyComp', 'Brand whole comp'], ['ease', 'Brand ease']]) out.push({ ref: `brand:${id}`, group: 'Brand', label });
   return out;
 }

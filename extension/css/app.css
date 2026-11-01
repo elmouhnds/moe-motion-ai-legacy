@@ -1296,3 +1296,72 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .bi-chips .chip, .bi-missing .chip { display: inline-flex; align-items: center; height: var(--h-s); padding: 0 9px; border: 1px solid var(--line); border-radius: var(--r-pill); color: var(--text-2); font-size: var(--fs-sm); }
 .bi-use { display: flex; flex-direction: column; gap: 6px; padding-top: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
 .bi-use .actions { margin-top: 0; flex-wrap: wrap; }
+
+/* ---------- v0.28 floating assistant (every style) ---------- */
+.main { position: relative; }
+.assistant { position: absolute; bottom: 12px; right: 12px; z-index: 40; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none; }
+.assistant.side-left { right: auto; left: 12px; align-items: flex-start; }
+.assistant > * { pointer-events: auto; }
+.as-fab { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--accent); border-radius: 50%; background: radial-gradient(120% 120% at 30% 20%, var(--accent-hover), var(--accent)); color: var(--accent-ink); box-shadow: var(--shadow-2); cursor: pointer; transition: box-shadow var(--t), filter var(--t); }
+.as-fab:hover { filter: brightness(1.08); box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5), 0 0 0 4px var(--accent-soft); }
+.as-fab:focus-visible { outline: none; box-shadow: var(--focus), var(--shadow-2); }
+.as-fab .svg-i { width: var(--ic-l); height: var(--ic-l); color: var(--accent-ink); }
+.as-fab.on { background: var(--bg-elev); border-color: var(--line-strong); color: var(--text); }
+.as-fab.on .svg-i { color: var(--text); }
+.as-badge { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px; border: 2px solid var(--bg); border-radius: var(--r-pill); background: var(--text); color: var(--bg); font-size: 10px; font-weight: 800; line-height: 14px; text-align: center; }
+.as-sheet { display: flex; flex-direction: column; width: min(420px, calc(100vw - 24px)); max-height: min(72vh, 620px); border: 1px solid var(--line-strong); border-radius: 14px; background: var(--bg-raised); box-shadow: var(--shadow-2); overflow: hidden; animation: reveal 160ms ease-out; }
+.as-h { display: flex; align-items: center; gap: 8px; padding: 10px 10px 8px 12px; border-bottom: 1px solid var(--line); }
+.as-h b { font-family: var(--display); font-size: 14px; }
+.as-logo { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); }
+.as-logo .svg-i { color: var(--accent); }
+.as-ctx { min-width: 0; overflow: hidden; color: var(--text-3); font-size: var(--fs-sm); white-space: nowrap; text-overflow: ellipsis; }
+.as-tips { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--bg); }
+.as-tip { display: flex; align-items: center; gap: 8px; min-height: 28px; font-size: var(--fs-sm); color: var(--text-2); }
+.as-tip > .svg-i { flex: none; color: var(--accent); }
+.as-tip-t { flex: 1; min-width: 0; }
+.as-tip .btn { flex: none; }
+.as-thread { flex: 1; min-height: 80px; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+.as-empty p { margin: 0 0 10px; color: var(--text-2); font-size: var(--fs); line-height: 1.5; }
+.as-prompts { display: flex; flex-direction: column; gap: 6px; }
+.as-prompt { align-self: flex-start; max-width: 100%; min-height: var(--h-m); padding: 4px 12px; border: 1px solid var(--line-strong); border-radius: var(--r-pill); background: var(--bg); color: var(--text); font: inherit; font-size: var(--fs); text-align: left; cursor: pointer; transition: border-color var(--t), color var(--t); }
+.as-prompt:hover { border-color: var(--accent); color: var(--accent); }
+.as-msg { display: flex; gap: 8px; align-items: flex-start; }
+.as-msg.you { justify-content: flex-end; }
+.as-msg.you .as-bubble { max-width: 85%; background: var(--accent-soft); border-color: transparent; color: var(--text); white-space: pre-wrap; }
+.as-av { flex: none; display: grid; place-items: center; width: 22px; height: 22px; margin-top: 2px; border-radius: 50%; background: var(--accent-soft); }
+.as-av .svg-i { color: var(--accent); }
+.as-bubble { min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-size: var(--fs); line-height: 1.5; }
+.as-msg.moe .as-bubble { flex: 1; }
+.as-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.as-text + * { margin-top: 8px; }
+.as-found { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.as-hit { display: flex; align-items: center; gap: 8px; min-height: var(--h-m); padding: 0 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-raised); color: var(--text); font: inherit; text-align: left; cursor: pointer; transition: border-color var(--t); }
+.as-hit:hover { border-color: var(--accent); }
+.as-hit .svg-i { flex: none; color: var(--text-3); }
+.as-hit-n { flex: none; font-weight: 600; }
+.as-hit-d { flex: 1; min-width: 0; overflow: hidden; color: var(--text-3); font-size: var(--fs-sm); text-align: right; white-space: nowrap; text-overflow: ellipsis; }
+.as-card { margin-top: 6px; padding: 8px 10px; border: 1px solid var(--accent-soft); border-radius: var(--r-lg); background: var(--bg-raised); }
+.as-card b { display: flex; align-items: center; gap: 6px; }
+.as-card p { margin: 4px 0; color: var(--text-2); }
+.as-card ol { margin: 4px 0 6px; padding-left: 18px; color: var(--text-2); }
+.as-key { margin-top: 8px; }
+.as-plan .step { margin-top: 6px; }
+.as-plan .actions { margin-top: 8px; }
+.as-old { display: flex; align-items: center; gap: 6px; color: var(--text-3); font-size: var(--fs-sm); }
+.as-in { display: flex; align-items: flex-end; gap: 6px; padding: 8px 10px 4px; border-top: 1px solid var(--line); }
+.as-input { flex: 1; min-height: 36px; max-height: 120px; resize: none; }
+.as-send { flex: none; width: var(--h-l); height: var(--h-l); padding: 0; justify-content: center; }
+.as-foot { padding: 0 12px 8px; color: var(--text-3); font-size: var(--fs-xs); }
+/* the last tools on a page stay clear of the button */
+.app .content > .view:last-child, .app .content > .b-page { padding-bottom: 68px; }
+
+/* ---------- v0.28 Everyday slots: hold Alt to see Alt+1…0 on the Quick Bar ---------- */
+.qb-btn[data-slot] { position: relative; }
+.alt-held .qb-btn[data-slot]::after { content: attr(data-slot); position: absolute; right: 1px; bottom: 1px; min-width: 11px; height: 11px; padding: 0 2px; border-radius: 3px; background: var(--accent); color: var(--accent-ink); font-size: 9px; font-weight: 800; line-height: 11px; text-align: center; }
+/* open: the sheet becomes a drawer at the bottom of the panel — the page shrinks above it, nothing is covered,
+   so you can keep selecting and clicking tools while you talk to the assistant (audit v0.28) */
+.assistant.open { position: relative; bottom: auto; right: auto; left: auto; flex: none; order: 1; width: 100%; padding: 0; pointer-events: auto; }
+.assistant.open .as-fab { display: none; }
+.assistant.open .as-sheet { width: 100%; max-height: min(55vh, 520px); border-width: 1px 0 0; border-radius: 14px 14px 0 0; box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.28); }
+.app.layout-glass .gl-nav { order: 2; }
+.app.layout-glass .assistant.open { bottom: auto; }

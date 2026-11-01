@@ -14,15 +14,11 @@ const A = require('./actions');
 const AE = require('./layoutAE');
 const studio = require('./studio/sections');
 
-const SPACES = [
-  { id: 'gl-motion', label: 'Motion', icon: 'motion', tabs: ['ae-keys', 'ae-animate'], fits: ['keys', 'layer', 'text', 'shapes'], title: 'Keyframes, ease, loops, animate in / out, rigs, expressions' },
-  { id: 'gl-arrange', label: 'Arrange', icon: 'alignCenter', tabs: ['ae-layer'], fits: ['layers', 'shapesMany'], title: 'Align, anchor, transform, parent, grid builder' },
-  { id: 'gl-look', label: 'Look', icon: 'palette', tabs: ['ae-design', 'ae-effect'], fits: ['none'], title: 'Shapes, backgrounds, looks, keying, colour, camera' },
-  { id: 'gl-deliver', label: 'Deliver', icon: 'download', tabs: ['ae-comp'], fits: [], title: 'Guides, every format, project' }
-];
+// v0.28: the spaces are the workflow stages (app/ui/workflow.js) — Animate · Arrange · Design · Finish · Deliver
+const W = require('./workflow');
+const SPACES = W.STAGES.map((st) => ({ id: `gl-${st.id.slice(3)}`, label: st.label, icon: st.icon, fits: st.fits, title: st.title, stage: st }));
 const SPACE_IDS = SPACES.map((x) => x.id);
-const tabsOf = (sp) => sp.tabs.map((id) => AE.TABS.find((t) => t.id === id));
-const ownerOf = (view) => SPACES.find((sp) => tabsOf(sp).some((t) => t.owns.includes(view))) || null;
+const ownerOf = (view) => { const st = W.stageOfView(view); return st ? SPACES.find((sp) => sp.stage === st) : null; };
 
 /** The Now card: what is selected, and the eight best actions for it. */
 function nowCard(app, s, kind) {
@@ -61,8 +57,10 @@ function build(app, s, body) {
   let content;
   if (q) content = h('div', { class: 'view ae-page gl-page' }, AE.searchResults(app, q));
   else if (isSpace) {
+    // everyday groups first; the stage's rare groups follow, folded until you open them (remembered per group)
     content = h('div', { class: 'view kit ae-page gl-page' }, nowCard(app, s, kind),
-      tabsOf(sp).map((t) => t.groups.map((g) => AE.twirl(app, t, g, kind, () => AE.groupBody(app, g, t), g.more ? AE.moreLink(app, g) : null))));
+      W.stageGroups(sp.stage).map(({ tab, group, tier }) => AE.twirl(app, tab, tier === 'more' && group.open ? Object.assign({}, group, { open: false }) : group, kind, () => AE.groupBody(app, group, tab),
+        tier === 'more' ? h('span', { class: 'gl-rare', title: 'Used less often' }, 'more') : group.more ? AE.moreLink(app, group) : null)));
   } else {
     const back = sp || SPACES.find((x) => x.id === (s.glSpace || first));
     const sec = studio.byId(view);

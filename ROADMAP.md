@@ -37,6 +37,12 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.33 — Organised the way you work + Assistant ✅ (v0.28.0)
+- Home by distance = frequency: Everyday (Alt+1…0) → NOW + format chip → Power tools (explained until learned) → stages Animate · Arrange · Design · Finish · Deliver (rare groups behind *More*) → search.
+- Floating Assistant: ask + do (Claude answers and plans with MOE tools, approval + verify), offline word → tool matching (Arabic / English), quiet suggestions.
+- Many projects: comp format chip, comp-sized social safe area, each AE project remembers its client.
+- Next: per-stage personal order (drag), voice-free "explain this panel" tour from the Assistant, Assistant answers grounded in the AE scripting / help docs when the network allows.
+
 ## M1.32 — Thick Glass (Glaze-class) ✅ (v0.27.0)
 - [x] `glass.thick` / `glass.thickLook`: thick refractive glass from a live height map (pre-comp linked to the source by expressions), CC Glass refraction, frost, dispersion, reflection / chrome, studio highlights, shadow, caustics, 7 looks, one glass for several layers (docs/features/THICK_GLASS.md)
 - [ ] Inside AE 2025: CC Glass parameter names and shading, precision on real logos / text, render time (TEST_REPORT 162–166)

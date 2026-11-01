@@ -2,6 +2,24 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.28.0] — 2026-10-31 — Organised the way you work + the Assistant
+The owner: the tools were arranged "like a bot that memorised a menu"; he asked for an organisation built on how a motion artist with years in AE really works — big explained cards for important things, everyday tools bigger and first, secondary and rare ones treated as such, fast access, useful shortcuts, an AI agent inside AE as a floating assistant, and many projects of different shapes and sizes. Design: `docs/features/WORKFLOW_HOME.md`, `docs/features/ASSISTANT.md`.
+### Added
+- **Assistant** — a floating button in the corner of every style (` or Ctrl+Space; right-click: other corner). Ask about After Effects / motion / MOE in Arabic or English and/or describe a change: Claude answers and plans with MOE tools (`core/ai/assistant.js`, one structured reply: answer + steps); steps are re-validated, approved, verified, rollback / save as tool. Conversation follow-ups (last 6 turns). **Offline / no key**: words (Egyptian Arabic phrases included) → matching Power card + best tools and presets, one click away. **Suggestions** for the selection as a number on the button (stagger, curve, brand, social safe area, empty comp) — never a pop-up.
+- **Stages** — Animate · Arrange · Design · Finish · Deliver, ordered by how often a motion designer is in them; everyday groups open, rare ones behind *More in <stage>*. Bento index chips and **Ctrl+1…5**; Glass's spaces are the stages.
+- **Power tools** — eight deep features as big cards (what · when · needs · 3 steps · one-click try · open) that shrink to chips after 3 uses or ✓; ≡ › *Explain the Power tools again*.
+- **Everyday** — the Quick Bar's first ten = Easy Ease, Out Expo, Center Anchor, Parent to Null, Pre-compose, Stagger, Loop Cycle, Wiggle, Reverse Keys, Duplicate Comp; **Alt+1…0** runs them (hold Alt to see the numbers).
+- **Format chip** in NOW (9:16 · HD · 30 Reels / TikTok / Shorts, 4:5, 1:1, 16:9, wide; HD / 2.5K / 4K; pixel aspect respected) and a comp-sized **social safe area**.
+- **Each AE project remembers its client** — switch projects and the client follows (toast).
+### Changed
+- Default Quick Bar: everyday tools first; Reveal / Open Folder / Purge left the default (Deliver › Project, search). Customised bars are kept.
+- The bottom "Describe a change…" bar became the Assistant; *Copilot* is called *Assistant* in menus and the pie.
+- Shortcuts sheet ordered by distance (Alt+1…0, F4, Q, `, Ctrl+K, Ctrl+1…5 …). Glass: Ctrl+1…5.
+### Fixed (found by the v0.28 audit)
+- The open Assistant covered controls → it opens as a drawer at the bottom (page shrinks above it). Ctrl+1…5 lit the wrong stage chip during the scroll. Empty *Send* gave no feedback.
+### Tests
+- `tests/workflow.home.test.js` (11): every group placed once, core before more, page → stage; Everyday = default bar, Alt slots run; Power cards resolve and learn; formats (vertical / portrait / square / 4K / wide / anamorphic); safe area accepted by the guides tool on a 9:16 mock comp; suggestions + per-comp dismiss; project → client memory (switch, untitled, deleted client, cap 60); Arabic whole-word keywords; assistant request shape (answer + plan schema, history cap, deterministic system prompt, format as data) and no-key error; shell wiring. **Mock / preview, not After Effects.**
+
 ## [0.27.0] — 2026-10-31 — Thick Glass (Glaze-class)
 The owner asked for something like aescripts Glaze, in a suitable place, implemented with high precision. Study and design: `docs/features/THICK_GLASS.md`.
 ### Added

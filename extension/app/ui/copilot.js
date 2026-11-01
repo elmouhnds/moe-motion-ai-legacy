@@ -68,4 +68,4 @@ function render(app) {
             c.run.ok ? h('button', { class: 'btn ghost', onclick: () => app.savePlanAsRecipe() }, icon('save', 'sm'), 'Save as tool') : null)) : null) : null));
 }
 
-module.exports = { render };
+module.exports = { render, stepView, argChips };

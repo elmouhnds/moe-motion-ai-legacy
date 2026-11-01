@@ -43,7 +43,10 @@ const VARIANTS = {
   moe: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'moe' } }); a.render(); } },
   // v0.24 style proposals: Glass (Now + a space), Apple (root + a category page), Bento (one page)
   glass: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'glass' } }); a.render(); } },
-  glook: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'glass' } }); a.go('gl-look'); } },
+  glook: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'glass' } }); a.go('gl-design'); } },
+  // v0.28: the floating assistant open (suggestions, prompts, offline + demo answers), and the Power cards learned (chips)
+  assist: { setup: () => { window.__app.openCopilot(); } },
+  learned: { setup: () => { const a = window.__app; const W = require('/extension/app/ui/workflow.js'); W.POWER.forEach((p) => W.gotIt(a.services.store, p.id)); a.render(); } },
   apple: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'apple' } }); a.render(); } },
   aplayer: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'apple' } }); a.go('ap-ae-layer'); } },
   bento: { setup: () => { const a = window.__app; a.services.settings.update({ ui: { layout: 'bento' } }); a.render(); } },
@@ -287,8 +290,10 @@ async function keys(browser) {
   const page = await browser.newPage({ viewport: { width: 940, height: 800 } });
   const res = [];
   const go = async () => { await page.goto(url('home')); await page.waitForSelector('.ctx .dot.live'); await page.waitForTimeout(200); };
-  const st = () => page.evaluate(() => { const s = window.__app.state.get(); return { view: s.view, modal: s.modal, pal: !!window.__app.paletteOpen, cp: s.copilot.open }; });
-  for (const [k, expect] of [['Control+k', (s) => s.pal], ['/', (s) => s.pal], ['Control+Space', (s) => s.cp], ['?', (s) => s.modal === 'shortcuts']].concat([1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => [`Control+Digit${n}`, (s) => s.view !== 'home' || n === 1]))) {
+  const st = () => page.evaluate(() => { const s = window.__app.state.get(); return { view: s.view, modal: s.modal, pal: !!window.__app.paletteOpen, cp: s.copilot.open, bIx: s.bIx || null, toast: s.toast || '' }; });
+  // v0.28 (Bento default): Ctrl+1…5 jump to a stage on Home; ` opens the assistant; Alt+1 runs Everyday slot 1
+  const STAGE = ['st-animate', 'st-arrange', 'st-design', 'st-finish', 'st-deliver'];
+  for (const [k, expect] of [['Control+k', (s) => s.pal], ['/', (s) => s.pal], ['Control+Space', (s) => s.cp], ['Backquote', (s) => s.cp], ['Alt+Digit1', (s) => /Easy Ease|ease|keyframe/i.test(s.toast)], ['?', (s) => s.modal === 'shortcuts']].concat([1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => [`Control+Digit${n}`, (s) => (n <= 5 ? s.view === 'home' && s.bIx === STAGE[n - 1] : s.view !== 'home')]))) {
     await go();
     await page.keyboard.press(k);
     await page.waitForTimeout(250);

@@ -149,9 +149,11 @@ test('style proposals (v0.24): every Classic group has one place in Glass, Apple
   const G = require('../extension/app/ui/layoutGlass');
   const AP = require('../extension/app/ui/layoutApple');
   const B = require('../extension/app/ui/layoutBento');
-  // Glass: the four spaces cover the six tabs exactly once
-  const covered = G.SPACES.flatMap((sp) => sp.tabs);
-  assert.deepEqual([...covered].sort(), [...AE.TAB_IDS].sort());
+  // Glass (v0.28): the spaces are the five workflow stages, which place every Classic group exactly once
+  const W = require('../extension/app/ui/workflow');
+  assert.deepEqual(G.SPACES.map((sp) => sp.label), W.STAGES.map((st) => st.label));
+  const covered = W.STAGES.flatMap((st) => st.groups.map(([t, g]) => `${t}/${g}`));
+  assert.deepEqual([...covered].sort(), AE.TABS.flatMap((t) => t.groups.map((g) => `${t.id}/${g.id}`)).sort());
   assert.equal(new Set(covered).size, covered.length);
   // every page a tab owns is owned by one space (crumb and active space agree)
   for (const t of AE.TABS) for (const page of t.owns) assert.ok(G.ownerOf(page), `glass owns ${page}`);

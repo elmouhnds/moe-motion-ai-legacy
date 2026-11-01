@@ -60,7 +60,7 @@ function createApp(root, services, env = {}) {
       running: null, results: {}, args: {}, open: {}, advanced: {},
       expr: { code: '', assist: { mode: 'generate', request: '', result: null } },
       factory: { description: '', draft: null, busy: false, error: null },
-      copilot: { open: false, request: '', phase: 'idle', validated: null, progress: {}, run: null, error: null },
+      copilot: { open: false, request: '', phase: 'idle', validated: null, progress: {}, run: null, error: null, thread: [], planEntry: null },
       keyStatus: null, toast: null, toastKind: null, modal: null, update: { phase: 'idle' }, compact: false, wide: false
     })
   };
@@ -119,7 +119,7 @@ function createApp(root, services, env = {}) {
         quickbar.strip(app),
         tabs,
         h('div', { class: 'content' }, chrome.banner(app, s.view), (views[s.view] || views.home).render(app)),
-        copilot.render(app)),
+        require('./assistant').render(app)),
       quickbar.popover(app),
       quickbar.restPopover(app),
       s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, s.toastKind ? h('span', { class: 'toast-ic' }, icon(TOAST_ICON[s.toastKind] || 'info', 'sm')) : null, h('span', {}, s.toast)) : null,
@@ -293,7 +293,7 @@ function createApp(root, services, env = {}) {
         p.top,
         h('div', { class: 'content' }, p.content),
         p.bottom || null,
-        copilot.render(app)),
+        require('./assistant').render(app)),
       p.overlay || null,
       quickbar.popover(app),
       quickbar.restPopover(app),
@@ -336,6 +336,7 @@ function createApp(root, services, env = {}) {
   /* ---------- host / context ---------- */
   let ctxInFlight = null;
   let lastCtxAt = 0;
+  let lastProject = null;
   app.refreshContext = async (force) => {
     if (ctxInFlight) return ctxInFlight;
     if (!force && Date.now() - lastCtxAt < 400) return null;
@@ -348,6 +349,10 @@ function createApp(root, services, env = {}) {
         lastCtxAt = Date.now();
         const prev = JSON.stringify(app.state.get().ctx);
         if (JSON.stringify(ctx) !== prev || app.state.get().hostError) app.state.set({ ctx, hostError: null });
+        // v0.28: each AE project remembers its client — switching projects switches the client too
+        const sync = require('./workflow').syncProject(services.store, ctx, services.brands, lastProject);
+        if (sync.switched) app.toast(`${sync.project} → client ${sync.switched.name}`, 3200, 'ok');
+        lastProject = sync.project || lastProject;
       } catch (e) {
         services.logger.warn('ui', 'context read failed', { code: e.code, message: e.message });
         if (app.state.get().hostError !== e.message) app.state.set({ hostError: e.message });
@@ -471,6 +476,34 @@ function createApp(root, services, env = {}) {
   const setC = (patch) => app.state.set((s) => ({ copilot: Object.assign({}, s.copilot, patch) }));
   app.openCopilot = () => setC({ open: true });
   app.closeCopilot = () => setC({ open: false });
+  app.toggleAssistant = () => setC({ open: !app.state.get().copilot.open });
+  /* v0.28 assistant: ask a question and/or describe a change. Claude answers and plans; without a key
+     (or offline) the assistant matches your words to tools locally. Plans still need your approval. */
+  let turnN = 0;
+  app.askAssistant = async (text) => {
+    const t = String(text || '').trim();
+    if (!t || app.state.get().copilot.phase === 'thinking') return;
+    const W = require('./workflow');
+    const c0 = app.state.get().copilot;
+    const thread = c0.thread.concat([{ id: `t${++turnN}`, role: 'user', text: t }]);
+    setC({ thread, request: '', phase: 'thinking', error: null });
+    const say = (entry, patch) => setC(Object.assign({ thread: app.state.get().copilot.thread.concat([Object.assign({ id: `t${++turnN}`, role: 'assistant' }, entry)]), phase: 'idle' }, patch || {}));
+    try {
+      await app.refreshContext(true);
+      const ctx = app.state.get().ctx;
+      const history = thread.slice(0, -1).map((e) => ({ role: e.role, text: e.text || e.summary || '' }));
+      const res = await services.assistant.ask(t, ctx, history, W.formatOf(ctx && ctx.comp));
+      const validated = res.steps && res.steps.length ? await services.assistant.validate(res, ctx) : null;
+      const id = `t${turnN + 1}`;
+      say({ text: res.answer || (validated ? '' : res.clarification || 'No answer came back.'), clarification: validated ? res.clarification : '', summary: validated ? validated.summary : '', plan: !!validated },
+        validated ? { validated, planEntry: id, phase: 'review', progress: {}, run: null } : null);
+    } catch (e) {
+      const offline = ['AI_NO_KEY', 'AI_DISABLED', 'AI_NETWORK', 'AI_BUDGET'].includes(e.code);
+      say({ kind: 'local', keywords: W.keywordsOf(t), code: e.code || 'ERR',
+        text: offline ? (e.code === 'AI_NO_KEY' ? 'Working offline (no Claude key) — here is what I found in MOE:' : `${e.message} Here is what I found in MOE:`) : `Claude could not answer (${e.message}). Here is what I found in MOE:` });
+    }
+  };
+  app.clearAssistant = () => setC({ thread: [], validated: null, planEntry: null, phase: 'idle', progress: {}, run: null, error: null });
   app.planCopilot = async () => {
     const req = (app.state.get().copilot.request || '').trim();
     if (!req) return;
@@ -650,14 +683,27 @@ function createApp(root, services, env = {}) {
     const typing = /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '');
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); const box = document.querySelector('.ae-search'); if (box) { box.focus(); box.select(); } else if (!app.paletteOpen) palette.open(app); }
     else if (e.key === '/' && !typing && !app.paletteOpen) { e.preventDefault(); palette.open(app); }
-    else if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); app.openCopilot(); }
+    else if (e.ctrlKey && e.code === 'Space') { e.preventDefault(); app.toggleAssistant(); }
+    else if (e.code === 'Backquote' && !typing && !e.ctrlKey && !e.altKey && !e.metaKey && !app.state.get().modal) { e.preventDefault(); app.toggleAssistant(); }
+    else if (e.key === 'Escape' && app.state.get().copilot.open && !app.state.get().modal) { e.preventDefault(); app.closeCopilot(); }
+    else if (e.altKey && !e.ctrlKey && !e.metaKey && /^Digit[0-9]$/.test(e.code) && !typing) {
+      // v0.28 Everyday: Alt+1…0 runs the first ten Quick Bar buttons
+      e.preventDefault();
+      const n = (Number(e.code.slice(5)) + 9) % 10;
+      if (app.state.get().running) app.toast('Wait for the running tool to finish', 2000, 'warn');
+      else if (!quickbar.runSlot(app, n)) app.toast(`Alt+${(n + 1) % 10}: that Quick Bar slot is empty — add buttons in Customize Quick Bar`, 3500, 'warn');
+    }
     else if (e.key === 'Escape' && app.state.get().modal) { e.preventDefault(); app.state.set({ modal: null }); }
     else if (e.key === 'Escape' && app.state.get().layMenu) { e.preventDefault(); app.state.set({ layMenu: null }); }
     else if (e.key === 'Escape' && (app.state.get().aeMenu || app.state.get().aeTabMenu)) { e.preventDefault(); app.state.set({ aeMenu: false, aeTabMenu: null }); }
     else if (e.key === '?' && !typing) { e.preventDefault(); app.state.set({ modal: 'shortcuts' }); }
-    else if ((e.ctrlKey || e.metaKey) && /^Digit[1-4]$/.test(e.code) && require('./layouts').layoutOf(app) === 'glass') {
-      // Glass: Ctrl+1…4 = Motion · Arrange · Look · Deliver
+    else if ((e.ctrlKey || e.metaKey) && /^Digit[1-5]$/.test(e.code) && require('./layouts').layoutOf(app) === 'glass') {
+      // Glass: Ctrl+1…5 = the stages Animate · Arrange · Design · Finish · Deliver
       e.preventDefault(); app.state.set({ aeQ: '' }); app.go(require('./layoutGlass').SPACE_IDS[Number(e.code.slice(5)) - 1]);
+    }
+    else if ((e.ctrlKey || e.metaKey) && /^Digit[1-5]$/.test(e.code) && require('./layouts').layoutOf(app) === 'bento') {
+      // Bento: Ctrl+1…5 jumps to a stage on the page
+      e.preventDefault(); require('./layoutBento').jumpTo(app, require('./workflow').STAGE_IDS[Number(e.code.slice(5)) - 1]);
     }
     else if ((e.ctrlKey || e.metaKey) && /^Digit[1-6]$/.test(e.code) && ['ae', 'moe'].includes(require('./layouts').layoutOf(app))) {
       // Classic: Ctrl+1…6 = the six tabs (Keys · Animate · Layer · Design · Effect · Comp)
@@ -695,6 +741,11 @@ function createApp(root, services, env = {}) {
   }, true);
   document.addEventListener('pointerdown', () => { lastPointer = lastInput = Date.now(); }, true);
   document.addEventListener('keydown', () => { lastInput = Date.now(); }, true);
+  // v0.28: hold Alt to see the Everyday numbers on the Quick Bar
+  const altView = (on) => { try { document.documentElement.classList.toggle('alt-held', on); } catch (_) { /* no DOM */ } };
+  document.addEventListener('keydown', (e) => { if (e.key === 'Alt') altView(true); }, true);
+  document.addEventListener('keyup', (e) => { if (e.key === 'Alt') altView(false); }, true);
+  window.addEventListener('blur', () => altView(false));
   let lastFocusRead = 0;
   window.addEventListener('focus', () => { if (Date.now() - lastFocusRead > 1500) { lastFocusRead = Date.now(); app.refreshContext(); } });
   const pollTick = () => {

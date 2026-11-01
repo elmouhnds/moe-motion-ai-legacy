@@ -72,7 +72,7 @@
 .app.layout-glass .ae-tile:hover { border-color: var(--accent); }
 .app.layout-glass .kit-graph, .app.layout-glass .kit-ib, .app.layout-glass .kit-seg, .app.layout-glass .kit-vfield, .app.layout-glass .kit-num { background: var(--bg-sunken); border-color: var(--line); }
 /* the floating capsule */
-.gl-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; flex: none; margin: 4px 10px 8px; padding: 4px; border: 1px solid var(--g-rim); border-radius: 999px; background: var(--bg-elev); box-shadow: var(--g-shadow); backdrop-filter: blur(18px) saturate(150%); }
+.gl-nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; flex: none; margin: 4px 10px 8px; padding: 4px; border: 1px solid var(--g-rim); border-radius: 999px; background: var(--bg-elev); box-shadow: var(--g-shadow); backdrop-filter: blur(18px) saturate(150%); }
 .gl-tab { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; height: 46px; min-width: 0; border: 0; border-radius: 999px; background: none; color: var(--text-3); font: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer; transition: background var(--t), color var(--t); }
 .gl-tab .svg-i { width: 20px; height: 20px; }
 .gl-tab:hover { color: var(--text); }
@@ -255,3 +255,49 @@
 .rail-btn.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
 .bt.drop-before { box-shadow: inset 3px 0 0 var(--accent); }
 .rail-btn[draggable="true"] { cursor: grab; }
+
+/* ---------- v0.28 Bento: format chip, Power tools, stages ---------- */
+.b-fmt { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border: 1px solid var(--line-strong); border-radius: var(--r-pill); color: var(--text-2); font-size: var(--fs-sm); white-space: nowrap; }
+.b-fmt-use { color: var(--text-3); }
+.b-fmt-box { display: inline-block; flex: none; width: 14px; height: 8px; border: 1.5px solid var(--accent); border-radius: 2px; }
+.b-fmt.fmt-vertical .b-fmt-box { width: 7px; height: 12px; }
+.b-fmt.fmt-portrait .b-fmt-box { width: 9px; height: 11px; }
+.b-fmt.fmt-square .b-fmt-box { width: 10px; height: 10px; }
+.b-fmt.fmt-wide .b-fmt-box { width: 16px; height: 6px; }
+.app.kit-narrow .b-fmt-use, .app.kit-tiny .b-fmt-use { display: none; }
+.b-power .b-h-n { margin-left: 2px; }
+.b-power .b-h .ae-more { margin-left: auto; }
+.pw-grid { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, calc((100% - 16px) / 3)); gap: 8px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.pw-grid > .pw-card { scroll-snap-align: start; }
+.app.kit-narrow .pw-grid, .app.kit-tiny .pw-grid { grid-auto-columns: 86%; }
+.pw-card { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: radial-gradient(130% 120% at 0% 0%, var(--accent-soft), transparent 55%), var(--b-tile); }
+.pw-card.fit { border-color: var(--accent); }
+.pw-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pw-ic { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 10px; background: var(--accent-soft); }
+.pw-ic .svg-i { color: var(--accent); }
+.pw-t { min-width: 0; overflow: hidden; font-family: var(--display); font-size: 15px; letter-spacing: -0.01em; white-space: nowrap; text-overflow: ellipsis; }
+.pw-got { flex: none; }
+.pw-what { margin: 0; color: var(--text); font-size: var(--fs); line-height: 1.45; }
+.pw-meta { display: flex; flex-direction: column; gap: 2px; color: var(--text-3); font-size: var(--fs-sm); }
+.pw-meta i { font-style: normal; font-weight: 700; color: var(--text-2); }
+.pw-steps { margin: 2px 0 0; padding-left: 18px; color: var(--text-2); font-size: var(--fs-sm); line-height: 1.5; }
+.pw-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 4px; }
+.pw-acts .btn.off { opacity: 0.55; }
+.pw-mini { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pw-mini .ae-chip.fit { border-color: var(--accent); }
+.app.kit-narrow .pw-steps, .app.kit-tiny .pw-steps, .app.kit-tiny .pw-meta { display: none; }
+.b-ix { display: inline-flex; align-items: center; gap: 6px; }
+.b-ix .svg-i { color: currentColor; }
+.b-h .b-fold > .svg-i:not(:first-child) { transform: none; color: var(--accent); }
+.b-h .b-h-n { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.app.kit-narrow .b-h .b-h-n, .app.kit-tiny .b-h .b-h-n { display: none; }
+.b-more { display: flex; align-items: center; gap: 8px; min-height: var(--h-m); padding: 0 10px; border: 1px dashed var(--line-strong); border-radius: 10px; background: none; color: var(--text-2); font: inherit; font-size: var(--fs); cursor: pointer; transition: border-color var(--t), color var(--t); }
+.b-more:hover { border-color: var(--accent); color: var(--text); }
+.b-more .svg-i { transform: none; transition: transform var(--t); }
+.b-more.on .svg-i { transform: rotate(90deg); }
+.b-more-n { min-width: 0; overflow: hidden; color: var(--text-3); font-size: var(--fs-sm); white-space: nowrap; text-overflow: ellipsis; }
+.gl-rare { color: var(--text-3); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.08em; }
+/* v0.28: five stages in the Glass capsule; the assistant floats above it */
+.app.layout-glass .assistant { bottom: 72px; }
+.app.layout-glass .gl-tab { font-size: 10.5px; }
+.app.layout-glass:not(.kit-wide) .gl-kbd { left: 6px; }

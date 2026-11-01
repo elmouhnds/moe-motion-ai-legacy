@@ -39,10 +39,12 @@ function openOptions(app, a) {
   }));
 }
 
-function button(app, a, cls = 'qb-btn') {
+function button(app, a, cls = 'qb-btn', slot) {
   const s = app.state.get();
+  // v0.28: the first ten buttons are the Everyday slots — Alt+1…0 runs them (hold Alt to see the numbers)
+  const key = slot != null && slot < 10 ? String((slot + 1) % 10) : null;
   return h('button', {
-    class: cls, title: `${a.label}\nRight-click: options`, 'aria-label': a.label, disabled: !!s.running,
+    class: cls, title: `${a.label}${key ? ` · Alt+${key}` : ''}\nRight-click: options`, 'aria-label': a.label, disabled: !!s.running, 'data-slot': key || undefined,
     onclick: (e) => (e.altKey ? openOptions(app, a) : run(app, a)),
     oncontextmenu: (e) => { e.preventDefault(); openOptions(app, a); }
   }, icon(a.icon || 'bolt'), cls === 'qt-tile' ? h('span', { class: 'qt-label' }, a.label) : null);
@@ -64,12 +66,13 @@ function strip(app) {
   if (mode === 'fit' && st.qbarW) {
     let room = st.qbarW - 12 - BTN * 2, last = null; // keep room for "+N" and ⚡
     const fit = [];
-    for (const a of all) { const w = BTN + (last !== null && a.group !== last ? SEP : 0); if (room - w < 0) break; room -= w; fit.push(a); last = a.group; }
+    all.forEach((a, i) => { if (fit.length < i) return; const w = BTN + (i === 10 || (i > 10 && a.group !== last) ? SEP : 0); if (room - w < 0) return; room -= w; fit.push(a); last = a.group; });
     if (fit.length < all.length) { shown = fit; rest = all.slice(fit.length); }
   }
   const items = [];
   let last = null;
-  for (const a of shown) { if (last !== null && a.group !== last) items.push(h('span', { class: 'qb-sep', 'aria-hidden': 'true' })); items.push(button(app, a)); last = a.group; }
+  // the ten Everyday slots form one run; after them, a line between groups (Project · Layer · Keys …)
+  shown.forEach((a, i) => { if (i === 10 || (i > 10 && a.group !== last)) items.push(h('span', { class: 'qb-sep', 'aria-hidden': 'true' })); items.push(button(app, a, 'qb-btn', i)); last = a.group; });
   return h('div', { class: `qbar ${mode === 'wrap' ? 'wrap' : ''} ${mode === 'fit' ? 'fit' : ''}`, role: 'toolbar', 'aria-label': 'Quick Bar',
     onwheel: (e) => { const el = e.currentTarget; if (el.scrollWidth > el.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) { el.scrollLeft += e.deltaY; e.preventDefault(); } } },
     items,
@@ -134,4 +137,7 @@ function view(app) {
     ]));
 }
 
-module.exports = { strip, popover, restPopover, view, ACTIONS, run, openOptions, button, fixedBox, byId, barIds };
+/** Run Everyday slot n (0-based) of the bar — Alt+1…0. */
+function runSlot(app, n) { const a = byId(barIds(app)[n]); if (!a) return false; run(app, a); return a; }
+
+module.exports = { runSlot, strip, popover, restPopover, view, ACTIONS, run, openOptions, button, fixedBox, byId, barIds };

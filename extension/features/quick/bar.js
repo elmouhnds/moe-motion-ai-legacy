@@ -82,7 +82,11 @@ const ACTIONS = [
     .map((p) => A(`x_${p}`, 'expressions.quick', { preset: p }, null, null, 'Expressions'))
 ];
 
-const DEFAULT_BAR = ['revealProject', 'revealFolder', 'purge', 'flipH', 'flipV', 'parentNull', 'precompose', 'selectSame', 'reverse', 'mirror', 'inRL', 'inLR', 'inTB', 'inBT', 'fadeIn', 'fadeOut', 'scaleUp', 'scaleDown', 'trimDraw', 'trimTravel', 'x_wiggle', 'x_loopCycle', 'x_loopPingPong', 'x_blink', 'x_timeRotate'];
+// v0.28 (docs/features/WORKFLOW_HOME.md): ordered by how often a motion designer needs it, not by menu.
+// The first ten are the Everyday slots (Alt+1…0, workflow.EVERYDAY); housekeeping (Purge, Open Folder) is
+// no longer in the default bar — it lives in Deliver › Project and in search.
+const DEFAULT_BAR = ['k_easy', 'curveExpo', 'centerAnchor', 'parentNull', 'precompose', 'k_stagger', 'x_loopCycle', 'x_wiggle', 'reverse', 'dupComp',
+  'trimDraw', 'fadeIn', 'fadeOut', 'inBT', 'scaleUp', 'mirror', 'flipH', 'separate', 'selectSame', 'typewriter', 'x_loopPingPong', 'revealProject'];
 const GROUPS = ['Project', 'Layer', 'Kit', 'Align', 'Keys', 'Animate', 'Text', 'Expressions'];
 
 /** Fill icon/label for expression actions from the expression library (kit actions keep their own). */

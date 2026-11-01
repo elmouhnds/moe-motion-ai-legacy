@@ -80,6 +80,9 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['sparkles', 'Organised the way you work', 'Home is now arranged by how often a motion designer reaches for things: the ten everyday tools first (Quick Bar, Alt+1…0), NOW for your selection, Power tools as big cards that explain themselves until you know them, then the stages Animate · Arrange · Design · Finish · Deliver — rare groups wait behind "More in…". Ctrl+1…5 jumps to a stage.'],
+  ['sparkles', 'The Assistant — bottom-right corner', 'Press ` (or click the round button): ask anything about After Effects in Arabic or English, or describe a change — Claude answers and plans it with MOE tools, you approve, each step is verified. No key or offline? It still finds the right MOE tool from your words. A small number on the button = suggestions for your selection.'],
+  ['layout', 'Knows your comp and your project', 'NOW shows the comp\'s shape and size (9:16 Reels, 1:1 feed, 16:9 YouTube, 4K…) and suggests the matching safe area. Each AE project remembers its client: switch projects and the client follows.'],
   ['glass', 'Thick Glass — real refraction', 'Design › Looks & Glass › Thick: turn a shape, title, logo or footage into thick glass that bends what is behind it. Bevel, frost, colour dispersion, chrome reflection, studio highlights, shadow and caustics — native effects, every amount a control on MOE Glass N. Seven looks (Thick Clear, Prism, Sugar, Bubble, Arctic Ice, Chrome, Liquid Gold); "One piece" makes several layers one glass. Edit the original layer as usual — the glass follows.'],
   ['brand', 'Your client\'s brand, in one click', 'Brand › Apply brand: client fonts by script (Arabic / English) and colours by role — headlines, body text, shapes and the background — on the selection or the whole comp, contrast-checked, one Undo. Saving a client from a website / PDF also adds its gradients to Backgrounds › Mine, and Brand ease moves keys the way the brand moves.'],
   ['sparkles', 'Brand from a website or PDF', 'Brand › From website / PDF: paste the client\'s site (or choose their brand book) and Claude fills the palette with roles, fonts matched to the ones you have installed, gradients, tone, how it should move and the rules. Review, then Save. Without an API key a website still gets a quick local scan.'],
@@ -128,17 +131,19 @@ const WHATS_NEW = [
 ];
 
 const SHORTCUTS = [
+  // v0.28: by distance — what you do all day first
+  [['Alt', '1…0'], 'Everyday: run the first ten Quick Bar buttons (Easy Ease, Out Expo, Center Anchor, Parent Null, Pre-compose, Stagger, Loop, Wiggle, Reverse, Dup Comp) — hold Alt to see the numbers'],
+  [['F4'], 'Repeat the last change on the current selection'],
+  [['Q', 'hold'], 'Pie menu: point and release (tap Q to keep it open, 1–8 to choose)'],
+  [['`'], 'Assistant: ask a question or describe a change (also Ctrl+Space; Esc closes)'],
   [['Ctrl', 'K'], 'Search every tool'],
-  [['Ctrl', 'Space'], 'Ask the Copilot'],
-  [['Ctrl', '1…6'], 'Classic tabs: Keys · Animate · Layer · Design · Effect · Comp (Sidebar layout: 1…7 = Home, Toolbox, workspaces)'],
+  [['Ctrl', '1…5'], 'Bento and Glass: jump to a stage — Animate · Arrange · Design · Finish · Deliver (MOE style: 1…6 = its AE-menu tabs)'],
   [['↑', '↓'], 'On a group header: previous / next group (Home / End: first / last)'],
   [['←', '→'], 'On a group header: fold / open it'],
   [['Alt', '↑ ↓'], 'On a group header: move the group (or drag its header) — saved per tab'],
-  [['Q', 'hold'], 'Pie menu: point and release (tap Q to keep it open, 1–8 to choose)'],
   [['Right button', 'hold'], 'Pie menu with the mouse'],
   [['?'], 'Show this sheet'],
   [['Esc'], 'Close sheets and dialogs'],
-  [['F4'], 'Repeat the last change on the current selection'],
   [['Enter'], 'In search: apply a preset / open a tool'],
   [['Shift', 'Enter'], 'In search: open without applying'],
   [['▶', '/ Double-click'], 'Apply a tile now'],
