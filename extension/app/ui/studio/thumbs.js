@@ -96,8 +96,8 @@ const DRAW = {
     c.strokeStyle = ACC; c.beginPath(); c.arc(ex, ey, 6, 0, Math.PI * 2); c.stroke();
   },
   grid(c, W, H, th, t) {
-    const n = th.mode === 'phyllo' ? 34 : th.mode === 'sphere' ? 40 : 12;
-    const p = Object.assign(GX.defaultParams(th.mode), { columns: 4, spacingX: 52, spacingY: 40, radius: th.mode === 'spiral' ? 10 : 70, arc: th.arc || 360, rowOffset: th.rowOffset || 0, spread: 13, spiralStep: 6, angleStep: 32, ringSpacing: 30, sphereSpin: t * 25, faceCenter: th.mode !== 'rect', buildStyle: 4, buildOrder: 3, buildStagger: 70 });
+    const n = th.row ? 8 : th.mode === 'phyllo' ? 34 : th.mode === 'sphere' ? 40 : th.mode === 'spiral' && th.clone ? 20 : 12;
+    const p = Object.assign(GX.defaultParams(th.mode), { columns: th.row ? 8 : 4, spacingX: 52, spacingY: 40, radius: th.mode === 'spiral' ? 10 : 70, arc: th.arc || 360, rowOffset: th.rowOffset || 0, spread: 13, spiralStep: 6, angleStep: 32, ringSpacing: 30, sphereSpin: t * 25, faceCenter: th.mode !== 'rect', buildStyle: 4, buildOrder: 3, buildStagger: 70 });
     p.build = th.build ? clamp01(phase(t, 1.6, 2.8)) * 100 : 100;
     if (th.mode === 'path') p.path = { point: (u) => [-110 + 220 * u, 30 - 60 * Math.sin(u * Math.PI)], tangent: (u) => [220, -60 * Math.PI * Math.cos(u * Math.PI)] };
     const k = Math.min(W / 260, H / 160);
@@ -108,9 +108,34 @@ const DRAW = {
       const s = it.m.scale * (th.mode === 'sphere' ? 1 - depth * 0.5 : 1) * (n > 20 ? 0.45 : 1);
       c.save(); c.translate(W / 2 + (it.x + it.m.dx) * k, H / 2 + (it.y + it.m.dy) * k); c.rotate((it.m.rot * Math.PI) / 180);
       c.globalAlpha = clamp01(it.m.opacity) * (th.mode === 'sphere' ? 1 - depth * 0.6 : 1);
-      c.fillStyle = it.i === 0 ? ACC : FG; rrect(c, -16 * k * s, -11 * k * s, 32 * k * s, 22 * k * s, 2); c.fill(); c.restore();
+      c.fillStyle = it.i === 0 ? ACC : FG;
+      if (th.clone) { c.beginPath(); c.arc(0, 0, 11 * k * s, 0, Math.PI * 2); c.fill(); } else rrect(c, -16 * k * s, -11 * k * s, 32 * k * s, 22 * k * s, 2), c.fill();
+      c.restore();
     }
     c.globalAlpha = 1;
+  },
+  /* v0.33: an effector passing over a grid of cards (the real maths: features/grid/effectors.js) */
+  eff(c, W, H, th, t) {
+    const EF = require('../../../features/grid/effectors');
+    const cols = 7, rows = 4, sx = 34, sy = 32, n = cols * rows, k = Math.min(W / 260, H / 160);
+    const sweep = (Math.sin((t / 3) * Math.PI * 2 - Math.PI / 2) + 1) / 2, ex = -150 + 300 * sweep;
+    const base = EF.valuesOf(Object.assign({ size: th.falloff === 'linear' ? 90 : 75, softness: 60, scale: 0 }, th, { type: th.type, falloff: th.falloff }));
+    const cyc = 2.4, at = (tt) => { if (th.type !== 'delay') return base; const u = Math.min(Math.max((((tt % cyc) + cyc) % cyc) / 0.6, 0), 1), f = 1 - u * u * (3 - 2 * u); return Object.assign({}, base, { moveX: base.moveX * f, moveY: base.moveY * f, scale: base.scale * f, rotate: base.rotate * f, fade: base.fade * f }); };
+    const toLocal = (px, py) => [px - ex, py];
+    for (let i = 0; i < n; i++) {
+      const col = i % cols, row = Math.floor(i / cols), x = (col - (cols - 1) / 2) * sx, y = (row - (rows - 1) / 2) * sy;
+      const r = EF.apply([{ values: at(t - i * 0.05), toLocal }], { i, k: i, n, x, y, cx: x, cy: y, time: t });
+      const s = Math.max(0, r.scaleMul);
+      c.save(); c.translate(W / 2 + (x + r.dx) * k, H / 2 + (y + r.dy) * k); c.rotate(r.rot * Math.PI / 180);
+      c.globalAlpha = Math.min(Math.max(r.opMul, 0), 1);
+      c.fillStyle = FG; rrect(c, -11 * k * s, -9 * k * s, 22 * k * s, 18 * k * s, 2); c.fill(); c.restore();
+    }
+    c.globalAlpha = 1;
+    if (th.falloff !== 'all') {
+      c.strokeStyle = ACC; c.lineWidth = 1.5; c.setLineDash([4, 3]); c.beginPath();
+      if (th.falloff === 'linear') { c.moveTo(W / 2 + ex * k, 4); c.lineTo(W / 2 + ex * k, H - 4); } else c.arc(W / 2 + ex * k, H / 2, base.size * k, 0, Math.PI * 2);
+      c.stroke(); c.setLineDash([]);
+    }
   },
   guides(c, W, H, th) {
     const m = th.safe ? 0.08 : th.c === 12 ? 0.07 : 0;

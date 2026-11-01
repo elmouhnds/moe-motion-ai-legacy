@@ -2,6 +2,18 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.33.0] — 2026-11-01 — Cloner + Effectors (MoGraph in After Effects)
+The owner pointed at aescripts mCloner Pro: add advanced tools for professional results. Details: `docs/features/CLONER_EFFECTORS.md`.
+### Added
+- **Cloner** (`grid.build` → *Clones*): one selected layer (or a few) → N copies (`MOE Clone n · <layer>`, keyframes and effects kept, sources cycle) on a live MOE Grid. Tiles: Clone Grid 5×5, Row, Ring, Spiral, Sunflower, Globe. Restore removes the copies.
+- **Effectors** (`grid.effector`): a **MOE Effector N** null with 15 live controls — Type (Plain · Random · Step · Noise · Delay), Falloff (Sphere · Linear · Box · Everywhere), Size, Softness, Strength, Invert, Move X / Y, Scale, Rotate, Fade, Seed, Delay, Noise Scale / Speed. Move, rotate or scale the null to animate; up to three per grid (they stack); *Sweep across* keyframes it over the grid in 2 s; Delay keyframes the moves to rest and each item plays them later. Tiles: Grow, Reveal, Scatter, Step, Wave, Cascade.
+- Grids from v0.19–v0.32 are upgraded in place when an effector is added (item expressions rewritten from their own facts — nothing moves).
+### Changed
+- Layer › **Arrange · Clone · Effectors** is one block with a switch (one layer → Clone, a grid → Effectors, several layers → Arrange); Layout & Grid modes add **Clone** and **Effectors**. The static *Repeat* chip left the tab (Clone is the live version; Repeat stays in the Quick Bar catalogue).
+- Power card **Cloner & Effectors**; *Next* after a grid: Reveal · Wave · Cascade · Pre-compose; the Assistant understands كلونر / موجراف / إيفكتور / موجة.
+### Tests
+- `tests/cloner.effectors.test.js` (6): every type and falloff — mock-evaluated expressions equal `features/grid/effectors.js` (position, scale, rotation, opacity; sweep at five times; rotated effector; Delay frames; inverted Box), Cloner order + restore, upgrade facts, three slots and a refused fourth. **Mock / preview, not After Effects.**
+
 ## [0.32.0] — 2026-11-01 — Library pages: settings where you click, modes instead of a wall
 The owner: continue the same approach on the library pages. Details: `docs/features/LIBRARY_PAGES.md`.
 ### Changed

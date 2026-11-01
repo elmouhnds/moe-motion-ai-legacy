@@ -17,7 +17,7 @@ test('Motion and Layout show one mode at a time; every mode has tiles; nothing i
   const motion = studio.byId('animate');
   assert.deepEqual(motion.modes.map(([m]) => m), ['In', 'Out', 'Trim', 'Proximity']);
   const layout = studio.byId('layout');
-  assert.deepEqual(layout.modes.map(([m]) => m), ['Arrange', 'Guides', 'Cells']);
+  assert.deepEqual(layout.modes.map(([m]) => m), ['Arrange', 'Clone', 'Effectors', 'Guides', 'Cells'], 'v0.33 adds Clone and Effectors');
   for (const sec of [motion, layout]) {
     for (const [m] of sec.modes) assert.ok(sec.tiles.some((t) => t.tags.includes(m)), `${sec.id}: ${m} has tiles`);
   }

@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.38 — Cloner + Effectors ✅ (v0.33.0) — advanced tools for pro results
+- Cloner on the MOE Grid engine; MOE Effector nulls (Plain / Random / Step / Noise / Delay × Sphere / Linear / Box / Everywhere), three per grid, live.
+- Next (same direction): colour effector / per-clone colour · spring / inertia effector · target effector · audio effector · object / text cloner (onto path points or letters).
+
 ## M1.37 — Library pages ✅ (v0.32.0)
 - Inspector beside the tiles from 600 px, under the clicked row when narrower (libraries + Shapes); Motion / Layout modes; icon tools as rows; one-line filters; columns that fit; compact Quick Bar customize.
 - Next: remember the open settings per page; the same inline settings in Text.

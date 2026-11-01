@@ -50,7 +50,11 @@ const TABS = [
       { id: 'transform', label: 'Transform', kind: 'acts', fits: [], hero: ['quick:precompose'], refs: ['quick:precompose', 'quick:separate', 'quick:flipH', 'quick:flipV'],
         pairs: [['Flip', 'quick:flipH', 'quick:flipV']], links: [['select', 'Select layers by type, name, label']] },
       { id: 'parent', label: 'Parent & Link', kind: 'acts', fits: ['layers'], hero: ['quick:parentNull'], refs: ['quick:parentNull', 'quick:k_parent', 'quick:k_delay', 'quick:k_stare'] },
-      { id: 'arrange', label: 'Arrange (Grid Builder)', kind: 'grid', section: 'layout', ids: ['grid', 'honey', 'wall', 'ring', 'fan', 'spiral', 'galaxy', 'path', 'globe'], more: 'layout', fits: ['layers', 'shapesMany'], minor: ['quick:k_repeat'] }
+      // v0.33: Arrange · Clone · Effectors — the grid engine's three jobs (mCloner / MoGraph style), one switch
+      { id: 'arrange', label: 'Arrange · Clone · Effectors', kind: 'animate', panel: 'grid', section: 'layout', more: 'layout', fits: ['layer', 'layers', 'shapes', 'shapesMany'],
+        modes: [['arrange', 'Arrange', ['grid', 'honey', 'wall', 'ring', 'fan', 'spiral', 'galaxy', 'path', 'globe']], ['clone', 'Clone', ['cloneGrid', 'cloneRow', 'cloneRing', 'cloneSpiral', 'cloneSun', 'cloneGlobe']], ['effect', 'Effectors', ['efPush', 'efReveal', 'efScatter', 'efStep', 'efWave', 'efCascade']]],
+        modeFor: { layer: 'clone', shapes: 'clone', text: 'clone', grid: 'effect' },
+        ids: ['grid', 'honey', 'wall', 'ring', 'fan', 'spiral', 'galaxy', 'path', 'globe', 'cloneGrid', 'cloneRow', 'cloneRing', 'cloneSpiral', 'cloneSun', 'cloneGlobe', 'efPush', 'efReveal', 'efScatter', 'efStep', 'efWave', 'efCascade'] }
     ] },
   { id: 'ae-design', label: 'Design', title: 'Shapes & icons, backgrounds, looks, brand', fits: ['none'], owns: ['shapes', 'backgrounds', 'looks', 'brand'],
     groups: [
@@ -325,18 +329,28 @@ function subRow(app, t, [label, refs, short]) {
 }
 /** Animate In / Out / Draw On — one block, the mode switch picks the six (or four) moves. Shapes open on Draw On. */
 const ANIM_KEY = 'ae-anim-mode';
+const modeKey = (g) => (g.id === 'in' ? ANIM_KEY : `ae-mode-${g.id}`);
+/** The mode a switch group shows: your last pick; else what fits the selection (a MOE Grid selected → its own mode). */
 function animMode(app, g) {
-  const saved = app.services.store.get(ANIM_KEY, null);
+  const saved = app.services.store.get(modeKey(g), null);
   if (g.modes.some(([m]) => m === saved)) return saved;
-  const kind = A.profile(app.state.get().ctx);
+  const c = app.state.get().ctx;
+  const kind = A.profile(c);
+  if (g.modeFor) {
+    const gridSel = c && (c.layers || []).some((l) => /^MOE (Grid|Effector) \d+$/.test(l.name));
+    const m = gridSel ? g.modeFor.grid : g.modeFor[kind];
+    if (m && g.modes.some(([x]) => x === m)) return m;
+    return g.modes[0][0];
+  }
   return kind === 'shapes' || kind === 'shapesMany' ? 'draw' : 'in';
 }
 function animateBlock(app, g, t) {
   const mode = animMode(app, g);
   const cur = g.modes.find(([m]) => m === mode);
   return [h('div', { class: 'kit-seg ae-modes', role: 'group', 'aria-label': 'Animate', 'data-key': 'ae-modes' }, g.modes.map(([m, label]) => h('button', {
-    'aria-pressed': String(m === mode), 'data-key': `mode-${m}`, title: { in: 'Animate in: the layer arrives', out: 'Animate out: the layer leaves', draw: 'Draw On: trim paths for shape lines' }[m] || label,
-    onclick: () => { app.services.store.set(ANIM_KEY, m); app.render(); } }, label))), tileStrip(app, g, t, cur[2])];
+    'aria-pressed': String(m === mode), 'data-key': `mode-${m}`, title: { in: 'Animate in: the layer arrives', out: 'Animate out: the layer leaves', draw: 'Draw On: trim paths for shape lines', arrange: 'Arrange the selected layers on a live grid', clone: 'One layer → many live copies (select one layer)', effect: 'Effectors: change a grid’s items near a moving null (select the grid)' }[m] || label,
+    onclick: () => { app.services.store.set(modeKey(g), m); app.render(); } }, label))),
+  g.panel === 'grid' ? require('./gridPanel').render(app) : null, tileStrip(app, g, t, cur[2])];
 }
 
 /* ---------- v0.30 Motion Control: one block at the top of every style (keys + anchor + align) ---------- */

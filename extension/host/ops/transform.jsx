@@ -375,7 +375,9 @@
             var src = U.findLayer(comp, { layerId: args.layerId });
             var str = src.property('ADBE Transform Group');
             if (src.locked) { U.fail('LOCKED', 'The layer is locked.'); }
-            if (animated(str)) { U.fail('ANIMATED', 'Clone works on a layer without Position, Rotation, Scale or Opacity keyframes - clone first, then animate.'); }
+            /* args.plain (v0.33 Cloner): exact copies - keyframes and transforms kept, the grid places them */
+            var plainCopies = args.plain === true;
+            if (!plainCopies && animated(str)) { U.fail('ANIMATED', 'Clone works on a layer without Position, Rotation, Scale or Opacity keyframes - clone first, then animate.'); }
             if (args.items.length > 200) { U.fail('BAD_ARGS', 'At most 200 copies.'); }
             return U.withUndo(args.label || 'MOE: Clone', function () {
                 var created = [], i, it, d, tr, s0, before;
@@ -389,6 +391,7 @@
                     d.moveAfter(prev);
                     prev = d;
                     tr = d.property('ADBE Transform Group');
+                    if (plainCopies) { created.push({ layerId: d.id, name: d.name, position: getPos(tr), rotation: num(rotZ(tr).value) }); continue; }
                     setPos(tr, it.position);
                     if (it.rotation !== undefined) { rotZ(tr).setValue(num(it.rotation)); }
                     if (it.scale !== undefined) { tr.property('ADBE Scale').setValue(s0.length > 2 ? [s0[0] * it.scale, s0[1] * it.scale, s0[2]] : [s0[0] * it.scale, s0[1] * it.scale]); }

@@ -48,7 +48,8 @@ test('Motion Control owns ease, anchor, align and the curve library: the tabs do
   }
   const layer = AE.TABS.find((t) => t.id === 'ae-layer');
   assert.ok(shown(layer.groups.find((g) => g.id === 'parent')).includes('quick:k_delay'));
-  assert.ok(shown(layer.groups.find((g) => g.id === 'arrange')).includes('quick:k_repeat'));
+  // v0.33: the static Repeat left the tab — Clone (Ring, Grid…) is the live version; Repeat stays in the Quick Bar catalogue
+  assert.ok(shown(layer.groups.find((g) => g.id === 'arrange')).includes('tile:layout/cloneRing'));
   const expr = AE.TABS.find((t) => t.id === 'ae-animate').groups.find((g) => g.id === 'expr');
   assert.equal(expr.live, true, 'Sliders switch: Excite = Inertia, Jump = Bounce Land with Slider Controls');
   assert.ok(expr.ids.includes('x-inertia') && expr.ids.includes('x-bounceBack'));

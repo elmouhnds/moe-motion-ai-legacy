@@ -98,6 +98,8 @@ const build = {
   icon: 'grid',
   params: {
     mode: { type: 'enum', label: 'Mode', default: 'rect', options: MODE_OPTIONS },
+    // v0.33 Cloner: one selected layer (or a few) becomes N copies on the grid — copies cycle through the sources
+    clones: { type: 'integer', label: 'Clones', min: 0, max: 200, default: 0, description: 'Make this many items by copying the selected layer(s) — 0 arranges the selection as it is' },
     columns: { type: 'integer', label: 'Columns', min: 0, max: 100, default: 0, description: '0 = auto from the comp shape', showIf: (a) => a.mode === 'rect' },
     spacingX: { type: 'number', label: 'Spacing X', min: 0, max: 5000, step: 1, default: 0, unit: 'px', description: '0 = auto from layer sizes', showIf: (a) => a.mode === 'rect' },
     spacingY: { type: 'number', label: 'Spacing Y', min: 0, max: 5000, step: 1, default: 0, unit: 'px', description: '0 = auto', showIf: (a) => a.mode === 'rect' },
@@ -120,11 +122,11 @@ const build = {
     centerAnchors: { type: 'boolean', label: 'Center anchors', default: true, advanced: true, description: 'Centre each item’s anchor on its content first (keyframed anchors are left alone)' },
     replace: { type: 'boolean', label: 'Replace existing', default: false, advanced: true, description: 'Overwrite expressions MOE did not create' }
   },
-  requires: { comp: true, minLayers: 2 },
+  requires: { comp: true, minLayers: 1 },
   permissions: ['modify.layers', 'modify.effects', 'modify.expressions'],
   recovery: 'undo+checkpoint',
   ai: { callable: true, hint: 'Arrange selected layers in a grid / circle / spiral / sunflower / along a path / on a 3D sphere, optionally animating them in with a stagger, and optionally morphing into a second layout (morphTo, animateMorph). orient: 1 Forward, 2 Face Center, 3 Face Screen. Live controls on a MOE Grid null.' },
-  uses: { hostOps: ['layers.bounds', 'layers.centerAnchor', 'layers.createNull', 'effects.ensure', 'effects.setMenu', 'layers.setParent', 'expressions.set', 'keys.write', 'props.values', 'paths.find'], network: false },
+  uses: { hostOps: ['layers.clone', 'layers.remove', 'layers.bounds', 'layers.centerAnchor', 'layers.createNull', 'effects.ensure', 'effects.setMenu', 'layers.setParent', 'expressions.set', 'keys.write', 'props.values', 'paths.find'], network: false },
   compatibility: { minAE: '25.0' },
   ui: {
     primaryLabel: 'Build Grid',
@@ -143,7 +145,10 @@ const build = {
   prepare(args, ctx) {
     const exclude = [args.pathLayer, args.effector].filter(Boolean);
     const items = itemsOf(ctx, exclude);
-    if (items.length < 2) return { ok: false, error: 'Select at least 2 layers to arrange' };
+    const clones = Math.round(args.clones || 0);
+    const copies = clones >= 2 && clones > items.length ? clones - items.length : 0;
+    if (!items.length) return { ok: false, error: 'Select the layer(s) to clone or arrange' };
+    if (items.length < 2 && !copies) return { ok: false, error: 'Select at least 2 layers to arrange — or set Clones to copy one layer' };
     // items already in a MOE Grid: building again would pull them out of it — say where to go instead
     const inGrid = items.filter((l) => l.parentIndex && (ctx.compLayers || []).some((g) => g.index === l.parentIndex && GRID_NAME.test(g.name)));
     if (inGrid.length) {
@@ -157,12 +162,13 @@ const build = {
     const name = nextGridName(ctx);
     const mode = L.MODES.find((m) => m.id === args.mode);
     return {
-      ok: true, items, name,
+      ok: true, items, name, copies,
       preview: {
-        summary: `${mode.label} of ${items.length} layers · ${name}${args.animateIn ? ' · animated in' : ''}${args.morphTo && args.morphTo !== 'none' && args.morphTo !== args.mode ? ` · morphs to ${L.MODES.find((m) => m.id === args.morphTo).label}${args.animateMorph ? ' (animated)' : ''}` : ''}`,
+        summary: `${mode.label} of ${items.length + copies} ${copies ? `clones (${items.length} source${items.length > 1 ? 's' : ''} + ${copies} copies)` : 'layers'} · ${name}${args.animateIn ? ' · animated in' : ''}${args.morphTo && args.morphTo !== 'none' && args.morphTo !== args.mode ? ` · morphs to ${L.MODES.find((m) => m.id === args.morphTo).label}${args.animateMorph ? ' (animated)' : ''}` : ''}`,
         items: [
           ...items.slice(0, 6).map((l) => l.name), ...(items.length > 6 ? [`+${items.length - 6} more`] : []),
           ...(args.mode === 'sphere' || args.morphTo === 'sphere' ? ['Items become 3D layers (restorable)'] : []),
+          ...(copies ? [`${copies} copies named "MOE Clone n · <layer>" (removed on Restore)`] : []),
           'Layout, Morph and every control stay live on the grid null (Effect Controls)',
           ...(parented.length ? [`${parented.length} item(s) are re-parented to the grid (restorable)`] : [])
         ]
@@ -172,7 +178,21 @@ const build = {
 
   async execute({ args, ctx, prepared, host }) {
     const comp = ctx.comp;
-    const items = prepared.items;
+    // v0.33 Cloner: copies first (they keep the source's look, effects and keyframes), cycling through the sources
+    const clonesMade = [];
+    let items = prepared.items;
+    if (prepared.copies) {
+      const srcs = prepared.items, per = srcs.map((_, si) => Math.floor(prepared.copies / srcs.length) + (si < prepared.copies % srcs.length ? 1 : 0));
+      const made = [];
+      for (let si = 0; si < srcs.length; si++) {
+        if (!per[si]) { made.push([]); continue; }
+        const r = await host.call('layers.clone', { compId: comp.id, label: 'MOE: Clone', layerId: srcs[si].id, plain: true, items: Array.from({ length: per[si] }, () => ({})) });
+        made.push(r.created.map((c) => ({ id: c.layerId, name: c.name, threeD: srcs[si].threeD, locked: false })));
+        r.created.forEach((c) => clonesMade.push(c.layerId));
+      }
+      items = srcs.slice();
+      for (let j = 0; j < Math.max(...per); j++) for (let si = 0; si < srcs.length; si++) if (made[si][j]) items.push(made[si][j]);
+    }
     const anchors = args.centerAnchors !== false ? await host.call('layers.centerAnchor', { compId: comp.id, layers: items.map((l) => l.id) }) : null;
     const meas = await host.call('layers.bounds', { compId: comp.id, layerIds: items.map((l) => l.id), times: [comp.time] });
     const boxes = meas.layers.map((m) => m.boxes[0]).filter(Boolean);
@@ -238,7 +258,7 @@ const build = {
     const read = await host.call('props.values', { compId: comp.id, time: checkTime, items: items.map((l) => ({ address: { layerId: l.id, matchNames: X.PROP_ADDR.position } })) });
     const finalParams = Object.assign({}, params, { build: 100, morph: morphKeys ? 100 : 0 });
     const predicted = args.mode === 'path' || params.morphTo === 'path' || args.effector ? null : L.placeMorph(finalParams, items.length).map((it) => { const m = L.modifiers(finalParams, it, items.length); return [it.x + m.dx, it.y + m.dy]; });
-    return { name: prepared.name, nullId: created.layerId, params, controls, set, parented, anchors, made3D, keys, morphKeys, read, predicted, items: items.map((l) => ({ id: l.id, name: l.name })) };
+    return { name: prepared.name, nullId: created.layerId, params, controls, set, parented, anchors, made3D, keys, morphKeys, read, predicted, clonesMade, items: items.map((l) => ({ id: l.id, name: l.name })) };
   },
 
   verify({ result }) {
@@ -257,6 +277,7 @@ const build = {
       const errs = result.read.items.filter((r) => r.error);
       checks.push({ ok: errs.length === 0, label: 'Layout read-back', detail: errs.length ? errs[0].error : `${result.read.items.length} positions evaluated` });
     }
+    if (result.clonesMade && result.clonesMade.length) checks.push({ ok: result.clonesMade.every((id) => result.items.some((it) => it.id === id)) && result.parented.layers.length === result.items.length, label: 'Clones', detail: `${result.clonesMade.length} copies made, ${result.items.length} items on the grid` });
     if (result.keys) checks.push({ ok: result.keys.items[0].written.length === 2, label: 'Build', detail: 'Build 0 → 100 keyframed' });
     if (result.morphKeys) checks.push({ ok: result.morphKeys.items[0].written.length === 2, label: 'Morph', detail: 'Morph 0 → 100 keyframed' });
     return { ok: checks.every((c) => c.ok), checks };
@@ -268,7 +289,8 @@ const build = {
       expressions: result.set.targets.filter((t) => !t.skipped && !t.reverted).map((t) => ({ address: t.address, expression: t.before.expression, enabled: t.before.expressionEnabled })),
       parents: result.parented.layers.map((l) => ({ layerId: l.layerId, parentId: l.before })),
       anchors: result.anchors ? result.anchors.layers.filter((a) => !a.skipped).map((a) => ({ layerId: a.layerId, anchor: a.before.anchor, position: a.before.position })) : [],
-      made3D: result.made3D ? result.made3D.layers.map((l) => l.layerId) : []
+      made3D: result.made3D ? result.made3D.layers.map((l) => l.layerId) : [],
+      clones: result.clonesMade || []
     };
   },
 
@@ -278,10 +300,12 @@ const build = {
     await host.call('layers.remove', { compId: data.compId, layerIds: [data.nullId], onlyNamed: 'MOE Grid' });
     if (data.anchors.length) await host.call('layers.restoreTransform', { compId: data.compId, layers: data.anchors });
     if (data.made3D.length) await host.call('layers.setAttrs', { compId: data.compId, items: data.made3D.map((id) => ({ layerId: id, threeDLayer: false })) });
+    // v0.33: the copies the Cloner made go (only layers named "MOE Clone …")
+    if (data.clones && data.clones.length) await host.call('layers.remove', { compId: data.compId, layerIds: data.clones, onlyNamed: 'MOE Clone ' });
     return { ok: true };
   },
 
-  summarize(result, v) { return v.ok ? `${result.name}: ${result.items.length} layers arranged` : 'Grid built with problems'; }
+  summarize(result, v) { return v.ok ? `${result.name}: ${result.items.length} ${result.clonesMade && result.clonesMade.length ? 'clones' : 'layers'} arranged` : 'Grid built with problems'; }
 };
 
 /* ---------- live update ---------- */

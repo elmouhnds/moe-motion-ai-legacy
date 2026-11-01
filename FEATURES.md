@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Cloner + Effectors** (v0.33.0): clone one layer into a live grid / ring / spiral / sunflower / globe, then add MOE Effectors — Plain, Random, Step, Noise or Delay with a Sphere, Linear, Box or Everywhere falloff — that move, scale, turn or fade the items near them; up to three per grid (docs/features/CLONER_EFFECTORS.md).
+
 **Library pages** (v0.32.0): settings open where you click (under the row, or beside the tiles from 600 px); Motion shows In · Out · Draw On · Proximity one at a time, Layout shows Arrange · Guides · Cells; tool lists as rows; filters on one line (docs/features/LIBRARY_PAGES.md).
 
 **Space follows content** (v0.31.0): every tab sized by what it holds and merged by job — 25 groups became 15 with the same tools (Animate In / Out / Draw On in one block, Keyframes & Loops, Key & Color, Deliver & Project, Expressions with Sliders); Motion Control compact until keys are selected (docs/features/SPACE_FOLLOWS_CONTENT.md).

@@ -149,6 +149,12 @@ See `docs/features/STUDIO_v0.4.md`.
 - Host: `ops/kit.jsx` (`keyframes.setInterp`, `layers.trimToKeys` / `restoreTiming`, `rigs.find` / `rigs.remove`); `ops/transform.jsx` anchor rewritten (2D maths R·S·Δa; 3D / auto-orient through a toWorld / fromWorld probe with selection restore; keyed anchor; mask box; Alt placement via the parent chain), `layers.nudge` handles parented layers (comp → parent space, 2D parents).
 - Second CEP extension `tv.madtomato.moe.motionai.kit` (`kit.html` → `main.start({ mode: 'kit' })` → `shell.renderKitPanel`). Both panels share `%APPDATA%\MOE Motion AI`: `core/storage.js` re-reads a document whose file changed (mtime, checked ≤ 2×/s per document; `version(name)`), `core/settings.js` re-reads before `get` / `update`.
 
+## 6j. Cloner + Effectors (v0.33.0)
+- `features/grid/effectors.js`: pure reference (`weight`, `amounts`, `apply`, `localFn`) + `code()` (the same maths as expression text). `grid/expressions.js buildAll` tags `· v3`, adds slots *Effector 2 / 3* to the grid controls, skips the legacy effector when slot 1 holds a MOE Effector; `factsOf(code)` reads an item's facts back for in-place upgrades.
+- `features/grid/effectorTool.js` (`grid.effector`): null + 15 controls (`effects.ensure` / `effects.setMenu`), first free slot (`props.values` on the grid null's layer controls), upgrade v2 items, sweep / delay keys, read-back; restore unlinks the slot and removes only `MOE Effector …`.
+- `grid.build` `clones`: `layers.clone` with `plain: true` per source, items = sources then copies cycling; checkpoint `clones` removed with `layers.remove onlyNamed 'MOE Clone '`.
+- UI: `layoutAE` arrange group is `kind: 'animate'` with `modes` + `modeFor` (per-group store key `ae-mode-<id>`) and `panel: 'grid'`; `sections.js` Layout modes Clone / Effectors; `thumbs.eff` draws the real effector maths.
+
 ## 6i. Library pages (v0.32.0)
 - `studio/library.js`: `stateOf` adds `open` (inline settings) and, for a section with `modes` (`[[tag, label, title]]`), always lands on a mode (or Mine); `filterRow` renders the mode switch (+ `elsewhere` links) or one-line chips; `fitCols(n, max)` → `--c` on `.st-grid.fit`; inline Inspector spliced after the clicked tile's row (`cols` from `s.kitBand`); `listLike` (all icon thumbs) → `.st-grid.list` rows with the tile `hint`; `HINT_KEY` counts applied presets (how-to line until 3). `shell.applyDensity`: `studioWide` from 600 px.
 - `views/shapes.js`: `colsFor(band, prim)` and the same inline Inspector (`S.open`). `quickbar.view`: `.qt-grid.rows`.
