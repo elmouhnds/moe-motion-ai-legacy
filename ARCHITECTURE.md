@@ -162,6 +162,11 @@ See `docs/features/STUDIO_v0.4.md`.
 - Host op `audio.amplitude` (`host/ops/layout.jsx`): Convert Audio to Keyframes via `app.findMenuCommandId` / `executeCommand` on one layer (selection saved and restored), finds the one new layer, checks Both Channels, renames `MOE Audio · <layer>`, `moveToEnd()`, returns the loudest key; reuses an existing one.
 - `grid.effector`: audio source = first layer with `hasAudio` outside the grid; checkpoint removes the amplitude layer only if this run made it.
 
+## 6n. Object & Text Cloner (v0.37.0)
+- `grid/layouts.js` MODES 7 `points` (vertices + pointOffset) / 8 `keep` (homes); `pathLike` (Path, Points, In Place) for build order. `grid/expressions.js` `lay(7)` reads `acc.points()` through `pathAccessCode`, `lay(8)` returns H.
+- `grid.build`: `splitText` (none / words / letters) → host `text.split` before anything else (pieces become the items) and `text.unsplit` on restore / failure; Points auto-clones `paths.find().points − 1`; Path / Points auto-pick the one selected shape; In Place null anchor = position; In Place read-back = `layers.bounds` before vs after.
+- Host `text.split` / `text.unsplit` (`host/ops/text.jsx`): temporary measuring duplicate (removed in finally), start-justified substring rects shifted to the source justification, pieces = duplicates without animators, named and centred; source `enabled = false`.
+
 ## 6j. Cloner + Effectors (v0.33.0)
 - `features/grid/effectors.js`: pure reference (`weight`, `amounts`, `apply`, `localFn`) + `code()` (the same maths as expression text). `grid/expressions.js buildAll` tags `· v3`, adds slots *Effector 2 / 3* to the grid controls, skips the legacy effector when slot 1 holds a MOE Effector; `factsOf(code)` reads an item's facts back for in-place upgrades.
 - `features/grid/effectorTool.js` (`grid.effector`): null + 15 controls (`effects.ensure` / `effects.setMenu`), first free slot (`props.values` on the grid null's layer controls), upgrade v2 items, sweep / delay keys, read-back; restore unlinks the slot and removes only `MOE Effector …`.

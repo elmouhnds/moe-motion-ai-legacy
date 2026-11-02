@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.37.0] — 2026-11-02 — Object Cloner & Text Cloner
+Next advanced tools after Target & Audio. Details: `docs/features/OBJECT_TEXT_CLONER.md`.
+### Added
+- **Points** layout (Object Cloner): one item on each point of a shape path / mask (`points()`), Point Offset live on the grid null, Face Center turns along the path; one selected layer + one shape → one copy per point (the shape is picked as the path). Tile **Clone on Points**.
+- **In Place** layout + **Split text** (Text Cloner): host op `text.split` turns one text layer into `MOE Word n · <layer>` / `MOE Letter n · <layer>` layers placed exactly where the words were (measured with sourceRectAtTime, any justification, right-to-left, multi-line, scale and rotation); Arabic by words only; the original is hidden and comes back on Restore (`text.unsplit`). Tiles **Text Cloner**, **Letters Rise**.
+### Changed
+- Layout / Morph To menus: 8 layouts (new grids). `paths.find` returns the point count. In Place grid nulls are anchored on their position (no jump when parenting); In Place read-back measures every item's comp box before and after.
+- Clone mode: 12 tiles.
+### Tests
+- `tests/object.text.cloner.test.js` (6): Points = `layouts.place`, Point Offset, refusals; words centred 2 lines and Arabic RTL 50 % — every piece's comp box = its word in the original; Letters Rise + a sweeping Effector; keyed text refused; tiles. The mock measures text with a simple metric. **Mock / preview, not After Effects.**
+
 ## [0.36.0] — 2026-11-02 — Target & Audio Effectors
 Next advanced tools after Spring / Inertia. Details: `docs/features/TARGET_AUDIO_EFFECTORS.md`.
 ### Added

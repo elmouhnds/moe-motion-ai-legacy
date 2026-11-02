@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Object & Text Cloner** (v0.37.0): Clone on Points puts one copy on each point of a shape (Points layout, Point Offset live); Text Cloner splits a title into one layer per word or letter exactly where it was (In Place layout, Arabic by words), so Effectors, colours and Build animate the words (docs/features/OBJECT_TEXT_CLONER.md).
+
 **Target & Audio Effectors** (v0.36.0): Target turns the clones to face the effector null; Audio drives every move from a soundtrack's loudness (After Effects' Convert Audio to Keyframes, run for you), each clone a little later — tiles Aim, Look Near, Beat Pulse, Beat Wave (docs/features/TARGET_AUDIO_EFFECTORS.md).
 
 **Spring / Inertia Effector** (v0.35.0): effectors move the clones through a damped spring — overshoot and settle, or a smooth Inertia lag at Frequency 0 — live on the effector null (Spring %, Frequency, Decay); tiles Spring Grow, Jelly, Inertia, Bounce Up (docs/features/SPRING_EFFECTOR.md).

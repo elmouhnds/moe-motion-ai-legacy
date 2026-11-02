@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.42 — Object & Text Cloner ✅ (v0.37.0)
+- Points layout (clones on a shape's points, Point Offset) and In Place + Split text (one layer per word / letter where it was; Arabic by words). Tiles Clone on Points, Text Cloner, Letters Rise.
+- Next (same direction): shader-like Field effectors (noise / image map) · Clone Trails (each clone echoes the one before) · Grid → keyframes bake for heavy scenes.
+
 ## M1.41 — Target & Audio Effectors ✅ (v0.36.0)
 - Target (clones face the null) and Audio (moves follow a soundtrack, Convert Audio to Keyframes) as effector types; tiles Aim, Look Near, Beat Pulse, Beat Wave.
 - Next (same direction): object cloner (clones on a shape's points) · text cloner (one clone per word / letter).

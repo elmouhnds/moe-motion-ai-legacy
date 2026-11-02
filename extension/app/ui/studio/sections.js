@@ -69,6 +69,10 @@ const LAYOUT = [
   T('colCycle', 'Colour Cycle', 'grid.colour', { mode: 'cycle', palette: 'tomato' }, { k: 'cloneCol', mode: 1 }, ['Clone']),
   T('colGradient', 'Colour Gradient', 'grid.colour', { mode: 'gradient', palette: 'ocean' }, { k: 'cloneCol', mode: 2 }, ['Clone']),
   T('colRandom', 'Colour Random', 'grid.colour', { mode: 'random', palette: 'candy', seed: 3 }, { k: 'cloneCol', mode: 3 }, ['Clone']),
+  // v0.37 Object Cloner (one copy on each point of a shape — select the layer and the shape) and Text Cloner (words / letters in place)
+  T('clonePoints', 'Clone on Points', 'grid.build', { mode: 'points', orient: '2' }, { k: 'grid', mode: 'points', clone: true }, ['Clone']),
+  T('textWords', 'Text Cloner', 'grid.build', { mode: 'keep', splitText: 'words' }, { k: 'grid', mode: 'keep', text: 'words' }, ['Clone']),
+  T('textLetters', 'Letters Rise', 'grid.build', { mode: 'keep', splitText: 'letters', animateIn: true, buildStyle: '3', buildOrder: '1', stagger: 70 }, { k: 'grid', mode: 'keep', text: 'letters', build: true, bs: 3 }, ['Clone']),
   // v0.33 Effectors: a null that changes the grid's items near it (select the grid null or an item)
   T('efPush', 'Grow', 'grid.effector', { type: 'plain', falloff: 'sphere', scale: 80, softness: 70, sweep: true }, { k: 'eff', type: 'plain', falloff: 'sphere', scale: 80 }, ['Effectors']),
   T('efReveal', 'Reveal', 'grid.effector', { type: 'plain', falloff: 'linear', scale: -100, invert: true, sweep: true }, { k: 'eff', type: 'plain', falloff: 'linear', scale: -100, invert: true }, ['Effectors']),

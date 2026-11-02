@@ -51,6 +51,8 @@ function wrapProp(prop, layerCtx, t) {
   if (prop.propertyValueType === 6423 /* SHAPE */) {
     w.pointOnPath = (pct = 0.5, tt = t) => pathPoint(prop.valueAtTime(tt, false), pct).p;
     w.tangentOnPath = (pct = 0.5, tt = t) => pathPoint(prop.valueAtTime(tt, false), pct).tan;
+    // v0.37 Object Cloner: points(t) — the path's vertices (AE expression reference, Path Property)
+    w.points = (tt = t) => prop.valueAtTime(tt, false).vertices.map((v) => v.slice());
   }
   return w;
 }

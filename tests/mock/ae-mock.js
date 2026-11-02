@@ -17,6 +17,7 @@ const KeyframeInterpolationType = { LINEAR: 6612, BEZIER: 6613, HOLD: 6614 };
 const AutoOrientType = { NO_AUTO_ORIENT: 4212, ALONG_PATH: 4213, CAMERA_OR_POINT_OF_INTEREST: 4214, CHARACTERS_TOWARD_CAMERA: 4215 };
 const PropertyType = { PROPERTY: 6812, INDEXED_GROUP: 6813, NAMED_GROUP: 6814 };
 const ParagraphDirection = { DIRECTION_LEFT_TO_RIGHT: 1, DIRECTION_RIGHT_TO_LEFT: 2 };
+const ParagraphJustification = { LEFT_JUSTIFY: 7413, RIGHT_JUSTIFY: 7414, CENTER_JUSTIFY: 7415, FULL_JUSTIFY_LASTLINE_LEFT: 7416 };
 const ComposerEngine = { UNIVERSAL_TYPE_ENGINE: 1, LATIN_CJK_ENGINE: 2 };
 const CTScript = { CT_ROMAN_SCRIPT: 0, CT_ARABIC_SCRIPT: 4 };
 
@@ -30,6 +31,12 @@ class TextDocument {
     this._fill = o.fillColor || [1, 1, 1];
     this._stroke = o.strokeColor || [0, 0, 0];
     this.direction = o.direction || ParagraphDirection.DIRECTION_LEFT_TO_RIGHT;
+    // v0.37: paragraph facts the Text Cloner reads (TextDocument.fontSize / justification / leading / autoLeading / boxText)
+    this.fontSize = o.fontSize || 100;
+    this.justification = o.justification || ParagraphJustification.LEFT_JUSTIFY;
+    this.autoLeading = o.leading === undefined;
+    this.leading = o.leading || this.fontSize * 1.2;
+    this.boxText = !!o.boxText;
     this.composerEngine = ComposerEngine.UNIVERSAL_TYPE_ENGINE;
   }
   get fillColor() { if (!this.applyFill) throw new Error('After Effects error: fillColor not available'); return this._fill.slice(); }
@@ -488,6 +495,21 @@ function cloneNode(node, parent) {
   if (node._children) c._children = node._children.map((ch) => cloneNode(ch, c));
   return c;
 }
+/** Mock text metric (see sourceRectAtTime): lines split on \r, each placed by the paragraph justification. */
+function measureText(doc) {
+  const fs = doc.fontSize || 100, lead = doc.autoLeading ? fs * 1.2 : doc.leading;
+  const adv = (ch) => (ch === ' ' ? 0.3 : /[\u0600-\u06FF]/.test(ch) ? 0.5 : 0.55) * fs;
+  const lines = String(doc.text).split(/\r\n|\r|\n/);
+  let l = Infinity, r = -Infinity;
+  lines.forEach((ln) => {
+    const W = Array.from(ln).reduce((a, ch) => a + adv(ch), 0);
+    const x0 = doc.justification === ParagraphJustification.CENTER_JUSTIFY ? -W / 2 : doc.justification === ParagraphJustification.RIGHT_JUSTIFY ? -W : 0;
+    if (W > 0) { l = Math.min(l, x0); r = Math.max(r, x0 + W); }
+  });
+  if (!isFinite(l)) return { left: 0, top: 0, width: 0, height: 0 };
+  return { left: l, top: -0.75 * fs, width: r - l, height: (lines.length - 1) * lead + fs };
+}
+
 function cloneLayer(L, comp) {
   const d = Object.create(Object.getPrototypeOf(L));
   for (const k of Object.keys(L)) d[k] = L[k];
@@ -607,6 +629,7 @@ class MockLayer {
     const tf = (spec.transform || (spec.camera ? [] : DEFAULT_TRANSFORM)).map((p) => Object.assign({}, p));
     this._group = new MockGroup({ name: 'root', children: [{ name: 'Transform', matchName: 'ADBE Transform Group', children: tf }] }, { propertyDepth: -1 }, 0);
     this._group._children.forEach((c) => { c.parentProperty = this; c.propertyDepth = 1; fixDepth(c); });
+    this._measure = !!spec.measure;
     if (spec.text !== undefined) {
       const tp = new MockNode('Text', 'ADBE Text Properties', this._group);
       tp.propertyDepth = 1; tp.parentProperty = this;
@@ -628,7 +651,12 @@ class MockLayer {
     if (typeof key === 'number' && key === this._group._children.length + 1) return this._parade;
     return this._group.property(key);
   }
-  sourceRectAtTime() { return Object.assign({}, this._rect); }
+  sourceRectAtTime(t) {
+    // v0.37: a text layer built with `measure: true` measures its own text (a simple font metric — tests compare
+    // MOE's maths with this metric, not with real glyphs): per character 0.55 em, Arabic 0.5 em, space 0.3 em
+    if (this._measure) { const td = this.property('ADBE Text Properties'); if (td) return measureText(td.property('ADBE Text Document').valueAtTime(t || 0, false)); }
+    return Object.assign({}, this._rect);
+  }
   get parent() { return this._parent; }
   set parent(p) { if (p === this) throw new Error('After Effects error: a layer cannot be its own parent'); this._parent = p || null; this._comp._parentSetCalls = (this._comp._parentSetCalls || 0) + 1; }
   setParentWithJump(p) { if (p === this) throw new Error('After Effects error: a layer cannot be its own parent'); this._parent = p || null; }
@@ -863,7 +891,7 @@ function installAE(target, fixture, { readFile, evalCode }) {
     Folder, PurgeTarget: { ALL_CACHES: 1, UNDO_CACHES: 2, SNAPSHOT_CACHES: 3, IMAGE_CACHES: 4 },
     PropertyValueType, KeyframeInterpolationType, PropertyType, KeyframeEase, CompItem, File,
     TextLayer: MockTextLayer, ShapeLayer: MockShapeLayer, AVLayer: MockLayer, FileSource,
-    ParagraphDirection, ComposerEngine, CTScript, PREFType: { PREF_Type_MACHINE_INDEPENDENT: 0 },
+    ParagraphDirection, ParagraphJustification, ComposerEngine, CTScript, PREFType: { PREF_Type_MACHINE_INDEPENDENT: 0 },
     CameraLayer: MockCameraLayer, LightLayer: function LightLayer() {},
     SolidSource, Shape, MaskMode, BlendingMode, TrackMatteType, AutoOrientType,
     app: {

@@ -427,20 +427,20 @@
         return null;
     }
 
-    /* args: { compId, layerId } -> { access: 'PL.mask("Mask 1").maskPath' | 'PL.content(..).path', closed, kind } */
+    /* args: { compId, layerId } -> { access: 'PL.mask("Mask 1").maskPath' | 'PL.content(..).path', closed, kind, points (vertex count, v0.37) } */
     ops['paths.find'] = {
         mutates: false,
         run: function (args) {
             var comp = U.compById(args.compId), L = U.findLayer(comp, { layerId: args.layerId }), masks, r, root;
             masks = L.property('ADBE Mask Parade');
             if (masks && masks.numProperties > 0) {
-                return { kind: 'mask', access: 'PL.mask("' + escq(masks.property(1).name) + '").maskPath', closed: !!masks.property(1).property('ADBE Mask Shape').value.closed, name: L.name };
+                return { kind: 'mask', access: 'PL.mask("' + escq(masks.property(1).name) + '").maskPath', closed: !!masks.property(1).property('ADBE Mask Shape').value.closed, points: masks.property(1).property('ADBE Mask Shape').value.vertices.length, name: L.name };
             }
             root = null;
             try { root = L.property('ADBE Root Vectors Group'); } catch (e) { root = null; }
             if (root) {
                 r = findShapePath(root, 'PL', 0);
-                if (r) { return { kind: 'shape', access: r.chain, closed: !!r.prop.value.closed, name: L.name }; }
+                if (r) { return { kind: 'shape', access: r.chain, closed: !!r.prop.value.closed, points: r.prop.value.vertices.length, name: L.name }; }
             }
             U.fail('NO_PATH', 'Layer "' + L.name + '" has no mask or shape path. Draw a path with the Pen tool first.');
         }

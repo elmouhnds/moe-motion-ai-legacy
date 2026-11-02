@@ -24,7 +24,10 @@ const MODE_CONTROLS = {
   spiral: [['Radius', 'slider', 60], ['Start Angle', 'angle', 0], ['Angle Step', 'slider', 30], ['Spiral Step', 'slider', 12]],
   phyllo: [['Spread', 'slider', 40], ['Start Angle', 'angle', 0]],
   path: [['Path Layer', 'layer', 0], ['Path Start', 'slider', 0], ['Path End', 'slider', 100], ['Path Offset', 'slider', 0]],
-  sphere: [['Radius', 'slider', 400], ['Sphere Spin', 'angle', 0], ['Sphere Tilt', 'angle', 0]]
+  sphere: [['Radius', 'slider', 400], ['Sphere Spin', 'angle', 0], ['Sphere Tilt', 'angle', 0]],
+  // v0.37
+  points: [['Path Layer', 'layer', 0], ['Point Offset', 'slider', 0]],
+  keep: []
 };
 const MODE_MENU = L.MODES.map((m) => m.menu);
 /** v0.19: what the grid is (live) — first in Effect Controls. */
@@ -73,7 +76,7 @@ function allControls() {
 const KEY = {
   Columns: 'columns', 'Spacing X': 'spacingX', 'Spacing Y': 'spacingY', 'Row Offset': 'rowOffset', 'Column Offset': 'columnOffset',
   Radius: 'radius', 'Start Angle': 'startAngle', Arc: 'arc', 'Ring Size': 'ringSize', 'Ring Spacing': 'ringSpacing', 'Angle Step': 'angleStep', 'Spiral Step': 'spiralStep',
-  Spread: 'spread', 'Path Start': 'pathStart', 'Path End': 'pathEnd', 'Path Offset': 'pathOffset', 'Sphere Spin': 'sphereSpin', 'Sphere Tilt': 'sphereTilt',
+  Spread: 'spread', 'Point Offset': 'pointOffset', 'Path Start': 'pathStart', 'Path End': 'pathEnd', 'Path Offset': 'pathOffset', 'Sphere Spin': 'sphereSpin', 'Sphere Tilt': 'sphereTilt',
   Order: 'order', Reverse: 'reverse', Seed: 'seed', 'Item Scale': 'itemScale', 'Scale Step': 'scaleStep', Twist: 'twist', 'Face Center': 'faceCenter', Orient: 'orient',
   Layout: 'layoutIdx', 'Morph To': 'morphToIdx', Morph: 'morph', 'Effector Rotate': 'effectorRotate', 'Effector Fade': 'effectorFade',
   'Random Position': 'randomPosition', 'Random Rotation': 'randomRotation', 'Random Scale': 'randomScale',
@@ -223,6 +226,26 @@ function layBody(pathAccess, pathClosed) {
         '}',
         'maxD = 1;'
       ];
+    } else if (m.id === 'points') {
+      // v0.37 Object Cloner: item k on point (k + Point Offset) of the path (points(), AE expression reference)
+      code = [
+        'var PL = null; try { PL = G.effect("Path Layer")(1); } catch (eP) { PL = null; }',
+        'if (PL) {',
+        pathAccessCode(pathAccess),
+        '  if (acc) {',
+        '    var PP = acc.points(), NP = PP.length;',
+        '    if (NP > 0) {',
+        '      var jv = ((k + Math.round(c("Point Offset"))) % NP + NP) % NP;',
+        '      var V0 = G.fromComp(PL.toComp(PP[jv])), Va = G.fromComp(PL.toComp(PP[(jv - 1 + NP) % NP])), Vb = G.fromComp(PL.toComp(PP[(jv + 1) % NP]));',
+        '      x = V0[0]; y = V0[1]; face = Math.atan2(Vb[1] - Va[1], Vb[0] - Va[0]) * 180 / Math.PI;',
+        '    }',
+        '  }',
+        '}',
+        'maxD = 1;'
+      ];
+    } else if (m.id === 'keep') {
+      // v0.37 In Place: the item stays where it was built (H = its place in the null's space)
+      code = ['x = H[0]; y = H[1]; maxD = 1;'];
     } else code = modeBlock(m.id); // its own `var` lines — re-declaring inside lay() is plain JS
     return `${idx ? 'else ' : ''}if (m == ${idx + 1}) {\n${code.join('\n')}\n}`;
   });
@@ -249,7 +272,7 @@ function buildAll(i, n, { gridName, pathAccess = null, pathClosed = false, home 
     'if (mo > 0 && mt != md) { var Q2 = lay(mt), u = mo * mo * (3 - 2 * mo); for (qi = 0; qi < 5; qi++) { Q[qi] = Q[qi] + (Q2[qi] - Q[qi]) * u; } }',
     'var x = Q[0], y = Q[1], z = Q[2], face = Q[3], maxD = Q[4];',
     'var lin = n > 1 ? k / (n - 1) : 0;',
-    'var dd = (md == 5 && !(mo > 0 && mt != md)) ? Math.abs(lin - 0.5) * 2 : (maxD > 0 ? Math.min(1, Math.sqrt(x * x + y * y + z * z) / maxD) : 0);',
+    'var dd = ((md == 5 || md == 7 || md == 8) && !(mo > 0 && mt != md)) ? Math.abs(lin - 0.5) * 2 : (maxD > 0 ? Math.min(1, Math.sqrt(x * x + y * y + z * z) / maxD) : 0);',
     'var rb = PR(seed + 7919), rv = 0, q2; for (q2 = 0; q2 <= i; q2++) { rv = rb(); }',
     'var bo = c("Build Order"), f = bo == 1 ? lin : (bo == 2 ? 1 - lin : (bo == 3 ? dd : (bo == 4 ? 1 - dd : rv)));',
     `f = Math.min(Math.max(f + ic("${ITEM_FX.delay}") / 100, 0), 1);`,

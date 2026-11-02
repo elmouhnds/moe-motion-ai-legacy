@@ -173,7 +173,7 @@ test('Grid 2 · Morph: the null blends two layouts; AE values equal the pure pla
   assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors, null, 1));
   const g = comp._layers.find((l) => l.name === 'MOE Grid 1');
   assert.equal(ctl(g, 'Layout').value, 1); assert.equal(ctl(g, 'Morph To').value, 2);
-  assert.equal(ctl(g, 'Layout')._menuItems.length, 6, 'Layout dropdown lists the six layouts');
+  assert.equal(ctl(g, 'Layout')._menuItems.length, 8, 'Layout dropdown lists the eight layouts (v0.37: + Points, In Place)');
   const p = Object.assign(Lg.place.length ? {} : {}, X.defaultParams('rect'), { mode: 'rect', columns: 4, spacingX: 150, spacingY: 120, radius: 300, arc: 360, morphTo: 'radial', order: 1, buildOrder: 1, buildStyle: 1, build: 100, seed: 1, rowOffset: 0, columnOffset: 0 });
   for (const m of [0, 35, 100]) {
     ctl(g, 'Morph').setValue(m);

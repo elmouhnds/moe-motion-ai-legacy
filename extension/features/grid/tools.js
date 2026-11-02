@@ -93,8 +93,8 @@ const build = {
   category: 'layout',
   group: 'Grid',
   name: 'Grid Builder',
-  description: 'Arrange the selected layers on a live grid controlled by one MOE Grid null: Grid, Radial, Spiral, Sunflower, Path or Sphere — with twist, scale step, random jitter, a Build-in animation and an Effector. Every control stays editable in Effect Controls.',
-  keywords: ['grid', 'layout', 'arrange', 'distribute', 'radial', 'circle', 'spiral', 'sunflower', 'phyllotaxis', 'path', 'sphere', 'array', 'clone', 'matrix', 'wall', 'mosaic', 'build'],
+  description: 'Arrange the selected layers on a live grid controlled by one MOE Grid null: Grid, Radial, Spiral, Sunflower, Path, Sphere, Points (one clone on each point of a shape) or In Place (a text split into words, kept where it was) — with twist, scale step, random jitter, a Build-in animation and an Effector. Every control stays editable in Effect Controls.',
+  keywords: ['grid', 'layout', 'arrange', 'distribute', 'radial', 'circle', 'spiral', 'sunflower', 'phyllotaxis', 'path', 'sphere', 'array', 'clone', 'matrix', 'wall', 'mosaic', 'build', 'object', 'vertices', 'points', 'text cloner', 'split text', 'words', 'letters', 'motext'],
   icon: 'grid',
   params: {
     mode: { type: 'enum', label: 'Mode', default: 'rect', options: MODE_OPTIONS },
@@ -106,7 +106,9 @@ const build = {
     rowOffset: { type: 'number', label: 'Row offset', min: -100, max: 100, step: 1, default: 0, unit: '%', description: 'Shift every other row (50 = honeycomb / brick)', showIf: (a) => a.mode === 'rect' },
     radius: { type: 'number', label: 'Radius', min: 0, max: 10000, step: 1, default: 0, unit: 'px', description: '0 = auto', showIf: (a) => ['radial', 'spiral', 'sphere'].includes(a.mode) },
     arc: { type: 'number', label: 'Arc', min: -360, max: 360, step: 1, default: 360, unit: '°', showIf: (a) => a.mode === 'radial' },
-    pathLayer: { type: 'layer', label: 'Path layer', description: 'Shape or masked layer whose path the items follow', showIf: (a) => a.mode === 'path' },
+    pathLayer: { type: 'layer', label: 'Path layer', description: 'Shape or masked layer whose path the items follow (Path) or whose points they sit on (Points)', showIf: (a) => a.mode === 'path' || a.mode === 'points' || a.morphTo === 'path' || a.morphTo === 'points' },
+    // v0.37 Text Cloner: one selected text layer → one item per word / letter, kept where it was (In Place)
+    splitText: { type: 'enum', label: 'Split text', default: 'none', options: [{ value: 'none', label: 'Off' }, { value: 'words', label: 'Words' }, { value: 'letters', label: 'Letters' }], description: 'One selected text layer becomes one item per word (or letter — not for Arabic), placed exactly where it was; the original is hidden (restorable)', showIf: (a) => a.mode === 'keep' || (a.splitText && a.splitText !== 'none') },
     order: { type: 'enum', label: 'Order', default: '1', options: enumOf(L.ORDERS) },
     orient: { type: 'enum', label: 'Orient', default: '1', options: enumOf(L.ORIENTS), description: 'Forward = turn with the grid · Face Center = face the centre or the path · Face Screen = stay upright when the grid spins' },
     morphTo: { type: 'enum', label: 'Morph to', default: 'none', options: MORPH_OPTIONS, description: 'A second layout the grid can blend into with the Morph slider (0–100)' },
@@ -126,7 +128,7 @@ const build = {
   permissions: ['modify.layers', 'modify.effects', 'modify.expressions'],
   recovery: 'undo+checkpoint',
   ai: { callable: true, hint: 'Arrange selected layers in a grid / circle / spiral / sunflower / along a path / on a 3D sphere, optionally animating them in with a stagger, and optionally morphing into a second layout (morphTo, animateMorph). orient: 1 Forward, 2 Face Center, 3 Face Screen. Live controls on a MOE Grid null.' },
-  uses: { hostOps: ['layers.clone', 'layers.remove', 'layers.bounds', 'layers.centerAnchor', 'layers.createNull', 'effects.ensure', 'effects.setMenu', 'layers.setParent', 'expressions.set', 'keys.write', 'props.values', 'paths.find'], network: false },
+  uses: { hostOps: ['paths.find', 'text.split', 'text.unsplit', 'layers.clone', 'layers.remove', 'layers.bounds', 'layers.centerAnchor', 'layers.createNull', 'effects.ensure', 'effects.setMenu', 'layers.setParent', 'expressions.set', 'keys.write', 'props.values', 'paths.find'], network: false },
   compatibility: { minAE: '25.0' },
   ui: {
     primaryLabel: 'Build Grid',
@@ -143,12 +145,21 @@ const build = {
   },
 
   prepare(args, ctx) {
+    // v0.37: Path / Points with no path layer chosen — the one selected shape layer is the path (the rest are the items)
+    if ((args.mode === 'path' || args.mode === 'points') && !args.pathLayer) {
+      const sel = itemsOf(ctx, [args.effector].filter(Boolean)), shapes = sel.filter((l) => l.type === 'shape');
+      if (sel.length >= 2 && shapes.length === 1) args = Object.assign({}, args, { pathLayer: shapes[0].index });
+    }
     const exclude = [args.pathLayer, args.effector].filter(Boolean);
     const items = itemsOf(ctx, exclude);
     const clones = Math.round(args.clones || 0);
-    const copies = clones >= 2 && clones > items.length ? clones - items.length : 0;
-    if (!items.length) return { ok: false, error: 'Select the layer(s) to clone or arrange' };
-    if (items.length < 2 && !copies) return { ok: false, error: 'Select at least 2 layers to arrange — or set Clones to copy one layer' };
+    const split = args.splitText && args.splitText !== 'none' ? args.splitText : null;
+    const copies = !split && clones >= 2 && clones > items.length ? clones - items.length : 0;
+    // v0.37 Points: one selected layer and no Clones count → one copy per point of the path (counted when it runs)
+    const autoPoints = args.mode === 'points' && !split && items.length === 1 && !copies;
+    if (!items.length) return { ok: false, error: split ? 'Select one text layer to split' : 'Select the layer(s) to clone or arrange' };
+    if (split && (items.length !== 1 || items[0].type !== 'text')) return { ok: false, error: 'Select one text layer to split into words or letters' };
+    if (items.length < 2 && !copies && !split && !autoPoints) return { ok: false, error: 'Select at least 2 layers to arrange — or set Clones to copy one layer' };
     // items already in a MOE Grid: building again would pull them out of it — say where to go instead
     const inGrid = items.filter((l) => l.parentIndex && (ctx.compLayers || []).some((g) => g.index === l.parentIndex && GRID_NAME.test(g.name)));
     if (inGrid.length) {
@@ -158,17 +169,19 @@ const build = {
     const locked = items.filter((l) => l.locked);
     if (locked.length) return { ok: false, error: `Unlock ${locked.map((l) => l.name).join(', ')} first` };
     const parented = items.filter((l) => l.parentIndex && !items.some((o) => o.index === l.parentIndex));
-    if (args.mode === 'path' && !args.pathLayer) return { ok: false, error: 'Choose the path layer' };
+    if ((args.mode === 'path' || args.mode === 'points') && !args.pathLayer) return { ok: false, error: args.mode === 'points' ? 'Choose the shape or masked layer whose points the clones sit on' : 'Choose the path layer' };
     const name = nextGridName(ctx);
     const mode = L.MODES.find((m) => m.id === args.mode);
     return {
-      ok: true, items, name, copies,
+      ok: true, items, name, copies, split, autoPoints, pathLayer: args.pathLayer,
       preview: {
-        summary: `${mode.label} of ${items.length + copies} ${copies ? `clones (${items.length} source${items.length > 1 ? 's' : ''} + ${copies} copies)` : 'layers'} · ${name}${args.animateIn ? ' · animated in' : ''}${args.morphTo && args.morphTo !== 'none' && args.morphTo !== args.mode ? ` · morphs to ${L.MODES.find((m) => m.id === args.morphTo).label}${args.animateMorph ? ' (animated)' : ''}` : ''}`,
+        summary: `${mode.label} of ${split ? `the ${split} of ${items[0].name}` : autoPoints ? `${items[0].name} on every point of the path` : `${items.length + copies} ${copies ? `clones (${items.length} source${items.length > 1 ? 's' : ''} + ${copies} copies)` : 'layers'}`} · ${name}${args.animateIn ? ' · animated in' : ''}${args.morphTo && args.morphTo !== 'none' && args.morphTo !== args.mode ? ` · morphs to ${L.MODES.find((m) => m.id === args.morphTo).label}${args.animateMorph ? ' (animated)' : ''}` : ''}`,
         items: [
           ...items.slice(0, 6).map((l) => l.name), ...(items.length > 6 ? [`+${items.length - 6} more`] : []),
           ...(args.mode === 'sphere' || args.morphTo === 'sphere' ? ['Items become 3D layers (restorable)'] : []),
           ...(copies ? [`${copies} copies named "MOE Clone n · <layer>" (removed on Restore)`] : []),
+          ...(autoPoints ? ['One copy per point of the path ("MOE Clone n · <layer>", removed on Restore)'] : []),
+          ...(split ? [`One text layer per ${split === 'letters' ? 'letter' : 'word'} ("MOE ${split === 'letters' ? 'Letter' : 'Word'} n · ${items[0].name}"), placed where it was — ${items[0].name} is hidden (Restore brings it back)`, ...(split === 'letters' ? ['Arabic text splits by words only (letters would disconnect)'] : [])] : []),
           'Layout, Morph and every control stay live on the grid null (Effect Controls)',
           ...(parented.length ? [`${parented.length} item(s) are re-parented to the grid (restorable)`] : [])
         ]
@@ -178,11 +191,27 @@ const build = {
 
   async execute({ args, ctx, prepared, host }) {
     const comp = ctx.comp;
+    // the path first (v0.37 Points counts its points to know how many clones to make)
+    let path = null;
+    const usesPath = args.mode === 'path' || args.mode === 'points' || args.morphTo === 'path' || args.morphTo === 'points';
+    if (prepared.pathLayer && !args.pathLayer) args = Object.assign({}, args, { pathLayer: prepared.pathLayer });
+    if (usesPath && args.pathLayer) path = await host.call('paths.find', { compId: comp.id, layerId: ctx.compLayers.find((l) => l.index === args.pathLayer).id });
+    let copiesWanted = prepared.copies;
+    if (prepared.autoPoints) {
+      if (!path || path.points < 2) { const e = new Error(`${path ? path.name : 'The path layer'} has ${path ? path.points : 0} point(s) — draw a shape with at least 2 points`); e.code = 'FEW_POINTS'; throw e; }
+      copiesWanted = Math.min(path.points, 200) - 1;
+    }
+    // v0.37 Text Cloner: the text becomes one layer per word / letter, placed where it was; those are the items
+    let split = null;
+    let items = prepared.items;
+    if (prepared.split) {
+      split = await host.call('text.split', { compId: comp.id, layerId: prepared.items[0].id, by: prepared.split, max: 150 });
+      items = split.pieces.map((p) => ({ id: p.layerId, name: p.name, threeD: false, locked: false, type: 'text' }));
+    }
     // v0.33 Cloner: copies first (they keep the source's look, effects and keyframes), cycling through the sources
     const clonesMade = [];
-    let items = prepared.items;
-    if (prepared.copies) {
-      const srcs = prepared.items, per = srcs.map((_, si) => Math.floor(prepared.copies / srcs.length) + (si < prepared.copies % srcs.length ? 1 : 0));
+    if (copiesWanted) {
+      const srcs = prepared.items, per = srcs.map((_, si) => Math.floor(copiesWanted / srcs.length) + (si < copiesWanted % srcs.length ? 1 : 0));
       const made = [];
       for (let si = 0; si < srcs.length; si++) {
         if (!per[si]) { made.push([]); continue; }
@@ -207,10 +236,11 @@ const build = {
       const flat = items.filter((l) => !l.threeD);
       if (flat.length) made3D = await host.call('layers.setAttrs', { compId: comp.id, label: 'MOE: Make 3D', items: flat.map((l) => ({ layerId: l.id, threeDLayer: true })) });
     }
-    const center = args.mode === 'path' ? [0, 0] : [Math.round(cx), Math.round(cy)];
-    const created = await host.call('layers.createNull', { compId: comp.id, name: prepared.name, position: threeD ? [center[0], center[1], 0] : center, anchor: [0, 0], label: 13, threeD, undoLabel: 'MOE: Grid Null' });
-    let path = null;
-    if (args.mode === 'path') path = await host.call('paths.find', { compId: comp.id, layerId: ctx.compLayers.find((l) => l.index === args.pathLayer).id });
+    const center = args.mode === 'path' || args.mode === 'points' ? [0, 0] : [Math.round(cx), Math.round(cy)];
+    // v0.37 In Place: anchor = position, so the null's space is the comp's — parenting (setParentWithJump keeps the
+    // values) leaves every item exactly where it was, and the null still turns / scales around the items' centre
+    const keepSpace = args.mode === 'keep';
+    const created = await host.call('layers.createNull', { compId: comp.id, name: prepared.name, position: threeD ? [center[0], center[1], 0] : center, anchor: keepSpace ? center : [0, 0], label: 13, threeD, undoLabel: 'MOE: Grid Null' });
     // Layer controls take layer indices — read them after the null was added.
     const desc = await host.call('layers.describe', { compId: comp.id });
     const idxOf = (oldIndex) => { const cl = ctx.compLayers.find((l) => l.index === oldIndex); const d = cl && desc.layers.find((x) => x.id === cl.id); return d ? d.index : 0; };
@@ -229,6 +259,8 @@ const build = {
       await host.call('layers.remove', { compId: comp.id, layerIds: [created.layerId], onlyNamed: 'MOE Grid' });
       if (made3D) await host.call('layers.setAttrs', { compId: comp.id, items: made3D.layers.map((x) => ({ layerId: x.layerId, threeDLayer: false })) });
       if (anchors) await host.call('layers.restoreTransform', { compId: comp.id, layers: anchors.layers.filter((a) => !a.skipped).map((a) => ({ layerId: a.layerId, anchor: a.before.anchor, position: a.before.position })) });
+      if (split) await host.call('text.unsplit', { compId: comp.id, layerIds: split.pieces.map((p) => p.layerId), sourceId: split.sourceId, sourceEnabled: split.sourceEnabled });
+      if (clonesMade.length) await host.call('layers.remove', { compId: comp.id, layerIds: clonesMade, onlyNamed: 'MOE Clone ' });
       const e = new Error(`These properties already have your own expressions: ${[...new Set(conflicts.map((c) => `${c.layer.name} › ${c.prop}`))].slice(0, 6).join(', ')}. Turn on "Replace existing" to overwrite (restorable).`);
       e.code = 'EXPRESSION_CONFLICT';
       throw e;
@@ -257,8 +289,17 @@ const build = {
     }
     const read = await host.call('props.values', { compId: comp.id, time: checkTime, items: items.map((l) => ({ address: { layerId: l.id, matchNames: X.PROP_ADDR.position } })) });
     const finalParams = Object.assign({}, params, { build: 100, morph: morphKeys ? 100 : 0 });
-    const predicted = args.mode === 'path' || params.morphTo === 'path' || args.effector ? null : L.placeMorph(finalParams, items.length).map((it) => { const m = L.modifiers(finalParams, it, items.length); return [it.x + m.dx, it.y + m.dy]; });
-    return { name: prepared.name, nullId: created.layerId, params, controls, set, parented, anchors, made3D, keys, morphKeys, read, predicted, clonesMade, items: items.map((l) => ({ id: l.id, name: l.name })) };
+    // v0.37 In Place: the items must not move (they stay where they were built); Points / Path depend on the path
+    const keepPlace = args.mode === 'keep' && !params.morphTo && !args.effector;
+    let keepCheck = null;
+    if (keepPlace) {
+      // read back where every item really is in the comp now (its box), against where it was before the grid
+      const after = await host.call('layers.bounds', { compId: comp.id, layerIds: items.map((l) => l.id), times: [checkTime] });
+      const ctr = (b) => [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];
+      keepCheck = meas.layers.map((m, i) => { const b0 = m.boxes[0], b1 = after.layers[i] && after.layers[i].boxes[0]; return b0 && b1 ? Math.hypot(ctr(b1)[0] - ctr(b0)[0], ctr(b1)[1] - ctr(b0)[1]) : Infinity; });
+    }
+    const predicted = keepPlace ? null : ['path', 'points', 'keep'].includes(args.mode) || ['path', 'points', 'keep'].includes(params.morphTo) || args.effector ? null : L.placeMorph(finalParams, items.length).map((it) => { const m = L.modifiers(finalParams, it, items.length); return [it.x + m.dx, it.y + m.dy]; });
+    return { split, keepCheck, path: path ? { name: path.name, points: path.points } : null, name: prepared.name, nullId: created.layerId, params, controls, set, parented, anchors, made3D, keys, morphKeys, read, predicted, clonesMade, items: items.map((l) => ({ id: l.id, name: l.name })) };
   },
 
   verify({ result }) {
@@ -268,7 +309,10 @@ const build = {
     const bad = result.set.targets.filter((t) => t.skipped || t.reverted || t.after.expressionError);
     checks.push({ ok: bad.length === 0, label: 'Expressions', detail: bad.length ? `${bad.length} failed: ${bad.slice(0, 3).map((t) => `${t.layerName} › ${t.name}: ${t.after ? t.after.expressionError : t.skipped}`).join('; ')}` : `${result.set.targets.length} live expressions, no engine errors` });
     checks.push({ ok: result.parented.layers.every((l) => l.after === result.nullId), label: 'Parenting', detail: `${result.parented.layers.length} item(s) follow ${result.name}` });
-    if (result.predicted) {
+    if (result.keepCheck) {
+      const worst = Math.max(...result.keepCheck);
+      checks.push({ ok: worst < 0.6, label: 'Layout read-back', detail: worst < 0.6 ? `${result.keepCheck.length} items stay exactly where they were in the comp (±0.5 px)` : `an item moved by ${worst.toFixed(1)} px` });
+    } else if (result.predicted) {
       // items with their own Position keys move on top of the grid — compare the others
       const off = result.read.items.map((r, i) => (r.numKeys ? 0 : r.value ? Math.hypot(r.value[0] - result.predicted[i][0], r.value[1] - result.predicted[i][1]) : Infinity));
       const worst = Math.max(...off);
@@ -278,6 +322,8 @@ const build = {
       checks.push({ ok: errs.length === 0, label: 'Layout read-back', detail: errs.length ? errs[0].error : `${result.read.items.length} positions evaluated` });
     }
     if (result.clonesMade && result.clonesMade.length) checks.push({ ok: result.clonesMade.every((id) => result.items.some((it) => it.id === id)) && result.parented.layers.length === result.items.length, label: 'Clones', detail: `${result.clonesMade.length} copies made, ${result.items.length} items on the grid` });
+    if (result.split) checks.push({ ok: result.split.pieces.length >= 2 && result.split.pieces.every((p) => result.items.some((it) => it.id === p.layerId)), label: 'Text split', detail: `${result.split.pieces.length} ${result.split.by} placed where they were — the original is hidden (Restore brings it back)` });
+    if (result.path && result.path.points && result.clonesMade && result.clonesMade.length) checks.push({ ok: result.items.length === Math.min(result.path.points, 200), label: 'Points', detail: `one item on each of the ${result.path.points} points of ${result.path.name}` });
     if (result.keys) checks.push({ ok: result.keys.items[0].written.length === 2, label: 'Build', detail: 'Build 0 → 100 keyframed' });
     if (result.morphKeys) checks.push({ ok: result.morphKeys.items[0].written.length === 2, label: 'Morph', detail: 'Morph 0 → 100 keyframed' });
     return { ok: checks.every((c) => c.ok), checks };
@@ -290,7 +336,8 @@ const build = {
       parents: result.parented.layers.map((l) => ({ layerId: l.layerId, parentId: l.before })),
       anchors: result.anchors ? result.anchors.layers.filter((a) => !a.skipped).map((a) => ({ layerId: a.layerId, anchor: a.before.anchor, position: a.before.position })) : [],
       made3D: result.made3D ? result.made3D.layers.map((l) => l.layerId) : [],
-      clones: result.clonesMade || []
+      clones: result.clonesMade || [],
+      split: result.split ? { layerIds: result.split.pieces.map((p) => p.layerId), sourceId: result.split.sourceId, sourceEnabled: result.split.sourceEnabled } : null
     };
   },
 
@@ -302,6 +349,8 @@ const build = {
     if (data.made3D.length) await host.call('layers.setAttrs', { compId: data.compId, items: data.made3D.map((id) => ({ layerId: id, threeDLayer: false })) });
     // v0.33: the copies the Cloner made go (only layers named "MOE Clone …")
     if (data.clones && data.clones.length) await host.call('layers.remove', { compId: data.compId, layerIds: data.clones, onlyNamed: 'MOE Clone ' });
+    // v0.37: the words / letters go and the original text comes back
+    if (data.split) await host.call('text.unsplit', Object.assign({ compId: data.compId }, data.split));
     return { ok: true };
   },
 

@@ -5,6 +5,12 @@
  *   text.applyAnimator build a named Text Animator from a MOE preset spec
  *   text.removeAnimator remove a named animator (checkpoint restore)
  *   text.applyFfx      apply a .ffx preset to given layers (applyPreset acts on the selection)
+ *   text.split         v0.37 Text Cloner: one text layer per word (or letter) placed exactly where it was. Each
+ *                      piece is measured with sourceRectAtTime on a temporary duplicate (removed in finally)
+ *                      set to the paragraph's start justification, then shifted by the source's own
+ *                      justification; pieces are duplicates (same font, style, effects, transform) named
+ *                      "MOE Word n . <layer>" / "MOE Letter n . <layer>", anchored on their own centre. The source is
+ *                      hidden (enabled = false). Arabic is split by words only (letters would disconnect).
  */
 (function (G) {
     var MOE = G.MOE, U = MOE.util, ops = MOE.ops;
@@ -200,6 +206,128 @@
                     for (i = 0; i < prev.length; i++) { try { prev[i].selected = true; } catch (eSel) { /* layer gone */ } }
                 }
                 return { applied: applied, time: comp.time };
+            });
+        }
+    };
+
+    /* ---------- v0.37 Text Cloner ---------- */
+    function hasArabic(s) { return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(s); }
+    function dropAnimators(L) {
+        var g = null, i;
+        try { g = L.property('ADBE Text Properties').property('ADBE Text Animators'); } catch (eG) { g = null; }
+        if (!g) { return; }
+        for (i = g.numProperties; i >= 1; i--) { g.property(i).remove(); }
+    }
+    function tokensOf(line, by) {
+        var out = [], i = 0, s0, ch;
+        while (i < line.length) {
+            ch = line.charAt(i);
+            if (ch === ' ' || ch === '\t') { i++; continue; }
+            if (by === 'letters') { out.push({ s: i, e: i + 1 }); i++; continue; }
+            s0 = i;
+            while (i < line.length && line.charAt(i) !== ' ' && line.charAt(i) !== '\t') { i++; }
+            out.push({ s: s0, e: i });
+        }
+        return out;
+    }
+    function measure(M, mp, srcProp, str, just, t) {
+        var d = srcProp.value, r;
+        d.text = str; d.justification = just;
+        mp.setValue(d);
+        r = M.sourceRectAtTime(t, false);
+        return { left: num(r.left), top: num(r.top), width: num(r.width), height: num(r.height) };
+    }
+    function keyedOrExpr(p) { return !!(p && (p.numKeys > 0 || (p.canSetExpression && p.expressionEnabled && p.expression))); }
+
+    /* args: { compId, layerId, by: 'words'|'letters', max } -> { pieces, sourceId, sourceEnabled, rtl, by, lines } */
+    ops['text.split'] = {
+        mutates: true,
+        run: function (args) {
+            var comp = U.compById(args.compId), L = U.findLayer(comp, { layerId: args.layerId }), t = comp.time;
+            var by = args.by === 'letters' ? 'letters' : 'words', sp = textProp(L), tg = L.property('ADBE Transform Group');
+            var doc, text, boxed = false, arabic, rtl, J, start, lines, li, total = 0, fs, lead, k, names = ['ADBE Anchor Point', 'ADBE Position', 'ADBE Scale', 'ADBE Rotate Z'];
+            if (keyedOrExpr(sp)) { U.fail('ANIMATED_TEXT', 'Source Text of "' + L.name + '" has keyframes or an expression - split works on still text.'); }
+            for (k = 0; k < names.length; k++) { if (keyedOrExpr(tg.property(names[k]))) { U.fail('ANIMATED', '"' + L.name + '" has keyframes or expressions on its Transform - remove them first, then animate the pieces.'); } }
+            if (tg.property('ADBE Position').dimensionsSeparated) { U.fail('SEPARATED', 'Join the Position dimensions of "' + L.name + '" first.'); }
+            if (L.threeDLayer) { U.fail('THREE_D', '"' + L.name + '" is a 3D layer - split works on 2D text.'); }
+            doc = sp.value; text = String(doc.text);
+            try { boxed = !!doc.boxText; } catch (eB) { boxed = false; }
+            if (boxed) { U.fail('BOX_TEXT', 'Paragraph (box) text is not supported yet - convert it to point text (right-click > Convert to Point Text).'); }
+            arabic = hasArabic(text);
+            if (by === 'letters' && arabic) { U.fail('ARABIC_LETTERS', 'Arabic letters disconnect when split - use Words.'); }
+            rtl = arabic;
+            try { if (doc.direction === ParagraphDirection.DIRECTION_RIGHT_TO_LEFT) { rtl = true; } } catch (eD) { }
+            J = doc.justification;
+            start = rtl ? ParagraphJustification.RIGHT_JUSTIFY : ParagraphJustification.LEFT_JUSTIFY;
+            lines = text.split(/\r\n|\r|\n/);
+            for (li = 0; li < lines.length; li++) { total += tokensOf(lines[li], by).length; }
+            if (total < 2) { U.fail('TOO_FEW', '"' + L.name + '" has fewer than two ' + by + ' to split.'); }
+            if (total > (args.max || 150)) { U.fail('TOO_MANY', '"' + L.name + '" has ' + total + ' ' + by + ' - split at most ' + (args.max || 150) + ' (try Words).'); }
+            fs = num(doc.fontSize) || 100; lead = fs * 1.2;
+            try { if (!doc.autoLeading && doc.leading > 0) { lead = num(doc.leading); } } catch (eL) { }
+            return U.withUndo('MOE: Split Text', function () {
+                var M = L.duplicate(), mp, pieces = [], ln, tk, j, full, shift, pw, pr, x, P, pd, a, pos, sc, rot, c0, c1, dx, dy, cs, sn, Ptg, wasOn;
+                try {
+                    dropAnimators(M);
+                    mp = M.property('ADBE Text Properties').property('ADBE Text Document');
+                    for (li = 0; li < lines.length; li++) {
+                        ln = lines[li]; tk = tokensOf(ln, by);
+                        if (!tk.length) { continue; }
+                        full = measure(M, mp, sp, ln, start, t);
+                        // the measured line starts at the paragraph's start edge; move it to the source's own justification
+                        if (J === start) { shift = 0; }
+                        else if (J === ParagraphJustification.CENTER_JUSTIFY) { shift = -(full.left + full.width / 2); }
+                        else if (J === ParagraphJustification.RIGHT_JUSTIFY) { shift = -(full.left + full.width); }
+                        else if (J === ParagraphJustification.LEFT_JUSTIFY) { shift = -full.left; }
+                        else { shift = 0; }
+                        for (j = 0; j < tk.length; j++) {
+                            pw = measure(M, mp, sp, ln.substring(tk[j].s, tk[j].e), start, t);
+                            pr = measure(M, mp, sp, ln.substring(0, tk[j].e), start, t);
+                            // LTR: the piece ends the prefix (right edge); RTL: it is the prefix's left edge
+                            x = rtl ? pr.left : pr.left + pr.width - pw.width;
+                            pieces.push({ text: ln.substring(tk[j].s, tk[j].e), line: li, box: [x + shift, li * lead + pw.top, pw.width, pw.height], own: [pw.left, pw.top] });
+                        }
+                    }
+                } finally { M.remove(); }
+                a = tg.property('ADBE Anchor Point').value; pos = tg.property('ADBE Position').value; sc = tg.property('ADBE Scale').value;
+                rot = num(tg.property('ADBE Rotate Z').value) * Math.PI / 180; cs = Math.cos(rot); sn = Math.sin(rot);
+                for (j = 0; j < pieces.length; j++) {
+                    P = L.duplicate();
+                    dropAnimators(P);
+                    pd = sp.value; pd.text = pieces[j].text; pd.justification = start;
+                    P.property('ADBE Text Properties').property('ADBE Text Document').setValue(pd);
+                    P.name = (by === 'letters' ? 'MOE Letter ' : 'MOE Word ') + (j + 1) + ' \u00B7 ' + L.name;
+                    // anchor on the piece's own centre; position = where that centre was in the source
+                    c0 = [pieces[j].own[0] + pieces[j].box[2] / 2, pieces[j].own[1] + pieces[j].box[3] / 2];
+                    c1 = [pieces[j].box[0] + pieces[j].box[2] / 2, pieces[j].box[1] + pieces[j].box[3] / 2];
+                    dx = (c1[0] - num(a[0])) * num(sc[0]) / 100; dy = (c1[1] - num(a[1])) * num(sc[1]) / 100;
+                    Ptg = P.property('ADBE Transform Group');
+                    Ptg.property('ADBE Anchor Point').setValue(a.length > 2 ? [c0[0], c0[1], num(a[2])] : c0);
+                    Ptg.property('ADBE Position').setValue(pos.length > 2 ? [num(pos[0]) + dx * cs - dy * sn, num(pos[1]) + dx * sn + dy * cs, num(pos[2])] : [num(pos[0]) + dx * cs - dy * sn, num(pos[1]) + dx * sn + dy * cs]);
+                    pieces[j].layerId = P.id; pieces[j].name = P.name;
+                }
+                wasOn = L.enabled;
+                L.enabled = false;
+                return { pieces: pieces, sourceId: L.id, sourceEnabled: wasOn, rtl: rtl, by: by, lines: lines.length };
+            });
+        }
+    };
+
+    /* args: { compId, layerIds, sourceId, sourceEnabled } -> undo text.split: remove the pieces (named), show the source again */
+    ops['text.unsplit'] = {
+        mutates: true,
+        run: function (args) {
+            var comp = U.compById(args.compId);
+            return U.withUndo('MOE: Restore Text', function () {
+                var removed = 0, i, L;
+                for (i = 0; i < args.layerIds.length; i++) {
+                    L = null;
+                    try { L = U.findLayer(comp, { layerId: args.layerIds[i] }); } catch (eF) { L = null; }
+                    if (L && /^MOE (Word|Letter) \d+ /.test(L.name)) { L.remove(); removed++; }
+                }
+                L = U.findLayer(comp, { layerId: args.sourceId });
+                L.enabled = args.sourceEnabled !== false;
+                return { removed: removed, sourceEnabled: L.enabled };
             });
         }
     };

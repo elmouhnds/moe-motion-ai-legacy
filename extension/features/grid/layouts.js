@@ -13,7 +13,10 @@ const MODES = [
   { id: 'spiral', label: 'Spiral', menu: 'Spiral' },
   { id: 'phyllo', label: 'Sunflower', menu: 'Phyllotaxis' },
   { id: 'path', label: 'Path', menu: 'Path' },
-  { id: 'sphere', label: 'Sphere', menu: 'Sphere (3D)' }
+  { id: 'sphere', label: 'Sphere', menu: 'Sphere (3D)' },
+  // v0.37: Object Cloner (one item on each point of a path) and In Place (items stay where they are — Text Cloner)
+  { id: 'points', label: 'Points', menu: 'Points' },
+  { id: 'keep', label: 'In Place', menu: 'In Place' }
 ];
 const ORDERS = ['Rows', 'Columns', 'Snake', 'Random'];
 /** v0.19 orientation (menu): Forward = turn with the grid null; Face Center = face the centre (or the
@@ -42,8 +45,12 @@ function permutation(n, seed) {
  * place(params, n) -> [{ x, y, z, face, f }]   (f = build start fraction 0..1)
  * params: { mode, columns, spacingX, spacingY, rowOffset, columnOffset, order (1..4), reverse,
  *           radius, startAngle, arc, ringSize, ringSpacing, spiralStep, angleStep, spread,
- *           sphereSpin, sphereTilt, seed, buildOrder (1..5), path: { points(pct) -> [x,y], tangent(pct) } }
+ *           sphereSpin, sphereTilt, seed, buildOrder (1..5), path: { points(pct) -> [x,y], tangent(pct) },
+ *           v0.37: vertices: [[x, y]…] (the path's points in the grid null's space) + pointOffset (Points);
+ *           homes: [[x, y]…] (each item's place in the null's space when built) (In Place) }
  */
+/** Layouts whose build order runs along the order (no centre): Path, Points, In Place. */
+const pathLike = (m) => m === 'path' || m === 'points' || m === 'keep';
 function rawPlace(p, n) {
   const out = [];
   const perm = p.order === 4 ? permutation(n, p.seed || 1) : null;
@@ -91,6 +98,19 @@ function rawPlace(p, n) {
       if (pct < 0 || pct > 100) pct = ((pct % 100) + 100) % 100;
       if (p.path) { const q = p.path.point(pct / 100); x = q[0]; y = q[1]; const t = p.path.tangent(pct / 100); face = (Math.atan2(t[1], t[0]) * 180) / Math.PI; }
       maxDist = 1;
+    } else if (p.mode === 'points') {
+      // item k on point (k + Point Offset) of the path, facing along the path there (previous → next point)
+      const V = p.vertices || [], P = V.length;
+      if (P) {
+        const j = (((k + Math.round(p.pointOffset || 0)) % P) + P) % P, a = V[(j - 1 + P) % P], b = V[(j + 1) % P];
+        x = V[j][0]; y = V[j][1]; face = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
+      }
+      maxDist = 1;
+    } else if (p.mode === 'keep') {
+      // the item itself (i, not the order k) stays where it was built
+      const hm = (p.homes || [])[i] || [0, 0];
+      x = hm[0]; y = hm[1];
+      maxDist = 1;
     } else if (p.mode === 'sphere') {
       const yN = n > 1 ? 1 - ((k + 0.5) / n) * 2 : 0;
       const rr = Math.sqrt(Math.max(0, 1 - yN * yN));
@@ -106,7 +126,7 @@ function rawPlace(p, n) {
     }
     out.push({ i, k, x, y, z, face });
   }
-  for (const o of out) o.maxD = p.mode === 'path' ? 1 : maxDist;
+  for (const o of out) o.maxD = pathLike(p.mode) ? 1 : maxDist;
   return out;
 }
 
@@ -122,7 +142,7 @@ function finishBuild(out, p, n, pathLike) {
   return out;
 }
 
-function place(p, n) { return finishBuild(rawPlace(p, n), p, n, p.mode === 'path'); }
+function place(p, n) { return finishBuild(rawPlace(p, n), p, n, pathLike(p.mode)); }
 
 /**
  * v0.19 Morph: the layout of p.mode blended into p.morphTo by p.morph (0–100, smoothstep) — the same

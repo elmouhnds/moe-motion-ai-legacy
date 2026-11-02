@@ -80,7 +80,7 @@ const POWER = [
     needs: 'Select two or more keyframes (anchor / align: layers)',
     steps: ['Select keys — the graph reads their ease', 'Drag a handle, or Copy and Paste the ease onto other keys', 'Anchor and align from the rail beside the graph'] },
   { id: 'grid', title: 'Cloner & Effectors', icon: 'grid', open: 'nav:layout', try: 'tile:layout/cloneRing', fits: ['layer', 'layers', 'shapesMany'],
-    what: 'Clone one layer into a live grid, ring, spiral, sunflower or globe — or arrange many — then add Effectors: nulls that grow, reveal, scatter, step, wave, cascade or tint the items near them — with a spring that overshoots and settles, a target they all turn to face, or the beat of your soundtrack — and give the clones a palette. MoGraph in After Effects, all live.',
+    what: 'Clone one layer into a live grid, ring, spiral, sunflower, globe or onto the points of a shape — split a title into words — or arrange many — then add Effectors: nulls that grow, reveal, scatter, step, wave, cascade or tint the items near them — with a spring that overshoots and settles, a target they all turn to face, or the beat of your soundtrack — and give the clones a palette. MoGraph in After Effects, all live.',
     when: 'Logo walls, icon fields, particle-like patterns, data cards, kinetic backgrounds.',
     needs: 'One layer to clone (or several to arrange); for an Effector, the grid',
     steps: ['Select a layer → Clone (Ring, Grid, Sunflower…)', 'Select the grid → Effector (Reveal, Wave, Cascade…)', 'Move or keyframe the MOE Effector null'] },
@@ -224,7 +224,7 @@ const word = (alts) => new RegExp(`(^|[\\s،,.؟?!])(ال|و|ب|ل|وال|بال
 const AR_WORDS = [
   [word('ايز|إيز|ايزي|إيزي|ايزنج|ايزينج|سموث|ناعم|نعومة'), 'ease'], [word('سناب|سنابي|سريع|حاد'), 'snappy'], [/اوفر ?شوت|أوفر ?شوت|ارتداد|يرتد/, 'overshoot'], [word('نط|ينط|يتنطط'), 'overshoot'],
   [/لوب|تكرار|يكرر|يتكرر/, 'loop'], [/ويجل|ويجيل|اهتزاز|يهتز|رعشة/, 'wiggle'], [/انكر|أنكر|نقطة الارتكاز|نقطه الارتكاز/, 'anchor'],
-  [word('بارنت|بيرنت|ربط|نل|نال'), 'parent'], [/بري ?كومب|بريكومبوز|تجميع/, 'precompose'], [/جريد|شبكة|شبكه/, 'grid'], [/كلونر|كلون|نسخ كتير|تكرار عناصر|موجراف|ماجراف/, 'clone'], [/ايفكتور|إيفكتور|افكتور|مؤثر|موجة|موجه/, 'effector'], [/موسيقى|موسيقي|مزيكا|مزيكه|صوت|إيقاع|ايقاع|بيتس/, 'audio'], [/يبص|يبصوا|تبص|يتجه|تتجه|يلف ناحية|يلفوا ناحية/, 'target'], [/دايرة|دائرة|دايره|حلقة/, 'ring'],
+  [word('بارنت|بيرنت|ربط|نل|نال'), 'parent'], [/بري ?كومب|بريكومبوز|تجميع/, 'precompose'], [/جريد|شبكة|شبكه/, 'grid'], [/كلونر|كلون|نسخ كتير|تكرار عناصر|موجراف|ماجراف/, 'clone'], [/قسم النص|تقسيم النص|كلمة لوحدها|كل كلمة|كلمات منفصلة/, 'split text'], [/نقط الشكل|رؤوس|نقاط الشكل|على النقط/, 'points'], [/ايفكتور|إيفكتور|افكتور|مؤثر|موجة|موجه/, 'effector'], [/موسيقى|موسيقي|مزيكا|مزيكه|صوت|إيقاع|ايقاع|بيتس/, 'audio'], [/يبص|يبصوا|تبص|يتجه|تتجه|يلف ناحية|يلفوا ناحية/, 'target'], [/دايرة|دائرة|دايره|حلقة/, 'ring'],
   [/زجاج|جلاس|قزاز/, 'glass'], [/خلفية|خلفيه|باك ?جراوند/, 'background'], [word('نص|نصوص|كتابة|كتابه|تايتل|عنوان|تكست'), 'text'],
   [/تايب ?رايتر|حرف حرف|كلمة كلمة|كلمه كلمه/, 'typewriter'], [/عداد|ارقام|أرقام/, 'counter'], [/براند|هوية|هويه|كلاينت/, 'brand'],
   [/زوم|تقريب/, 'zoom'], [/ماوس|كيرسر|كرسر|مؤشر/, 'cursor'], [/كروما|جرين ?سكرين|اخضر|أخضر|كيينج|كي ?اينج/, 'key'],

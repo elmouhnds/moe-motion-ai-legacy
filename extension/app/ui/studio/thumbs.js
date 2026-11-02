@@ -96,10 +96,21 @@ const DRAW = {
     c.strokeStyle = ACC; c.beginPath(); c.arc(ex, ey, 6, 0, Math.PI * 2); c.stroke();
   },
   grid(c, W, H, th, t) {
-    const n = th.row ? 8 : th.mode === 'phyllo' ? 34 : th.mode === 'sphere' ? 40 : th.mode === 'spiral' && th.clone ? 20 : 12;
+    // v0.37: Points = one clone on each corner of a hexagon; In Place (Text Cloner) = the words / letters of a title
+    const WORDS = th.text === 'letters' ? [16, 16, 16, 16, 0, 16, 16, 16, 16, 16] : [64, 30, 58];
+    const n = th.text ? WORDS.filter((w) => w).length : th.mode === 'points' ? 6 : th.row ? 8 : th.mode === 'phyllo' ? 34 : th.mode === 'sphere' ? 40 : th.mode === 'spiral' && th.clone ? 20 : 12;
     const p = Object.assign(GX.defaultParams(th.mode), { columns: th.row ? 8 : 4, spacingX: 52, spacingY: 40, radius: th.mode === 'spiral' ? 10 : 70, arc: th.arc || 360, rowOffset: th.rowOffset || 0, spread: 13, spiralStep: 6, angleStep: 32, ringSpacing: 30, sphereSpin: t * 25, faceCenter: th.mode !== 'rect', buildStyle: 4, buildOrder: 3, buildStagger: 70 });
     p.build = th.build ? clamp01(phase(t, 1.6, 2.8)) * 100 : 100;
     if (th.mode === 'path') p.path = { point: (u) => [-110 + 220 * u, 30 - 60 * Math.sin(u * Math.PI)], tangent: (u) => [220, -60 * Math.PI * Math.cos(u * Math.PI)] };
+    if (th.mode === 'points') p.vertices = Array.from({ length: 6 }, (_, j) => [62 * Math.cos((j * 60 - 90) * Math.PI / 180), 62 * Math.sin((j * 60 - 90) * Math.PI / 180)]);
+    const widths = [];
+    if (th.text) {
+      const gap = th.text === 'letters' ? 4 : 12, total = WORDS.reduce((a, w) => a + (w || 14) + gap, -gap);
+      let x = -total / 2; p.homes = [];
+      WORDS.forEach((w) => { if (w) { p.homes.push([x + w / 2, 0]); widths.push(w); } x += (w || 14) + gap; });
+      if (th.bs) p.buildStyle = th.bs;
+      p.buildDistance = 40; p.faceCenter = false; p.orient = 1;
+    }
     const k = Math.min(W / 260, H / 160);
     const pts = L.place(p, n).map((it) => Object.assign(it, { m: L.modifiers(p, it, n) }));
     if (th.mode === 'sphere') pts.sort((a, b) => a.z - b.z);
@@ -109,10 +120,12 @@ const DRAW = {
       c.save(); c.translate(W / 2 + (it.x + it.m.dx) * k, H / 2 + (it.y + it.m.dy) * k); c.rotate((it.m.rot * Math.PI) / 180);
       c.globalAlpha = clamp01(it.m.opacity) * (th.mode === 'sphere' ? 1 - depth * 0.6 : 1);
       c.fillStyle = it.i === 0 ? ACC : FG;
-      if (th.clone) { c.beginPath(); c.arc(0, 0, 11 * k * s, 0, Math.PI * 2); c.fill(); } else rrect(c, -16 * k * s, -11 * k * s, 32 * k * s, 22 * k * s, 2), c.fill();
+      if (th.text) { const w = widths[it.i]; c.fillStyle = it.i === 0 ? ACC : FG; rrect(c, -w / 2 * k * s, -14 * k * s, w * k * s, 28 * k * s, 3); c.fill(); }
+      else if (th.clone) { c.beginPath(); c.arc(0, 0, 11 * k * s, 0, Math.PI * 2); c.fill(); } else rrect(c, -16 * k * s, -11 * k * s, 32 * k * s, 22 * k * s, 2), c.fill();
       c.restore();
     }
     c.globalAlpha = 1;
+    if (th.mode === 'points') { c.strokeStyle = ACC; c.lineWidth = 1.2; c.setLineDash([3, 3]); c.beginPath(); p.vertices.forEach((v, j) => (j ? c.lineTo : c.moveTo).call(c, W / 2 + v[0] * k, H / 2 + v[1] * k)); c.closePath(); c.stroke(); c.setLineDash([]); }
   },
   /* v0.33: an effector passing over a grid of cards (the real maths: features/grid/effectors.js) */
   eff(c, W, H, th, t) {
