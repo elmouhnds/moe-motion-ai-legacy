@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Clone Colours** (v0.34.0): a colour for every clone — Cycle, Gradient or Random from a MOE palette, live on the grid null — and effectors that tint the clones they reach (Colour + Colour Mix) (docs/features/CLONE_COLOURS.md).
+
 **Cloner + Effectors** (v0.33.0): clone one layer into a live grid / ring / spiral / sunflower / globe, then add MOE Effectors — Plain, Random, Step, Noise or Delay with a Sphere, Linear, Box or Everywhere falloff — that move, scale, turn or fade the items near them; up to three per grid (docs/features/CLONER_EFFECTORS.md).
 
 **Library pages** (v0.32.0): settings open where you click (under the row, or beside the tiles from 600 px); Motion shows In · Out · Draw On · Proximity one at a time, Layout shows Arrange · Guides · Cells; tool lists as rows; filters on one line (docs/features/LIBRARY_PAGES.md).

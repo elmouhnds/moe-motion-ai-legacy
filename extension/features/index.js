@@ -18,6 +18,7 @@ const select = require('./select/tools');
 const adapt = require('./adapt/tools');
 const grid = require('./grid/tools');
 const gridEffector = require('./grid/effectorTool');
+const gridColour = require('./grid/colourTool');
 const zoom = require('./zoom/tools');
 const glass = require('./glass/tools');
 const thickGlass = require('./glass/thickTools');
@@ -36,7 +37,7 @@ const TOOLS = [
   text.animate, text.removeAnimation,
   brand.applyColor, brand.applyFont, brand.extractPalette, brandSource.fromSource, brandAll.applyAll,
   select.selectLayers,
-  grid.build, grid.update, grid.items, grid.remove, grid.guides, grid.placeInCells, gridEffector.effector,
+  grid.build, grid.update, grid.items, grid.remove, grid.guides, grid.placeInCells, gridEffector.effector, gridColour.colour,
   adapt.resize, adapt.suggest,
   exprQuick.quick, expr.apply, expr.validate, expr.inspect, expr.remove, assist,
   quick.reveal, quick.purge, quick.duplicate, quick.flip, quick.parentNull, quick.precompose, quick.separate,

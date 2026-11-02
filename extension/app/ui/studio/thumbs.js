@@ -128,13 +128,27 @@ const DRAW = {
       const s = Math.max(0, r.scaleMul);
       c.save(); c.translate(W / 2 + (x + r.dx) * k, H / 2 + (y + r.dy) * k); c.rotate(r.rot * Math.PI / 180);
       c.globalAlpha = Math.min(Math.max(r.opMul, 0), 1);
-      c.fillStyle = FG; rrect(c, -11 * k * s, -9 * k * s, 22 * k * s, 18 * k * s, 2); c.fill(); c.restore();
+      if (th.tint) { const lx = x - ex, w = EF.weight(Object.assign({}, base, { colourMix: 100 }), lx, y); c.fillStyle = w > 0.5 ? '#ffffff' : ACC; c.globalAlpha = 1; }
+      else c.fillStyle = FG;
+      rrect(c, -11 * k * s, -9 * k * s, 22 * k * s, 18 * k * s, 2); c.fill(); c.restore();
     }
     c.globalAlpha = 1;
     if (th.falloff !== 'all') {
       c.strokeStyle = ACC; c.lineWidth = 1.5; c.setLineDash([4, 3]); c.beginPath();
       if (th.falloff === 'linear') { c.moveTo(W / 2 + ex * k, 4); c.lineTo(W / 2 + ex * k, H - 4); } else c.arc(W / 2 + ex * k, H / 2, base.size * k, 0, Math.PI * 2);
       c.stroke(); c.setLineDash([]);
+    }
+  },
+  /* v0.34: a ring of clones coloured by the real palette maths (Cycle / Gradient / Random) */
+  cloneCol(c, W, H, th, t) {
+    const EF = require('../../../features/grid/effectors');
+    const PALS = { 1: 'tomato', 2: 'ocean', 3: 'candy' };
+    const P = require('../../../features/design/palettes').byId(PALS[th.mode]).colors.slice(1, 5).map((h) => EF.rgba(h));
+    const n = 12, k = Math.min(W / 260, H / 160), R = 52, spin = t * 12;
+    for (let i = 0; i < n; i++) {
+      const a = (-90 + i * 30 + spin) * Math.PI / 180, col = EF.paletteColour(th.mode, P, i, n, 3);
+      c.fillStyle = `rgb(${col.slice(0, 3).map((v) => Math.round(v * 255)).join(',')})`;
+      c.beginPath(); c.arc(W / 2 + Math.cos(a) * R * k, H / 2 + Math.sin(a) * R * k, 11 * k, 0, Math.PI * 2); c.fill();
     }
   },
   guides(c, W, H, th) {

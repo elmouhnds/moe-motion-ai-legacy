@@ -149,6 +149,10 @@ See `docs/features/STUDIO_v0.4.md`.
 - Host: `ops/kit.jsx` (`keyframes.setInterp`, `layers.trimToKeys` / `restoreTiming`, `rigs.find` / `rigs.remove`); `ops/transform.jsx` anchor rewritten (2D maths R·S·Δa; 3D / auto-orient through a toWorld / fromWorld probe with selection restore; keyed anchor; mask box; Alt placement via the parent chain), `layers.nudge` handles parented layers (comp → parent space, 2D parents).
 - Second CEP extension `tv.madtomato.moe.motionai.kit` (`kit.html` → `main.start({ mode: 'kit' })` → `shell.renderKitPanel`). Both panels share `%APPDATA%\MOE Motion AI`: `core/storage.js` re-reads a document whose file changed (mtime, checked ≤ 2×/s per document; `version(name)`), `core/settings.js` re-reads before `get` / `update`.
 
+## 6k. Clone Colours (v0.34.0)
+- `features/grid/effectors.js`: `paletteColour`, `colourWithEffectors` (reference), `colourCode` (Fill colour expression, tag `// MOE Clone Colour`), `COLOUR_CONTROLS` / `COLOUR_MODES`; effector `CONTROLS` gain Colour / Colour Mix (`expressions.KIND.color`).
+- `features/grid/colourTool.js` (`grid.colour`): grid-null controls + one `MOE Clone Colour` Fill per item (slot from the item's own grid expression), read-back; restore through `effects.restore`.
+
 ## 6j. Cloner + Effectors (v0.33.0)
 - `features/grid/effectors.js`: pure reference (`weight`, `amounts`, `apply`, `localFn`) + `code()` (the same maths as expression text). `grid/expressions.js buildAll` tags `· v3`, adds slots *Effector 2 / 3* to the grid controls, skips the legacy effector when slot 1 holds a MOE Effector; `factsOf(code)` reads an item's facts back for in-place upgrades.
 - `features/grid/effectorTool.js` (`grid.effector`): null + 15 controls (`effects.ensure` / `effects.setMenu`), first free slot (`props.values` on the grid null's layer controls), upgrade v2 items, sweep / delay keys, read-back; restore unlinks the slot and removes only `MOE Effector …`.

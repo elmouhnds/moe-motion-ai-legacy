@@ -50,9 +50,12 @@ const CONTROLS = [
   ['Seed', 'slider', 1],
   ['Delay', 'slider', 3],
   ['Noise Scale', 'slider', 100],
-  ['Noise Speed', 'slider', 50]
+  ['Noise Speed', 'slider', 50],
+  // v0.34: the items in reach blend toward this colour (needs Clone Colours on the grid)
+  ['Colour', 'color', [1, 1, 1, 1]],
+  ['Colour Mix', 'slider', 0]
 ];
-const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed' };
+const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix' };
 
 /** Default effector values (type / falloff as menu indices 1-based). */
 function defaults() {
@@ -60,11 +63,20 @@ function defaults() {
   for (const [name, kind, def] of CONTROLS) p[KEY[name]] = kind === 'checkbox' ? !!def : def;
   return p;
 }
+/** '#RRGGBB' → [r, g, b, 1] (0–1); an array passes through. */
+function rgba(c) {
+  if (Array.isArray(c)) return c.length === 4 ? c : c.concat([1]);
+  const m = /^#?([0-9a-f]{6})$/i.exec(String(c || ''));
+  if (!m) return [1, 1, 1, 1];
+  const v = parseInt(m[1], 16);
+  return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255, 1];
+}
 /** Tool args → control values. */
 function valuesOf(args) {
   const p = Object.assign(defaults(), args || {});
   if (typeof p.type === 'string') p.type = Math.max(1, TYPES.findIndex((t) => t.id === p.type) + 1);
   if (typeof p.falloff === 'string') p.falloff = Math.max(1, FALLOFFS.findIndex((f) => f.id === p.falloff) + 1);
+  p.colour = rgba(p.colour);
   return p;
 }
 
@@ -178,4 +190,70 @@ function code() {
   ].join('\n');
 }
 
-module.exports = { TYPES, FALLOFFS, SLOTS, NAME, CONTROLS, KEY, defaults, valuesOf, weight, amounts, apply, localFn, vnoise, hs, PR, code };
+/* ---------- v0.34 Clone Colours: a palette over the items, effectors tint them ---------- */
+const COLOUR_MODES = [
+  { id: 'cycle', menu: 'Cycle', label: 'Cycle', hint: 'Colour 1, 2, 3, 4, 1, 2… in the grid order' },
+  { id: 'gradient', menu: 'Gradient', label: 'Gradient', hint: 'From Colour 1 on the first item to Colour 4 on the last' },
+  { id: 'random', menu: 'Random', label: 'Random', hint: 'Each item picks one of the four (Seed)' }
+];
+/** The grid null's colour controls. */
+const COLOUR_CONTROLS = [['Colour Mode', 'menu', 1, COLOUR_MODES.map((m) => m.menu)], ['Colour 1', 'color'], ['Colour 2', 'color'], ['Colour 3', 'color'], ['Colour 4', 'color'], ['Colour Seed', 'slider', 1]];
+const COLOUR_FX = 'MOE Clone Colour';
+const COLOUR_TAG = '// MOE Clone Colour';
+const mixC = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, 1];
+/** Base colour of item i of n: mode 1 cycle, 2 gradient, 3 random; pal = four [r, g, b, a]. */
+function paletteColour(mode, pal, i, n, seed) {
+  const md = Math.round(mode);
+  if (md === 2) { const t = n > 1 ? i / (n - 1) : 0, sv = t * 3, j = Math.min(Math.floor(sv), 2); return mixC(pal[j], pal[j + 1], sv - j); }
+  if (md === 3) { const u = hs(i * 1.731 + 0.5, seed * 3.117 + 1.1) * 0.5 + 0.5, j = Math.min(3, Math.floor(u * 4)); return mixC(pal[j], pal[j], 0); }
+  return mixC(pal[i % 4], pal[i % 4], 0);
+}
+/** The colour after every effector's Colour Mix (in order). effs: [{ values, toLocal }]; cx, cy = the item's comp point. */
+function colourWithEffectors(base, effs, cx, cy) {
+  let col = base;
+  for (const e of effs) {
+    const mx = (e.values.colourMix || 0) / 100;
+    if (mx <= 0) continue;
+    const [lx, ly] = e.toLocal(cx, cy);
+    const a = Math.min(Math.max(weight(e.values, lx, ly) * mx, 0), 1);
+    col = mixC(col, rgba(e.values.colour), a);
+  }
+  return col;
+}
+/** The Fill colour expression for item i of n (mirrors paletteColour + colourWithEffectors). */
+function colourCode(i, n, gridName) {
+  const g = String(gridName).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return [
+    `${COLOUR_TAG} · ${g}`,
+    `var G = thisComp.layer("${g}");`,
+    'function c(nm) { return G.effect(nm)(1).value; }',
+    'function sm(u) { return u * u * (3 - 2 * u); }',
+    'function hs(a, b) { var s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return (s - Math.floor(s)) * 2 - 1; }',
+    'function mx3(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, 1]; }',
+    `var i = ${i}, n = ${n};`,
+    'var md = Math.round(c("Colour Mode")), P = [c("Colour 1"), c("Colour 2"), c("Colour 3"), c("Colour 4")], col;',
+    'if (md == 2) { var t = n > 1 ? i / (n - 1) : 0, sv = t * 3, j = Math.min(Math.floor(sv), 2); col = mx3(P[j], P[j + 1], sv - j); }',
+    'else if (md == 3) { var u = hs(i * 1.731 + 0.5, c("Colour Seed") * 3.117 + 1.1) * 0.5 + 0.5, j2 = Math.min(3, Math.floor(u * 4)); col = mx3(P[j2], P[j2], 0); }',
+    'else { col = mx3(P[i % 4], P[i % 4], 0); }',
+    'var IP = thisLayer.toComp(thisLayer.anchorPoint), q;',
+    `for (q = 0; q < ${SLOTS.length}; q++) {`,
+    '  var EL = null; try { EL = G.effect(q == 0 ? "Effector" : "Effector " + (q + 1))(1); } catch (eS) { EL = null; }',
+    '  if (!EL) { continue; }',
+    '  var mxv = 0, ec = null; try { mxv = EL.effect("Colour Mix")(1).value / 100; ec = EL.effect("Colour")(1).value; } catch (eC) { continue; }',
+    '  if (mxv <= 0) { continue; }',
+    '  var L0 = sub(EL.fromComp([IP[0], IP[1]]), EL.anchorPoint), lx = L0[0], ly = L0[1];',
+    '  var fo = Math.round(EL.effect("Falloff")(1).value), sz = Math.max(EL.effect("Size")(1).value, 0.001), sf = Math.min(Math.max(EL.effect("Softness")(1).value / 100, 0), 1), w;',
+    '  if (fo == 4) { w = 1; } else if (fo == 2) { w = sm(Math.min(Math.max(0.5 - lx / sz, 0), 1)); } else {',
+    '    var dE = fo == 3 ? Math.max(Math.abs(lx), Math.abs(ly)) : Math.sqrt(lx * lx + ly * ly), inr = sz * (1 - sf);',
+    '    w = dE <= inr ? 1 : (dE >= sz ? 0 : sm((sz - dE) / Math.max(sz - inr, 0.001)));',
+    '  }',
+    '  if (EL.effect("Invert")(1).value == 1) { w = 1 - w; }',
+    '  w = w * EL.effect("Strength")(1).value / 100;',
+    '  col = mx3(col, ec, Math.min(Math.max(w * mxv, 0), 1));',
+    '}',
+    'col;'
+  ].join('\n');
+}
+
+module.exports = { TYPES, FALLOFFS, SLOTS, NAME, CONTROLS, KEY, defaults, valuesOf, rgba, weight, amounts, apply, localFn, vnoise, hs, PR, code,
+  COLOUR_MODES, COLOUR_CONTROLS, COLOUR_FX, COLOUR_TAG, paletteColour, colourWithEffectors, colourCode };

@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.34.0] — 2026-11-02 — Clone Colours: a colour for every clone, effectors that tint
+Next advanced tool after Cloner + Effectors. Details: `docs/features/CLONE_COLOURS.md`. Also: an animated product demo of Cloner + Effectors (`marketing/demos/cloner-effectors/`, Stageshow).
+### Added
+- **Clone Colours** (`grid.colour`): Cycle · Gradient · Random over a grid's items from a MOE palette; Colour Mode, Colour 1–4 and Colour Seed live on the grid null (edit the palette in Effect Controls); one *MOE Clone Colour* Fill per item, updated in place; restore removes them. Tiles: Colour Cycle, Colour Gradient, Colour Random.
+- **Effector Colour + Colour Mix**: the items an effector's falloff reaches blend toward its colour (same falloff maths as the moves). Tiles: **Tint** (white sphere sweeping across) and **Shrink**.
+### Changed
+- Layer › Arrange · Clone · Effectors: Clone mode 9 tiles (6 clones + 3 colour), Effectors 8 (Grow, Shrink, Reveal, Scatter, Step, Wave, Cascade, Tint) — full rows.
+### Tests
+- `tests/clone.colour.test.js` (4): mock-evaluated Fill colours = `effectors.js` for every mode, live palette change, soft sphere and linear tint at three times, update in place, restore, refusal. **Mock / preview, not After Effects.**
+
 ## [0.33.0] — 2026-11-01 — Cloner + Effectors (MoGraph in After Effects)
 The owner pointed at aescripts mCloner Pro: add advanced tools for professional results. Details: `docs/features/CLONER_EFFECTORS.md`.
 ### Added

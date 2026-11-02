@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.39 — Clone Colours ✅ (v0.34.0)
+- Palette over clones (Cycle / Gradient / Random, live on the grid null) + effector Colour / Colour Mix (Tint).
+- Next (same direction): spring / inertia effector · target effector · audio effector · object / text cloner.
+
 ## M1.38 — Cloner + Effectors ✅ (v0.33.0) — advanced tools for pro results
 - Cloner on the MOE Grid engine; MOE Effector nulls (Plain / Random / Step / Noise / Delay × Sphere / Linear / Box / Everywhere), three per grid, live.
 - Next (same direction): colour effector / per-clone colour · spring / inertia effector · target effector · audio effector · object / text cloner (onto path points or letters).

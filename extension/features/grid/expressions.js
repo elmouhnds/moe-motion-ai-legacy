@@ -47,7 +47,8 @@ const KIND = {
   angle: { matchName: 'ADBE Angle Control', param: 'Angle', type: 'OneD' },
   checkbox: { matchName: 'ADBE Checkbox Control', param: 'Checkbox', type: 'OneD' },
   menu: { matchName: 'ADBE Dropdown Control', param: 'Menu', type: 'OneD' },
-  layer: { matchName: 'ADBE Layer Control', param: 'Layer', type: 'LAYER_INDEX' }
+  layer: { matchName: 'ADBE Layer Control', param: 'Layer', type: 'LAYER_INDEX' },
+  color: { matchName: 'ADBE Color Control', param: 'Color', type: 'COLOR' }
 };
 
 /**

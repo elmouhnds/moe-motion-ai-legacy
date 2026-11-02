@@ -65,12 +65,18 @@ const LAYOUT = [
   T('cloneSpiral', 'Clone Spiral', 'grid.build', { mode: 'spiral', clones: 24, orient: '2' }, { k: 'grid', mode: 'spiral', clone: true }, ['Clone']),
   T('cloneSun', 'Clone Sunflower', 'grid.build', { mode: 'phyllo', clones: 60, animateIn: true, buildStyle: '1', buildOrder: '3' }, { k: 'grid', mode: 'phyllo', clone: true, build: true }, ['Clone']),
   T('cloneGlobe', 'Clone Globe', 'grid.build', { mode: 'sphere', clones: 50 }, { k: 'grid', mode: 'sphere', clone: true }, ['Clone']),
+  // v0.34 Clone Colours: a palette over the items (live on the grid null; effectors with Colour Mix tint them)
+  T('colCycle', 'Colour Cycle', 'grid.colour', { mode: 'cycle', palette: 'tomato' }, { k: 'cloneCol', mode: 1 }, ['Clone']),
+  T('colGradient', 'Colour Gradient', 'grid.colour', { mode: 'gradient', palette: 'ocean' }, { k: 'cloneCol', mode: 2 }, ['Clone']),
+  T('colRandom', 'Colour Random', 'grid.colour', { mode: 'random', palette: 'candy', seed: 3 }, { k: 'cloneCol', mode: 3 }, ['Clone']),
   // v0.33 Effectors: a null that changes the grid's items near it (select the grid null or an item)
   T('efPush', 'Grow', 'grid.effector', { type: 'plain', falloff: 'sphere', scale: 80, softness: 70, sweep: true }, { k: 'eff', type: 'plain', falloff: 'sphere', scale: 80 }, ['Effectors']),
   T('efReveal', 'Reveal', 'grid.effector', { type: 'plain', falloff: 'linear', scale: -100, invert: true, sweep: true }, { k: 'eff', type: 'plain', falloff: 'linear', scale: -100, invert: true }, ['Effectors']),
   T('efScatter', 'Scatter', 'grid.effector', { type: 'random', falloff: 'all', moveX: 80, moveY: 80, rotate: 60, scale: 0 }, { k: 'eff', type: 'random', falloff: 'all', moveX: 40, moveY: 40, rotate: 60 }, ['Effectors']),
   T('efStep', 'Step', 'grid.effector', { type: 'step', falloff: 'all', scale: 100, rotate: 90 }, { k: 'eff', type: 'step', falloff: 'all', scale: 100, rotate: 90 }, ['Effectors']),
   T('efWave', 'Wave', 'grid.effector', { type: 'noise', falloff: 'all', moveY: 50, rotate: 20, scale: 0, noiseScale: 250, noiseSpeed: 120 }, { k: 'eff', type: 'noise', falloff: 'all', moveY: 22, rotate: 20 }, ['Effectors']),
+  T('efShrink', 'Shrink', 'grid.effector', { type: 'plain', falloff: 'sphere', scale: -70, softness: 70, sweep: true }, { k: 'eff', type: 'plain', falloff: 'sphere', scale: -70 }, ['Effectors']),
+  T('efTint', 'Tint', 'grid.effector', { type: 'plain', falloff: 'sphere', scale: 0, colour: '#FFFFFF', colourMix: 100, softness: 60, sweep: true }, { k: 'eff', type: 'plain', falloff: 'sphere', tint: true }, ['Effectors']),
   T('efCascade', 'Cascade', 'grid.effector', { type: 'delay', falloff: 'all', moveY: 80, fade: 100, scale: 0, delay: 2 }, { k: 'eff', type: 'delay', falloff: 'all', moveY: 30, fade: 100 }, ['Effectors']),
   T('g12', '12 Columns', 'grid.guides', { columns: 12, rows: 1, gutterX: 24, marginX: 96, marginY: 72 }, { k: 'guides', c: 12, r: 1 }, ['Guides']),
   T('thirds', 'Thirds', 'grid.guides', { columns: 3, rows: 3, gutterX: 0, gutterY: 0, marginX: 0, marginY: 0 }, { k: 'guides', c: 3, r: 3 }, ['Guides']),

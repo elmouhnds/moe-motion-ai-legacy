@@ -31,7 +31,8 @@ function controlItems(values) {
     const K = X.KIND[kind];
     let value = values[EF.KEY[name]] !== undefined ? values[EF.KEY[name]] : def;
     if (kind === 'checkbox') value = value ? 1 : 0;
-    return { key: name, matchName: K.matchName, before: [], params: [{ id: name, value: Number(value), names: [K.param], suffix: 1, nth: { type: K.type, n: 1 } }] };
+    // a colour stays [r, g, b, a]; everything else is one number
+    return { key: name, matchName: K.matchName, before: [], params: [{ id: name, value: kind === 'color' ? EF.rgba(value) : Number(value), names: [K.param], suffix: 1, nth: { type: K.type, n: 1 } }] };
   });
 }
 const slotItem = (slot, value) => ({ key: slot, matchName: X.KIND.layer.matchName, before: [], params: [{ id: slot, value, names: [X.KIND.layer.param], suffix: 1, nth: { type: X.KIND.layer.type, n: 1 } }] });
@@ -62,6 +63,8 @@ const effector = {
     delay: { type: 'number', label: 'Delay', min: 0, max: 60, step: 0.5, default: 3, unit: 'frames', description: 'Per item, in the grid order. The moves are keyframed to rest in 0.6 s from the playhead (re-key them freely) and every item plays them this much later', showIf: (a) => a.type === 'delay' },
     noiseScale: { type: 'number', label: 'Noise size', min: 1, max: 2000, step: 1, default: 100, description: 'Bigger = finer waves', showIf: (a) => a.type === 'noise' },
     noiseSpeed: { type: 'number', label: 'Noise speed', min: -1000, max: 1000, step: 1, default: 50, showIf: (a) => a.type === 'noise' },
+    colour: { type: 'string', label: 'Colour', default: '#FF6A4D', maxLength: 7, format: 'color', description: 'The colour the items in reach blend toward (needs Clone Colours on the grid)', showIf: (a) => a.colourMix > 0 },
+    colourMix: { type: 'number', label: 'Colour mix', min: 0, max: 100, step: 1, default: 0, unit: '%', description: '0 = no colour change · 100 = the items in reach take the colour fully (v0.34, with Clone Colours)' },
     sweep: { type: 'boolean', label: 'Sweep across', default: false, description: 'Keyframe the effector travelling across the grid in 2 s (Sphere / Box / Linear)', showIf: (a) => a.falloff !== 'all' },
     gridId: { type: 'integer', label: 'Grid', min: 0, max: 1e9, default: 0, hidden: true }
   },
@@ -78,8 +81,8 @@ const effector = {
     if (!grid) return { ok: false, error: 'Select a MOE Grid (its null or one of its items) — or build one with Clone / Arrange first' };
     const name = nextName(ctx);
     const t = EF.TYPES.find((x) => x.id === args.type), f = EF.FALLOFFS.find((x) => x.id === args.falloff);
-    const moves = [args.moveX && `move ${args.moveX}, ${args.moveY || 0} px`, !args.moveX && args.moveY && `move Y ${args.moveY} px`, args.scale && `scale ${args.scale > 0 ? '+' : ''}${args.scale} %`, args.rotate && `rotate ${args.rotate}°`, args.fade && `fade ${args.fade} %`].filter(Boolean);
-    if (!moves.length) return { ok: false, error: 'Give the effector something to do: Move, Scale, Rotate or Fade' };
+    const moves = [args.moveX && `move ${args.moveX}, ${args.moveY || 0} px`, !args.moveX && args.moveY && `move Y ${args.moveY} px`, args.scale && `scale ${args.scale > 0 ? '+' : ''}${args.scale} %`, args.rotate && `rotate ${args.rotate}°`, args.fade && `fade ${args.fade} %`, args.colourMix > 0 && `colour ${args.colour} at ${args.colourMix} %`].filter(Boolean);
+    if (!moves.length) return { ok: false, error: 'Give the effector something to do: Move, Scale, Rotate, Fade or Colour' };
     return {
       ok: true, grid, name,
       preview: {
