@@ -1,0 +1,135 @@
+/* MOE Cloner + Effectors — a dark After Effects hero. One lit color: the
+   accent (MOE's tomato) on the star layer and its copies, the effector and the
+   focal tiles. Depth from surface steps, not shadow. */
+.moe .ss-stage {
+  overflow: hidden;
+  background: #09090b;
+  --ss-accent: #ff6a4d;
+  --moe-viewer: #121214;
+  --moe-comp: #1d1d21;
+}
+
+/* The window inset top and left, off the right and the bottom */
+.moe-win {
+  position: absolute;
+  top: 48px;
+  left: 48px;
+  width: 760px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+.moe .ss-stage[data-layout='compact'] .moe-win { top: 16px; left: 16px; width: 400px; }
+
+/* ---------- the MOE panel (docked, the window's sidebar) ---------- */
+.moe-panel { display: grid; align-content: start; gap: 14px; padding: 12px 12px 0; }
+.moe-brand { padding: 2px 4px 0; color: var(--ss-text-strong); font-size: 13px; font-weight: 600; line-height: 1.3; }
+.moe-seg { width: 100%; font-size: 12px; }
+.moe-sets { display: grid; }
+.moe-tiles {
+  grid-area: 1 / 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(8px);
+  /* the outgoing set clears first, the incoming one fades in after it */
+  transition: opacity 120ms ease, transform 120ms ease;
+  pointer-events: none;
+  will-change: transform;
+}
+.moe-tiles[data-on] { opacity: 1; transform: none; transition: opacity 220ms ease 110ms, transform 220ms ease 110ms; }
+.moe-tile {
+  display: grid;
+  gap: 6px;
+  padding: 6px 6px 8px;
+  border-radius: var(--ss-radius-md);
+  background: var(--ss-ink-1);
+  transition: background 160ms ease;
+}
+.moe-tile[data-hover] { background: var(--ss-ink-2); }
+.moe-tile[data-pressed] { background: var(--ss-ink-3); }
+.moe-thumb { display: block; height: 44px; border-radius: var(--ss-radius-sm); background: var(--moe-viewer); overflow: hidden; }
+.moe-art { display: block; width: 100%; height: 100%; fill: var(--ss-ink-4); }
+.moe-art[data-focal] { fill: var(--ss-accent); }
+.moe-tile-l { display: flex; align-items: center; min-height: 16px; padding: 0 2px; color: var(--ss-text-strong); font-size: 12px; line-height: 1.3; white-space: nowrap; }
+.moe-tile:not([data-target]) .moe-tile-l { color: var(--ss-text); }
+.moe-more { display: grid; gap: 12px; padding: 14px 4px 0; border-top: 1px solid var(--ss-line-faint); }
+.moe-panel[data-top] { gap: 10px; width: 342px; padding: 12px; border-bottom: 1px solid var(--ss-line-faint); background: var(--ss-surface); }
+.moe-panel[data-top] .moe-thumb { height: 34px; }
+.moe-panel[data-top] .moe-tile { padding: 5px 5px 6px; gap: 5px; }
+
+/* ---------- the comp viewer ---------- */
+.moe-body { background: var(--moe-viewer); }
+.moe-viewer { position: relative; padding: 12px 0 12px 16px; border-bottom: 1px solid var(--ss-line-faint); }
+/* The comp runs off the right: only its empty ground is cut */
+.moe-frame { position: relative; overflow: hidden; width: 520px; height: 248px; border-radius: 4px 0 0 4px; background: var(--moe-comp); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.05); }
+.moe .ss-stage[data-layout='compact'] .moe-viewer { padding: 12px 0 0 12px; border-bottom: 0; }
+.moe .ss-stage[data-layout='compact'] .moe-frame { width: 380px; height: 300px; border-radius: 4px 0 0 0; }
+.moe-rest { position: absolute; width: 2px; height: 2px; }
+
+/* The star layer and its copies: opaque the whole way, stacked under the
+   source until they spiral out, so nothing ghosts */
+.moe-item {
+  position: absolute;
+  width: var(--item);
+  height: var(--item);
+  transition: transform 950ms cubic-bezier(0.45, 0, 0.1, 1);
+  will-change: transform;
+}
+.moe-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ss-accent);
+  clip-path: polygon(50% 2%, 62% 36%, 98% 38%, 69% 59%, 79% 95%, 50% 74%, 21% 95%, 31% 59%, 2% 38%, 38% 36%);
+}
+.moe-frame[data-live] .moe-item { transition: transform 60ms linear; }
+/* After Effects' own selection box on the selected source layer: it leaves as
+   the copies go, and comes back only once the source has landed */
+.moe-item::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 1px solid rgb(255 255 255 / 0.75);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+.moe-item[data-sel]::after { opacity: 1; }
+.moe-item[data-sel][data-back]::after { transition: opacity 200ms ease 1050ms; }
+
+/* The MOE Effector: a null at the centre, its dashed falloff around it */
+.moe-eff {
+  position: absolute;
+  z-index: 2; /* the null and its falloff read over the stars they change */
+  transform: translate(calc(-50% + var(--ex)), -50%);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform;
+  transition: opacity 400ms ease;
+}
+.moe-eff::before { content: ''; position: absolute; inset: 0; border: 1.5px dashed rgb(255 106 77 / 0.8); border-radius: 50%; }
+/* the sweep: one glide, ease-in-out cubic (the curve the stars read); it fades
+   in over the first half of the move, so it never appears and then moves */
+.moe-eff[data-sweep] { transition: opacity 1500ms cubic-bezier(0.45, 0, 0.55, 1), transform 2200ms cubic-bezier(0.65, 0, 0.35, 1); }
+.moe-eff[data-on] { opacity: 1; }
+.moe-null { position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border: 1.5px solid var(--ss-accent); border-radius: 2px; background: rgb(18 18 20 / 0.6); }
+
+/* ---------- After Effects' timeline ---------- */
+.moe-tl { background: var(--ss-surface); padding-bottom: 40px; }
+.moe-tl-head { display: flex; align-items: center; gap: 12px; height: 28px; padding: 0 16px; border-bottom: 1px solid var(--ss-line-faint); }
+.moe-layer {
+  display: grid;
+  grid-template-columns: 10px 128px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  height: 26px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--ss-line-faint);
+}
+.moe-chip { width: 10px; height: 10px; border-radius: 2px; }
+.moe-layer-n { color: var(--ss-text-strong); font-size: 12px; line-height: 1.3; white-space: nowrap; }
+.moe-bar { display: block; height: 14px; border-radius: 3px; opacity: 0.32; }
+
+/* The ⌘Z keycaps: the reset's cause, readable on black */
+.moe .ss-key { min-width: 34px; height: 34px; background: #3a3a41; color: #fff; font-size: 15px; box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.45), 0 0 0 1px rgb(255 255 255 / 0.14); }
