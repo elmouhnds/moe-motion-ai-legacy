@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['xBounce', 'Spring Effectors', 'Effectors can now move the clones through a real spring: Spring %, Frequency and Decay on the effector null. The items overshoot and settle as it passes — or, at Frequency 0, trail behind it with a smooth Inertia lag. New tiles: Spring Grow, Jelly, Inertia and Bounce Up.'],
   ['palette', 'Clone Colours', 'Give every clone its own colour: Colour Cycle, Gradient or Random from a MOE palette — the four colours stay live on the grid null. Effectors now have Colour + Colour Mix: the new Tint effector sweeps across and colours the clones it reaches.'],
   ['grid', 'Cloner + Effectors', 'Layer › Arrange · Clone · Effectors: select one layer and Clone it into a live grid, ring, spiral, sunflower or globe. Then select the grid and add an Effector — Grow, Reveal, Scatter, Step, Wave or Cascade: a MOE Effector null whose falloff and type move, scale, turn or fade the items near it. Move the null to animate it; up to three per grid.'],
   ['sliders', 'Settings open where you click', 'In every library a tile’s settings open right under its row (beside the tiles on a wider panel) — no more scrolling past the whole library. Motion shows In · Out · Draw On · Proximity one at a time, Layout shows Arrange · Guides · Cells, tools like Compositing are one-line rows that say what they do, and filters fit on one line.'],

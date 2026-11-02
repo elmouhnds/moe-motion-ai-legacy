@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.35.0] — 2026-11-02 — Spring / Inertia Effector: clones with weight
+Next advanced tool (after Cloner + Effectors and Clone Colours). Details: `docs/features/SPRING_EFFECTOR.md`.
+### Added
+- **Spring / Inertia** on every MOE Effector: Spring %, Frequency (Hz) and Decay live on the effector null. The items follow the effector through a damped spring — they overshoot and settle — or, at Frequency 0, trail behind it with a smooth Inertia lag. A real step-response sum over the effector's own past (≤ 3 s, ≤ 60 samples), the same maths in `effectors.js` (reference) and the item expressions.
+- Tiles in Effectors: **Spring Grow**, **Jelly**, **Inertia**, **Bounce Up** (Effectors mode now 12 — three full rows).
+### Changed
+- Grid item expressions compute each effector through one function of time (`TQ`), so the spring can sample it; with Spring 0 the result is the v0.33 / v0.34 maths. Effectors made before v0.35 (no Spring control) are read with `try` and behave as before.
+### Tests
+- `tests/spring.effector.test.js` (5): step response, bounded window, mock-evaluated items = reference at 7 times on a sweep, overshoot past the direct result and swing past the rest, Inertia never overshoots, old effectors unchanged, tiles. **Mock / preview, not After Effects.**
+
 ## [0.34.0] — 2026-11-02 — Clone Colours: a colour for every clone, effectors that tint
 Next advanced tool after Cloner + Effectors. Details: `docs/features/CLONE_COLOURS.md`. Also: an animated product demo of Cloner + Effectors (`marketing/demos/cloner-effectors/`, Stageshow).
 ### Added

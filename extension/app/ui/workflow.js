@@ -80,7 +80,7 @@ const POWER = [
     needs: 'Select two or more keyframes (anchor / align: layers)',
     steps: ['Select keys — the graph reads their ease', 'Drag a handle, or Copy and Paste the ease onto other keys', 'Anchor and align from the rail beside the graph'] },
   { id: 'grid', title: 'Cloner & Effectors', icon: 'grid', open: 'nav:layout', try: 'tile:layout/cloneRing', fits: ['layer', 'layers', 'shapesMany'],
-    what: 'Clone one layer into a live grid, ring, spiral, sunflower or globe — or arrange many — then add Effectors: nulls that grow, reveal, scatter, step, wave, cascade or tint the items near them, and give the clones a palette. MoGraph in After Effects, all live.',
+    what: 'Clone one layer into a live grid, ring, spiral, sunflower or globe — or arrange many — then add Effectors: nulls that grow, reveal, scatter, step, wave, cascade or tint the items near them — with a spring that overshoots and settles — and give the clones a palette. MoGraph in After Effects, all live.',
     when: 'Logo walls, icon fields, particle-like patterns, data cards, kinetic backgrounds.',
     needs: 'One layer to clone (or several to arrange); for an Effector, the grid',
     steps: ['Select a layer → Clone (Ring, Grid, Sunflower…)', 'Select the grid → Effector (Reveal, Wave, Cascade…)', 'Move or keyframe the MOE Effector null'] },

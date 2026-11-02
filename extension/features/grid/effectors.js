@@ -53,9 +53,13 @@ const CONTROLS = [
   ['Noise Speed', 'slider', 50],
   // v0.34: the items in reach blend toward this colour (needs Clone Colours on the grid)
   ['Colour', 'color', [1, 1, 1, 1]],
-  ['Colour Mix', 'slider', 0]
+  ['Colour Mix', 'slider', 0],
+  // v0.35: Spring / Inertia — the items follow what the effector does through a damped spring (0 = off)
+  ['Spring', 'slider', 0],
+  ['Frequency', 'slider', 2.5],
+  ['Decay', 'slider', 5]
 ];
-const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix' };
+const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix', Spring: 'spring', Frequency: 'frequency', Decay: 'decay' };
 
 /** Default effector values (type / falloff as menu indices 1-based). */
 function defaults() {
@@ -153,6 +157,68 @@ function localFn({ position, rotation = 0, scale = [100, 100] }) {
   return (px, py) => { const x = px - position[0], y = py - position[1]; return [(x * c + y * s) / (scale[0] / 100), (-x * s + y * c) / (scale[1] / 100)]; };
 }
 
+/* ---------- v0.35 Spring / Inertia: the items follow the effector through a damped spring ---------- */
+/**
+ * The result of one effector on one item is a signal over time (its falloff weight × the moves). With Spring on,
+ * the item does not take that signal at once: every change of it rings through a damped spring — the item's
+ * response to a change made τ seconds ago is the spring's step response S(τ):
+ *   Frequency > 0  (Spring)   S = 1 − e^(−Decay·τ) · (cos ωτ + Decay / ω · sin ωτ),  ω = 2π · Frequency  → overshoot, settle
+ *   Frequency = 0  (Inertia)  S = 1 − e^(−Decay·τ) · (1 + Decay·τ)                                      → smooth lag, no overshoot
+ * The expression samples the signal back in time over a bounded window (≤ 3 s, ≤ 60 samples, CLAUDE.md: bounded
+ * simulations) and sums the changes × S. Spring % blends between the direct result (0) and the spring (100).
+ */
+const SPRING = { maxSamples: 60, maxWindow: 3, minDecay: 2, settle: 9.2 };
+function stepResponse(tau, freq, decay) {
+  if (tau <= 0) return 0;
+  const s = Math.max(decay, SPRING.minDecay), ek = Math.exp(-s * tau);
+  if (freq <= 0.01) return 1 - ek * (1 + s * tau);
+  const w = 2 * Math.PI * freq;
+  return 1 - ek * (Math.cos(w * tau) + s / w * Math.sin(w * tau));
+}
+/** How far back the expression looks: N samples D seconds apart (N ≤ 60, N·D ≤ 3 s). */
+function springWindow(decay, fd) {
+  const s = Math.max(decay, SPRING.minDecay), W = Math.min(SPRING.maxWindow, SPRING.settle / s);
+  const N = Math.max(1, Math.min(SPRING.maxSamples, Math.ceil(W / fd - 1e-9)));
+  return { N, D: W / N };
+}
+/**
+ * One effector's raw terms on one item at time tq: [dx px, dy px, scale (×1, added to 1), rotate °, fade (×1)].
+ * src: { at(t) → control values at t, toLocal(t) → (cx, cy) → [lx, ly] }  — menus, Invert, Seed, Delay and the
+ * noise settings are read at `now`; Size, Softness, Strength and the effector's transform at tq; the moves at tq
+ * (Delay: tq − k × Delay frames). item: { i, k, n, x, y (grid space), compAt(t) → [cx, cy], fd (frame duration) }.
+ */
+function termsAt(src, item, tq, now) {
+  const V = src.at(now), Q = tq === now ? V : src.at(tq);
+  const c = item.compAt(tq), l = src.toLocal(tq)(c[0], c[1]);
+  const w = weight(Object.assign({}, V, { size: Q.size, softness: Q.softness, strength: Q.strength }), l[0], l[1]);
+  if (w <= 0) return [0, 0, 0, 0, 0];
+  const M = Math.round(V.type) === 5 ? src.at(tq - item.k * V.delay * item.fd) : Q;
+  const m = amounts(V, { i: item.i, k: item.k, n: item.n, x: item.x, y: item.y, time: tq });
+  return [M.moveX * m[0] * w, M.moveY * m[1] * w, M.scale / 100 * m[2] * w, M.rotate * m[3] * w, M.fade / 100 * m[4] * w];
+}
+/** termsAt with the spring (when the effector has Spring > 0). */
+function springTerms(src, item, now) {
+  const V = src.at(now), e0 = termsAt(src, item, now, now), sp = Math.max(0, (V.spring || 0) / 100);
+  if (!(sp > 0)) return e0;
+  const { N, D } = springWindow(V.decay, item.fd), acc = [0, 0, 0, 0, 0];
+  let prev = e0;
+  for (let j = 0; j < N; j++) {
+    const nx = termsAt(src, item, now - (j + 1) * D, now), S = stepResponse((j + 0.5) * D, V.frequency, V.decay);
+    for (let c = 0; c < 5; c++) acc[c] += (prev[c] - nx[c]) * S;
+    prev = nx;
+  }
+  return e0.map((v, c) => v + sp * (prev[c] + acc[c] - v));
+}
+/** Every effector (in slot order) on one item at time now → { dx, dy, scaleMul, rot, opMul } (spring included). */
+function applyAt(srcs, item, now) {
+  let dx = 0, dy = 0, scaleMul = 1, rot = 0, opMul = 1;
+  for (const src of srcs) {
+    const R = springTerms(src, item, now);
+    dx += R[0]; dy += R[1]; scaleMul *= Math.max(0, 1 + R[2]); rot += R[3]; opMul *= clamp(1 - R[4], 0, 1);
+  }
+  return { dx, dy, scaleMul, rot, opMul };
+}
+
 /* ---------- the expression (mirrors the maths above) ---------- */
 /**
  * Code inserted in a grid item's expression after the grid's own position (x + jx, y + jy + dy) is known.
@@ -168,23 +234,41 @@ function code() {
     'function EFX(EL) {',
     '  var tp = 0; try { tp = Math.round(EL.effect("Effector Type")(1).value); } catch (eT) { return; }',
     '  function ev(nm, tt) { return EL.effect(nm)(1).valueAtTime(tt); }',
-    '  var IP = G.toComp([x + jx, y + jy + dy, z]), L0 = sub(EL.fromComp([IP[0], IP[1]]), EL.anchorPoint), lx = L0[0], ly = L0[1];',
-    '  var fo = Math.round(ev("Falloff", time)), sz = Math.max(ev("Size", time), 0.001), sf = Math.min(Math.max(ev("Softness", time) / 100, 0), 1), w;',
-    '  if (fo == 4) { w = 1; } else if (fo == 2) { w = sm(Math.min(Math.max(0.5 - lx / sz, 0), 1)); } else {',
-    '    var dE = fo == 3 ? Math.max(Math.abs(lx), Math.abs(ly)) : Math.sqrt(lx * lx + ly * ly), inr = sz * (1 - sf);',
-    '    w = dE <= inr ? 1 : (dE >= sz ? 0 : sm((sz - dE) / Math.max(sz - inr, 0.001)));',
+    '  var fo = Math.round(ev("Falloff", time)), inv = ev("Invert", time) == 1, dl = ev("Delay", time), sd0 = ev("Seed", time), nf = ev("Noise Scale", time) / 1000, nsp = ev("Noise Speed", time) / 100, m0 = [1, 1, 1, 1, 1];',
+    '  if (tp == 2) { var s2 = sd0 * 3.117 + 1.1, ia = i * 1.731; m0 = [hs(ia + 0.5, s2), hs(ia + 17.63, s2), hs(ia + 34.76, s2), hs(ia + 51.89, s2), hs(ia + 69.02, s2)]; }',
+    '  else if (tp == 3) { var sv = n > 1 ? k / (n - 1) : 0; m0 = [sv, sv, sv, sv, sv]; }',
+    // the effector's raw terms at time tq: [dx, dy, scale, rotate, fade] (features/grid/effectors.js termsAt)
+    '  function TQ(tq) {',
+    '    var IP = G.toComp([x + jx, y + jy + dy, z], tq), L0 = sub(EL.fromComp([IP[0], IP[1]], tq), EL.anchorPoint.valueAtTime(tq)), lx = L0[0], ly = L0[1];',
+    '    var sz = Math.max(ev("Size", tq), 0.001), sf = Math.min(Math.max(ev("Softness", tq) / 100, 0), 1), w;',
+    '    if (fo == 4) { w = 1; } else if (fo == 2) { w = sm(Math.min(Math.max(0.5 - lx / sz, 0), 1)); } else {',
+    '      var dE = fo == 3 ? Math.max(Math.abs(lx), Math.abs(ly)) : Math.sqrt(lx * lx + ly * ly), inr = sz * (1 - sf);',
+    '      w = dE <= inr ? 1 : (dE >= sz ? 0 : sm((sz - dE) / Math.max(sz - inr, 0.001)));',
+    '    }',
+    '    if (inv) { w = 1 - w; }',
+    '    w = w * ev("Strength", tq) / 100;',
+    '    if (w <= 0) { return [0, 0, 0, 0, 0]; }',
+    '    var tt = tp == 5 ? tq - k * dl * thisComp.frameDuration : tq, m = m0;',
+    '    if (tp == 4) { var ns = nsp * tq, sd = sd0 * 17.3, nv = vn(x * nf + ns, y * nf + sd); m = [nv, vn(x * nf + 31.7 + ns, y * nf + sd), nv, nv, nv]; }',
+    '    return [ev("Move X", tt) * m[0] * w, ev("Move Y", tt) * m[1] * w, ev("Scale", tt) / 100 * m[2] * w, ev("Rotate", tt) * m[3] * w, ev("Fade", tt) / 100 * m[4] * w];',
     '  }',
-    '  if (ev("Invert", time) == 1) { w = 1 - w; }',
-    '  w = w * ev("Strength", time) / 100;',
-    '  if (w <= 0) { return; }',
-    '  var tt = tp == 5 ? time - k * ev("Delay", time) * thisComp.frameDuration : time, m = [1, 1, 1, 1, 1];',
-    '  if (tp == 2) { var s2 = ev("Seed", time) * 3.117 + 1.1, ia = i * 1.731; m = [hs(ia + 0.5, s2), hs(ia + 17.63, s2), hs(ia + 34.76, s2), hs(ia + 51.89, s2), hs(ia + 69.02, s2)]; }',
-    '  else if (tp == 3) { var sv = n > 1 ? k / (n - 1) : 0; m = [sv, sv, sv, sv, sv]; }',
-    '  else if (tp == 4) { var nf = ev("Noise Scale", time) / 1000, ns = ev("Noise Speed", time) / 100 * time, sd = ev("Seed", time) * 17.3, nv = vn(x * nf + ns, y * nf + sd); m = [nv, vn(x * nf + 31.7 + ns, y * nf + sd), nv, nv, nv]; }',
-    '  ex += ev("Move X", tt) * m[0] * w; ey += ev("Move Y", tt) * m[1] * w;',
-    '  es *= Math.max(0, 1 + ev("Scale", tt) / 100 * m[2] * w);',
-    '  er += ev("Rotate", tt) * m[3] * w;',
-    '  eop *= Math.min(Math.max(1 - ev("Fade", tt) / 100 * m[4] * w, 0), 1);',
+    '  var R = TQ(time), sp = 0, fq = 0, dc = 5;',
+    // v0.35 Spring / Inertia (effectors made before v0.35 have no Spring control → off)
+    '  try { sp = Math.max(0, ev("Spring", time) / 100); fq = ev("Frequency", time); dc = ev("Decay", time); } catch (eSp) { sp = 0; }',
+    '  if (sp > 0) {',
+    `    var sg = Math.max(dc, ${SPRING.minDecay}), Wn = Math.min(${SPRING.maxWindow}, ${SPRING.settle} / sg), Nn = Math.max(1, Math.min(${SPRING.maxSamples}, Math.ceil(Wn / thisComp.frameDuration - 1e-9))), Dn = Wn / Nn, om = 2 * Math.PI * fq, pv = R, ac = [0, 0, 0, 0, 0], jn, cn;`,
+    '    for (jn = 0; jn < Nn; jn++) {',
+    '      var nx = TQ(time - (jn + 1) * Dn), tau = (jn + 0.5) * Dn, dk = Math.exp(-sg * tau);',
+    '      var Sr = fq <= 0.01 ? 1 - dk * (1 + sg * tau) : 1 - dk * (Math.cos(om * tau) + sg / om * Math.sin(om * tau));',
+    '      for (cn = 0; cn < 5; cn++) { ac[cn] += (pv[cn] - nx[cn]) * Sr; }',
+    '      pv = nx;',
+    '    }',
+    '    var R2 = []; for (cn = 0; cn < 5; cn++) { R2.push(R[cn] + sp * (pv[cn] + ac[cn] - R[cn])); } R = R2;',
+    '  }',
+    '  ex += R[0]; ey += R[1];',
+    '  es *= Math.max(0, 1 + R[2]);',
+    '  er += R[3];',
+    '  eop *= Math.min(Math.max(1 - R[4], 0), 1);',
     '}',
     `var eqi; for (eqi = 0; eqi < ${SLOTS.length}; eqi++) { var EQ = null; try { EQ = G.effect(eqi == 0 ? "Effector" : "Effector " + (eqi + 1))(1); } catch (eS) { EQ = null; } if (EQ) { EFX(EQ); } }`
   ].join('\n');
@@ -256,4 +340,5 @@ function colourCode(i, n, gridName) {
 }
 
 module.exports = { TYPES, FALLOFFS, SLOTS, NAME, CONTROLS, KEY, defaults, valuesOf, rgba, weight, amounts, apply, localFn, vnoise, hs, PR, code,
+  SPRING, stepResponse, springWindow, termsAt, springTerms, applyAt,
   COLOUR_MODES, COLOUR_CONTROLS, COLOUR_FX, COLOUR_TAG, paletteColour, colourWithEffectors, colourCode };

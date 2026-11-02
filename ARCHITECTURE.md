@@ -153,6 +153,10 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/grid/effectors.js`: `paletteColour`, `colourWithEffectors` (reference), `colourCode` (Fill colour expression, tag `// MOE Clone Colour`), `COLOUR_CONTROLS` / `COLOUR_MODES`; effector `CONTROLS` gain Colour / Colour Mix (`expressions.KIND.color`).
 - `features/grid/colourTool.js` (`grid.colour`): grid-null controls + one `MOE Clone Colour` Fill per item (slot from the item's own grid expression), read-back; restore through `effects.restore`.
 
+## 6l. Spring / Inertia Effector (v0.35.0)
+- `features/grid/effectors.js`: `stepResponse`, `springWindow` (≤ 60 samples, ≤ 3 s), `termsAt` (one effector's [dx, dy, scale, rotate, fade] at a time), `springTerms`, `applyAt` — the reference; `code()` mirrors it with `TQ(tq)` + the spring sum. Effector `CONTROLS` gain Spring / Frequency / Decay.
+- `grid.effector` params spring / frequency / decay; tiles efSpring, efJelly, efInertia, efBounce; thumbnails run `applyAt`.
+
 ## 6j. Cloner + Effectors (v0.33.0)
 - `features/grid/effectors.js`: pure reference (`weight`, `amounts`, `apply`, `localFn`) + `code()` (the same maths as expression text). `grid/expressions.js buildAll` tags `· v3`, adds slots *Effector 2 / 3* to the grid controls, skips the legacy effector when slot 1 holds a MOE Effector; `factsOf(code)` reads an item's facts back for in-place upgrades.
 - `features/grid/effectorTool.js` (`grid.effector`): null + 15 controls (`effects.ensure` / `effects.setMenu`), first free slot (`props.values` on the grid null's layer controls), upgrade v2 items, sweep / delay keys, read-back; restore unlinks the slot and removes only `MOE Effector …`.

@@ -78,6 +78,11 @@ const LAYOUT = [
   T('efShrink', 'Shrink', 'grid.effector', { type: 'plain', falloff: 'sphere', scale: -70, softness: 70, sweep: true }, { k: 'eff', type: 'plain', falloff: 'sphere', scale: -70 }, ['Effectors']),
   T('efTint', 'Tint', 'grid.effector', { type: 'plain', falloff: 'sphere', scale: 0, colour: '#FFFFFF', colourMix: 100, softness: 60, sweep: true }, { k: 'eff', type: 'plain', falloff: 'sphere', tint: true }, ['Effectors']),
   T('efCascade', 'Cascade', 'grid.effector', { type: 'delay', falloff: 'all', moveY: 80, fade: 100, scale: 0, delay: 2 }, { k: 'eff', type: 'delay', falloff: 'all', moveY: 30, fade: 100 }, ['Effectors']),
+  // v0.35 Spring / Inertia: the items follow the effector through a damped spring (features/grid/effectors.js springTerms)
+  T('efSpring', 'Spring Grow', 'grid.effector', { type: 'plain', falloff: 'sphere', scale: 80, softness: 60, spring: 100, frequency: 3, decay: 5, sweep: true }, { k: 'eff', type: 'plain', falloff: 'sphere', scale: 80, spring: 100, frequency: 3, decay: 5 }, ['Effectors']),
+  T('efJelly', 'Jelly', 'grid.effector', { type: 'plain', falloff: 'sphere', scale: 40, rotate: 25, softness: 60, spring: 100, frequency: 4, decay: 3, sweep: true }, { k: 'eff', type: 'plain', falloff: 'sphere', scale: 40, rotate: 25, spring: 100, frequency: 4, decay: 3 }, ['Effectors']),
+  T('efInertia', 'Inertia', 'grid.effector', { type: 'plain', falloff: 'sphere', moveY: -60, scale: 0, softness: 60, spring: 100, frequency: 0, decay: 6, sweep: true }, { k: 'eff', type: 'plain', falloff: 'sphere', moveY: -30, spring: 100, frequency: 0, decay: 6 }, ['Effectors']),
+  T('efBounce', 'Bounce Up', 'grid.effector', { type: 'plain', falloff: 'linear', moveY: -80, scale: 0, spring: 100, frequency: 2, decay: 4, sweep: true }, { k: 'eff', type: 'plain', falloff: 'linear', moveY: -13, spring: 100, frequency: 2, decay: 4 }, ['Effectors']),
   T('g12', '12 Columns', 'grid.guides', { columns: 12, rows: 1, gutterX: 24, marginX: 96, marginY: 72 }, { k: 'guides', c: 12, r: 1 }, ['Guides']),
   T('thirds', 'Thirds', 'grid.guides', { columns: 3, rows: 3, gutterX: 0, gutterY: 0, marginX: 0, marginY: 0 }, { k: 'guides', c: 3, r: 3 }, ['Guides']),
   T('safe', 'Safe Area', 'grid.guides', { columns: 1, rows: 1, marginX: 96, marginY: 54, gutterX: 0, gutterY: 0, center: true }, { k: 'guides', c: 1, r: 1, safe: true }, ['Guides']),

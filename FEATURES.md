@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Spring / Inertia Effector** (v0.35.0): effectors move the clones through a damped spring — overshoot and settle, or a smooth Inertia lag at Frequency 0 — live on the effector null (Spring %, Frequency, Decay); tiles Spring Grow, Jelly, Inertia, Bounce Up (docs/features/SPRING_EFFECTOR.md).
+
 **Clone Colours** (v0.34.0): a colour for every clone — Cycle, Gradient or Random from a MOE palette, live on the grid null — and effectors that tint the clones they reach (Colour + Colour Mix) (docs/features/CLONE_COLOURS.md).
 
 **Cloner + Effectors** (v0.33.0): clone one layer into a live grid / ring / spiral / sunflower / globe, then add MOE Effectors — Plain, Random, Step, Noise or Delay with a Sphere, Linear, Box or Everywhere falloff — that move, scale, turn or fade the items near them; up to three per grid (docs/features/CLONER_EFFECTORS.md).

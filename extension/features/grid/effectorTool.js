@@ -44,8 +44,8 @@ const effector = {
   category: 'layout',
   group: 'Grid',
   name: 'Effector',
-  description: 'Add a MOE Effector to a grid or cloner: a null that moves, scales, turns or fades the items near it — Plain, Random, Step, Noise or Delay, with a Sphere, Linear, Box or Everywhere falloff. Move, rotate or scale the null to animate it; up to three per grid.',
-  keywords: ['effector', 'mograph', 'cloner', 'falloff', 'field', 'random', 'step', 'noise', 'delay', 'wave', 'reveal', 'proximity', 'mcloner', 'c4d'],
+  description: 'Add a MOE Effector to a grid or cloner: a null that moves, scales, turns or fades the items near it — Plain, Random, Step, Noise or Delay, with a Sphere, Linear, Box or Everywhere falloff. Spring makes the items follow it with overshoot (or a smooth Inertia lag). Move, rotate or scale the null to animate it; up to three per grid.',
+  keywords: ['effector', 'mograph', 'cloner', 'falloff', 'field', 'random', 'step', 'noise', 'delay', 'wave', 'reveal', 'proximity', 'mcloner', 'c4d', 'spring', 'inertia', 'bounce', 'jelly', 'overshoot', 'lag'],
   icon: 'target',
   params: {
     type: { type: 'enum', label: 'Type', default: 'plain', options: TYPE_OPTIONS, description: EF.TYPES.map((t) => `${t.label}: ${t.hint}`).join(' · ') },
@@ -65,13 +65,16 @@ const effector = {
     noiseSpeed: { type: 'number', label: 'Noise speed', min: -1000, max: 1000, step: 1, default: 50, showIf: (a) => a.type === 'noise' },
     colour: { type: 'string', label: 'Colour', default: '#FF6A4D', maxLength: 7, format: 'color', description: 'The colour the items in reach blend toward (needs Clone Colours on the grid)', showIf: (a) => a.colourMix > 0 },
     colourMix: { type: 'number', label: 'Colour mix', min: 0, max: 100, step: 1, default: 0, unit: '%', description: '0 = no colour change · 100 = the items in reach take the colour fully (v0.34, with Clone Colours)' },
+    spring: { type: 'number', label: 'Spring', min: 0, max: 200, step: 1, default: 0, unit: '%', description: '0 = the items follow the effector at once · 100 = they follow through a damped spring (overshoot and settle) — v0.35' },
+    frequency: { type: 'number', label: 'Frequency', min: 0, max: 10, step: 0.1, default: 2.5, unit: 'Hz', description: 'Bounces per second · 0 = Inertia (a smooth lag, no overshoot)', showIf: (a) => a.spring > 0 },
+    decay: { type: 'number', label: 'Decay', min: 2, max: 30, step: 0.5, default: 5, description: 'How fast it settles — higher = shorter', showIf: (a) => a.spring > 0 },
     sweep: { type: 'boolean', label: 'Sweep across', default: false, description: 'Keyframe the effector travelling across the grid in 2 s (Sphere / Box / Linear)', showIf: (a) => a.falloff !== 'all' },
     gridId: { type: 'integer', label: 'Grid', min: 0, max: 1e9, default: 0, hidden: true }
   },
   requires: { comp: true },
   permissions: ['modify.layers', 'modify.effects', 'modify.expressions'],
   recovery: 'undo+checkpoint',
-  ai: { callable: true, hint: 'Add a MoGraph-style effector to an existing MOE Grid / cloner (select the grid null or its items). type plain|random|step|noise|delay, falloff sphere|linear|box|all, moveX/moveY px, scale %, rotate deg, fade %. sweep animates it across.' },
+  ai: { callable: true, hint: 'Add a MoGraph-style effector to an existing MOE Grid / cloner (select the grid null or its items). type plain|random|step|noise|delay, falloff sphere|linear|box|all, moveX/moveY px, scale %, rotate deg, fade %. sweep animates it across. spring 0-200 % (100 = full spring), frequency Hz (0 = inertia lag), decay 2-30.' },
   uses: { hostOps: ['layers.describe', 'layers.createNull', 'effects.ensure', 'effects.setMenu', 'props.values', 'proximity.scan', 'expressions.peek', 'expressions.set', 'keys.write', 'layers.remove'], network: false },
   compatibility: { minAE: '25.0' },
   ui: { primaryLabel: 'Add Effector' },
@@ -87,7 +90,7 @@ const effector = {
       ok: true, grid, name,
       preview: {
         summary: `${name}: ${t.label} · ${f.label} on ${grid.name}`,
-        items: [moves.join(' · '), args.type === 'delay' ? `${args.delay} frames later per item — keyframe the effector's moves` : t.hint, args.sweep ? 'Sweeps across the grid in 2 s (keyframed)' : 'Move, rotate or scale the null to animate it', 'Every control stays live on the null (Effect Controls)']
+        items: [moves.join(' · '), args.type === 'delay' ? `${args.delay} frames later per item — keyframe the effector's moves` : t.hint, args.spring > 0 ? (args.frequency > 0.01 ? `Spring ${args.spring} %: ${args.frequency} Hz, decay ${args.decay} — the items overshoot and settle` : `Inertia ${args.spring} %: decay ${args.decay} — the items lag and ease in`) : null, args.sweep ? 'Sweeps across the grid in 2 s (keyframed)' : 'Move, rotate or scale the null to animate it', 'Every control stays live on the null (Effect Controls)'].filter(Boolean)
       }
     };
   },

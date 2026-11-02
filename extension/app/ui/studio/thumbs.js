@@ -118,13 +118,17 @@ const DRAW = {
   eff(c, W, H, th, t) {
     const EF = require('../../../features/grid/effectors');
     const cols = 7, rows = 4, sx = 34, sy = 32, n = cols * rows, k = Math.min(W / 260, H / 160);
-    const sweep = (Math.sin((t / 3) * Math.PI * 2 - Math.PI / 2) + 1) / 2, ex = -150 + 300 * sweep;
+    // v0.35 spring tiles: move, hold, move back, hold — so the overshoot and settle show at each stop
+    const exAt = (tt) => { if (!th.spring) { const sw = (Math.sin((tt / 3) * Math.PI * 2 - Math.PI / 2) + 1) / 2; return -150 + 300 * sw; } const u = ((tt % 5) + 5) % 5, ss = (v) => v * v * (3 - 2 * v); return u < 1.2 ? -150 + 300 * ss(u / 1.2) : u < 2.5 ? 150 : u < 3.7 ? 150 - 300 * ss((u - 2.5) / 1.2) : -150; };
+    const ex = exAt(t);
     const base = EF.valuesOf(Object.assign({ size: th.falloff === 'linear' ? 90 : 75, softness: 60, scale: 0 }, th, { type: th.type, falloff: th.falloff }));
     const cyc = 2.4, at = (tt) => { if (th.type !== 'delay') return base; const u = Math.min(Math.max((((tt % cyc) + cyc) % cyc) / 0.6, 0), 1), f = 1 - u * u * (3 - 2 * u); return Object.assign({}, base, { moveX: base.moveX * f, moveY: base.moveY * f, scale: base.scale * f, rotate: base.rotate * f, fade: base.fade * f }); };
     const toLocal = (px, py) => [px - ex, py];
     for (let i = 0; i < n; i++) {
       const col = i % cols, row = Math.floor(i / cols), x = (col - (cols - 1) / 2) * sx, y = (row - (rows - 1) / 2) * sy;
-      const r = EF.apply([{ values: at(t - i * 0.05), toLocal }], { i, k: i, n, x, y, cx: x, cy: y, time: t });
+      const r = th.spring
+        ? EF.applyAt([{ at: () => base, toLocal: (tt) => { const e = exAt(tt); return (px, py) => [px - e, py]; } }], { i, k: i, n, x, y, compAt: () => [x, y], fd: 1 / 30 }, t)
+        : EF.apply([{ values: at(t - i * 0.05), toLocal }], { i, k: i, n, x, y, cx: x, cy: y, time: t });
       const s = Math.max(0, r.scaleMul);
       c.save(); c.translate(W / 2 + (x + r.dx) * k, H / 2 + (y + r.dy) * k); c.rotate(r.rot * Math.PI / 180);
       c.globalAlpha = Math.min(Math.max(r.opMul, 0), 1);
