@@ -12,6 +12,11 @@
  *   comps.remove      remove comps MOE created (name guard).
  *   comp.restoreSize  restore width/height of a comp.
  *   guides.set        add / remove composition guides (CompItem.addGuide / removeGuide).
+ *   audio.amplitude   v0.36: AE's own Animation > Keyframe Assistant > Convert Audio to Keyframes on one
+ *                     layer (app.findMenuCommandId + app.executeCommand, Application object, AE Scripting
+ *                     Guide). AE adds an "Audio Amplitude" null with Left / Right / Both Channels sliders;
+ *                     it is renamed "MOE Audio . <layer>", moved to the bottom and the loudest Both
+ *                     Channels key is returned. Reused when it already exists.
  */
 (function (G) {
     var MOE = G.MOE, U = MOE.util, ops = MOE.ops;
@@ -105,7 +110,7 @@
                 out.push({
                     id: L.id, index: L.index, name: L.name, type: U.layerType(L), parentId: L.parent ? L.parent.id : null,
                     threeD: !!L.threeDLayer, enabled: L.enabled, locked: L.locked, guide: !!L.guideLayer,
-                    hasVideo: L.hasVideo !== false, inPoint: L.inPoint, outPoint: L.outPoint, startTime: L.startTime,
+                    hasVideo: L.hasVideo !== false, hasAudio: !!L.hasAudio, inPoint: L.inPoint, outPoint: L.outPoint, startTime: L.startTime,
                     posExpr: hasExpr(pos) || !!(pos && pos.dimensionsSeparated && (hasExpr(tg.property('ADBE Position_0')) || hasExpr(tg.property('ADBE Position_1')))),
                     scaleExpr: tg ? hasExpr(tg.property('ADBE Scale')) : false,
                     animated: !!(pos && (pos.numKeys > 0 || (pos.dimensionsSeparated && (tg.property('ADBE Position_0').numKeys + tg.property('ADBE Position_1').numKeys) > 0))),
@@ -519,6 +524,43 @@
                     added.push({ o: args.add[i].o, pos: num(args.add[i].pos) });
                 }
                 return { added: added, removed: removed, cleared: cleared, total: comp.guides.length };
+            });
+        }
+    };
+
+    /* args: { compId, layerId, name } -> { layerId, index, max, keys, created } */
+    function amplitudeOf(A) {
+        var fx = null, sl = null, mx = 0, i;
+        try { fx = A.property('ADBE Effect Parade').property('Both Channels'); } catch (eF) { fx = null; }
+        if (!fx) { return null; }
+        sl = fx.property(1);
+        if (sl.numKeys > 0) { for (i = 1; i <= sl.numKeys; i++) { mx = Math.max(mx, num(sl.keyValue(i))); } } else { mx = num(sl.value); }
+        return { max: mx, keys: sl.numKeys };
+    }
+    ops['audio.amplitude'] = {
+        mutates: true,
+        run: function (args) {
+            var comp = U.compById(args.compId), L = U.findLayer(comp, { layerId: args.layerId }), i, A, before = {}, sel = [], cmd = 0, made = null, amp;
+            if (!L.hasAudio) { U.fail('NO_AUDIO', L.name + ' has no audio.'); }
+            for (i = 1; i <= comp.numLayers; i++) {
+                if (comp.layer(i).name === args.name) { amp = amplitudeOf(comp.layer(i)); if (amp) { return { layerId: comp.layer(i).id, index: comp.layer(i).index, max: amp.max, keys: amp.keys, created: false }; } }
+            }
+            try { cmd = app.findMenuCommandId('Convert Audio to Keyframes'); } catch (eC) { cmd = 0; }
+            if (!cmd) { U.fail('NO_COMMAND', 'Convert Audio to Keyframes is not available - run Animation > Keyframe Assistant > Convert Audio to Keyframes on the sound layer, then try again.'); }
+            return U.withUndo('MOE: Audio to Keyframes', function () {
+                for (i = 1; i <= comp.numLayers; i++) { before[comp.layer(i).id] = true; if (comp.layer(i).selected) { sel.push(comp.layer(i)); } comp.layer(i).selected = false; }
+                L.selected = true;
+                try { app.executeCommand(cmd); } finally {
+                    L.selected = false;
+                    for (i = 0; i < sel.length; i++) { sel[i].selected = true; }
+                }
+                for (i = 1; i <= comp.numLayers; i++) { if (!before[comp.layer(i).id]) { made = comp.layer(i); break; } }
+                if (!made) { U.fail('NOT_CREATED', 'After Effects did not add an Audio Amplitude layer.'); }
+                amp = amplitudeOf(made);
+                if (!amp) { made.remove(); U.fail('NOT_CREATED', 'The new layer has no Both Channels slider - removed.'); }
+                made.name = args.name;
+                made.moveToEnd();
+                return { layerId: made.id, index: made.index, max: amp.max, keys: amp.keys, created: true };
             });
         }
     };

@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['target', 'Target & Audio Effectors', 'Two new effector types. Target: the clones turn to face the effector null as you move it (Aim, Look Near). Audio: the moves follow your soundtrack — MOE runs After Effects’ Convert Audio to Keyframes for you and each clone plays the beat a little later (Beat Pulse, Beat Wave).'],
   ['xBounce', 'Spring Effectors', 'Effectors can now move the clones through a real spring: Spring %, Frequency and Decay on the effector null. The items overshoot and settle as it passes — or, at Frequency 0, trail behind it with a smooth Inertia lag. New tiles: Spring Grow, Jelly, Inertia and Bounce Up.'],
   ['palette', 'Clone Colours', 'Give every clone its own colour: Colour Cycle, Gradient or Random from a MOE palette — the four colours stay live on the grid null. Effectors now have Colour + Colour Mix: the new Tint effector sweeps across and colours the clones it reaches.'],
   ['grid', 'Cloner + Effectors', 'Layer › Arrange · Clone · Effectors: select one layer and Clone it into a live grid, ring, spiral, sunflower or globe. Then select the grid and add an Effector — Grow, Reveal, Scatter, Step, Wave or Cascade: a MOE Effector null whose falloff and type move, scale, turn or fade the items near it. Move the null to animate it; up to three per grid.'],

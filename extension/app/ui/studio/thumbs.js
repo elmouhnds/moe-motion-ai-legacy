@@ -126,17 +126,21 @@ const DRAW = {
     const toLocal = (px, py) => [px - ex, py];
     for (let i = 0; i < n; i++) {
       const col = i % cols, row = Math.floor(i / cols), x = (col - (cols - 1) / 2) * sx, y = (row - (rows - 1) / 2) * sy;
-      const r = th.spring
-        ? EF.applyAt([{ at: () => base, toLocal: (tt) => { const e = exAt(tt); return (px, py) => [px - e, py]; } }], { i, k: i, n, x, y, compAt: () => [x, y], fd: 1 / 30 }, t)
+      // v0.36: Target items face the effector; Audio follows a two-beat-a-second pulse (the real maths: applyAt)
+      const live = th.spring || th.type === 'target' || th.type === 'audio';
+      const r = live
+        ? EF.applyAt([{ at: () => Object.assign({}, base, { audioMax: 1 }), toLocal: (tt) => { const e = exAt(tt); return (px, py) => [px - e, py]; }, originAt: (tt) => [exAt(tt), 0], audioAt: (tt) => Math.pow(Math.max(0, Math.sin(tt * Math.PI * 4)), 3) }], { i, k: i, n, x, y, compAt: () => [x, y], fd: 1 / 30, baseRotAt: () => 0 }, t)
         : EF.apply([{ values: at(t - i * 0.05), toLocal }], { i, k: i, n, x, y, cx: x, cy: y, time: t });
       const s = Math.max(0, r.scaleMul);
       c.save(); c.translate(W / 2 + (x + r.dx) * k, H / 2 + (y + r.dy) * k); c.rotate(r.rot * Math.PI / 180);
       c.globalAlpha = Math.min(Math.max(r.opMul, 0), 1);
       if (th.tint) { const lx = x - ex, w = EF.weight(Object.assign({}, base, { colourMix: 100 }), lx, y); c.fillStyle = w > 0.5 ? '#ffffff' : ACC; c.globalAlpha = 1; }
       else c.fillStyle = FG;
+      if (th.type === 'target') { c.beginPath(); c.moveTo(12 * k * s, 0); c.lineTo(-9 * k * s, -8 * k * s); c.lineTo(-5 * k * s, 0); c.lineTo(-9 * k * s, 8 * k * s); c.closePath(); c.fill(); c.restore(); continue; }
       rrect(c, -11 * k * s, -9 * k * s, 22 * k * s, 18 * k * s, 2); c.fill(); c.restore();
     }
     c.globalAlpha = 1;
+    if (th.type === 'target') { c.fillStyle = ACC; c.beginPath(); c.arc(W / 2 + ex * k, H / 2, 4, 0, Math.PI * 2); c.fill(); }
     if (th.falloff !== 'all') {
       c.strokeStyle = ACC; c.lineWidth = 1.5; c.setLineDash([4, 3]); c.beginPath();
       if (th.falloff === 'linear') { c.moveTo(W / 2 + ex * k, 4); c.lineTo(W / 2 + ex * k, H - 4); } else c.arc(W / 2 + ex * k, H / 2, base.size * k, 0, Math.PI * 2);

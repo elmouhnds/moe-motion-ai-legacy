@@ -157,6 +157,11 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/grid/effectors.js`: `stepResponse`, `springWindow` (≤ 60 samples, ≤ 3 s), `termsAt` (one effector's [dx, dy, scale, rotate, fade] at a time), `springTerms`, `applyAt` — the reference; `code()` mirrors it with `TQ(tq)` + the spring sum. Effector `CONTROLS` gain Spring / Frequency / Decay.
 - `grid.effector` params spring / frequency / decay; tiles efSpring, efJelly, efInertia, efBounce; thumbnails run `applyAt`.
 
+## 6m. Target & Audio Effectors (v0.36.0)
+- `effectors.js`: TYPES 6 Target / 7 Audio; `termsAt` uses `src.originAt`, `src.audioAt`, `item.baseRotAt`, `wrap180`; CONTROLS gain Audio Layer (layer) / Audio Max. `code()`: `TQ` aims with `EL.toComp(anchor, tq)` and reads `AU.effect("Both Channels")` at tq − k × Delay.
+- Host op `audio.amplitude` (`host/ops/layout.jsx`): Convert Audio to Keyframes via `app.findMenuCommandId` / `executeCommand` on one layer (selection saved and restored), finds the one new layer, checks Both Channels, renames `MOE Audio · <layer>`, `moveToEnd()`, returns the loudest key; reuses an existing one.
+- `grid.effector`: audio source = first layer with `hasAudio` outside the grid; checkpoint removes the amplitude layer only if this run made it.
+
 ## 6j. Cloner + Effectors (v0.33.0)
 - `features/grid/effectors.js`: pure reference (`weight`, `amounts`, `apply`, `localFn`) + `code()` (the same maths as expression text). `grid/expressions.js buildAll` tags `· v3`, adds slots *Effector 2 / 3* to the grid controls, skips the legacy effector when slot 1 holds a MOE Effector; `factsOf(code)` reads an item's facts back for in-place upgrades.
 - `features/grid/effectorTool.js` (`grid.effector`): null + 15 controls (`effects.ensure` / `effects.setMenu`), first free slot (`props.values` on the grid null's layer controls), upgrade v2 items, sweep / delay keys, read-back; restore unlinks the slot and removes only `MOE Effector …`.

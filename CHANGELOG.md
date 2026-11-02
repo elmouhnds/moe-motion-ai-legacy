@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.36.0] — 2026-11-02 — Target & Audio Effectors
+Next advanced tools after Spring / Inertia. Details: `docs/features/TARGET_AUDIO_EFFECTORS.md`.
+### Added
+- **Target** effector type: the clones turn the short way to face the effector null (Rotate = aim offset), weighted by the falloff, with Spring if on. Tiles **Aim**, **Look Near**.
+- **Audio** effector type: MOE runs After Effects' Convert Audio to Keyframes on the comp's sound layer (`audio.amplitude` host op → `MOE Audio · <layer>` at the bottom, reused), links it on the effector (Audio Layer, Audio Max) and every move follows the loudness, each clone Delay frames later. Tiles **Beat Pulse**, **Beat Wave**. No sound → refused with what to do.
+- Search: Arabic words for music / sound and "face / look at" find these effectors.
+### Changed
+- Effectors mode: 16 tiles (four full rows). `layers.describe` reports `hasAudio`.
+### Tests
+- `tests/target.audio.test.js` (5): Target aims at every time (mock = reference, +X axis on the effector), Target + Spring, Audio follows the amplitude with per-item delay, reuse + restore, refusal. **Mock / preview, not After Effects** (Convert Audio to Keyframes is mocked).
+
 ## [0.35.0] — 2026-11-02 — Spring / Inertia Effector: clones with weight
 Next advanced tool (after Cloner + Effectors and Clone Colours). Details: `docs/features/SPRING_EFFECTOR.md`.
 ### Added

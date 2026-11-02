@@ -23,7 +23,10 @@ const TYPES = [
   { id: 'random', menu: 'Random', label: 'Random', hint: 'Each item gets its own random share (seeded)' },
   { id: 'step', menu: 'Step', label: 'Step', hint: 'Grows from the first item to the last' },
   { id: 'noise', menu: 'Noise', label: 'Noise', hint: 'Smooth organic waves over space and time' },
-  { id: 'delay', menu: 'Delay', label: 'Delay', hint: 'Keyframe the effector — each item plays it a little later' }
+  { id: 'delay', menu: 'Delay', label: 'Delay', hint: 'Keyframe the effector — each item plays it a little later' },
+  // v0.36
+  { id: 'target', menu: 'Target', label: 'Target', hint: 'The items turn to face the effector null (Rotate = aim offset)' },
+  { id: 'audio', menu: 'Audio', label: 'Audio', hint: 'The moves follow a soundtrack’s loudness — each item a little later (Delay)' }
 ];
 const FALLOFFS = [
   { id: 'sphere', menu: 'Sphere', label: 'Sphere' },
@@ -57,9 +60,12 @@ const CONTROLS = [
   // v0.35: Spring / Inertia — the items follow what the effector does through a damped spring (0 = off)
   ['Spring', 'slider', 0],
   ['Frequency', 'slider', 2.5],
-  ['Decay', 'slider', 5]
+  ['Decay', 'slider', 5],
+  // v0.36 Audio: the "MOE Audio · <layer>" amplitude layer (Convert Audio to Keyframes) and its loudest value
+  ['Audio Layer', 'layer', 0],
+  ['Audio Max', 'slider', 1]
 ];
-const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix', Spring: 'spring', Frequency: 'frequency', Decay: 'decay' };
+const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix', Spring: 'spring', Frequency: 'frequency', Decay: 'decay', 'Audio Layer': 'audioLayer', 'Audio Max': 'audioMax' };
 
 /** Default effector values (type / falloff as menu indices 1-based). */
 function defaults() {
@@ -181,19 +187,31 @@ function springWindow(decay, fd) {
   const N = Math.max(1, Math.min(SPRING.maxSamples, Math.ceil(W / fd - 1e-9)));
   return { N, D: W / N };
 }
+/** An angle in −180..180 (the short way round). */
+const wrap180 = (a) => a - 360 * Math.floor((a + 180) / 360);
 /**
  * One effector's raw terms on one item at time tq: [dx px, dy px, scale (×1, added to 1), rotate °, fade (×1)].
- * src: { at(t) → control values at t, toLocal(t) → (cx, cy) → [lx, ly] }  — menus, Invert, Seed, Delay and the
+ * src: { at(t) → control values at t, toLocal(t) → (cx, cy) → [lx, ly], originAt(t) → the effector's comp point
+ * (Target), audioAt(t) → Both Channels amplitude (Audio) }  — menus, Invert, Seed, Delay, Audio Max and the
  * noise settings are read at `now`; Size, Softness, Strength and the effector's transform at tq; the moves at tq
- * (Delay: tq − k × Delay frames). item: { i, k, n, x, y (grid space), compAt(t) → [cx, cy], fd (frame duration) }.
+ * (Delay: tq − k × Delay frames). item: { i, k, n, x, y (grid space), compAt(t) → [cx, cy], fd (frame duration),
+ * baseRotAt(t) → the item's rotation before effectors + the grid null's rotation (Target) }.
+ * v0.36 Target: rotate = w × (the short turn from the item's rotation to the angle toward the effector + Rotate);
+ * 0° = the item's +X axis points at it. Audio: every move × (Both Channels at tq − k × Delay frames) / Audio Max.
  */
 function termsAt(src, item, tq, now) {
   const V = src.at(now), Q = tq === now ? V : src.at(tq);
   const c = item.compAt(tq), l = src.toLocal(tq)(c[0], c[1]);
   const w = weight(Object.assign({}, V, { size: Q.size, softness: Q.softness, strength: Q.strength }), l[0], l[1]);
   if (w <= 0) return [0, 0, 0, 0, 0];
-  const M = Math.round(V.type) === 5 ? src.at(tq - item.k * V.delay * item.fd) : Q;
-  const m = amounts(V, { i: item.i, k: item.k, n: item.n, x: item.x, y: item.y, time: tq });
+  const tp = Math.round(V.type);
+  const M = tp === 5 ? src.at(tq - item.k * V.delay * item.fd) : Q;
+  if (tp === 6) {
+    const o = src.originAt(tq), aim = wrap180(Math.atan2(o[1] - c[1], o[0] - c[0]) * 180 / Math.PI + M.rotate - item.baseRotAt(tq));
+    return [M.moveX * w, M.moveY * w, M.scale / 100 * w, aim * w, M.fade / 100 * w];
+  }
+  let m = amounts(V, { i: item.i, k: item.k, n: item.n, x: item.x, y: item.y, time: tq });
+  if (tp === 7) { const a = clamp((src.audioAt ? src.audioAt(tq - item.k * V.delay * item.fd) : 0) / Math.max(V.audioMax, 0.001), 0, 1); m = [a, a, a, a, a]; }
   return [M.moveX * m[0] * w, M.moveY * m[1] * w, M.scale / 100 * m[2] * w, M.rotate * m[3] * w, M.fade / 100 * m[4] * w];
 }
 /** termsAt with the spring (when the effector has Spring > 0). */
@@ -237,6 +255,8 @@ function code() {
     '  var fo = Math.round(ev("Falloff", time)), inv = ev("Invert", time) == 1, dl = ev("Delay", time), sd0 = ev("Seed", time), nf = ev("Noise Scale", time) / 1000, nsp = ev("Noise Speed", time) / 100, m0 = [1, 1, 1, 1, 1];',
     '  if (tp == 2) { var s2 = sd0 * 3.117 + 1.1, ia = i * 1.731; m0 = [hs(ia + 0.5, s2), hs(ia + 17.63, s2), hs(ia + 34.76, s2), hs(ia + 51.89, s2), hs(ia + 69.02, s2)]; }',
     '  else if (tp == 3) { var sv = n > 1 ? k / (n - 1) : 0; m0 = [sv, sv, sv, sv, sv]; }',
+    // v0.36 Audio: the amplitude layer linked on the effector (made by Convert Audio to Keyframes)
+    '  var AU = null, amx = 1; if (tp == 7) { try { AU = EL.effect("Audio Layer")(1); amx = Math.max(ev("Audio Max", time), 0.001); } catch (eAu) { AU = null; } }',
     // the effector's raw terms at time tq: [dx, dy, scale, rotate, fade] (features/grid/effectors.js termsAt)
     '  function TQ(tq) {',
     '    var IP = G.toComp([x + jx, y + jy + dy, z], tq), L0 = sub(EL.fromComp([IP[0], IP[1]], tq), EL.anchorPoint.valueAtTime(tq)), lx = L0[0], ly = L0[1];',
@@ -249,6 +269,9 @@ function code() {
     '    w = w * ev("Strength", tq) / 100;',
     '    if (w <= 0) { return [0, 0, 0, 0, 0]; }',
     '    var tt = tp == 5 ? tq - k * dl * thisComp.frameDuration : tq, m = m0;',
+    // v0.36 Target: turn the short way toward the effector (Rotate = aim offset; 0° = the item's +X axis)
+    '    if (tp == 6) { var EO = EL.toComp(EL.anchorPoint.valueAtTime(tq), tq), am = Math.atan2(EO[1] - IP[1], EO[0] - IP[0]) * 180 / Math.PI + ev("Rotate", tq) - (rot + G.transform.rotation.valueAtTime(tq)); am = am - 360 * Math.floor((am + 180) / 360); return [ev("Move X", tq) * w, ev("Move Y", tq) * w, ev("Scale", tq) / 100 * w, am * w, ev("Fade", tq) / 100 * w]; }',
+    '    if (tp == 7) { var av = 0; if (AU) { try { av = AU.effect("Both Channels")(1).valueAtTime(tq - k * dl * thisComp.frameDuration); } catch (eAv) { av = 0; } } av = Math.min(Math.max(av / amx, 0), 1); m = [av, av, av, av, av]; }',
     '    if (tp == 4) { var ns = nsp * tq, sd = sd0 * 17.3, nv = vn(x * nf + ns, y * nf + sd); m = [nv, vn(x * nf + 31.7 + ns, y * nf + sd), nv, nv, nv]; }',
     '    return [ev("Move X", tt) * m[0] * w, ev("Move Y", tt) * m[1] * w, ev("Scale", tt) / 100 * m[2] * w, ev("Rotate", tt) * m[3] * w, ev("Fade", tt) / 100 * m[4] * w];',
     '  }',
@@ -340,5 +363,5 @@ function colourCode(i, n, gridName) {
 }
 
 module.exports = { TYPES, FALLOFFS, SLOTS, NAME, CONTROLS, KEY, defaults, valuesOf, rgba, weight, amounts, apply, localFn, vnoise, hs, PR, code,
-  SPRING, stepResponse, springWindow, termsAt, springTerms, applyAt,
+  SPRING, stepResponse, springWindow, termsAt, springTerms, applyAt, wrap180,
   COLOUR_MODES, COLOUR_CONTROLS, COLOUR_FX, COLOUR_TAG, paletteColour, colourWithEffectors, colourCode };

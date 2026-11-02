@@ -44,8 +44,8 @@ const effector = {
   category: 'layout',
   group: 'Grid',
   name: 'Effector',
-  description: 'Add a MOE Effector to a grid or cloner: a null that moves, scales, turns or fades the items near it — Plain, Random, Step, Noise or Delay, with a Sphere, Linear, Box or Everywhere falloff. Spring makes the items follow it with overshoot (or a smooth Inertia lag). Move, rotate or scale the null to animate it; up to three per grid.',
-  keywords: ['effector', 'mograph', 'cloner', 'falloff', 'field', 'random', 'step', 'noise', 'delay', 'wave', 'reveal', 'proximity', 'mcloner', 'c4d', 'spring', 'inertia', 'bounce', 'jelly', 'overshoot', 'lag'],
+  description: 'Add a MOE Effector to a grid or cloner: a null that moves, scales, turns or fades the items near it — Plain, Random, Step, Noise or Delay, with a Sphere, Linear, Box or Everywhere falloff. Spring makes the items follow it with overshoot (or a smooth Inertia lag). Target turns the items to face the null; Audio drives the moves from a soundtrack. Move, rotate or scale the null to animate it; up to three per grid.',
+  keywords: ['effector', 'mograph', 'cloner', 'falloff', 'field', 'random', 'step', 'noise', 'delay', 'wave', 'reveal', 'proximity', 'mcloner', 'c4d', 'spring', 'inertia', 'bounce', 'jelly', 'overshoot', 'lag', 'target', 'look at', 'aim', 'face', 'audio', 'music', 'beat', 'sound', 'equalizer'],
   icon: 'target',
   params: {
     type: { type: 'enum', label: 'Type', default: 'plain', options: TYPE_OPTIONS, description: EF.TYPES.map((t) => `${t.label}: ${t.hint}`).join(' · ') },
@@ -68,14 +68,15 @@ const effector = {
     spring: { type: 'number', label: 'Spring', min: 0, max: 200, step: 1, default: 0, unit: '%', description: '0 = the items follow the effector at once · 100 = they follow through a damped spring (overshoot and settle) — v0.35' },
     frequency: { type: 'number', label: 'Frequency', min: 0, max: 10, step: 0.1, default: 2.5, unit: 'Hz', description: 'Bounces per second · 0 = Inertia (a smooth lag, no overshoot)', showIf: (a) => a.spring > 0 },
     decay: { type: 'number', label: 'Decay', min: 2, max: 30, step: 0.5, default: 5, description: 'How fast it settles — higher = shorter', showIf: (a) => a.spring > 0 },
-    sweep: { type: 'boolean', label: 'Sweep across', default: false, description: 'Keyframe the effector travelling across the grid in 2 s (Sphere / Box / Linear)', showIf: (a) => a.falloff !== 'all' },
+    sweep: { type: 'boolean', label: 'Sweep across', default: false, description: 'Keyframe the effector travelling across the grid in 2 s (Sphere / Box / Linear — or a Target the items follow)', showIf: (a) => a.falloff !== 'all' || a.type === 'target' },
+    audioLayerId: { type: 'integer', label: 'Sound layer', min: 0, max: 1e9, default: 0, hidden: true, description: '0 = the first layer with audio in the comp (not in the grid)' },
     gridId: { type: 'integer', label: 'Grid', min: 0, max: 1e9, default: 0, hidden: true }
   },
   requires: { comp: true },
   permissions: ['modify.layers', 'modify.effects', 'modify.expressions'],
   recovery: 'undo+checkpoint',
-  ai: { callable: true, hint: 'Add a MoGraph-style effector to an existing MOE Grid / cloner (select the grid null or its items). type plain|random|step|noise|delay, falloff sphere|linear|box|all, moveX/moveY px, scale %, rotate deg, fade %. sweep animates it across. spring 0-200 % (100 = full spring), frequency Hz (0 = inertia lag), decay 2-30.' },
-  uses: { hostOps: ['layers.describe', 'layers.createNull', 'effects.ensure', 'effects.setMenu', 'props.values', 'proximity.scan', 'expressions.peek', 'expressions.set', 'keys.write', 'layers.remove'], network: false },
+  ai: { callable: true, hint: 'Add a MoGraph-style effector to an existing MOE Grid / cloner (select the grid null or its items). type plain|random|step|noise|delay|target|audio (target: items face the null, rotate = aim offset; audio: needs a layer with sound in the comp), falloff sphere|linear|box|all, moveX/moveY px, scale %, rotate deg, fade %. sweep animates it across. spring 0-200 % (100 = full spring), frequency Hz (0 = inertia lag), decay 2-30.' },
+  uses: { hostOps: ['layers.describe', 'audio.amplitude', 'layers.createNull', 'effects.ensure', 'effects.setMenu', 'props.values', 'proximity.scan', 'expressions.peek', 'expressions.set', 'keys.write', 'layers.remove'], network: false },
   compatibility: { minAE: '25.0' },
   ui: { primaryLabel: 'Add Effector' },
 
@@ -85,12 +86,13 @@ const effector = {
     const name = nextName(ctx);
     const t = EF.TYPES.find((x) => x.id === args.type), f = EF.FALLOFFS.find((x) => x.id === args.falloff);
     const moves = [args.moveX && `move ${args.moveX}, ${args.moveY || 0} px`, !args.moveX && args.moveY && `move Y ${args.moveY} px`, args.scale && `scale ${args.scale > 0 ? '+' : ''}${args.scale} %`, args.rotate && `rotate ${args.rotate}°`, args.fade && `fade ${args.fade} %`, args.colourMix > 0 && `colour ${args.colour} at ${args.colourMix} %`].filter(Boolean);
-    if (!moves.length) return { ok: false, error: 'Give the effector something to do: Move, Scale, Rotate, Fade or Colour' };
+    if (!moves.length && args.type !== 'target') return { ok: false, error: 'Give the effector something to do: Move, Scale, Rotate, Fade or Colour' };
+    if (args.type === 'target') moves.unshift(`the items turn to face ${name}${args.rotate ? ` (aim offset ${args.rotate}°)` : ''}`);
     return {
       ok: true, grid, name,
       preview: {
         summary: `${name}: ${t.label} · ${f.label} on ${grid.name}`,
-        items: [moves.join(' · '), args.type === 'delay' ? `${args.delay} frames later per item — keyframe the effector's moves` : t.hint, args.spring > 0 ? (args.frequency > 0.01 ? `Spring ${args.spring} %: ${args.frequency} Hz, decay ${args.decay} — the items overshoot and settle` : `Inertia ${args.spring} %: decay ${args.decay} — the items lag and ease in`) : null, args.sweep ? 'Sweeps across the grid in 2 s (keyframed)' : 'Move, rotate or scale the null to animate it', 'Every control stays live on the null (Effect Controls)'].filter(Boolean)
+        items: [moves.join(' · '), args.type === 'audio' ? 'Reads the loudness of the first layer with sound (After Effects’ Convert Audio to Keyframes → a MOE Audio layer at the bottom)' : args.type === 'delay' ? `${args.delay} frames later per item — keyframe the effector's moves` : t.hint, args.spring > 0 ? (args.frequency > 0.01 ? `Spring ${args.spring} %: ${args.frequency} Hz, decay ${args.decay} — the items overshoot and settle` : `Inertia ${args.spring} %: decay ${args.decay} — the items lag and ease in`) : null, args.sweep ? 'Sweeps across the grid in 2 s (keyframed)' : 'Move, rotate or scale the null to animate it', 'Every control stays live on the null (Effect Controls)'].filter(Boolean)
       }
     };
   },
@@ -111,9 +113,19 @@ const effector = {
     const local = pos.items.slice(0, -1).map((r) => r.value || [0, 0]);
     const ext = Math.max(50, ...local.map((p) => Math.hypot(p[0], p[1])));
     const size = args.size || Math.round(Math.max(80, ext * 0.6));
-    const values = EF.valuesOf(Object.assign({}, args, { size, invert: !!args.invert }));
+    // v0.36 Audio: the loudness of a layer with sound, through After Effects' own Convert Audio to Keyframes
+    let audio = null;
+    if (args.type === 'audio') {
+      const inGrid = new Set(kids.map((l) => l.id).concat([grid.id]));
+      const src = args.audioLayerId ? desc.layers.find((l) => l.id === args.audioLayerId) : desc.layers.find((l) => l.hasAudio && !inGrid.has(l.id) && !/^MOE Audio · /.test(l.name));
+      if (!src || !src.hasAudio) { const e = new Error('Add a layer with sound (music or a voice-over) to the comp — the Audio effector follows its loudness'); e.code = 'NO_AUDIO'; throw e; }
+      audio = await host.call('audio.amplitude', { compId: comp.id, layerId: src.id, name: `MOE Audio · ${src.name}`.slice(0, 120) });
+      audio.source = src.name;
+    }
+    const values = EF.valuesOf(Object.assign({}, args, { size, invert: !!args.invert }, audio ? { audioMax: Math.max(audio.max, 0.001) } : {}));
     const start = args.sweep ? [Math.round(gv[0] - ext - size / 2), Math.round(gv[1])] : [Math.round(gv[0]), Math.round(gv[1])];
     const created = await host.call('layers.createNull', { compId: comp.id, name: prepared.name, position: start, anchor: [0, 0], label: 2, threeD: false, undoLabel: 'MOE: Effector' });
+    if (audio) { const d0 = await host.call('layers.describe', { compId: comp.id }); values.audioLayer = (d0.layers.find((l) => l.id === audio.layerId) || {}).index || 0; }
     const controls = await host.call('effects.ensure', { compId: comp.id, label: 'MOE: Effector Controls', layers: [{ layer: { layerId: created.layerId }, items: controlItems(values) }] });
     await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Effector Type', items: EF.TYPES.map((t) => t.menu), value: values.type });
     await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Falloff', items: EF.FALLOFFS.map((f) => f.menu), value: values.falloff });
@@ -124,6 +136,7 @@ const effector = {
     const freeAt = slotsNow.items.findIndex((r) => r.error || !r.value);
     if (freeAt < 0) {
       await host.call('layers.remove', { compId: comp.id, layerIds: [created.layerId], onlyNamed: 'MOE Effector' });
+      if (audio && audio.created) await host.call('layers.remove', { compId: comp.id, layerIds: [audio.layerId], onlyNamed: 'MOE Audio' });
       const e = new Error(`${grid.name} already has three effectors — remove one (select it and delete) or change its controls`); e.code = 'SLOTS_FULL'; throw e;
     }
     const slot = EF.SLOTS[freeAt];
@@ -154,8 +167,8 @@ const effector = {
     // 6. read back: every item still evaluates (no expression error), at the sweep's middle when there is one
     const at = args.sweep ? comp.time + 1 : comp.time;
     const read = await host.call('props.values', { compId: comp.id, time: at, items: kids.map((l) => ({ address: { layerId: l.id, matchNames: POS } })) });
-    const slotRead = await host.call('props.values', { compId: comp.id, time: comp.time, items: [{ address: ctlAddr(grid.id, slot, 'layer') }] });
-    return { name: prepared.name, effectorId: created.layerId, effIndex, grid: { id: grid.id, name: grid.name }, slot, slotBefore: slotsNow.items[freeAt].error ? null : (slotsNow.items[freeAt].value || 0), controls, linked, set, keys, delayKeys, read, slotRead, items: kids.length };
+    const slotRead = await host.call('props.values', { compId: comp.id, time: comp.time, items: [{ address: ctlAddr(grid.id, slot, 'layer') }].concat(audio ? [{ address: ctlAddr(created.layerId, 'Audio Layer', 'layer') }] : []) });
+    return { audio, audioIndex: values.audioLayer || 0, name: prepared.name, effectorId: created.layerId, effIndex, grid: { id: grid.id, name: grid.name }, slot, slotBefore: slotsNow.items[freeAt].error ? null : (slotsNow.items[freeAt].value || 0), controls, linked, set, keys, delayKeys, read, slotRead, items: kids.length };
   },
 
   verify({ result }) {
@@ -166,6 +179,10 @@ const effector = {
     checks.push({ ok: bad.length === 0, label: 'Items read effectors', detail: bad.length ? `${bad.length} failed: ${bad[0].after ? bad[0].after.expressionError : bad[0].skipped}` : (result.set.targets.length ? `${result.set.targets.length} expressions updated in place` : 'already up to date') });
     const errs = result.read.items.filter((r) => r.error || !r.value);
     checks.push({ ok: errs.length === 0, label: 'Read-back', detail: errs.length ? (errs[0].error || 'no value') : `${result.read.items.length} items evaluate with the effector` });
+    if (result.audio) {
+      const linkedAudio = result.slotRead.items[1] && result.slotRead.items[1].value === result.audioIndex && result.audioIndex > 0;
+      checks.push({ ok: linkedAudio && result.audio.max > 0, label: 'Audio', detail: !linkedAudio ? 'the amplitude layer is not linked' : result.audio.max > 0 ? `${result.audio.created ? 'Converted' : 'Reused'} ${result.audio.source} (loudest ${Math.round(result.audio.max * 100) / 100}, ${result.audio.keys} keys)` : `${result.audio.source} is silent — nothing to follow` });
+    }
     if (result.keys) checks.push({ ok: result.keys.items[0].written.length === 2, label: 'Sweep', detail: 'travels across the grid in 2 s' });
     if (result.delayKeys) checks.push({ ok: result.delayKeys.items.every((it) => it.written.length === 2), label: 'Delay', detail: `${result.delayKeys.items.length} move(s) keyframed to rest in 0.6 s — each item plays it later` });
     return { ok: checks.every((c) => c.ok), checks };
@@ -173,7 +190,7 @@ const effector = {
 
   checkpoint({ result, ctx }) {
     return {
-      compId: ctx.comp.id, effectorId: result.effectorId, gridId: result.grid.id, slot: result.slot, slotBefore: result.slotBefore || 0,
+      compId: ctx.comp.id, effectorId: result.effectorId, audioId: result.audio && result.audio.created ? result.audio.layerId : null, gridId: result.grid.id, slot: result.slot, slotBefore: result.slotBefore || 0,
       expressions: result.set.targets.filter((t) => !t.skipped && !t.reverted).map((t) => ({ address: t.address, expression: t.before.expression, enabled: t.before.expressionEnabled }))
     };
   },
@@ -182,6 +199,7 @@ const effector = {
     if (data.expressions.length) await host.call('expressions.set', { compId: data.compId, label: 'MOE: Restore Grid', revertOnError: false, targets: data.expressions });
     await host.call('effects.ensure', { compId: data.compId, label: 'MOE: Unlink Effector', layers: [{ layer: { layerId: data.gridId }, items: [slotItem(data.slot, data.slotBefore)] }] });
     await host.call('layers.remove', { compId: data.compId, layerIds: [data.effectorId], onlyNamed: 'MOE Effector' });
+    if (data.audioId) await host.call('layers.remove', { compId: data.compId, layerIds: [data.audioId], onlyNamed: 'MOE Audio' });
     return { ok: true };
   },
 

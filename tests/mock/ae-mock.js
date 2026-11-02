@@ -588,6 +588,7 @@ class MockLayer {
     this.width = spec.camera ? undefined : (spec.width || (this.nullLayer ? 100 : comp.width));
     this.height = spec.camera ? undefined : (spec.height || (this.nullLayer ? 100 : comp.height));
     this._pixels = spec.pixels || (() => [0.5, 0.5, 0.5, 1]);
+    this._audio = spec.audio || null; // v0.36: amplitude over time (fixture) for Convert Audio to Keyframes
     this._parade = spec.camera ? null : new MockParade(this, comp._fxOpts || {});
     (spec.effects || []).forEach((e) => { const fx = this._parade.addProperty(e.matchName); if (e.name) fx.name = e.name; });
     this.label = spec.label || 0; this.comment = spec.comment || ''; this.shy = !!spec.shy; this.solo = false;
@@ -661,6 +662,7 @@ class MockLayer {
   moveAfter(L) { const a = this._comp._layers; a.splice(a.indexOf(this), 1); a.splice(a.indexOf(L) + 1, 0, this); }
   moveToBeginning() { const a = this._comp._layers; a.splice(a.indexOf(this), 1); a.unshift(this); }
   moveToEnd() { const a = this._comp._layers; a.splice(a.indexOf(this), 1); a.push(this); }
+  get hasAudio() { return !!(this.source && this.source.hasAudio); }
   replaceSource(item) { this.source = item; if (item.width) { this.width = item.width; this.height = item.height; } }
   duplicate() {
     const d = cloneLayer(this, this._comp);
@@ -875,8 +877,23 @@ function installAE(target, fixture, { readFile, evalCode }) {
       preferences: { getPrefAsString() { throw new Error('After Effects error: preference not found'); } },
       beginUndoGroup(label) { undo.depth++; undo.groups.push(label); },
       purge(target) { (app0.purged = app0.purged || []).push(target); },
-      findMenuCommandId(name) { return name === 'Reveal Layer Source in Project' ? 2517 : 0; },
-      executeCommand(id) { (app0.commands = app0.commands || []).push(id); },
+      findMenuCommandId(name) { return { 'Reveal Layer Source in Project': 2517, 'Convert Audio to Keyframes': 3065 }[name] || 0; },
+      executeCommand(id) {
+        (app0.commands = app0.commands || []).push(id);
+        // mock of Convert Audio to Keyframes: an "Audio Amplitude" null at the top with Left / Right / Both Channels
+        // sliders keyed every frame from the selected sound layer's fixture `audio(t)` (0 when it has none)
+        if (id === 3065 && project && project.activeItem) {
+          const comp = project.activeItem, src = comp._layers.find((L) => L.selected && L.hasAudio);
+          if (!src) return;
+          const A = comp.layers.addNull(comp.duration); A.name = 'Audio Amplitude';
+          const f = src._audio || (() => 0);
+          for (const nm of ['Left Channel', 'Right Channel', 'Both Channels']) {
+            const fx = A._parade.addProperty('ADBE Slider Control'); fx.name = nm;
+            const sl = fx.property(1);
+            for (let fr = 0; fr <= Math.round(comp.duration * comp.frameRate); fr++) sl.setValueAtTime(fr / comp.frameRate, Math.round(f(fr / comp.frameRate) * 100) / 100);
+          }
+        }
+      },
       endUndoGroup() { undo.depth--; }
     },
     $: {

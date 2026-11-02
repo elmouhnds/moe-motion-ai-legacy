@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.41 — Target & Audio Effectors ✅ (v0.36.0)
+- Target (clones face the null) and Audio (moves follow a soundtrack, Convert Audio to Keyframes) as effector types; tiles Aim, Look Near, Beat Pulse, Beat Wave.
+- Next (same direction): object cloner (clones on a shape's points) · text cloner (one clone per word / letter).
+
 ## M1.40 — Spring / Inertia Effector ✅ (v0.35.0)
 - Spring %, Frequency, Decay on every MOE Effector (overshoot + settle, or a smooth lag at 0 Hz); tiles Spring Grow, Jelly, Inertia, Bounce Up.
 - Next (same direction): target effector (clones look at a null) · audio effector · object / text cloner.

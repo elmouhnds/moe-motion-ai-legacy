@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Target & Audio Effectors** (v0.36.0): Target turns the clones to face the effector null; Audio drives every move from a soundtrack's loudness (After Effects' Convert Audio to Keyframes, run for you), each clone a little later — tiles Aim, Look Near, Beat Pulse, Beat Wave (docs/features/TARGET_AUDIO_EFFECTORS.md).
+
 **Spring / Inertia Effector** (v0.35.0): effectors move the clones through a damped spring — overshoot and settle, or a smooth Inertia lag at Frequency 0 — live on the effector null (Spring %, Frequency, Decay); tiles Spring Grow, Jelly, Inertia, Bounce Up (docs/features/SPRING_EFFECTOR.md).
 
 **Clone Colours** (v0.34.0): a colour for every clone — Cycle, Gradient or Random from a MOE palette, live on the grid null — and effectors that tint the clones they reach (Colour + Colour Mix) (docs/features/CLONE_COLOURS.md).
