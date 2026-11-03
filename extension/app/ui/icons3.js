@@ -79,5 +79,7 @@ module.exports = {
   kPaste: '<rect x="4" y="3" width="8" height="11" rx="1"/><path d="M6 3V2h4v1"/><path d="M6 8h4M6 10.5h3" opacity=".6"/>',
   kRead: '<path d="M2 8s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4z"/><path d="M5 10c1-2 2-3 3-3s2 1 3 3" opacity=".7"/>',
   kAuto: '<path d="M9 1.5L3.5 9H8l-1 5.5L12.5 7H8z"/>',
-  clone: '<circle cx="8" cy="3" r="1.4"/><circle cx="13" cy="8" r="1.4"/><circle cx="8" cy="13" r="1.4"/><circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4" opacity=".5"/>'
+  clone: '<circle cx="8" cy="3" r="1.4"/><circle cx="13" cy="8" r="1.4"/><circle cx="8" cy="13" r="1.4"/><circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4" opacity=".5"/>',
+  /* v0.42 Bake: a live curve above becomes keyframes below */
+  bake: '<path d="M1.5 6c1.6-3.2 3.3-3.2 4.4 0s3 3.2 4.3 0 2.7-3.2 4.3 0" opacity=".6"/><path d="M3 10l1.6 1.6L3 13.2 1.4 11.6zM8 10l1.6 1.6L8 13.2l-1.6-1.6zM13 10l1.6 1.6-1.6 1.6-1.6-1.6z"/>'
 };

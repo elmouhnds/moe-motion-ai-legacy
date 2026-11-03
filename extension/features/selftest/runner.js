@@ -3,7 +3,7 @@
  * Self-Test inside After Effects (v0.40, docs/features/SELF_TEST.md).
  *
  * One click in Diagnostics: MOE makes a temporary comp ("MOE Self-Test …"), runs its own advanced tools there
- * (Grid, Cloner, Effectors, Spring, Target, Noise / Image fields, Clone Colours, Points, Text Cloner), reads what
+ * (Grid, Cloner, Effectors, Spring, Target, Noise / Image fields, Clone Colours, Points, Text Cloner, Trail, Bake), reads what
  * After Effects really computed (props.values / layers.bounds), compares it with the same reference maths the unit
  * tests use (layouts.js, effectors.js), times the heavy expressions, undoes every tool (checkpoint restore — the
  * restore is checked too), then removes the comp and reopens yours. The report is plain JSON to copy and send.
@@ -38,6 +38,7 @@ const CHECKS = [
   { id: 'text', label: 'Text Cloner: words where the title was', run: (T) => checkText(T, { text: 'Make it move', justification: 'center' }) },
   { id: 'textArabic', label: 'Text Cloner: Arabic words (right to left)', run: (T) => checkText(T, { text: 'مرحبا بالعالم', justification: 'right', rtl: true }) },
   { id: 'trail', label: 'Clone Trail: copies = the source, later', run: checkTrail },
+  { id: 'bake', label: 'Bake: keyframes = the live grid', run: checkBake },
   { id: 'speed', label: 'Speed: 48 clones, Spring on vs off', run: checkSpeed }
 ];
 
@@ -272,6 +273,35 @@ async function checkTrail(T) {
   await T.host.call('layers.remove', { compId: T.compId, layerIds: [ball.layerId], onlyNamed: 'ST ' });
   const worst = maxOf(errs);
   return { status: worst < 0.05 && u.back ? 'pass' : 'fail', detail: `${copies.length} copies at 2 times (position, scale, rotation, opacity), worst ${r2(worst)} from trail.js · undo ${u.back ? 'removed the copies and the null' : 'left layers'}`, numbers: { worst: r2(worst), copies: copies.length } };
+}
+
+/** Bake: a swept grid baked every 5 frames — the keys must give what the live expressions gave at those frames. */
+async function checkBake(T) {
+  const before = (await T.layerIds()).length;
+  const g = await grid9(T);
+  await T.select([g.gridId]);
+  const e = await T.run('grid.effector', { type: 'plain', falloff: 'sphere', size: 200, softness: 50, scale: 60, rotate: 45, sweep: true });
+  const times = [0.4, 0.8, 1.2, 1.6, 2.0];
+  const addrs = g.ids.flatMap((id) => [{ layerId: id, matchNames: POS }, { layerId: id, matchNames: SCALE }, { layerId: id, matchNames: ROT }]);
+  const read = async () => { const out = []; for (const t of times) out.push(await T.values(t, addrs)); return out; };
+  const live = await read();
+  await T.select([g.gridId]);
+  const s0 = Date.now();
+  const r = await T.run('rig.bake', { range: 'work', every: 5, keys: 'smart', which: 'moe' });
+  const ms = Date.now() - s0;
+  const baked = await read();
+  const diff = (a, b) => (Array.isArray(a) ? Math.max(...a.map((v, i) => Math.abs(v - b[i]))) : Math.abs(a - b));
+  const errs = [], keys = [];
+  baked.forEach((row, ti) => row.forEach((x, k) => { errs.push(diff(x.value, live[ti][k].value)); if (ti === 0) keys.push(x.numKeys); }));
+  const exprLeft = r.result.written.filter((w) => w.expression).length;
+  const ub = await T.undo(r, before + 11);
+  const back = await read();
+  const errBack = maxOf(back.flatMap((row, ti) => row.map((x, k) => diff(x.value, live[ti][k].value))));
+  const u = await T.undo(e, before + 10);
+  await dropGrid9(T, g, before);
+  const worst = maxOf(errs);
+  const ok = worst <= 0.01 && exprLeft === 0 && errBack <= 0.001 && ub.back && u.back;
+  return { status: ok ? 'pass' : 'fail', detail: `${r.result.written.length} properties baked in ${ms} ms (${r.result.keysTotal} keys, ${r.result.constants} plain values) · ${errs.length} values at ${times.length} frames, worst ${r2(worst)} from the live rig · restore ${errBack <= 0.001 ? 'brought the expressions back' : `differs by ${r2(errBack)}`} · undo ${ub.back && u.back ? 'ok' : 'left layers'}`, numbers: { worst: r2(worst), bakeMs: ms, keys: r.result.keysTotal, keysPerItem: keys.slice(0, 3), restoreErr: r2(errBack) } };
 }
 
 async function checkSpeed(T) {

@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.47 — Bake to Keyframes ✅ (v0.42.0)
+- Grid / cloner / trail / any MOE rig → keyframes over the work area, smart keys, restorable; a Self-Test check with the bake time.
+- Next: the owner's Self-Test report from AE 2025 (now 16 checks) → fixes first.
+
 ## M1.46 — Clone Trails ✅ (v0.41.0)
 - Echo / Ghost / Spin Trail: copies replaying an animated layer's motion later, live on one null; a Self-Test check.
 - Next: the owner's Self-Test report from AE 2025 → fixes; then Bake (grid / trail → keyframes for heavy scenes).

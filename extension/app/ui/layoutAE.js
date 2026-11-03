@@ -29,10 +29,10 @@ const TABS = [
   // v0.31 (docs/features/SPACE_FOLLOWS_CONTENT.md): every group is sized by what it holds and merged with the
   // tools that do the same job; Easy / Linear / Hold, the anchor, align and the curve library live in the
   // Motion Control on top, so the tabs no longer repeat them.
-  { id: 'ae-keys', label: 'Keys', title: 'Keyframes: timing, loops (Animation › Keyframe Assistant) — the ease is in Motion Control', fits: ['keys'], owns: [],
+  { id: 'ae-keys', label: 'Keys', title: 'Keyframes: timing, loops, bake (Animation › Keyframe Assistant) — the ease is in Motion Control', fits: ['keys'], owns: [],
     groups: [
-      { id: 'assist', label: 'Keyframes & Loops', kind: 'acts', fits: ['keys'], open: true, hero: ['quick:reverse', 'quick:k_stagger'], minor: ['quick:k_trimKeys', 'quick:selectSame'],
-        refs: ['quick:reverse', 'quick:k_stagger', 'quick:mirror', 'quick:clone', 'quick:k_trimKeys', 'quick:selectSame'],
+      { id: 'assist', label: 'Keyframes & Loops', kind: 'acts', fits: ['keys'], open: true, hero: ['quick:reverse', 'quick:k_stagger'], minor: ['quick:k_trimKeys', 'quick:selectSame', 'quick:k_bake'],
+        refs: ['quick:reverse', 'quick:k_stagger', 'quick:mirror', 'quick:clone', 'quick:k_trimKeys', 'quick:selectSame', 'quick:k_bake'],
         rows: [['Loop', ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'], ['Cycle', 'Ping-Pong', 'Offset', 'In + Out']]] }
     ] },
   { id: 'ae-animate', label: 'Animate', title: 'Animate in / out, draw on, text, expressions (Animation menu)', fits: ['layer', 'layers', 'text', 'shapes', 'shapesMany'], owns: ['animate', 'text', 'expressions', 'kit'],

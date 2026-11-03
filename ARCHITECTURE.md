@@ -179,6 +179,12 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6s. Bake to Keyframes (v0.42.0)
+- `features/bake/plan.js` (pure): `timesFor` (frame-aligned samples), `thin` (smart LINEAR keys within `TOL`, HOLD for checkboxes / menus, constant → plain value), `planError`, `everyFor`, `chunks`, `LIMITS` (120,000 reads · 40,000 keys).
+- `features/bake/bake.js` (`rig.bake`): targets (grid null → its items; trail null → copies by tag `// MOE Trail · <null>`; other layers → their MOE / all expressions) → `bake.scan` → `bake.sample` all values first → plan → `bake.write` in pieces → read-back of ≤ 12 frames; checkpoint = each property's saved expression + keys → `bake.restore`.
+- `host/ops/bake.jsx`: `bake.scan` / `bake.sample` (read-only), `bake.write` (save state, clear keys + expression, `setValuesAtTimes`, interpolation + straight tangents, per-property put-back on error), `bake.restore`.
+- UI: quick action `k_bake` (Motion Kit › Clean up, Alt = one key per sample; Keys tab). Self-Test `checkBake`.
+
 ## 6r. Clone Trails (v0.41.0)
 - `features/grid/trail.js`: `at(k, src, c, now, fd)` reference + `code(k, source, null)` (four expressions, tag `// MOE Trail`). `features/grid/trailTool.js` (`grid.trail`): null + controls, `layers.clone` plain copies, `layers.setParent(null)`, `expressions.set`, read-back of every copy vs the source read at its own time.
 - Self-Test `checkTrail`.

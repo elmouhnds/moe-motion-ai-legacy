@@ -32,6 +32,7 @@ The report is plain JSON: **Copy report** and send it. The last report is kept i
 | text | `addText("Make it move")` centred + Text Cloner (words) | the words' outline matches the title within 3 px; neighbours do not overlap (> 1 px) |
 | textArabic | the same with `مرحبا بالعالم`, right to left, right-justified | the same (this is where real glyph bounds matter) |
 | trail | a keyframed solid + Clone Trail (4 copies) | every copy's position / scale / rotation / opacity = `trail.js` at 2 times (within 0.05); undo removes copies + null |
+| bake | a 3 × 3 grid with a sweeping effector, baked every 5 frames | position / scale / rotation from the keys = the live rig at 5 frames (within 0.01); no expression left; restore = the live values again (within 0.001); the bake time in ms |
 | speed | 48 clones, a plain effector vs Spring | info: milliseconds to read all 48 scales |
 
 ## Safety

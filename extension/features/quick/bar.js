@@ -51,6 +51,7 @@ const ACTIONS = [
   A('k_trimKeys', 'kit.trimToKeys', {}, 'kTrimKeys', 'Trim to keys', 'Kit'),
   A('k_repeat', 'transform.clone', { mode: 'radial', count: 8, radius: 300, arc: 360, faceOut: true }, 'clone', 'Repeat (radial clone)', 'Kit'),
   A('k_vignette', 'kit.vignette', {}, 'kVignette', 'Vignette', 'Kit'),
+  A('k_bake', 'rig.bake', {}, 'bake', 'Bake to keyframes (Alt: one per frame)', 'Kit'),
   A('k_trash', 'kit.trash', {}, 'trash', 'Trash MOE rigs', 'Kit'),
 
   A('typewriter', 'quick.typewriter', {}, 'typewriter', 'Typewriter', 'Text'),
@@ -99,16 +100,16 @@ function resolve(PRESETS) {
 /* Motion Kit layout: the tool grid (Motion 4 Toolbox order: layer helpers, rigs, keys, looks, clean-up).
    v0.29: Wiggle / Orbit / Swing / Spin left the rigs — they are the expression presets (Expressions,
    with "Live controls" in their options); the rigs keep what only they do. */
-const KIT_TOOLS = ['parentNull', 'k_parent', 'k_excite', 'k_delay', 'k_jump', 'k_stare', 'clone', 'reverse', 'k_stagger', 'k_trimKeys', 'separate', 'tile:animate/trimDraw', 'k_repeat', 'k_vignette', 'k_trash'];
+const KIT_TOOLS = ['parentNull', 'k_parent', 'k_excite', 'k_delay', 'k_jump', 'k_stare', 'clone', 'reverse', 'k_stagger', 'k_trimKeys', 'separate', 'tile:animate/trimDraw', 'k_repeat', 'k_vignette', 'k_bake', 'k_trash'];
 /* v0.14: the Toolbox shows the same tools grouped by what they do. */
 const KIT_GROUPS = [
   ['Motion rigs', ['k_excite', 'k_delay', 'k_jump', 'k_stare', 'k_repeat']],
   ['Keyframes', ['clone', 'reverse', 'k_stagger', 'k_trimKeys', 'tile:animate/trimDraw']],
   ['Layers', ['parentNull', 'k_parent', 'separate', 'k_vignette']],
-  ['Clean up', ['k_trash']]
+  ['Clean up', ['k_bake', 'k_trash']]
 ];
 /* Alt-click variants (Motion 4 / Flow convention: the modifier gives the second most common intent). */
-const KIT_ALT = { k_parent: { reverse: true }, clone: { mode: 'mirror' }, k_delay: { mode: 'blend' } };
-const KIT_LABEL = { parentNull: 'Null', k_parent: 'Parent', k_excite: 'Excite', k_delay: 'Delay', k_jump: 'Jump', k_stare: 'Stare', clone: 'Clone keys', reverse: 'Reverse', k_stagger: 'Stagger', k_trimKeys: 'Trim keys', separate: 'Separate', 'tile:animate/trimDraw': 'Draw On', k_repeat: 'Repeat', k_vignette: 'Vignette', k_trash: 'Trash' };
+const KIT_ALT = { k_parent: { reverse: true }, clone: { mode: 'mirror' }, k_delay: { mode: 'blend' }, k_bake: { keys: 'every' } };
+const KIT_LABEL = { parentNull: 'Null', k_parent: 'Parent', k_excite: 'Excite', k_delay: 'Delay', k_jump: 'Jump', k_stare: 'Stare', clone: 'Clone keys', reverse: 'Reverse', k_stagger: 'Stagger', k_trimKeys: 'Trim keys', separate: 'Separate', 'tile:animate/trimDraw': 'Draw On', k_repeat: 'Repeat', k_vignette: 'Vignette', k_bake: 'Bake', k_trash: 'Trash' };
 
 module.exports = { MIGRATE, migrate, ACTIONS, DEFAULT_BAR, GROUPS, resolve, KIT_TOOLS, KIT_GROUPS, KIT_ALT, KIT_LABEL };

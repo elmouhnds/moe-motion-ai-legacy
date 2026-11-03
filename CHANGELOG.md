@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.42.0] — 2026-11-03 — Bake to Keyframes
+Details: `docs/features/BAKE.md`.
+### Added
+- **Bake to Keyframes** (`rig.bake`): select a `MOE Grid` null (its items), a `MOE Trail` null (its copies) or rigged layers — every live MOE expression (optionally every expression) becomes keyframes over the work area or the whole comp. *Only what is needed* keeps a LINEAR key only where a straight line would miss the motion (0.005 px / % / °, colour 0.0005); values that never change become plain values; HOLD for checkboxes / menus. All values are read before anything changes; limits 120,000 reads / 40,000 keys with a clear hint above them. Restore puts back every expression and the keys that were under it.
+- Host ops `bake.scan`, `bake.sample`, `bake.write`, `bake.restore` (`host/ops/bake.jsx`; `Property.setValuesAtTimes`).
+- Motion Kit › Clean up › **Bake** (Alt = one key per sample) and Keys tab › **Bake keys**; a MOE *bake* icon; Arabic search words.
+- Self-Test: a **bake** check (16 checks) with the bake time in ms.
+### Tests
+- `tests/bake.test.js` (7). Mock: `setValuesAtTimes`, `isInterpolationTypeValid`. **Mock / preview, not After Effects** — the Self-Test checks it in AE.
+
 ## [0.41.0] — 2026-11-03 — Clone Trails
 Details: `docs/features/CLONE_TRAILS.md`.
 ### Added

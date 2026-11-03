@@ -320,6 +320,16 @@ class MockProperty {
     if (preExpression || !this._expression || !this.expressionEnabled) return this.value;
     return evalExpression(this, t);
   }
+  /** Property.setValuesAtTimes(times, newValues) — one key per time (AE Scripting Guide). */
+  setValuesAtTimes(times, values) {
+    if (!Array.isArray(times) || !Array.isArray(values) || times.length !== values.length) throw new Error('After Effects error: times and values must be arrays of the same length');
+    for (let i = 0; i < times.length; i++) this.setValueAtTime(times[i], values[i]);
+  }
+  /** Property.isInterpolationTypeValid(type) — checkboxes and menus only hold. */
+  isInterpolationTypeValid(type) {
+    if (type === KeyframeInterpolationType.HOLD) return true;
+    return !/Checkbox|Dropdown/.test(this.matchName || '');
+  }
   setValueAtKey(i, v) { this._key(i).value = clone(v); }
   removeKey(i) { this._key(i); this._keys.splice(i - 1, 1); }
   keyInSpatialTangent(i) { return (this._key(i).inTan || this._zeroTan()).slice(); }
