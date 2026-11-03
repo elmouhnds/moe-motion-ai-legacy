@@ -26,7 +26,8 @@ function nowCard(app, s, kind) {
   const fold = !!app.services.store.get('glass-now-folded', false);
   const what = !c ? 'Reading After Effects…' : !c.comp ? 'No active composition' : A.CONTEXT_LABEL[kind];
   const sub = c && c.comp ? `${c.comp.name} · ${(c.layers || []).length} layers${c.keys ? ` · ${c.keys} keys` : ''}` : '';
-  const acts = (A.SETS[kind] || []).map((r) => A.resolve(r)).filter(Boolean).slice(0, 8);
+  // v0.43: the pie keeps its fixed positions; here the same eight sit with their families (Loop Cycle next to Ping-Pong)
+  const acts = require('./arrange').group((A.SETS[kind] || []).filter((r) => A.resolve(r)).slice(0, 8)).map((r) => A.resolve(r));
   // v0.26: the client you work for, one click away (when layers are selected)
   const client = require('../../features/brand/kit').activeBrand(app.services.store, app.services.brands);
   if (client && kind !== 'none' && kind !== 'keys') acts.push(A.resolve('brand:apply'));
@@ -35,9 +36,10 @@ function nowCard(app, s, kind) {
       h('button', { class: 'icon-btn gl-now-fold', 'data-key': 'gl-now-fold', 'aria-expanded': String(!fold), 'aria-label': fold ? 'Show the Now actions' : 'Fold the Now card', title: fold ? 'Show the eight best actions' : 'Fold to one line (more room for the cards)', onclick: () => { app.services.store.set('glass-now-folded', !fold); app.render(); } }, icon('chev', `xs gl-chev ${fold ? '' : 'open'}`))),
     // v0.30: the Motion Control (graph + anchor + align) leads the Now card
     fold ? null : AE.controlTop(app, kind),
-    fold ? null : (() => { const refs = require('./workflow').nextAfter(s.last); return refs.length ? h('div', { class: 'gl-next', 'data-key': 'gl-next', role: 'group', 'aria-label': `Next after ${s.last.label}` }, h('span', { class: 'b-next-h' }, h('span', {}, 'Next'), h('span', { class: 'b-next-after' }, `after ${s.last.label}`)), refs.map((r) => AE.actButton(app, A.resolve(r), null, 's'))) : null; })(),
     // folded: the two primary actions stay, as small buttons in the header line
-    h('div', { class: `gl-now-acts ${fold ? 'mini' : ''}` }, (fold ? acts.slice(0, 2) : acts).map((a, i) => AE.actButton(app, a, null, fold ? 's' : i < 2 ? 'l' : undefined))));
+    h('div', { class: `gl-now-acts ${fold ? 'mini' : ''}` }, (fold ? acts.slice(0, 2) : acts).map((a, i) => AE.actButton(app, a, null, fold ? 's' : i < 2 ? 'l' : undefined))),
+    // v0.43: "Next" below the actions — it comes and goes without moving them
+    fold ? null : AE.nextStrip(app, s, 'gl-next', 'gl-next'));
 }
 
 function nav(app, sp, kind) {

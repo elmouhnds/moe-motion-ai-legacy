@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Smart Arrange** (v0.43.0): tools that go together sit together in every style and width — Flip Horizontal | Vertical as one tile, Reverse / Mirror / Clone as one row, no tile drifting into another group (docs/features/SMART_ARRANGE.md).
+
 **Bake to Keyframes** (v0.42.0): Motion Kit › Bake — a grid, cloner, trail or any MOE rig becomes plain keyframes over the work area (only the keys the motion needs), lighter to render and playable without MOE; Restore brings the expressions back (docs/features/BAKE.md).
 
 **Clone Trails** (v0.41.0): Echo, Ghost and Spin Trail — copies that replay an animated layer's motion a little later, fading, shrinking or turning per copy, live on one MOE Trail null (docs/features/CLONE_TRAILS.md).

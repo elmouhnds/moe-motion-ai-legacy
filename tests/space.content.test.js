@@ -16,7 +16,8 @@ const studio = require('../extension/app/ui/studio/sections');
 /** Every tool a group shows, as comparable refs ('quick:x', 'tile:sec/id'). */
 function shown(g) {
   const tiles = (g.ids || []).map((id) => `tile:${g.section}/${id}`);
-  return [...(g.refs || []), ...(g.minor || []).filter((r) => !(g.refs || []).includes(r)), ...(g.rows || []).flatMap(([, refs]) => refs), ...tiles];
+  // a ref in a labelled row is also in refs (▾ menu, Recent) but is drawn once, in its row (v0.43)
+  return [...new Set([...(g.refs || []), ...(g.minor || []).filter((r) => !(g.refs || []).includes(r)), ...(g.rows || []).flatMap(([, refs]) => refs), ...tiles])];
 }
 
 test('25 groups became 15: each tab holds its jobs once', () => {

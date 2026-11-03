@@ -18,6 +18,7 @@
 const { h, icon } = require('./dom');
 const A = require('./actions');
 const studio = require('./studio/sections');
+const AR = require('./arrange');
 
 /* ---------- information architecture: tab → groups ---------- */
 // Action groups list their refs by importance (v0.23, docs/features/DESIGN_SYSTEM.md): `hero` = primary (32 px, first row),
@@ -31,9 +32,10 @@ const TABS = [
   // Motion Control on top, so the tabs no longer repeat them.
   { id: 'ae-keys', label: 'Keys', title: 'Keyframes: timing, loops, bake (Animation › Keyframe Assistant) — the ease is in Motion Control', fits: ['keys'], owns: [],
     groups: [
-      { id: 'assist', label: 'Keyframes & Loops', kind: 'acts', fits: ['keys'], open: true, hero: ['quick:reverse', 'quick:k_stagger'], minor: ['quick:k_trimKeys', 'quick:selectSame', 'quick:k_bake'],
-        refs: ['quick:reverse', 'quick:k_stagger', 'quick:mirror', 'quick:clone', 'quick:k_trimKeys', 'quick:selectSame', 'quick:k_bake'],
-        rows: [['Loop', ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'], ['Cycle', 'Ping-Pong', 'Offset', 'In + Out']]] }
+      { id: 'assist', label: 'Keyframes & Loops', kind: 'acts', fits: ['keys'], open: true, hero: ['quick:k_stagger'], minor: ['quick:k_trimKeys', 'quick:selectSame', 'quick:k_bake'],
+        refs: ['quick:k_stagger', 'quick:reverse', 'quick:mirror', 'quick:clone', 'quick:k_trimKeys', 'quick:selectSame', 'quick:k_bake'],
+        // v0.43: Reverse / Mirror / Clone are one family — one labelled row, like Loop
+        rows: [['Keys', ['quick:reverse', 'quick:mirror', 'quick:clone'], ['Reverse', 'Mirror', 'Clone']], ['Loop', ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'], ['Cycle', 'Ping-Pong', 'Offset', 'In + Out']]] }
     ] },
   { id: 'ae-animate', label: 'Animate', title: 'Animate in / out, draw on, text, expressions (Animation menu)', fits: ['layer', 'layers', 'text', 'shapes', 'shapesMany'], owns: ['animate', 'text', 'expressions', 'kit'],
     groups: [
@@ -49,7 +51,7 @@ const TABS = [
     groups: [
       { id: 'transform', label: 'Transform', kind: 'acts', fits: [], hero: ['quick:precompose'], refs: ['quick:precompose', 'quick:separate', 'quick:flipH', 'quick:flipV'],
         pairs: [['Flip', 'quick:flipH', 'quick:flipV']], links: [['select', 'Select layers by type, name, label']] },
-      { id: 'parent', label: 'Parent & Link', kind: 'acts', fits: ['layers'], hero: ['quick:parentNull'], refs: ['quick:parentNull', 'quick:k_parent', 'quick:k_delay', 'quick:k_stare'] },
+      { id: 'parent', label: 'Parent & Link', kind: 'acts', fits: ['layers'], hero: ['quick:parentNull', 'quick:k_parent'], refs: ['quick:parentNull', 'quick:k_parent', 'quick:k_delay', 'quick:k_stare'] },
       // v0.33: Arrange · Clone · Effectors — the grid engine's three jobs (mCloner / MoGraph style), one switch
       { id: 'arrange', label: 'Arrange · Clone · Effectors', kind: 'animate', panel: 'grid', section: 'layout', more: 'layout', fits: ['layer', 'layers', 'shapes', 'shapesMany'],
         modes: [['arrange', 'Arrange', ['grid', 'honey', 'wall', 'ring', 'fan', 'spiral', 'galaxy', 'path', 'globe']], ['clone', 'Clone', ['cloneGrid', 'cloneRow', 'cloneRing', 'cloneSpiral', 'cloneSun', 'cloneGlobe', 'colCycle', 'colGradient', 'colRandom', 'clonePoints', 'textWords', 'textLetters', 'trailEcho', 'trailGhost', 'trailSpin']], ['effect', 'Effectors', ['efPush', 'efShrink', 'efReveal', 'efScatter', 'efStep', 'efWave', 'efCascade', 'efTint', 'efSpring', 'efJelly', 'efInertia', 'efBounce', 'efAim', 'efLook', 'efBeat', 'efBeatWave', 'efField', 'efFlicker', 'efImage', 'efImageReveal']]],
@@ -295,16 +297,22 @@ function groupBody(app, g, t) {
   }
   if (g.kind === 'curves') return kit.curveLibrary(app, kit.matchPreset(kit.K.curve, app.services.store.get('kit-curves', [])));
   if (g.kind === 'kitTools') { const BAR = require('../../features/quick/bar'); const grp = BAR.KIT_GROUPS.find(([n]) => n === g.group); return kit.toolsBlock(app, { ids: grp ? grp[1] : [], title: g.group, cls: 'ae-kit', onRun: (id) => remember(app, t, `kit:${id}`) }); }
-  const row = (cls, refs, size) => { const list = (refs || []).map((r) => [r, A.resolve(r)]).filter(([, a]) => a); return list.length ? h('div', { class: cls }, list.map(([r, a]) => actButton(app, a, () => remember(app, t, r), size))) : null; };
+  // v0.43 (SMART_ARRANGE): a family (Mirror / Clone keys, Easy / Linear / Hold …) is one unit that wraps as a whole
+  const row = (cls, refs, size, tail) => {
+    const ok = AR.group(refs || []).filter((r) => A.resolve(r));
+    const kids = runsOf(app, t, ok, size);
+    return kids.length || (tail && tail.length) ? h('div', { class: cls }, kids, tail || null) : null;
+  };
   if (g.kind === 'acts') {
     // importance decides size and place: primary first and larger, minor last as chips;
     // v0.31: a pair (Flip ↔ / ↕) is one control, a labelled row (Loop: Cycle · Ping-Pong …) is one line
     const hero = g.hero || [], minor = g.minor || [];
     const paired = (g.pairs || []).flatMap(([, ...refs]) => refs);
     const lead = (g.lead || []).map(([id, label]) => h('button', { class: 'ae-lead', 'data-key': `lead-${id}`, onclick: () => app.go(id) }, icon((studio.byId(id) || {}).icon || 'chev', 'sm'), h('span', {}, label), icon('chev', 'xs')));
-    const std = g.refs.filter((r) => !hero.includes(r) && !minor.includes(r) && !paired.includes(r));
-    return [...lead, row('ae-hero', hero, 'l'),
-      std.length || paired.length ? h('div', { class: 'ae-acts' }, std.map((r) => [r, A.resolve(r)]).filter(([, a]) => a).map(([r, a]) => actButton(app, a, () => remember(app, t, r))), (g.pairs || []).map((p) => pairControl(app, t, p))) : null,
+    const inRows = (g.rows || []).flatMap((rw) => rw[1]);
+    const std = g.refs.filter((r) => !hero.includes(r) && !minor.includes(r) && !paired.includes(r) && !inRows.includes(r));
+    return [...lead, row('ae-hero flow', hero, 'l'),
+      row('ae-acts flow', std, undefined, (g.pairs || []).map((p) => pairControl(app, t, p))),
       ...(g.rows || []).map((rw) => subRow(app, t, rw)), row('ae-minor', minor, 's'), ...linkRow(app, g.links)];
   }
   if (g.kind === 'animate') return animateBlock(app, g, t);
@@ -313,6 +321,25 @@ function groupBody(app, g, t) {
   return linkRow(app, g.links);
 }
 
+/**
+ * v0.43: "Next" after the last tool — one line of fixed height once anything has run (it never comes and goes, so
+ * nothing around it moves while you aim). When nothing usually follows the last tool it offers Repeat (F4).
+ */
+function nextStrip(app, s, cls, key) {
+  if (!s.last) return null;
+  const refs = require('./workflow').nextAfter(s.last);
+  const head = h('span', { class: 'b-next-h' }, icon('chev', 'xs'), h('span', {}, refs.length ? 'Next' : 'Last'), h('span', { class: 'b-next-after' }, refs.length ? `after ${s.last.label}` : s.last.label));
+  const body = refs.length ? refs.map((r) => actButton(app, A.resolve(r), null, 's'))
+    : [h('button', { class: 'ae-act s', 'data-key': `${key}-repeat`, title: `Repeat “${s.last.label}” on the current selection (F4)`, disabled: !!s.running, onclick: () => app.repeatLast() }, icon('repeat', 'sm'), h('span', {}, 'Repeat · F4'))];
+  return h('div', { class: cls, 'data-key': key, role: 'group', 'aria-label': refs.length ? `Next after ${s.last.label}` : `Last: ${s.last.label}` }, head, body);
+}
+/** Buttons for refs, a run of one family wrapped in one unbreakable .fam (it moves to the next line as a whole). */
+function runsOf(app, t, refs, size) {
+  return AR.runs(refs).map((run) => {
+    const btns = run.map((r) => actButton(app, A.resolve(r), () => remember(app, t, r), size));
+    return run.length > 1 ? h('div', { class: 'fam', role: 'group', 'aria-label': AR.familyOf(run[0]).name, style: { '--n': String(run.length) } }, btns) : btns[0];
+  });
+}
 /** One control for two opposite actions: [Flip  ↔ | ↕]. */
 function pairControl(app, t, [label, ...refs]) {
   const acts = refs.map((r) => [r, A.resolve(r)]).filter(([, a]) => a);
@@ -324,7 +351,7 @@ function pairControl(app, t, [label, ...refs]) {
 function subRow(app, t, [label, refs, short]) {
   const acts = refs.map((r, i) => [r, A.resolve(r), (short || [])[i]]).filter(([, a]) => a);
   return h('div', { class: 'ae-subrow', role: 'group', 'aria-label': label, 'data-key': `row-${label}` }, h('span', { class: 'ae-sub-l' }, label),
-    h('div', { class: 'ae-sub-b' }, acts.map(([r, a, s]) => { const rd = a.ready(app); return h('button', { class: `ae-act ${rd.ok ? '' : 'off'}`, 'data-key': `a-${a.id}`, 'aria-label': a.label, title: rd.ok ? a.label : `${a.label} — ${rd.hint}`,
+    h('div', { class: `ae-sub-b n${Math.min(acts.length, 4)}` }, acts.map(([r, a, s]) => { const rd = a.ready(app); return h('button', { class: `ae-act ${rd.ok ? '' : 'off'}`, 'data-key': `a-${a.id}`, 'aria-label': a.label, title: rd.ok ? a.label : `${a.label} — ${rd.hint}`,
       onclick: () => (rd.ok ? (remember(app, t, r), a.run(app)) : app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn')) }, icon(a.icon || 'bolt', 'sm'), h('span', {}, s || a.label)); })));
 }
 /** Animate In / Out / Draw On — one block, the mode switch picks the six (or four) moves. Shapes open on Draw On. */
@@ -508,6 +535,6 @@ function menuButton(app, s) {
     onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(), box = require('./quickbar').fixedBox(e.currentTarget.closest('.app') || document.body); app.state.set({ aeMenu: !s.aeMenu, aeMenuAt: { top: Math.round(r.bottom - box.top + 2), right: Math.max(4, Math.round(box.left + box.width - r.right)) } }); } }, icon('menu', 'sm'));
 }
 
-module.exports = { controlTop, tileCols, animMode, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
+module.exports = { runsOf, nextStrip, controlTop, tileCols, animMode, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
   // building blocks reused by the v0.24 style proposals (layoutGlass / layoutApple / layoutBento)
   twirl, actButton, groupBody, tileStrip, moreLink, groupExtra, subRow, pairControl, linkRow, searchBox, searchResults, panelMenu, menuButton, openTile };

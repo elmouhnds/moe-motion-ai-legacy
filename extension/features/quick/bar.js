@@ -82,7 +82,10 @@ const migrate = (id) => MIGRATE[id] || id;
 // The first ten are the Everyday slots (Alt+1…0, workflow.EVERYDAY); housekeeping (Purge, Open Folder) is
 // no longer in the default bar — it lives in Deliver › Project and in search.
 const DEFAULT_BAR = ['k_easy', 'curveExpo', 'centerAnchor', 'parentNull', 'precompose', 'k_stagger', 'tile:expressions/x-loopCycle', 'tile:expressions/x-wiggle', 'reverse', 'dupComp',
-  'tile:animate/trimDraw', 'tile:animate/fadeIn', 'tile:animate/fadeOut', 'tile:animate/inBT', 'tile:animate/popIn', 'mirror', 'flipH', 'separate', 'selectSame', 'typewriter', 'tile:expressions/x-loopPingPong', 'revealProject'];
+  // v0.43 (SMART_ARRANGE): after Alt+1…0 the rest sits by family — Mirror and Ping-Pong right after Reverse and Loop,
+  // the moves together, Flip H next to Flip V, then layers, text and the project
+  'mirror', 'tile:expressions/x-loopPingPong', 'tile:animate/fadeIn', 'tile:animate/fadeOut', 'tile:animate/inBT', 'tile:animate/popIn', 'tile:animate/trimDraw',
+  'flipH', 'flipV', 'separate', 'selectSame', 'typewriter', 'revealProject'];
 const GROUPS = ['Project', 'Layer', 'Kit', 'Align', 'Keys', 'Text'];
 
 /** Fill icon/label for expression actions from the expression library (kit actions keep their own). */

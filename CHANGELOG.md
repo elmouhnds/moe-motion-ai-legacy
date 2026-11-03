@@ -2,6 +2,21 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.43.0] — 2026-11-03 — Smart Arrange
+Details: `docs/features/SMART_ARRANGE.md`.
+### Fixed
+- Bento mixed groups and split pairs (`grid-auto-flow: dense` filled gaps with tiles from the next group — *Parent chain* landed in *Transform*, Flip H and Flip V on different rows). Tiles are now placed by `arrange.pack`: order kept, families on one row, every row full; no dense flow.
+- Wrapping rows in Classic / Glass / MOE and the MOE menus could break a pair over two lines; Glass's NOW strip had Loop Cycle and Ping-Pong apart.
+- The *Next* row (Bento / Glass NOW) came and went above the tiles and changed height, moving them while you aimed: it is now one fixed-height line **below** the tiles, shown once anything has run (*Last: … · Repeat F4* when nothing usually follows).
+- `npm run stress` waits for a scroll to finish before aiming (Build Grid scrolls its panel into view once, by design).
+### Changed
+- `app/ui/arrange.js`: tool families (Flip, Align, Distribute, Anchor, Interpolation, Curves, Copy keys, Loop, Fade, Pop, Trim, Parent, Project, Text, Guides, Zoom, Clean up); `group` / `runs` / `pack`.
+- Bento: a declared pair is one tile (*Flip — Horizontal · Vertical*); long names take two lines.
+- Keys tab: Reverse / Mirror / Clone became a labelled **Keys** row; Parent Null + Parent chain both primary; a three-item row stays on one line.
+- MOE *Layer* menu: + Flip V, + Distribute V. Default Quick Bar (new installs): + Flip V, the rest after Alt+1…0 ordered by family.
+### Tests
+- `tests/arrange.test.js` (5) and `tools/audit-arrange.js` (80 screens: 3 styles + menus + Kit × 4 widths) — 0 split families, 0 tiles outside their group, 0 holes, 0 cut labels. **Preview, not After Effects.**
+
 ## [0.42.0] — 2026-11-03 — Bake to Keyframes
 Details: `docs/features/BAKE.md`.
 ### Added

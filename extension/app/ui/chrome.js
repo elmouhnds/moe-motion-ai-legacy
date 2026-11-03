@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['layers', 'Tools that go together, together', 'Flip Horizontal sits right next to Flip Vertical (one tile in Bento), Reverse · Mirror · Clone are one row, Align and Distribute come in pairs — in every style and at every panel width, and no tile drifts into another group any more.'],
   ['bake', 'Bake to Keyframes', 'Motion Kit › Bake: select a grid, cloner or trail null (or rigged layers) and its live expressions become plain keyframes over the work area — only the keys the motion needs. The comp gets lighter and plays anywhere without MOE; Restore brings the expressions back. Alt-click for a key on every frame.'],
   ['copy', 'Clone Trails', 'Select one animated layer and pick Echo, Ghost or Spin Trail: copies replay its motion a little later, fading, shrinking or turning copy by copy — live, no keyframes on the copies. Delay, Fade, Scale Step and Rotate Step sit on one MOE Trail null.'],
   ['check', 'Check in After Effects', 'Diagnostics › Check in After Effects runs MOE’s advanced tools in a temporary comp, compares what After Effects computed with MOE’s own maths (px, %, °, colour, ms), undoes everything and removes the comp. Copy the report and send it — it shows exactly what works on your machine.'],

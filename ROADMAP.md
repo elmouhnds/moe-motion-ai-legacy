@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.48 — Smart Arrange ✅ (v0.43.0)
+- Families of tools kept together everywhere (engine + data + on-screen audit at 4 widths).
+- Next: the owner's Self-Test report from AE 2025 → fixes first; then more families as tools are added.
+
 ## M1.47 — Bake to Keyframes ✅ (v0.42.0)
 - Grid / cloner / trail / any MOE rig → keyframes over the work area, smart keys, restorable; a Self-Test check with the bake time.
 - Next: the owner's Self-Test report from AE 2025 (now 16 checks) → fixes first.

@@ -52,6 +52,8 @@ const VIEWS = [['animate', '.st-tile'], ['shapes', '.sh-tile'], ['home', '.focus
     if (view === 'kit' || view === 'home') await page.evaluate(([s]) => { window.__kc = 0; document.addEventListener('click', (e) => { const el = e.target.closest(s); if (el && el.isConnected) window.__kc++; }, true); const run = window.__app.runTool, toast = window.__app.toast; window.__runs = 0; window.__app.runTool = (...a) => { window.__runs++; return run(...a); }; window.__app.toast = (...a) => { if (a[2] === 'warn') window.__runs++; return toast(...a); }; const go = window.__app.go; window.__app.go = (...a) => { window.__runs++; return go(...a); }; }, [sel]);
     for (let i = 0; i < 20; i++) {
       if (view === 'kit' || view === 'home') { await page.waitForFunction(() => !window.__app.state.get().running, null, { timeout: 5000 }).catch(() => {}); await page.waitForTimeout(60); }
+      // a person waits for a scroll to finish before aiming (Build Grid scrolls its panel into view once, by design)
+      await page.waitForFunction(() => new Promise((res) => { const c = document.querySelector('.content'); const y0 = c ? c.scrollTop : 0; setTimeout(() => res((c ? c.scrollTop : 0) === y0), 120); }), null, { timeout: 3000, polling: 150 }).catch(() => {});
       const b = await rect(i % 2 ? 3 : 4);
       await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
       await page.mouse.down();

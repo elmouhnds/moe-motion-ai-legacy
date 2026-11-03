@@ -16,6 +16,7 @@ const { h, icon } = require('./dom');
 const A = require('./actions');
 const AE = require('./layoutAE');
 const studio = require('./studio/sections');
+const AR = require('./arrange');
 
 /* v0.25: your own tiles on top (right-click a tile: pin / unpin to NOW), folded sections */
 const PIN_KEY = 'bento-pins', FOLD_KEY = 'bento-fold', PIN_MAX = 4;
@@ -60,6 +61,35 @@ function tile(app, a, size, t, ref, sub) {
   pinned ? h('span', { class: 'bt-pin', 'aria-hidden': 'true' }, icon('star', 'xs')) : null);
 }
 const wide = (key, ...kids) => h('div', { class: 'bt b-4 bt-block', 'data-key': key }, ...kids);
+
+/**
+ * v0.43 (docs/features/SMART_ARRANGE.md): tiles are placed, not packed — order kept, a family (Flip H / V,
+ * Fade In / Out …) never split over two rows, every row filled (a short row's tiles grow). The grid has no
+ * "dense" flow any more, so a tile can never drift into another group's gap. Spans for 4 and 2 columns.
+ * entries: [{ el, w, run }] (w = 'full' for a block / caption / chip row).
+ */
+function placed(entries, group) {
+  const tiles = entries.filter((e) => e && e.el);
+  for (const cols of [4, 2]) {
+    const items = tiles.map((e, i) => ({ key: i, w: e.w === 'full' ? cols : Math.min(e.w || 1, cols), run: e.run }));
+    AR.pack(items, cols).forEach((p) => { const e = tiles[p.key]; if (e.w !== 'full') e.el.style.setProperty(`--s${cols}`, String(p.span)); });
+  }
+  if (group) tiles.forEach((e) => e.el.setAttribute('data-g', group));
+  return tiles.map((e) => e.el);
+}
+/** One tile for two opposite actions: Flip [↔ Horizontal | ↕ Vertical]. */
+function pairTile(app, t, [label, ...refs]) {
+  const acts = refs.map((r) => [r, A.resolve(r)]).filter(([, a]) => a);
+  if (!acts.length) return null;
+  // the family's icon and name on one line (like every tile), the two halves as words below
+  return h('div', { class: 'bt b-pair', role: 'group', 'aria-label': label, 'data-key': `pair-${label}` }, h('div', { class: 'b-pair-h' }, icon(acts[0][1].icon || 'bolt', ''), h('span', { class: 'bt-l' }, label)),
+    h('div', { class: 'b-pair-b' }, acts.map(([r, a]) => {
+      const rd = a.ready(app);
+      const short = a.label.replace(new RegExp(`^${label}\\s+`, 'i'), '');
+      return h('button', { class: `b-half ${rd.ok ? '' : 'off'}`, 'data-key': `a-${a.id}`, 'aria-label': a.label, title: rd.ok ? a.label : `${a.label} — ${rd.hint}`,
+        onclick: () => (rd.ok ? (t && AE.remember(app, t, r), a.run(app)) : app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn')) }, h('span', { class: 'b-half-t' }, short));
+    })));
+}
 const caption = (key, text, extra) => h('div', { class: 'b-cap', 'data-key': key }, h('span', {}, text), extra || null);
 
 /** The kit block that leads NOW for this kind of selection (and is then left out of its section). */
@@ -82,14 +112,7 @@ function formatChip(f) {
 }
 
 /** v0.30: after a run, the steps that usually follow it — the job's sequence, one click each. */
-function nextRow(app, s) {
-  const W = require('./workflow');
-  const refs = W.nextAfter(s.last);
-  if (!refs.length) return null;
-  return h('div', { class: 'b-4 b-next', 'data-key': 'b-next', role: 'group', 'aria-label': `Next after ${s.last.label}` },
-    h('span', { class: 'b-next-h' }, icon('chev', 'xs'), h('span', {}, 'Next'), h('span', { class: 'b-next-after' }, `after ${s.last.label}`)),
-    refs.map((r) => AE.actButton(app, A.resolve(r), null, 's')));
-}
+function nextRow(app, s) { return AE.nextStrip(app, s, 'b-4 b-next', 'b-next'); }
 
 function now(app, s, kind) {
   const kit = require('./views/kit');
@@ -106,11 +129,13 @@ function now(app, s, kind) {
     // v0.29: the anchor point is a one-second action — half the width (2×2 cell), the actions fill the rest;
     // ease (keys) and align (several layers) are real working surfaces and keep the full width
     h('div', { class: 'b-grid' }, block ? wide('now-block', block) : null,
-      nextRow(app, s),
       // your pinned tiles first (same size as primary), then the best actions for the selection — no duplicates
-      mine.map(([r, a]) => tile(app, a, '2x1', null, r, 'pinned')),
-      brandNow(app, kind),
-      acts.filter(([r]) => !mineRefs.includes(r)).map(([r, a], i) => tile(app, a, i < 2 && !mine.length ? '2x1' : '1x1', null, r))));
+      ...placed([...mine.map(([r, a]) => ({ el: tile(app, a, '2x1', null, r, 'pinned'), w: 2 })),
+        (() => { const b = brandNow(app, kind); return b ? { el: b, w: 2 } : null; })(),
+        // the pie keeps its fixed positions; here the same eight sit with their families (Fade In next to Fade Out)
+        ...AR.group(acts.map(([r]) => r).filter((r) => !mineRefs.includes(r))).map((r, i) => { const a = A.resolve(r), f = AR.familyOf(r); return { el: tile(app, a, i < 2 && !mine.length ? '2x1' : '1x1', null, r), w: i < 2 && !mine.length ? 2 : 1, run: f ? `now:${f.name}` : undefined }; })], 'now'),
+      // v0.43: "Next" comes and goes with the last tool — below the tiles, so it never moves what you are aiming at
+      nextRow(app, s)));
 }
 
 function groupTiles(app, t, g, kind, skipBlock) {
@@ -118,16 +143,27 @@ function groupTiles(app, t, g, kind, skipBlock) {
   const cap = caption(`cap-${g.id}`, g.label, g.more || g.live ? AE.groupExtra(app, g) : g.fits.includes(kind) ? h('span', { class: 'ae-fit' }, 'for selection') : null);
   if (g.kind === 'acts') {
     const hero = g.hero || [], minor = g.minor || [];
-    const pick = (refs) => refs.map((r) => [r, A.resolve(r)]).filter(([, a]) => a);
-    const minorTiles = pick(minor);
-    return [cap,
-      ...pick(hero).map(([r, a]) => tile(app, a, '2x1', t, r)),
-      ...pick(g.refs.filter((r) => !hero.includes(r) && !minor.includes(r))).map(([r, a]) => tile(app, a, '1x1', t, r)),
-      minorTiles.length ? h('div', { class: 'b-4 b-chips', 'data-key': `minor-${g.id}` }, minorTiles.map(([r, a]) => AE.actButton(app, a, () => AE.remember(app, t, r), 's'))) : null,
-      ...(g.rows || []).map((rw) => wide(`row-${g.id}-${rw[0]}`, AE.subRow(app, t, rw))),
-      ...(g.lead || []).concat(g.links || []).map(([id, label]) => h('button', { class: 'bt b-2x1 bt-link', 'data-key': `l-${id}`, 'aria-label': label, onclick: () => app.go(id) }, icon((studio.byId(id) || {}).icon || 'chev', ''), h('span', { class: 'bt-l' }, label)))];
+    const pairs = g.pairs || [], paired = pairs.flatMap(([, ...refs]) => refs);
+    const minorTiles = AR.group(minor).map((r) => [r, A.resolve(r)]).filter(([, a]) => a);
+    // primary (2 wide) and standard (1 wide) in one sequence, families kept together; a pair is one 2-wide tile
+    const inRows = (g.rows || []).flatMap((rw) => rw[1]);
+    const seq = AR.group(g.refs.filter((r) => !minor.includes(r) && !inRows.includes(r)));
+    const entries = [], donePairs = new Set();
+    seq.forEach((r) => {
+      const p = pairs.find(([, ...refs]) => refs.includes(r));
+      if (p) { if (!donePairs.has(p[0])) { donePairs.add(p[0]); entries.push({ el: pairTile(app, t, p), w: 2 }); } return; }
+      if (paired.includes(r)) return;
+      const a = A.resolve(r);
+      if (!a) return;
+      const f = AR.familyOf(r);
+      entries.push({ el: tile(app, a, hero.includes(r) ? '2x1' : '1x1', t, r), w: hero.includes(r) ? 2 : 1, run: f ? `${g.id}:${f.name}` : undefined });
+    });
+    const links = (g.lead || []).concat(g.links || []).map(([id, label]) => ({ el: h('button', { class: 'bt b-2x1 bt-link', 'data-key': `l-${id}`, 'aria-label': label, onclick: () => app.go(id) }, icon((studio.byId(id) || {}).icon || 'chev', ''), h('span', { class: 'bt-l' }, label)), w: 2 }));
+    return [cap, ...placed([...entries, ...links,
+      minorTiles.length ? { el: h('div', { class: 'b-4 b-chips', 'data-key': `minor-${g.id}` }, AR.runs(minorTiles.map(([r]) => r)).map((run) => { const btns = run.map((r) => { const a = A.resolve(r); return AE.actButton(app, a, () => AE.remember(app, t, r), 's'); }); return run.length > 1 ? h('span', { class: 'fam' }, btns) : btns[0]; })), w: 'full' } : null,
+      ...(g.rows || []).map((rw) => ({ el: wide(`row-${g.id}-${rw[0]}`, AE.subRow(app, t, rw)), w: 'full' }))], g.id)];
   }
-  if (g.kind === 'links') return [cap, ...(g.links || []).map(([id, label]) => { const sec = studio.byId(id); return h('button', { class: 'bt b-2x1 bt-link', 'data-key': `l-${id}`, 'aria-label': `Open ${sec ? sec.label : label}`, onclick: () => app.go(id) }, icon((sec && sec.icon) || 'chev', 'lg'), h('span', { class: 'bt-l' }, sec ? sec.label : label), h('span', { class: 'bt-s' }, label)); })];
+  if (g.kind === 'links') return [cap, ...placed((g.links || []).map(([id, label]) => { const sec = studio.byId(id); return { el: h('button', { class: 'bt b-2x1 bt-link', 'data-key': `l-${id}`, 'aria-label': `Open ${sec ? sec.label : label}`, onclick: () => app.go(id) }, icon((sec && sec.icon) || 'chev', 'lg'), h('span', { class: 'bt-l' }, sec ? sec.label : label), h('span', { class: 'bt-s' }, label)), w: 2 }; }), g.id)];
   return [cap, wide(`w-${g.id}`, AE.groupBody(app, g, t))];
 }
 
