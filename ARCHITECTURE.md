@@ -175,6 +175,10 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/grid/sim.js` (pure, no DOM): `createSim({ args, items })` — recorded null path (grab / drag / release, sweep, reset; ≤ 3.5 s, ≤ 600 points), `frame(t)` through `effectors.applyAt`, `weightAt` for the overlay; stand-ins `beat` (Audio) and a sample luma (Image).
 - `app/ui/clonerPreview.js`: `effectorPreview` (canvas `data-fresh` with pointer events, shared sim across re-renders, *Use my grid* = one `layers.describe` + `props.values` (evaluated positions)), `demoInputs` (sample star / words for the Grid Builder preview). Registered in `widgets.body['grid.effector']`.
 
+## 6q. Self-Test (v0.40.0)
+- `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
+- `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
+
 ## 6j. Cloner + Effectors (v0.33.0)
 - `features/grid/effectors.js`: pure reference (`weight`, `amounts`, `apply`, `localFn`) + `code()` (the same maths as expression text). `grid/expressions.js buildAll` tags `· v3`, adds slots *Effector 2 / 3* to the grid controls, skips the legacy effector when slot 1 holds a MOE Effector; `factsOf(code)` reads an item's facts back for in-place upgrades.
 - `features/grid/effectorTool.js` (`grid.effector`): null + 15 controls (`effects.ensure` / `effects.setMenu`), first free slot (`props.values` on the grid null's layer controls), upgrade v2 items, sweep / delay keys, read-back; restore unlinks the slot and removes only `MOE Effector …`.

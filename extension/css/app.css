@@ -337,6 +337,13 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .grid-canvas.live { height: 220px; cursor: grab; touch-action: none; }
 .grid-canvas.live:active { cursor: grabbing; }
 .btn.ghost.on { color: var(--accent); background: var(--accent-soft); }
+/* v0.40 Self-Test (Diagnostics) */
+.selftest-list { display: grid; gap: 4px; padding: 0 var(--pad, 12px) 8px; }
+.selftest-check { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; padding: 6px 8px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); }
+.selftest-label { font-weight: 600; }
+.selftest-badge { font-size: 11px; line-height: 18px; padding: 0 6px; border-radius: 999px; border: 1px solid var(--line); color: var(--text-2); white-space: nowrap; }
+.selftest-badge.pass { color: var(--ok, var(--text-1)); border-color: var(--ok, var(--line)); }
+.selftest-badge.fail { color: var(--err); border-color: var(--err); }
 /* v0.9 Ease Curve editor + anchor picker */
 .curve-canvas { display: block; width: 100%; height: 250px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-raised, transparent); touch-action: none; cursor: grab; }
 .curve-canvas:active { cursor: grabbing; }

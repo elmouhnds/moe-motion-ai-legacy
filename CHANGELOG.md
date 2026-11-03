@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.40.0] — 2026-11-03 — Self-Test inside After Effects
+Details: `docs/features/SELF_TEST.md`.
+### Added
+- **Diagnostics › Check in After Effects**: a confirm step, then 14 checks in a temporary `MOE Self-Test` comp — Grid, Cloner, Effector, Spring, Target, Noise Field, Image field (Gradient Ramp + sampleImage), Clone Colours, Points (elliptical mask), Text Cloner (Latin and Arabic), the Convert Audio to Keyframes command, the expression engine, and a speed read (48 clones, plain vs Spring). Each check compares what After Effects computed (`props.values`, `layers.bounds`) with the reference maths and undoes its tool (the undo is checked). The comp and its unused solids are removed and your comp reopened, in `finally`. *Copy report* gives the JSON to send.
+- Host ops `selftest.begin` / `selftest.addText` / `selftest.commands` / `selftest.end`.
+### Tests
+- `tests/selftest.test.js` (4): all checks pass on the mock and the user's comp is untouched; an injected maths fault is reported as a failure; a failing tool fails only its check; the card. The whole self-test ran from Diagnostics in the panel preview (0 JS errors). **The run that matters is the owner's, in After Effects.**
+
 ## [0.39.0] — 2026-11-03 — Live Preview for Effectors
 Chosen by the owner before the in-After-Effects self-test. Details: `docs/features/LIVE_PREVIEW.md`.
 ### Added

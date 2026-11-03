@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.45 — Self-Test inside After Effects ✅ (v0.40.0)
+- Diagnostics › Check in After Effects: 14 checks with real-host numbers, cleanup in finally, copyable report.
+- Next: the owner runs it in AE 2025 and sends the report → fix whatever it shows; then Clone Trails / Bake.
+
 ## M1.44 — Live Preview ✅ (v0.39.0)
 - Drag-the-null preview for every Effector (same maths as AE), Points / In Place in the Grid Builder preview.
 - Next: the self-test inside After Effects (Diagnostics › Check in After Effects) — real-host numbers for v0.33–v0.39.

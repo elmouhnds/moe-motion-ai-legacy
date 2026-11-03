@@ -79,7 +79,7 @@ function sampleable(layer) {
         for (let j = 0; j < N; j++) {
           const x = point[0] - radius[0] + (2 * radius[0] * (i + 0.5)) / N;
           const y = point[1] - radius[1] + (2 * radius[1] * (j + 0.5)) / N;
-          const c = postEffect ? renderEffects(layer, px(x / layer.width, y / layer.height, t)) : px(x / layer.width, y / layer.height, t);
+          const c = postEffect ? renderEffects(layer, px(x / layer.width, y / layer.height, t), x, y) : px(x / layer.width, y / layer.height, t);
           for (let k = 0; k < 3; k++) acc[k] += (c[k] * c[3]) / (N * N);
           acc[3] += c[3] / (N * N);
         }
@@ -91,10 +91,18 @@ function sampleable(layer) {
 }
 
 /** Post-effect pixel simulation for the effects MOE adds (enabled ones only, in stack order). */
-function renderEffects(layer, rgba) {
+function renderEffects(layer, rgba, x, y) {
   let c = rgba.slice();
   for (const fx of (layer._parade ? layer._parade._children : [])) {
     if (!fx.enabled) continue;
+    // v0.40 mock: Gradient Ramp (linear) replaces the colour along Start → End (layer space)
+    if (fx.matchName === 'ADBE Ramp' && x !== undefined) {
+      const v = (n) => fx._children.find((q) => q.name === n).value;
+      const a = v('Start of Ramp'), b = v('End of Ramp'), ca = v('Start Color'), cb = v('End Color');
+      const dx = b[0] - a[0], dy = b[1] - a[1], u = Math.min(Math.max(((x - a[0]) * dx + (y - a[1]) * dy) / Math.max(dx * dx + dy * dy, 1e-9), 0), 1);
+      c = [0, 1, 2].map((k) => ca[k] + (cb[k] - ca[k]) * u).concat([c[3]]);
+      continue;
+    }
     if (fx.matchName === 'ADBE CHANNEL MIXER') {
       const v = fx._children.map((p) => p.value / 100);
       c = [0, 1, 2].map((r) => v[r * 4] * c[0] + v[r * 4 + 1] * c[1] + v[r * 4 + 2] * c[2] + v[r * 4 + 3]).concat([c[3]]);
@@ -776,6 +784,12 @@ class CompItem {
         const tg = L.property('ADBE Transform Group');
         tg.property('ADBE Anchor Point').setValue([item.width / 2, item.height / 2]);
         tg.property('ADBE Position').setValue([comp.width / 2, comp.height / 2]);
+        comp._layers.unshift(L);
+        return L;
+      },
+      // v0.40: LayerCollection.addText (the self-test's title)
+      addText(text) {
+        const L = new MockTextLayer({ name: String(text), text: String(text), measure: true, transform: DEFAULT_TRANSFORM.map((q) => Object.assign({}, q)) }, comp);
         comp._layers.unshift(L);
         return L;
       },
