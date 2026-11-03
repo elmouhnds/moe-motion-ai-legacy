@@ -151,7 +151,8 @@ function exprLayer(L, t) {
       const f = (pn) => {
         const p = typeof pn === 'number' ? fx.property(pn) : fx._children.find((c) => c.name === pn || c.name.endsWith(':' + pn));
         if (!p) throw new Error(`Expression error: effect parameter "${pn}" is missing`);
-        if (p.propertyValueType === 6421 /* LAYER_INDEX */) { const v = p.valueAtTime(t, false); return v ? exprLayer(comp.layer(v), t) : null; }
+        // a Layer Control's layer gets the same extras as thisComp.layer() (sampleImage — v0.38 Image field)
+        if (p.propertyValueType === 6421 /* LAYER_INDEX */) { const v = p.valueAtTime(t, false); if (!v) return null; const LL = comp.layer(v); return Object.assign(exprLayer(LL, t), EXTRA.layerExtras ? EXTRA.layerExtras(LL) : {}); }
         return wrapProp(p, self, t);
       };
       f.active = fx.enabled;
@@ -187,7 +188,9 @@ function contentNode(group, name, layerCtx, t) {
 }
 
 /** Evaluate `prop`'s expression at comp time t. */
+let EXTRA = {};
 function evaluate(prop, t, extra = {}) {
+  EXTRA = extra;
   const layer = prop._layer();
   const comp = layer._comp;
   const thisLayer = exprLayer(layer, t);

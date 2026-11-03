@@ -134,15 +134,15 @@ const DRAW = {
     // v0.35 spring tiles: move, hold, move back, hold — so the overshoot and settle show at each stop
     const exAt = (tt) => { if (!th.spring) { const sw = (Math.sin((tt / 3) * Math.PI * 2 - Math.PI / 2) + 1) / 2; return -150 + 300 * sw; } const u = ((tt % 5) + 5) % 5, ss = (v) => v * v * (3 - 2 * v); return u < 1.2 ? -150 + 300 * ss(u / 1.2) : u < 2.5 ? 150 : u < 3.7 ? 150 - 300 * ss((u - 2.5) / 1.2) : -150; };
     const ex = exAt(t);
-    const base = EF.valuesOf(Object.assign({ size: th.falloff === 'linear' ? 90 : 75, softness: 60, scale: 0 }, th, { type: th.type, falloff: th.falloff }));
+    const base = EF.valuesOf(Object.assign({ size: th.falloff === 'linear' ? 90 : th.falloff === 'noise' ? 45 : 75, softness: 60, scale: 0 }, th, { type: th.type, falloff: th.falloff }));
     const cyc = 2.4, at = (tt) => { if (th.type !== 'delay') return base; const u = Math.min(Math.max((((tt % cyc) + cyc) % cyc) / 0.6, 0), 1), f = 1 - u * u * (3 - 2 * u); return Object.assign({}, base, { moveX: base.moveX * f, moveY: base.moveY * f, scale: base.scale * f, rotate: base.rotate * f, fade: base.fade * f }); };
     const toLocal = (px, py) => [px - ex, py];
     for (let i = 0; i < n; i++) {
       const col = i % cols, row = Math.floor(i / cols), x = (col - (cols - 1) / 2) * sx, y = (row - (rows - 1) / 2) * sy;
       // v0.36: Target items face the effector; Audio follows a two-beat-a-second pulse (the real maths: applyAt)
-      const live = th.spring || th.type === 'target' || th.type === 'audio';
+      const live = th.spring || th.type === 'target' || th.type === 'audio' || th.falloff === 'noise' || th.falloff === 'image';
       const r = live
-        ? EF.applyAt([{ at: () => Object.assign({}, base, { audioMax: 1 }), toLocal: (tt) => { const e = exAt(tt); return (px, py) => [px - e, py]; }, originAt: (tt) => [exAt(tt), 0], audioAt: (tt) => Math.pow(Math.max(0, Math.sin(tt * Math.PI * 4)), 3) }], { i, k: i, n, x, y, compAt: () => [x, y], fd: 1 / 30, baseRotAt: () => 0 }, t)
+        ? EF.applyAt([{ at: () => Object.assign({}, base, { audioMax: 1 }), toLocal: (tt) => { const e = exAt(tt); return (px, py) => [px - e, py]; }, originAt: (tt) => [exAt(tt), 0], audioAt: (tt) => Math.pow(Math.max(0, Math.sin(tt * Math.PI * 4)), 3), lumaAt: (cx, cy, tt) => { const bx = Math.sin(tt * 0.9) * 70, d = Math.hypot(cx - bx, cy) / 70; return Math.max(0, 1 - d * d); } }], { i, k: i, n, x, y, compAt: () => [x, y], fd: 1 / 30, baseRotAt: () => 0 }, t)
         : EF.apply([{ values: at(t - i * 0.05), toLocal }], { i, k: i, n, x, y, cx: x, cy: y, time: t });
       const s = Math.max(0, r.scaleMul);
       c.save(); c.translate(W / 2 + (x + r.dx) * k, H / 2 + (y + r.dy) * k); c.rotate(r.rot * Math.PI / 180);
@@ -154,7 +154,7 @@ const DRAW = {
     }
     c.globalAlpha = 1;
     if (th.type === 'target') { c.fillStyle = ACC; c.beginPath(); c.arc(W / 2 + ex * k, H / 2, 4, 0, Math.PI * 2); c.fill(); }
-    if (th.falloff !== 'all') {
+    if (th.falloff !== 'all' && th.falloff !== 'noise' && th.falloff !== 'image') {
       c.strokeStyle = ACC; c.lineWidth = 1.5; c.setLineDash([4, 3]); c.beginPath();
       if (th.falloff === 'linear') { c.moveTo(W / 2 + ex * k, 4); c.lineTo(W / 2 + ex * k, H - 4); } else c.arc(W / 2 + ex * k, H / 2, base.size * k, 0, Math.PI * 2);
       c.stroke(); c.setLineDash([]);

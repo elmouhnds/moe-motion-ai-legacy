@@ -32,7 +32,10 @@ const FALLOFFS = [
   { id: 'sphere', menu: 'Sphere', label: 'Sphere' },
   { id: 'linear', menu: 'Linear', label: 'Linear' },
   { id: 'box', menu: 'Box', label: 'Box' },
-  { id: 'all', menu: 'Everywhere', label: 'Everywhere' }
+  { id: 'all', menu: 'Everywhere', label: 'Everywhere' },
+  // v0.38 Field falloffs: a moving noise field (in the effector's space) and a layer's brightness (Image)
+  { id: 'noise', menu: 'Noise Field', label: 'Noise' },
+  { id: 'image', menu: 'Image', label: 'Image' }
 ];
 const SLOTS = ['Effector', 'Effector 2', 'Effector 3'];
 const NAME = /^MOE Effector \d+$/;
@@ -63,9 +66,12 @@ const CONTROLS = [
   ['Decay', 'slider', 5],
   // v0.36 Audio: the "MOE Audio · <layer>" amplitude layer (Convert Audio to Keyframes) and its loudest value
   ['Audio Layer', 'layer', 0],
-  ['Audio Max', 'slider', 1]
+  ['Audio Max', 'slider', 1],
+  // v0.38 Field falloffs: the layer whose brightness is the weight (Image) and how fast the noise field evolves
+  ['Field Layer', 'layer', 0],
+  ['Field Speed', 'slider', 50]
 ];
-const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix', Spring: 'spring', Frequency: 'frequency', Decay: 'decay', 'Audio Layer': 'audioLayer', 'Audio Max': 'audioMax' };
+const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix', Spring: 'spring', Frequency: 'frequency', Decay: 'decay', 'Audio Layer': 'audioLayer', 'Audio Max': 'audioMax', 'Field Layer': 'fieldLayer', 'Field Speed': 'fieldSpeed' };
 
 /** Default effector values (type / falloff as menu indices 1-based). */
 function defaults() {
@@ -104,11 +110,22 @@ function vnoise(x, y) {
   return a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy;
 }
 
-/** Weight 0..1 of a point given in the effector's own space (px). */
-function weight(e, lx, ly) {
+/** Rec. 709 luma of an [r, g, b, a] sample, times its alpha (Image field). */
+const luma = (c) => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) * (c[3] === undefined ? 1 : c[3]);
+/**
+ * Weight 0..1 of a point given in the effector's own space (px).
+ * f (v0.38 fields): { t: time (Noise Field evolves), luma: the Field Layer's brightness under the item (Image) }.
+ *   Noise Field: n = value noise at (lx / Size + Seed × 13.7, ly / Size + Field Speed / 100 × t), 0..1; Softness
+ *   is the width of the edge around 0.5 (0 = hard cells). Image: the brightness (0..1). Both then Invert / Strength.
+ */
+function weight(e, lx, ly, f) {
   const fo = Math.round(e.falloff), sz = Math.max(e.size, 0.001), sf = clamp(e.softness / 100, 0, 1);
   let w;
   if (fo === 4) w = 1;
+  else if (fo === 5) {
+    const t = f && f.t !== undefined ? f.t : 0, nu = (vnoise(lx / sz + (e.seed || 0) * 13.7, ly / sz + (e.fieldSpeed || 0) / 100 * t) + 1) / 2, hf = Math.max(sf, 0.001) / 2;
+    w = smooth(clamp((nu - 0.5 + hf) / (2 * hf), 0, 1));
+  } else if (fo === 6) w = clamp(f && f.luma !== undefined ? f.luma : 0, 0, 1);
   else if (fo === 2) w = smooth(clamp(0.5 - lx / sz, 0, 1)); // a soft edge Size px wide: full to the left, none to the right
   else {
     const d = fo === 3 ? Math.max(Math.abs(lx), Math.abs(ly)) : Math.sqrt(lx * lx + ly * ly);
@@ -192,7 +209,7 @@ const wrap180 = (a) => a - 360 * Math.floor((a + 180) / 360);
 /**
  * One effector's raw terms on one item at time tq: [dx px, dy px, scale (×1, added to 1), rotate °, fade (×1)].
  * src: { at(t) → control values at t, toLocal(t) → (cx, cy) → [lx, ly], originAt(t) → the effector's comp point
- * (Target), audioAt(t) → Both Channels amplitude (Audio) }  — menus, Invert, Seed, Delay, Audio Max and the
+ * (Target), audioAt(t) → Both Channels amplitude (Audio), lumaAt(cx, cy, t) → the Field Layer's brightness there (Image) }  — menus, Invert, Seed, Delay, Audio Max and the
  * noise settings are read at `now`; Size, Softness, Strength and the effector's transform at tq; the moves at tq
  * (Delay: tq − k × Delay frames). item: { i, k, n, x, y (grid space), compAt(t) → [cx, cy], fd (frame duration),
  * baseRotAt(t) → the item's rotation before effectors + the grid null's rotation (Target) }.
@@ -202,7 +219,7 @@ const wrap180 = (a) => a - 360 * Math.floor((a + 180) / 360);
 function termsAt(src, item, tq, now) {
   const V = src.at(now), Q = tq === now ? V : src.at(tq);
   const c = item.compAt(tq), l = src.toLocal(tq)(c[0], c[1]);
-  const w = weight(Object.assign({}, V, { size: Q.size, softness: Q.softness, strength: Q.strength }), l[0], l[1]);
+  const w = weight(Object.assign({}, V, { size: Q.size, softness: Q.softness, strength: Q.strength }), l[0], l[1], { t: tq, luma: src.lumaAt ? src.lumaAt(c[0], c[1], tq) : 0 });
   if (w <= 0) return [0, 0, 0, 0, 0];
   const tp = Math.round(V.type);
   const M = tp === 5 ? src.at(tq - item.k * V.delay * item.fd) : Q;
@@ -256,12 +273,16 @@ function code() {
     '  if (tp == 2) { var s2 = sd0 * 3.117 + 1.1, ia = i * 1.731; m0 = [hs(ia + 0.5, s2), hs(ia + 17.63, s2), hs(ia + 34.76, s2), hs(ia + 51.89, s2), hs(ia + 69.02, s2)]; }',
     '  else if (tp == 3) { var sv = n > 1 ? k / (n - 1) : 0; m0 = [sv, sv, sv, sv, sv]; }',
     // v0.36 Audio: the amplitude layer linked on the effector (made by Convert Audio to Keyframes)
+    // v0.38 fields: the noise field's speed, the Image field's layer
+    '  var fsp = 0, FL = null; if (fo == 5) { try { fsp = ev("Field Speed", time) / 100; } catch (eFs) { fsp = 0; } } if (fo == 6) { try { FL = EL.effect("Field Layer")(1); } catch (eFl) { FL = null; } }',
     '  var AU = null, amx = 1; if (tp == 7) { try { AU = EL.effect("Audio Layer")(1); amx = Math.max(ev("Audio Max", time), 0.001); } catch (eAu) { AU = null; } }',
     // the effector's raw terms at time tq: [dx, dy, scale, rotate, fade] (features/grid/effectors.js termsAt)
     '  function TQ(tq) {',
     '    var IP = G.toComp([x + jx, y + jy + dy, z], tq), L0 = sub(EL.fromComp([IP[0], IP[1]], tq), EL.anchorPoint.valueAtTime(tq)), lx = L0[0], ly = L0[1];',
     '    var sz = Math.max(ev("Size", tq), 0.001), sf = Math.min(Math.max(ev("Softness", tq) / 100, 0), 1), w;',
-    '    if (fo == 4) { w = 1; } else if (fo == 2) { w = sm(Math.min(Math.max(0.5 - lx / sz, 0), 1)); } else {',
+    '    if (fo == 4) { w = 1; } else if (fo == 5) { var nu = (vn(lx / sz + sd0 * 13.7, ly / sz + fsp * tq) + 1) / 2, hf = Math.max(sf, 0.001) / 2; w = sm(Math.min(Math.max((nu - 0.5 + hf) / (2 * hf), 0), 1)); }',
+    '    else if (fo == 6) { w = 0; if (FL) { var smp = FL.sampleImage(FL.fromComp([IP[0], IP[1]], tq), [2, 2], true, tq); w = Math.min(Math.max((0.2126 * smp[0] + 0.7152 * smp[1] + 0.0722 * smp[2]) * smp[3], 0), 1); } }',
+    '    else if (fo == 2) { w = sm(Math.min(Math.max(0.5 - lx / sz, 0), 1)); } else {',
     '      var dE = fo == 3 ? Math.max(Math.abs(lx), Math.abs(ly)) : Math.sqrt(lx * lx + ly * ly), inr = sz * (1 - sf);',
     '      w = dE <= inr ? 1 : (dE >= sz ? 0 : sm((sz - dE) / Math.max(sz - inr, 0.001)));',
     '    }',
@@ -315,14 +336,14 @@ function paletteColour(mode, pal, i, n, seed) {
   if (md === 3) { const u = hs(i * 1.731 + 0.5, seed * 3.117 + 1.1) * 0.5 + 0.5, j = Math.min(3, Math.floor(u * 4)); return mixC(pal[j], pal[j], 0); }
   return mixC(pal[i % 4], pal[i % 4], 0);
 }
-/** The colour after every effector's Colour Mix (in order). effs: [{ values, toLocal }]; cx, cy = the item's comp point. */
-function colourWithEffectors(base, effs, cx, cy) {
+/** The colour after every effector's Colour Mix (in order). effs: [{ values, toLocal, lumaAt? }]; cx, cy = the item's comp point; t = time (Noise Field). */
+function colourWithEffectors(base, effs, cx, cy, t = 0) {
   let col = base;
   for (const e of effs) {
     const mx = (e.values.colourMix || 0) / 100;
     if (mx <= 0) continue;
     const [lx, ly] = e.toLocal(cx, cy);
-    const a = Math.min(Math.max(weight(e.values, lx, ly) * mx, 0), 1);
+    const a = Math.min(Math.max(weight(e.values, lx, ly, { t, luma: e.lumaAt ? e.lumaAt(cx, cy, t) : 0 }) * mx, 0), 1);
     col = mixC(col, rgba(e.values.colour), a);
   }
   return col;
@@ -337,6 +358,7 @@ function colourCode(i, n, gridName) {
     'function sm(u) { return u * u * (3 - 2 * u); }',
     'function hs(a, b) { var s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return (s - Math.floor(s)) * 2 - 1; }',
     'function mx3(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, 1]; }',
+    'function vn(px, py) { var x0 = Math.floor(px), y0 = Math.floor(py), ux = sm(px - x0), uy = sm(py - y0), a = hs(x0, y0), b = hs(x0 + 1, y0), c2 = hs(x0, y0 + 1), d = hs(x0 + 1, y0 + 1); return a + (b - a) * ux + (c2 - a) * uy + (a - b - c2 + d) * ux * uy; }',
     `var i = ${i}, n = ${n};`,
     'var md = Math.round(c("Colour Mode")), P = [c("Colour 1"), c("Colour 2"), c("Colour 3"), c("Colour 4")], col;',
     'if (md == 2) { var t = n > 1 ? i / (n - 1) : 0, sv = t * 3, j = Math.min(Math.floor(sv), 2); col = mx3(P[j], P[j + 1], sv - j); }',
@@ -350,7 +372,11 @@ function colourCode(i, n, gridName) {
     '  if (mxv <= 0) { continue; }',
     '  var L0 = sub(EL.fromComp([IP[0], IP[1]]), EL.anchorPoint), lx = L0[0], ly = L0[1];',
     '  var fo = Math.round(EL.effect("Falloff")(1).value), sz = Math.max(EL.effect("Size")(1).value, 0.001), sf = Math.min(Math.max(EL.effect("Softness")(1).value / 100, 0), 1), w;',
-    '  if (fo == 4) { w = 1; } else if (fo == 2) { w = sm(Math.min(Math.max(0.5 - lx / sz, 0), 1)); } else {',
+    '  if (fo == 4) { w = 1; }',
+    // v0.38 fields (same maths as the moves; read now)
+    '  else if (fo == 5) { var fsp = 0, sd0 = 0; try { fsp = EL.effect("Field Speed")(1).value / 100; sd0 = EL.effect("Seed")(1).value; } catch (eF5) { } var nu = (vn(lx / sz + sd0 * 13.7, ly / sz + fsp * time) + 1) / 2, hf = Math.max(sf, 0.001) / 2; w = sm(Math.min(Math.max((nu - 0.5 + hf) / (2 * hf), 0), 1)); }',
+    '  else if (fo == 6) { w = 0; var FL = null; try { FL = EL.effect("Field Layer")(1); } catch (eF6) { FL = null; } if (FL) { var smp = FL.sampleImage(FL.fromComp([IP[0], IP[1]]), [2, 2], true, time); w = Math.min(Math.max((0.2126 * smp[0] + 0.7152 * smp[1] + 0.0722 * smp[2]) * smp[3], 0), 1); } }',
+    '  else if (fo == 2) { w = sm(Math.min(Math.max(0.5 - lx / sz, 0), 1)); } else {',
     '    var dE = fo == 3 ? Math.max(Math.abs(lx), Math.abs(ly)) : Math.sqrt(lx * lx + ly * ly), inr = sz * (1 - sf);',
     '    w = dE <= inr ? 1 : (dE >= sz ? 0 : sm((sz - dE) / Math.max(sz - inr, 0.001)));',
     '  }',
@@ -363,5 +389,5 @@ function colourCode(i, n, gridName) {
 }
 
 module.exports = { TYPES, FALLOFFS, SLOTS, NAME, CONTROLS, KEY, defaults, valuesOf, rgba, weight, amounts, apply, localFn, vnoise, hs, PR, code,
-  SPRING, stepResponse, springWindow, termsAt, springTerms, applyAt, wrap180,
+  SPRING, stepResponse, springWindow, termsAt, springTerms, applyAt, wrap180, luma,
   COLOUR_MODES, COLOUR_CONTROLS, COLOUR_FX, COLOUR_TAG, paletteColour, colourWithEffectors, colourCode };

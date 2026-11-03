@@ -167,6 +167,10 @@ See `docs/features/STUDIO_v0.4.md`.
 - `grid.build`: `splitText` (none / words / letters) → host `text.split` before anything else (pieces become the items) and `text.unsplit` on restore / failure; Points auto-clones `paths.find().points − 1`; Path / Points auto-pick the one selected shape; In Place null anchor = position; In Place read-back = `layers.bounds` before vs after.
 - Host `text.split` / `text.unsplit` (`host/ops/text.jsx`): temporary measuring duplicate (removed in finally), start-justified substring rects shifted to the source justification, pieces = duplicates without animators, named and centred; source `enabled = false`.
 
+## 6o. Field Effectors (v0.38.0)
+- `effectors.js`: FALLOFFS 5 Noise Field / 6 Image; `weight(e, lx, ly, { t, luma })`; `termsAt` passes time + `src.lumaAt`; CONTROLS gain Field Layer (layer) / Field Speed. `code()` hoists `fsp` / `FL` and samples `FL.sampleImage(FL.fromComp(IP, tq), [2, 2], true, tq)`; `colourCode` mirrors both at the current time.
+- `grid.effector`: `fieldLayer` (picked from the selection: the one selected layer that is not the grid, its items or MOE's) / `fieldSpeed`; verify reads the Field Layer link back. Mock: a Layer Control's layer gets `sampleImage` too.
+
 ## 6j. Cloner + Effectors (v0.33.0)
 - `features/grid/effectors.js`: pure reference (`weight`, `amounts`, `apply`, `localFn`) + `code()` (the same maths as expression text). `grid/expressions.js buildAll` tags `· v3`, adds slots *Effector 2 / 3* to the grid controls, skips the legacy effector when slot 1 holds a MOE Effector; `factsOf(code)` reads an item's facts back for in-place upgrades.
 - `features/grid/effectorTool.js` (`grid.effector`): null + 15 controls (`effects.ensure` / `effects.setMenu`), first free slot (`props.values` on the grid null's layer controls), upgrade v2 items, sweep / delay keys, read-back; restore unlinks the slot and removes only `MOE Effector …`.

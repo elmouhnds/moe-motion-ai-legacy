@@ -45,13 +45,16 @@ const effector = {
   group: 'Grid',
   name: 'Effector',
   description: 'Add a MOE Effector to a grid or cloner: a null that moves, scales, turns or fades the items near it — Plain, Random, Step, Noise or Delay, with a Sphere, Linear, Box or Everywhere falloff. Spring makes the items follow it with overshoot (or a smooth Inertia lag). Target turns the items to face the null; Audio drives the moves from a soundtrack. Move, rotate or scale the null to animate it; up to three per grid.',
-  keywords: ['effector', 'mograph', 'cloner', 'falloff', 'field', 'random', 'step', 'noise', 'delay', 'wave', 'reveal', 'proximity', 'mcloner', 'c4d', 'spring', 'inertia', 'bounce', 'jelly', 'overshoot', 'lag', 'target', 'look at', 'aim', 'face', 'audio', 'music', 'beat', 'sound', 'equalizer'],
+  keywords: ['effector', 'mograph', 'cloner', 'falloff', 'field', 'random', 'step', 'noise', 'delay', 'wave', 'reveal', 'proximity', 'mcloner', 'c4d', 'spring', 'inertia', 'bounce', 'jelly', 'overshoot', 'lag', 'target', 'look at', 'aim', 'face', 'audio', 'music', 'beat', 'sound', 'equalizer', 'field', 'noise field', 'image', 'luma', 'map', 'logo'],
   icon: 'target',
   params: {
     type: { type: 'enum', label: 'Type', default: 'plain', options: TYPE_OPTIONS, description: EF.TYPES.map((t) => `${t.label}: ${t.hint}`).join(' · ') },
-    falloff: { type: 'enum', label: 'Falloff', default: 'sphere', options: FALLOFF_OPTIONS, description: 'Where it acts: around the null (Sphere / Box), on one side of its edge (Linear — move it to sweep), or on every item' },
-    size: { type: 'number', label: 'Size', min: 0, max: 10000, step: 1, default: 0, unit: 'px', description: '0 = about a third of the grid', showIf: (a) => a.falloff !== 'all' },
-    softness: { type: 'number', label: 'Softness', min: 0, max: 100, step: 1, default: 50, unit: '%', showIf: (a) => a.falloff === 'sphere' || a.falloff === 'box' },
+    falloff: { type: 'enum', label: 'Falloff', default: 'sphere', options: FALLOFF_OPTIONS, description: 'Where it acts: around the null (Sphere / Box), on one side of its edge (Linear — move it to sweep), on every item, in the patches of a moving Noise Field, or as bright as a layer under each item (Image)' },
+    size: { type: 'number', label: 'Size', min: 0, max: 10000, step: 1, default: 0, unit: 'px', description: '0 = about a third of the grid · Noise Field: the size of a patch', showIf: (a) => a.falloff !== 'all' && a.falloff !== 'image' },
+    softness: { type: 'number', label: 'Softness', min: 0, max: 100, step: 1, default: 50, unit: '%', description: 'Noise Field: 0 = hard patches, 100 = smooth', showIf: (a) => a.falloff === 'sphere' || a.falloff === 'box' || a.falloff === 'noise' },
+    // v0.38 Field falloffs
+    fieldSpeed: { type: 'number', label: 'Field speed', min: -1000, max: 1000, step: 1, default: 50, description: 'How fast the noise field drifts (0 = still; move the null to slide it)', showIf: (a) => a.falloff === 'noise' },
+    fieldLayer: { type: 'layer', label: 'Field layer', description: 'The layer whose brightness under each item is the weight — a logo, a gradient, a video (select it with the grid and it is picked)', showIf: (a) => a.falloff === 'image' },
     strength: { type: 'number', label: 'Strength', min: -200, max: 200, step: 1, default: 100, unit: '%' },
     invert: { type: 'boolean', label: 'Invert', default: false, advanced: true, description: 'Act outside the falloff instead of inside' },
     moveX: { type: 'number', label: 'Move X', min: -5000, max: 5000, step: 1, default: 0, unit: 'px' },
@@ -68,7 +71,7 @@ const effector = {
     spring: { type: 'number', label: 'Spring', min: 0, max: 200, step: 1, default: 0, unit: '%', description: '0 = the items follow the effector at once · 100 = they follow through a damped spring (overshoot and settle) — v0.35' },
     frequency: { type: 'number', label: 'Frequency', min: 0, max: 10, step: 0.1, default: 2.5, unit: 'Hz', description: 'Bounces per second · 0 = Inertia (a smooth lag, no overshoot)', showIf: (a) => a.spring > 0 },
     decay: { type: 'number', label: 'Decay', min: 2, max: 30, step: 0.5, default: 5, description: 'How fast it settles — higher = shorter', showIf: (a) => a.spring > 0 },
-    sweep: { type: 'boolean', label: 'Sweep across', default: false, description: 'Keyframe the effector travelling across the grid in 2 s (Sphere / Box / Linear — or a Target the items follow)', showIf: (a) => a.falloff !== 'all' || a.type === 'target' },
+    sweep: { type: 'boolean', label: 'Sweep across', default: false, description: 'Keyframe the effector travelling across the grid in 2 s (Sphere / Box / Linear / Noise Field — or a Target the items follow)', showIf: (a) => (a.falloff !== 'all' && a.falloff !== 'image') || a.type === 'target' },
     audioLayerId: { type: 'integer', label: 'Sound layer', min: 0, max: 1e9, default: 0, hidden: true, description: '0 = the first layer with audio in the comp (not in the grid)' },
     gridId: { type: 'integer', label: 'Grid', min: 0, max: 1e9, default: 0, hidden: true }
   },
@@ -82,6 +85,12 @@ const effector = {
 
   prepare(args, ctx) {
     const grid = gridFor(ctx, args);
+    // v0.38 Image field: no Field layer chosen — the one other selected layer (not the grid, its items or a MOE layer) is it
+    if (grid && args.falloff === 'image' && !args.fieldLayer) {
+      const others = (ctx.layers || []).filter((l) => l.index !== grid.index && l.parentIndex !== grid.index && !/^MOE /.test(l.name));
+      if (others.length === 1) args = Object.assign({}, args, { fieldLayer: others[0].index });
+    }
+    if (grid && args.falloff === 'image' && !args.fieldLayer) return { ok: false, error: 'Choose the Field layer — or select it together with the grid (a logo, a gradient or a video: its brightness drives the effector)' };
     if (!grid) return { ok: false, error: 'Select a MOE Grid (its null or one of its items) — or build one with Clone / Arrange first' };
     const name = nextName(ctx);
     const t = EF.TYPES.find((x) => x.id === args.type), f = EF.FALLOFFS.find((x) => x.id === args.falloff);
@@ -89,10 +98,10 @@ const effector = {
     if (!moves.length && args.type !== 'target') return { ok: false, error: 'Give the effector something to do: Move, Scale, Rotate, Fade or Colour' };
     if (args.type === 'target') moves.unshift(`the items turn to face ${name}${args.rotate ? ` (aim offset ${args.rotate}°)` : ''}`);
     return {
-      ok: true, grid, name,
+      ok: true, grid, name, fieldLayer: args.fieldLayer || 0,
       preview: {
         summary: `${name}: ${t.label} · ${f.label} on ${grid.name}`,
-        items: [moves.join(' · '), args.type === 'audio' ? 'Reads the loudness of the first layer with sound (After Effects’ Convert Audio to Keyframes → a MOE Audio layer at the bottom)' : args.type === 'delay' ? `${args.delay} frames later per item — keyframe the effector's moves` : t.hint, args.spring > 0 ? (args.frequency > 0.01 ? `Spring ${args.spring} %: ${args.frequency} Hz, decay ${args.decay} — the items overshoot and settle` : `Inertia ${args.spring} %: decay ${args.decay} — the items lag and ease in`) : null, args.sweep ? 'Sweeps across the grid in 2 s (keyframed)' : 'Move, rotate or scale the null to animate it', 'Every control stays live on the null (Effect Controls)'].filter(Boolean)
+        items: [moves.join(' · '), ...(args.falloff === 'image' ? [`Weight = the brightness of ${((ctx.compLayers || []).find((l) => l.index === args.fieldLayer) || {}).name || 'the Field layer'} under each item`] : args.falloff === 'noise' ? ['Weight = a noise field drifting through the grid (Size = patch size)'] : []), args.type === 'audio' ? 'Reads the loudness of the first layer with sound (After Effects’ Convert Audio to Keyframes → a MOE Audio layer at the bottom)' : args.type === 'delay' ? `${args.delay} frames later per item — keyframe the effector's moves` : t.hint, args.spring > 0 ? (args.frequency > 0.01 ? `Spring ${args.spring} %: ${args.frequency} Hz, decay ${args.decay} — the items overshoot and settle` : `Inertia ${args.spring} %: decay ${args.decay} — the items lag and ease in`) : null, args.sweep ? 'Sweeps across the grid in 2 s (keyframed)' : 'Move, rotate or scale the null to animate it', 'Every control stays live on the null (Effect Controls)'].filter(Boolean)
       }
     };
   },
@@ -125,7 +134,13 @@ const effector = {
     const values = EF.valuesOf(Object.assign({}, args, { size, invert: !!args.invert }, audio ? { audioMax: Math.max(audio.max, 0.001) } : {}));
     const start = args.sweep ? [Math.round(gv[0] - ext - size / 2), Math.round(gv[1])] : [Math.round(gv[0]), Math.round(gv[1])];
     const created = await host.call('layers.createNull', { compId: comp.id, name: prepared.name, position: start, anchor: [0, 0], label: 2, threeD: false, undoLabel: 'MOE: Effector' });
-    if (audio) { const d0 = await host.call('layers.describe', { compId: comp.id }); values.audioLayer = (d0.layers.find((l) => l.id === audio.layerId) || {}).index || 0; }
+    // layer controls take indices — read them after the null was added
+    const fieldId = prepared.fieldLayer ? ((ctx.compLayers || []).find((l) => l.index === prepared.fieldLayer) || {}).id : null;
+    if (audio || fieldId) {
+      const d0 = await host.call('layers.describe', { compId: comp.id });
+      if (audio) values.audioLayer = (d0.layers.find((l) => l.id === audio.layerId) || {}).index || 0;
+      if (fieldId) values.fieldLayer = (d0.layers.find((l) => l.id === fieldId) || {}).index || 0;
+    }
     const controls = await host.call('effects.ensure', { compId: comp.id, label: 'MOE: Effector Controls', layers: [{ layer: { layerId: created.layerId }, items: controlItems(values) }] });
     await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Effector Type', items: EF.TYPES.map((t) => t.menu), value: values.type });
     await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Falloff', items: EF.FALLOFFS.map((f) => f.menu), value: values.falloff });
@@ -167,8 +182,8 @@ const effector = {
     // 6. read back: every item still evaluates (no expression error), at the sweep's middle when there is one
     const at = args.sweep ? comp.time + 1 : comp.time;
     const read = await host.call('props.values', { compId: comp.id, time: at, items: kids.map((l) => ({ address: { layerId: l.id, matchNames: POS } })) });
-    const slotRead = await host.call('props.values', { compId: comp.id, time: comp.time, items: [{ address: ctlAddr(grid.id, slot, 'layer') }].concat(audio ? [{ address: ctlAddr(created.layerId, 'Audio Layer', 'layer') }] : []) });
-    return { audio, audioIndex: values.audioLayer || 0, name: prepared.name, effectorId: created.layerId, effIndex, grid: { id: grid.id, name: grid.name }, slot, slotBefore: slotsNow.items[freeAt].error ? null : (slotsNow.items[freeAt].value || 0), controls, linked, set, keys, delayKeys, read, slotRead, items: kids.length };
+    const slotRead = await host.call('props.values', { compId: comp.id, time: comp.time, items: [{ address: ctlAddr(grid.id, slot, 'layer') }].concat(audio ? [{ address: ctlAddr(created.layerId, 'Audio Layer', 'layer') }] : []).concat(fieldId ? [{ address: ctlAddr(created.layerId, 'Field Layer', 'layer') }] : []) });
+    return { audio, audioIndex: values.audioLayer || 0, field: fieldId ? { index: values.fieldLayer, name: ((ctx.compLayers || []).find((l) => l.id === fieldId) || {}).name } : null, name: prepared.name, effectorId: created.layerId, effIndex, grid: { id: grid.id, name: grid.name }, slot, slotBefore: slotsNow.items[freeAt].error ? null : (slotsNow.items[freeAt].value || 0), controls, linked, set, keys, delayKeys, read, slotRead, items: kids.length };
   },
 
   verify({ result }) {
@@ -182,6 +197,10 @@ const effector = {
     if (result.audio) {
       const linkedAudio = result.slotRead.items[1] && result.slotRead.items[1].value === result.audioIndex && result.audioIndex > 0;
       checks.push({ ok: linkedAudio && result.audio.max > 0, label: 'Audio', detail: !linkedAudio ? 'the amplitude layer is not linked' : result.audio.max > 0 ? `${result.audio.created ? 'Converted' : 'Reused'} ${result.audio.source} (loudest ${Math.round(result.audio.max * 100) / 100}, ${result.audio.keys} keys)` : `${result.audio.source} is silent — nothing to follow` });
+    }
+    if (result.field) {
+      const fr = result.slotRead.items[result.slotRead.items.length - 1];
+      checks.push({ ok: !!fr && fr.value === result.field.index && result.field.index > 0, label: 'Field', detail: `${result.name} reads the brightness of ${result.field.name}` });
     }
     if (result.keys) checks.push({ ok: result.keys.items[0].written.length === 2, label: 'Sweep', detail: 'travels across the grid in 2 s' });
     if (result.delayKeys) checks.push({ ok: result.delayKeys.items.every((it) => it.written.length === 2), label: 'Delay', detail: `${result.delayKeys.items.length} move(s) keyframed to rest in 0.6 s — each item plays it later` });

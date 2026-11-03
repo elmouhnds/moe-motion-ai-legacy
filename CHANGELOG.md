@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.38.0] — 2026-11-03 — Field Effectors
+Next advanced tool after the Object & Text Cloner. Details: `docs/features/FIELD_EFFECTORS.md`.
+### Added
+- **Noise Field** falloff: a value noise drifting through the grid decides who an effector reaches (Size = patch size, Softness = edge, Field Speed = drift, Seed; moving / turning / scaling the null moves the field). Tiles **Noise Grow**, **Noise Flicker**.
+- **Image** falloff: the brightness of a layer under each item (`sampleImage`, Rec. 709 luma × alpha) is its weight; the Field Layer is picked from the selection. Tiles **Image Grow**, **Image Reveal**.
+- Both work with every effector Type, Spring and the Clone Colour tint.
+### Changed
+- Effectors mode: 20 tiles (five full rows). Effector nulls gain Field Layer / Field Speed (older effectors never reach these falloffs).
+### Tests
+- `tests/field.effector.test.js` (4): Noise Field mock = reference at three times, drift, hard edge; Image from a gradient layer = reference, brighter → bigger, colour tint follows; refusal; tiles. **Mock / preview, not After Effects.**
+
 ## [0.37.0] — 2026-11-02 — Object Cloner & Text Cloner
 Next advanced tools after Target & Audio. Details: `docs/features/OBJECT_TEXT_CLONER.md`.
 ### Added

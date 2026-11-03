@@ -92,6 +92,11 @@ const LAYOUT = [
   T('efLook', 'Look Near', 'grid.effector', { type: 'target', falloff: 'sphere', size: 0, softness: 70, scale: 20, spring: 100, frequency: 2.5, decay: 5, sweep: true }, { k: 'eff', type: 'target', falloff: 'sphere', scale: 20, spring: 100, frequency: 2.5, decay: 5 }, ['Effectors']),
   T('efBeat', 'Beat Pulse', 'grid.effector', { type: 'audio', falloff: 'all', scale: 60, delay: 0 }, { k: 'eff', type: 'audio', falloff: 'all', scale: 30, delay: 0 }, ['Effectors']),
   T('efBeatWave', 'Beat Wave', 'grid.effector', { type: 'audio', falloff: 'all', moveY: -60, scale: 20, delay: 3 }, { k: 'eff', type: 'audio', falloff: 'all', moveY: -18, scale: 20, delay: 3 }, ['Effectors']),
+  // v0.38 Field falloffs: a drifting Noise Field, and the brightness of a layer (Image — select it with the grid)
+  T('efField', 'Noise Grow', 'grid.effector', { type: 'plain', falloff: 'noise', size: 0, softness: 50, scale: 70, fieldSpeed: 50 }, { k: 'eff', type: 'plain', falloff: 'noise', scale: 35, softness: 50, fieldSpeed: 50 }, ['Effectors']),
+  T('efFlicker', 'Noise Flicker', 'grid.effector', { type: 'plain', falloff: 'noise', size: 0, softness: 0, scale: 0, fade: 100, fieldSpeed: 200 }, { k: 'eff', type: 'plain', falloff: 'noise', softness: 0, fade: 100, fieldSpeed: 200 }, ['Effectors']),
+  T('efImage', 'Image Grow', 'grid.effector', { type: 'plain', falloff: 'image', scale: 100 }, { k: 'eff', type: 'plain', falloff: 'image', scale: 45 }, ['Effectors']),
+  T('efImageReveal', 'Image Reveal', 'grid.effector', { type: 'plain', falloff: 'image', invert: true, scale: -100 }, { k: 'eff', type: 'plain', falloff: 'image', invert: true, scale: -100 }, ['Effectors']),
   T('g12', '12 Columns', 'grid.guides', { columns: 12, rows: 1, gutterX: 24, marginX: 96, marginY: 72 }, { k: 'guides', c: 12, r: 1 }, ['Guides']),
   T('thirds', 'Thirds', 'grid.guides', { columns: 3, rows: 3, gutterX: 0, gutterY: 0, marginX: 0, marginY: 0 }, { k: 'guides', c: 3, r: 3 }, ['Guides']),
   T('safe', 'Safe Area', 'grid.guides', { columns: 1, rows: 1, marginX: 96, marginY: 54, gutterX: 0, gutterY: 0, center: true }, { k: 'guides', c: 1, r: 1, safe: true }, ['Guides']),
