@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Live Preview** (v0.39.0): every Effector's settings show a live preview — drag the null and the clones answer with the same maths After Effects runs (Spring, Target, fields, colour), on a sample grid or your own (docs/features/LIVE_PREVIEW.md).
+
 **Field Effectors** (v0.38.0): two new falloffs — a drifting Noise Field, and Image (the brightness of a logo, gradient or video under each clone is its weight) — for every effector type, with Spring and colour (docs/features/FIELD_EFFECTORS.md).
 
 **Object & Text Cloner** (v0.37.0): Clone on Points puts one copy on each point of a shape (Points layout, Point Offset live); Text Cloner splits a title into one layer per word or letter exactly where it was (In Place layout, Arabic by words), so Effectors, colours and Build animate the words (docs/features/OBJECT_TEXT_CLONER.md).

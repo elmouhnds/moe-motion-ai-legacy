@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.44 — Live Preview ✅ (v0.39.0)
+- Drag-the-null preview for every Effector (same maths as AE), Points / In Place in the Grid Builder preview.
+- Next: the self-test inside After Effects (Diagnostics › Check in After Effects) — real-host numbers for v0.33–v0.39.
+
 ## M1.43 — Field Effectors ✅ (v0.38.0)
 - Noise Field and Image falloffs on every effector; tiles Noise Grow, Noise Flicker, Image Grow, Image Reveal.
 - Next (same direction): Clone Trails (each clone echoes the one before) · Bake a grid to keyframes for heavy scenes.

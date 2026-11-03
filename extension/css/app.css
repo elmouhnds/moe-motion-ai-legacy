@@ -333,6 +333,10 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 /* ---------- layout / grid previews ---------- */
 .grid-canvas { display: block; width: 100%; height: 170px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-sunken); }
 .grid-canvas.short { height: 120px; }
+/* v0.39 Live Preview: the effector null is dragged on this canvas */
+.grid-canvas.live { height: 220px; cursor: grab; touch-action: none; }
+.grid-canvas.live:active { cursor: grabbing; }
+.btn.ghost.on { color: var(--accent); background: var(--accent-soft); }
 /* v0.9 Ease Curve editor + anchor picker */
 .curve-canvas { display: block; width: 100%; height: 250px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-raised, transparent); touch-action: none; cursor: grab; }
 .curve-canvas:active { cursor: grabbing; }

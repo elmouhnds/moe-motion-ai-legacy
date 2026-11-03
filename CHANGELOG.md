@@ -2,6 +2,18 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.39.0] — 2026-11-03 — Live Preview for Effectors
+Chosen by the owner before the in-After-Effects self-test. Details: `docs/features/LIVE_PREVIEW.md`.
+### Added
+- **Live Preview** in every Effector's Inspector: a sample grid (or your own — *Use my grid* reads it once) and the null you drag with the mouse; items answer with the same maths as the expressions (`features/grid/sim.js` → `effectors.applyAt`): falloff overlay, Spring / Inertia from the recorded drag path, Target arrows, Delay replay, Noise / Image fields, colour tint. *Sweep* and *Reset*; Audio and Image use labelled stand-ins.
+- Grid Builder preview draws **Points** (sample star) and **In Place** (sample words / letters) with the real layout maths.
+### Fixed (found by the new tests and the button audit)
+- A click in the preview slid the null from its last point instead of jumping there.
+- *Use my grid* read the items' positions before their expressions — now the evaluated positions (`props.values`).
+- Sweep and Reset gave no visible feedback (the audit's 2 dead clicks): the preview label says what the null does, Sweep is an on / off switch, Reset stops it and is disabled at rest.
+### Tests
+- `tests/cloner.preview.test.js` (4): still null = `applyAt` for four falloffs / types, a jump overshoots and settles (Inertia trails), bounded history, sweep / grab, own-grid sizing, wiring. Browser: the preview was dragged in the panel preview (0 JS errors).
+
 ## [0.38.0] — 2026-11-03 — Field Effectors
 Next advanced tool after the Object & Text Cloner. Details: `docs/features/FIELD_EFFECTORS.md`.
 ### Added

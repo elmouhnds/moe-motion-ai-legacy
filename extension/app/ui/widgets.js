@@ -11,6 +11,7 @@ const GT = require('../../features/grid/tools');
 const AT = require('../../features/adapt/tools');
 const BZ = require('../../features/curves/bezier');
 const TM = require('../../features/transform/math');
+const CP = require('./clonerPreview');
 
 /* ---------- shared canvas loop (stops when canvases unmount) ---------- */
 const live = new Set();
@@ -81,7 +82,11 @@ function frameIn(W, H, cw, ch, pad = 10) {
 function gridPreview(args, setArgs, { h, ctx }) {
   if (!ctx || !ctx.comp) return null;
   const items = (ctx.layers || []).filter((l) => !GT.GRID_NAME.test(l.name) && !['camera', 'light'].includes(l.type) && l.index !== args.pathLayer && l.index !== args.effector);
-  const n = Math.max(items.length, 2) < 3 ? 12 : items.length;
+  // v0.39: Points previews on a sample star, In Place (Text Cloner) on sample words — the real layout maths
+  const demo = CP.demoInputs(args, ctx.comp.width, ctx.comp.height);
+  // Points: items sized from the gap between the shape's points (so the shape stays readable)
+  const pointCell = demo.vertices ? 0.45 * Math.min(...demo.vertices.map((v, j) => { const q = demo.vertices[(j + 1) % demo.vertices.length]; return Math.hypot(q[0] - v[0], q[1] - v[1]); })) : 0;
+  const n = demo.homes ? demo.homes.length : demo.vertices && items.length < 2 ? demo.vertices.length : Math.max(items.length, 2) < 3 ? 12 : items.length;
   const maxW = Math.min(Math.max(...items.map((l) => l.width || 160), 160), ctx.comp.width / 3);
   const maxH = Math.min(Math.max(...items.map((l) => l.height || 160), 160), ctx.comp.height / 3);
   const auto = L.autoParams({ n, maxW: Math.min(maxW, 220), maxH: Math.min(maxH, 220), compW: ctx.comp.width, compH: ctx.comp.height });
@@ -112,14 +117,15 @@ function gridPreview(args, setArgs, { h, ctx }) {
     const build = args.animateIn ? Math.min(100, Math.max(0, (tt - 0.3) / bd * 100)) : 100;
     const mt = tt - 0.3 - bd - 0.3;
     const morph = !morphTo || now === null ? 0 : Math.min(100, Math.max(0, mt < md + 0.3 ? mt / md * 100 : (2 * md + 0.3 - mt) / md * 100));
-    const pp = Object.assign({}, p, { build, path, morph });
+    const pp = Object.assign({}, p, { build, path, morph }, demo.vertices ? { vertices: demo.vertices } : {}, demo.homes ? { homes: demo.homes } : {});
+    if (demo.vertices) { c.strokeStyle = dim; c.beginPath(); demo.vertices.forEach((v, j) => (j ? c.lineTo : c.moveTo).call(c, cx + v[0] * f.k, cy + v[1] * f.k)); c.closePath(); c.stroke(); }
     const pts = L.placeMorph(pp, n).map((it) => Object.assign(it, { m: L.modifiers(pp, it, n) }));
     const is3D = args.mode === 'sphere' || morphTo === 'sphere';
     if (is3D) pts.sort((a, b) => a.z - b.z);
     for (const it of pts) {
       const depth = is3D ? (it.z / Math.max(p.radius, 1) + 1) / 2 : 1;
       const s = it.m.scale * (is3D ? 0.55 + 0.45 * (1 - depth) : 1);
-      const w = auto.spacingX / 1.25 * f.k * s, hh = auto.spacingY / 1.25 * f.k * s;
+      const w = (demo.widths ? demo.widths[it.i] : pointCell || auto.spacingX / 1.25) * f.k * s, hh = (demo.height || pointCell || auto.spacingY / 1.25) * f.k * s;
       const x = cx + (it.x + it.m.dx) * f.k, y = cy + (it.y + it.m.dy) * f.k;
       c.save(); c.translate(x, y); c.rotate((it.m.rot * Math.PI) / 180);
       c.globalAlpha = Math.max(0, Math.min(1, it.m.opacity)) * (is3D ? 0.35 + 0.65 * (1 - depth) : 1);
@@ -130,7 +136,8 @@ function gridPreview(args, setArgs, { h, ctx }) {
     c.globalAlpha = 1; c.fillStyle = accent; c.beginPath(); c.arc(cx, cy, 2.5, 0, Math.PI * 2); c.fill();
   });
   const target = morphTo ? L.MODES.find((m) => m.id === morphTo) : null;
-  return h('div', { class: 'field stack' }, h('label', {}, `Preview · ${n} item${n > 1 ? 's' : ''}${target ? ` · morphs to ${target.label}` : ''}${items.length < 2 ? ' (select layers)' : ''}`), canvas);
+  const what = demo.homes ? ` · sample ${args.splitText === 'letters' ? 'letters' : 'words'}` : demo.vertices && items.length < 2 ? ' on a sample shape' : '';
+  return h('div', { class: 'field stack' }, h('label', {}, `Preview · ${n} item${n > 1 ? 's' : ''}${what}${target ? ` · morphs to ${target.label}` : ''}${items.length < 2 && !demo.homes && !demo.vertices ? ' (select layers)' : ''}`), canvas);
 }
 
 /* ---------- Layout guides preview ---------- */
@@ -481,6 +488,8 @@ const body = {
   'motion.easeCurve': curveEditor,
   'transform.anchor': anchorPicker,
   'grid.build': gridPreview,
+  // v0.39 Live Preview: drag the null, see the items answer (features/grid/sim.js)
+  'grid.effector': (a, s, env) => CP.effectorPreview(a, s, env, { animated, prep, css }),
   'grid.guides': guidesPreview,
   'grid.placeInCells': guidesPreview,
   'adapt.resize': adaptPreview,

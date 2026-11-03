@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['target', 'Live Preview', 'Every Effector now has a live preview in its settings: drag the null with the mouse and the items answer at once — Spring overshoot, Target aim, noise field, colour — with the same maths After Effects runs. Try it on a sample grid or on your own (Use my grid), then apply once.'],
   ['xWiggle', 'Field Effectors', 'Two new falloffs. Noise Field: a drifting noise decides which clones an effector reaches (Noise Grow, Noise Flicker). Image: the brightness of a layer under each clone is its weight — a logo, a gradient or a video (Image Grow, Image Reveal; select the layer with the grid).'],
   ['type', 'Object & Text Cloner', 'Clone on Points puts one copy on every point of a shape (select the layer and the shape). Text Cloner splits a title into one layer per word (or letter) exactly where it was — Arabic by words — so Effectors, colours and Build animate the words. New layouts: Points and In Place.'],
   ['target', 'Target & Audio Effectors', 'Two new effector types. Target: the clones turn to face the effector null as you move it (Aim, Look Near). Audio: the moves follow your soundtrack — MOE runs After Effects’ Convert Audio to Keyframes for you and each clone plays the beat a little later (Beat Pulse, Beat Wave).'],
