@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.46 — Clone Trails ✅ (v0.41.0)
+- Echo / Ghost / Spin Trail: copies replaying an animated layer's motion later, live on one null; a Self-Test check.
+- Next: the owner's Self-Test report from AE 2025 → fixes; then Bake (grid / trail → keyframes for heavy scenes).
+
 ## M1.45 — Self-Test inside After Effects ✅ (v0.40.0)
 - Diagnostics › Check in After Effects: 14 checks with real-host numbers, cleanup in finally, copyable report.
 - Next: the owner runs it in AE 2025 and sends the report → fix whatever it shows; then Clone Trails / Bake.

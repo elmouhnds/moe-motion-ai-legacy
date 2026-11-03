@@ -31,6 +31,7 @@ The report is plain JSON: **Copy report** and send it. The last report is kept i
 | points | a solid with an elliptical mask + Points | 4 items on the ellipse's 4 points within 0.6 px |
 | text | `addText("Make it move")` centred + Text Cloner (words) | the words' outline matches the title within 3 px; neighbours do not overlap (> 1 px) |
 | textArabic | the same with `مرحبا بالعالم`, right to left, right-justified | the same (this is where real glyph bounds matter) |
+| trail | a keyframed solid + Clone Trail (4 copies) | every copy's position / scale / rotation / opacity = `trail.js` at 2 times (within 0.05); undo removes copies + null |
 | speed | 48 clones, a plain effector vs Spring | info: milliseconds to read all 48 scales |
 
 ## Safety

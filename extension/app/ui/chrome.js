@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['copy', 'Clone Trails', 'Select one animated layer and pick Echo, Ghost or Spin Trail: copies replay its motion a little later, fading, shrinking or turning copy by copy — live, no keyframes on the copies. Delay, Fade, Scale Step and Rotate Step sit on one MOE Trail null.'],
   ['check', 'Check in After Effects', 'Diagnostics › Check in After Effects runs MOE’s advanced tools in a temporary comp, compares what After Effects computed with MOE’s own maths (px, %, °, colour, ms), undoes everything and removes the comp. Copy the report and send it — it shows exactly what works on your machine.'],
   ['target', 'Live Preview', 'Every Effector now has a live preview in its settings: drag the null with the mouse and the items answer at once — Spring overshoot, Target aim, noise field, colour — with the same maths After Effects runs. Try it on a sample grid or on your own (Use my grid), then apply once.'],
   ['xWiggle', 'Field Effectors', 'Two new falloffs. Noise Field: a drifting noise decides which clones an effector reaches (Noise Grow, Noise Flicker). Image: the brightness of a layer under each clone is its weight — a logo, a gradient or a video (Image Grow, Image Reveal; select the layer with the grid).'],

@@ -73,6 +73,10 @@ const LAYOUT = [
   T('clonePoints', 'Clone on Points', 'grid.build', { mode: 'points', orient: '2' }, { k: 'grid', mode: 'points', clone: true }, ['Clone']),
   T('textWords', 'Text Cloner', 'grid.build', { mode: 'keep', splitText: 'words' }, { k: 'grid', mode: 'keep', text: 'words' }, ['Clone']),
   T('textLetters', 'Letters Rise', 'grid.build', { mode: 'keep', splitText: 'letters', animateIn: true, buildStyle: '3', buildOrder: '1', stagger: 70 }, { k: 'grid', mode: 'keep', text: 'letters', build: true, bs: 3 }, ['Clone']),
+  // v0.41 Clone Trails: copies that replay the selected layer's own motion later (features/grid/trail.js)
+  T('trailEcho', 'Echo Trail', 'grid.trail', { copies: 8, delay: 2, fade: 12, scaleStep: 0, rotateStep: 0 }, { k: 'trail', copies: 8, delay: 2, fade: 12, scaleStep: 0 }, ['Clone']),
+  T('trailGhost', 'Ghost Trail', 'grid.trail', { copies: 12, delay: 1, fade: 8, scaleStep: 4, rotateStep: 0 }, { k: 'trail', copies: 12, delay: 1, fade: 8, scaleStep: 4 }, ['Clone']),
+  T('trailSpin', 'Spin Trail', 'grid.trail', { copies: 8, delay: 3, fade: 15, scaleStep: 0, rotateStep: 15 }, { k: 'trail', copies: 8, delay: 3, fade: 15, scaleStep: 0, rotateStep: 15 }, ['Clone']),
   // v0.33 Effectors: a null that changes the grid's items near it (select the grid null or an item)
   T('efPush', 'Grow', 'grid.effector', { type: 'plain', falloff: 'sphere', scale: 80, softness: 70, sweep: true }, { k: 'eff', type: 'plain', falloff: 'sphere', scale: 80 }, ['Effectors']),
   T('efReveal', 'Reveal', 'grid.effector', { type: 'plain', falloff: 'linear', scale: -100, invert: true, sweep: true }, { k: 'eff', type: 'plain', falloff: 'linear', scale: -100, invert: true }, ['Effectors']),

@@ -13,6 +13,7 @@
 const EF = require('../grid/effectors');
 const L = require('../grid/layouts');
 const X = require('../grid/expressions');
+const TR = require('../grid/trail');
 
 const POS = ['ADBE Transform Group', 'ADBE Position'];
 const SCALE = ['ADBE Transform Group', 'ADBE Scale'];
@@ -36,6 +37,7 @@ const CHECKS = [
   { id: 'points', label: 'Points: clones on a mask\'s 4 points', run: checkPoints },
   { id: 'text', label: 'Text Cloner: words where the title was', run: (T) => checkText(T, { text: 'Make it move', justification: 'center' }) },
   { id: 'textArabic', label: 'Text Cloner: Arabic words (right to left)', run: (T) => checkText(T, { text: 'مرحبا بالعالم', justification: 'right', rtl: true }) },
+  { id: 'trail', label: 'Clone Trail: copies = the source, later', run: checkTrail },
   { id: 'speed', label: 'Speed: 48 clones, Spring on vs off', run: checkSpeed }
 ];
 
@@ -246,6 +248,30 @@ async function checkText(T, { text, justification, rtl }) {
   await T.host.call('layers.remove', { compId: T.compId, layerIds: [tl.layerId], onlyNamed: 'ST ' });
   const worst = maxOf(edge);
   return { status: worst <= 3 && overlap <= 1 && u.back ? 'pass' : 'fail', detail: `${pieces.length} words; their outline vs the title: worst edge ${r2(worst)} px (3 allowed), overlap ${r2(overlap)} px · undo ${u.back ? 'brought the title back' : 'left layers'}`, numbers: { words: pieces.length, edgesPx: edge.map(r2), overlapPx: r2(overlap) } };
+}
+
+async function checkTrail(T) {
+  const before = (await T.layerIds()).length;
+  const ball = await T.host.call('layers.createSolid', { compId: T.compId, name: 'ST Ball', color: [0.9, 0.4, 0.2] });
+  await T.host.call('keys.write', { compId: T.compId, label: 'MOE: Self-Test Keys', items: [{ address: { layerId: ball.layerId, matchNames: POS }, keys: [{ t: 0, v: [200, 500] }, { t: 2, v: [1400, 300] }] }] });
+  await T.select([ball.layerId]);
+  const c = { delay: 3, fade: 20, scaleStep: 10, rotateStep: 15 };
+  const r = await T.run('grid.trail', Object.assign({ copies: 4 }, c));
+  const copies = r.result.copies, errs = [];
+  for (const t of [0.6, 1.2]) {
+    const got = await T.values(t, copies.flatMap((id) => [{ layerId: id, matchNames: POS }, { layerId: id, matchNames: SCALE }, { layerId: id, matchNames: ROT }, { layerId: id, matchNames: ['ADBE Transform Group', 'ADBE Opacity'] }]));
+    for (let i = 0; i < copies.length; i++) {
+      const ts = TR.timeOf(i + 1, c.delay, t, 1 / 25);
+      const s = (await T.values(ts, [{ layerId: ball.layerId, matchNames: POS }, { layerId: ball.layerId, matchNames: SCALE }, { layerId: ball.layerId, matchNames: ROT }, { layerId: ball.layerId, matchNames: ['ADBE Transform Group', 'ADBE Opacity'] }])).map((x) => x.value);
+      const want = TR.at(i + 1, () => ({ position: s[0], scale: s[1], rotation: s[2], opacity: s[3] }), c, t, 1 / 25);
+      const g = got.slice(i * 4, i * 4 + 4).map((x) => x.value);
+      errs.push(Math.hypot(g[0][0] - want.position[0], g[0][1] - want.position[1]), Math.abs(g[1][0] - want.scale[0]), Math.abs(g[2] - want.rotation), Math.abs(g[3] - want.opacity));
+    }
+  }
+  const u = await T.undo(r, before + 1);
+  await T.host.call('layers.remove', { compId: T.compId, layerIds: [ball.layerId], onlyNamed: 'ST ' });
+  const worst = maxOf(errs);
+  return { status: worst < 0.05 && u.back ? 'pass' : 'fail', detail: `${copies.length} copies at 2 times (position, scale, rotation, opacity), worst ${r2(worst)} from trail.js · undo ${u.back ? 'removed the copies and the null' : 'left layers'}`, numbers: { worst: r2(worst), copies: copies.length } };
 }
 
 async function checkSpeed(T) {

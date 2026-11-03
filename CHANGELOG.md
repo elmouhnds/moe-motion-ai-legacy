@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.41.0] — 2026-11-03 — Clone Trails
+Details: `docs/features/CLONE_TRAILS.md`.
+### Added
+- **Clone Trail** (`grid.trail`): N copies of the selected animated layer below it, each replaying its motion k × Delay frames later — Fade, Scale Step and Rotate Step per copy, live on a `MOE Trail N` null; copies are unparented and follow the source's comp point (`toComp`), expressions tagged `// MOE Trail`. Tiles **Echo Trail**, **Ghost Trail**, **Spin Trail** (Clone mode: 15).
+- Self-Test: a **trail** check (15 checks).
+- Search: Arabic words for trail / echo / ghost.
+### Tests
+- `tests/clone.trail.test.js` (4): a 5-copy trail = `trail.js` at 4 times, live Delay, restore; parented source; refusals; tiles. **Mock / preview, not After Effects** — the Self-Test checks it in AE.
+
 ## [0.40.0] — 2026-11-03 — Self-Test inside After Effects
 Details: `docs/features/SELF_TEST.md`.
 ### Added

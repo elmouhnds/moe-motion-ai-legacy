@@ -179,6 +179,10 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6r. Clone Trails (v0.41.0)
+- `features/grid/trail.js`: `at(k, src, c, now, fd)` reference + `code(k, source, null)` (four expressions, tag `// MOE Trail`). `features/grid/trailTool.js` (`grid.trail`): null + controls, `layers.clone` plain copies, `layers.setParent(null)`, `expressions.set`, read-back of every copy vs the source read at its own time.
+- Self-Test `checkTrail`.
+
 ## 6j. Cloner + Effectors (v0.33.0)
 - `features/grid/effectors.js`: pure reference (`weight`, `amounts`, `apply`, `localFn`) + `code()` (the same maths as expression text). `grid/expressions.js buildAll` tags `· v3`, adds slots *Effector 2 / 3* to the grid controls, skips the legacy effector when slot 1 holds a MOE Effector; `factsOf(code)` reads an item's facts back for in-place upgrades.
 - `features/grid/effectorTool.js` (`grid.effector`): null + 15 controls (`effects.ensure` / `effects.setMenu`), first free slot (`props.values` on the grid null's layer controls), upgrade v2 items, sweep / delay keys, read-back; restore unlinks the slot and removes only `MOE Effector …`.

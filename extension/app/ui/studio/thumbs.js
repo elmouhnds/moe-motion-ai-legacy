@@ -127,6 +127,20 @@ const DRAW = {
     c.globalAlpha = 1;
     if (th.mode === 'points') { c.strokeStyle = ACC; c.lineWidth = 1.2; c.setLineDash([3, 3]); c.beginPath(); p.vertices.forEach((v, j) => (j ? c.lineTo : c.moveTo).call(c, W / 2 + v[0] * k, H / 2 + v[1] * k)); c.closePath(); c.stroke(); c.setLineDash([]); }
   },
+  /* v0.41: a square moving along a curve, its copies replaying the motion later (features/grid/trail.js) */
+  trail(c, W, H, th, t) {
+    const TR = require('../../../features/grid/trail');
+    const k = Math.min(W / 260, H / 160), fd = 1 / 30;
+    const src = (tt) => { const u = ((tt % 3) + 3) % 3 / 3, a = u * Math.PI * 2; return { position: [W / 2 + Math.cos(a) * 80 * k, H / 2 + Math.sin(a * 2) * 34 * k], scale: [100, 100], rotation: a * 57.3, opacity: 100 }; };
+    const cc = { delay: th.delay * 2, fade: th.fade, scaleStep: th.scaleStep || 0, rotateStep: th.rotateStep || 0 };
+    for (let i = th.copies; i >= 0; i--) {
+      const s = TR.at(i, src, cc, t, fd), sz = 22 * k * s.scale[0] / 100;
+      c.save(); c.translate(s.position[0], s.position[1]); c.rotate((th.rotateStep ? s.rotation : 0) * Math.PI / 180);
+      c.globalAlpha = Math.max(0, Math.min(1, s.opacity / 100)); c.fillStyle = i === 0 ? ACC : FG;
+      rrect(c, -sz / 2, -sz / 2, sz, sz, 3); c.fill(); c.restore();
+    }
+    c.globalAlpha = 1;
+  },
   /* v0.33: an effector passing over a grid of cards (the real maths: features/grid/effectors.js) */
   eff(c, W, H, th, t) {
     const EF = require('../../../features/grid/effectors');
