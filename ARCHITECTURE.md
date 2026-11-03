@@ -179,6 +179,11 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6u. Find Fast (v0.44.0)
+- `features/select/tools.js`: `select.layers` (by type / label / search / same / all / invert / none; `typesOf` footage, cameraLight) + `select.step` (selector back / forward). Quick actions `sel*` and `t_*` in `quick/bar.js`; group `ae-layer/select` (rows) first; MOE menu `Select` renders that group's rows (`menu.group`).
+- `app/ui/palette.js`: `actionItems` (every Quick action, one click) and Arabic queries through `workflow.keywordsOf`.
+- `tests/findfast.test.js`: buried-tool and shared-name rules.
+
 ## 6t. Smart Arrange (v0.43.0)
 - `app/ui/arrange.js` (pure): `FAMILIES`, `group`, `runs`, `splits`, `pack(items, cols)`. Used by `layoutBento.js` (`placed()` sets `--s4` / `--s2` spans, `pairTile`), `layoutAE.js` (`runsOf` → `.fam` boxes in `.flow` rows), `layouts.js` (MOE menus), `layoutGlass.js` (NOW).
 - `tools/audit-arrange.js`: on-screen rules (family / group / hole / cut) for Bento, Glass, MOE, menus, Kit × 340–900 px → `dev/audit/arrange.json`.

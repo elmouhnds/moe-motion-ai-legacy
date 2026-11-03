@@ -33,7 +33,7 @@ const PRESETS = [
   P({ id: 'wide-focus', name: 'Wide Focus', group: 'Blur', basedOn: 4, duration: 1.4, easeHigh: 60, props: { opacity: 0, tracking: 120, blur: [24, 24] } }),
   P({ id: 'char-fade', name: 'Char Fade', group: 'Fade', basedOn: 2, duration: 1.0, props: { opacity: 0 } }),
   P({ id: 'random-fade', name: 'Random Fade', group: 'Fade', basedOn: 2, randomize: 1, duration: 1.2, props: { opacity: 0, blur: [8, 8] } }),
-  P({ id: 'typewriter', name: 'Typewriter', group: 'Type', basedOn: 1, shape: 1, smoothness: 0, easeHigh: 0, easeLow: 0, duration: 1.5, ease: { first: [0.1, 0.1], last: [0.1, 0.1] }, props: { opacity: 0 } }),
+  P({ id: 'typewriter', name: 'Type On', group: 'Type', basedOn: 1, shape: 1, smoothness: 0, easeHigh: 0, easeLow: 0, duration: 1.5, ease: { first: [0.1, 0.1], last: [0.1, 0.1] }, props: { opacity: 0 } }),
   P({ id: 'zoom-in', name: 'Zoom In', group: 'Scale', basedOn: 2, duration: 1.0, props: { scale: [0, 0, 100], opacity: 0 } }),
   P({ id: 'zoom-out-in', name: 'Zoom Down', group: 'Scale', basedOn: 3, duration: 1.1, props: { scale: [220, 220, 100], opacity: 0, blur: [12, 12] } }),
   P({ id: 'spin-in', name: 'Spin In', group: 'Rotate', basedOn: 2, duration: 1.2, props: { rotation: 180, scale: [0, 0, 100], opacity: 0 } }),

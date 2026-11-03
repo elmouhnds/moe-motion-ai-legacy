@@ -1428,3 +1428,7 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .qt-grid.rows .qt-tile .svg-i { flex: 0 0 auto; width: 15px; height: 15px; }
 .qt-grid.rows .qt-pin { top: 50%; right: 5px; transform: translateY(-50%); }
 .app:not(.has-actbar) .view { padding-bottom: 64px; } /* v0.32: the last control of a page can scroll clear of the floating Assistant button */
+/* v0.44 (FIND_FAST): the MOE Select menu = the Select group's labelled rows; label on top, the buttons get the width */
+.lay-rows { display: grid; gap: 2px; }
+.lay-rows .ae-subrow { grid-template-columns: 1fr; gap: 3px; margin-top: 4px; }
+.lay-rows .ae-subrow:first-child { margin-top: 0; }

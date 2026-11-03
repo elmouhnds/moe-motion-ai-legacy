@@ -159,9 +159,11 @@ function groupTiles(app, t, g, kind, skipBlock) {
       entries.push({ el: tile(app, a, hero.includes(r) ? '2x1' : '1x1', t, r), w: hero.includes(r) ? 2 : 1, run: f ? `${g.id}:${f.name}` : undefined });
     });
     const links = (g.lead || []).concat(g.links || []).map(([id, label]) => ({ el: h('button', { class: 'bt b-2x1 bt-link', 'data-key': `l-${id}`, 'aria-label': label, onclick: () => app.go(id) }, icon((studio.byId(id) || {}).icon || 'chev', ''), h('span', { class: 'bt-l' }, label)), w: 2 }));
-    return [cap, ...placed([...entries, ...links,
+    // the same reading order as Classic: tiles, labelled rows, rare chips, then the link to the page
+    return [cap, ...placed([...entries,
+      ...(g.rows || []).map((rw) => ({ el: wide(`row-${g.id}-${rw[0]}`, AE.subRow(app, t, rw)), w: 'full' })),
       minorTiles.length ? { el: h('div', { class: 'b-4 b-chips', 'data-key': `minor-${g.id}` }, AR.runs(minorTiles.map(([r]) => r)).map((run) => { const btns = run.map((r) => { const a = A.resolve(r); return AE.actButton(app, a, () => AE.remember(app, t, r), 's'); }); return run.length > 1 ? h('span', { class: 'fam' }, btns) : btns[0]; })), w: 'full' } : null,
-      ...(g.rows || []).map((rw) => ({ el: wide(`row-${g.id}-${rw[0]}`, AE.subRow(app, t, rw)), w: 'full' }))], g.id)];
+      ...links], g.id)];
   }
   if (g.kind === 'links') return [cap, ...placed((g.links || []).map(([id, label]) => { const sec = studio.byId(id); return { el: h('button', { class: 'bt b-2x1 bt-link', 'data-key': `l-${id}`, 'aria-label': `Open ${sec ? sec.label : label}`, onclick: () => app.go(id) }, icon((sec && sec.icon) || 'chev', 'lg'), h('span', { class: 'bt-l' }, sec ? sec.label : label), h('span', { class: 'bt-s' }, label)), w: 2 }; }), g.id)];
   return [cap, wide(`w-${g.id}`, AE.groupBody(app, g, t))];

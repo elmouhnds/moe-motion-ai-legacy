@@ -93,7 +93,7 @@ const LAYOUT = [
   T('efBounce', 'Bounce Up', 'grid.effector', { type: 'plain', falloff: 'linear', moveY: -80, scale: 0, spring: 100, frequency: 2, decay: 4, sweep: true }, { k: 'eff', type: 'plain', falloff: 'linear', moveY: -8, spring: 100, frequency: 2, decay: 4 }, ['Effectors']),
   // v0.36 Target (the items face the effector) and Audio (the moves follow a soundtrack's loudness)
   T('efAim', 'Aim', 'grid.effector', { type: 'target', falloff: 'all', scale: 0, sweep: true }, { k: 'eff', type: 'target', falloff: 'all' }, ['Effectors']),
-  T('efLook', 'Look Near', 'grid.effector', { type: 'target', falloff: 'sphere', size: 0, softness: 70, scale: 20, spring: 100, frequency: 2.5, decay: 5, sweep: true }, { k: 'eff', type: 'target', falloff: 'sphere', scale: 20, spring: 100, frequency: 2.5, decay: 5 }, ['Effectors']),
+  T('efLook', 'Face Near', 'grid.effector', { type: 'target', falloff: 'sphere', size: 0, softness: 70, scale: 20, spring: 100, frequency: 2.5, decay: 5, sweep: true }, { k: 'eff', type: 'target', falloff: 'sphere', scale: 20, spring: 100, frequency: 2.5, decay: 5 }, ['Effectors']),
   T('efBeat', 'Beat Pulse', 'grid.effector', { type: 'audio', falloff: 'all', scale: 60, delay: 0 }, { k: 'eff', type: 'audio', falloff: 'all', scale: 30, delay: 0 }, ['Effectors']),
   T('efBeatWave', 'Beat Wave', 'grid.effector', { type: 'audio', falloff: 'all', moveY: -60, scale: 20, delay: 3 }, { k: 'eff', type: 'audio', falloff: 'all', moveY: -18, scale: 20, delay: 3 }, ['Effectors']),
   // v0.38 Field falloffs: a drifting Noise Field, and the brightness of a layer (Image — select it with the grid)

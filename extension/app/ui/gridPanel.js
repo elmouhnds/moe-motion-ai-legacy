@@ -74,8 +74,16 @@ function render(app) {
     const entry = e;
     load(app, ctx, grid).then((d) => {
       entry.data = d; app.scheduleRender ? app.scheduleRender() : app.render();
-      // first time this grid's panel appears (e.g. right after Build Grid): bring it into view once
-      if (!shown.has(grid.id)) { shown.add(grid.id); setTimeout(() => { const el = document.querySelector(`[data-key="gp-${grid.id}"]`); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 60); }
+      // first time this grid's panel appears right after Build Grid: bring it into view once — but only while that
+      // click is still "now" (≤ 4 s from its start, nothing pressed since). A late answer from a slow host must never move the
+      // page under a pointer that is aiming at something else (v0.44, found by npm run stress).
+      if (!shown.has(grid.id)) {
+        shown.add(grid.id);
+        const st = app.lastStart, now = Date.now();
+        const fresh = st && st.toolId === 'grid.build' && now - st.at <= 4000 && !(app.lastPressAt && app.lastPressAt > st.at);
+        // instant, not smooth: a smooth scroll is cut off by the next render (the shell restores scrollTop) and jiggles
+        if (fresh) setTimeout(() => { const el = document.querySelector(`[data-key="gp-${grid.id}"]`); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' }); }, 60);
+      }
     }, (err) => { entry.error = err.message; app.render(); });
   }
   const d = e.data;

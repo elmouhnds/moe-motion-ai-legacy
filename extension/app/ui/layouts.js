@@ -61,14 +61,17 @@ function header(app, title, extra, menuBtn) {
 }
 /* ---------- MOE: menus by object ---------- */
 const MENUS = [
+  // v0.44 (FIND_FAST): Select has its own menu — the everyday filters one click away
+  // shown as the Select group's own labelled rows (Type · Same · Comp), so the menu reads like the group
+  { id: 'Select', icon: 'cursor', group: ['ae-layer', 'select'], refs: ['quick:selText', 'quick:selShape', 'quick:selSolid', 'quick:selNull', 'quick:selPrecomp', 'quick:selFootage', 'quick:selAdjust', 'quick:selCamLight', 'quick:selSameType', 'quick:selSameSource', 'quick:selSameLabel', 'quick:selSameName', 'quick:selAll', 'quick:selInvert', 'quick:selNone', 'quick:selBack'], open: [['select', 'Search, labels, comps, project']] },
   { id: 'Keys', icon: 'easeCurve', refs: ['quick:k_easy', 'quick:k_linear', 'quick:k_hold', 'quick:curveExpo', 'quick:curveBack', 'quick:reverse', 'quick:mirror', 'quick:clone', 'quick:k_stagger', 'quick:k_trimKeys', 'tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong'], open: [['kit', 'Ease panel']] },
-  { id: 'Layer', icon: 'layers', refs: ['quick:anchorC', 'quick:anchorB', 'quick:centerAnchor', 'quick:alignH', 'quick:alignV', 'quick:distH', 'quick:distV', 'quick:parentNull', 'quick:k_parent', 'quick:flipH', 'quick:flipV', 'quick:precompose', 'quick:separate', 'quick:k_excite', 'tile:expressions/x-wiggle', 'quick:k_delay', 'quick:k_stare', 'quick:k_trash'], open: [['animate', 'Motion presets'], ['kit', 'Toolbox']] },
+  { id: 'Layer', icon: 'layers', refs: ['quick:anchorTL', 'quick:anchorC', 'quick:anchorB', 'quick:alignH', 'quick:alignV', 'quick:distH', 'quick:distV', 'quick:parentNull', 'quick:k_parent', 'quick:flipH', 'quick:flipV', 'quick:precompose', 'quick:separate', 'quick:k_excite', 'tile:expressions/x-wiggle', 'quick:k_delay', 'quick:k_stare', 'quick:k_trash'], open: [['animate', 'Motion presets'], ['kit', 'Toolbox']] },
   { id: 'Text', icon: 'type', refs: ['quick:typewriter', 'quick:counter', 'tile:animate/riseIn', 'tile:animate/cascadeIn', 'tile:animate/fadeIn', 'tile:animate/fadeOut'], open: [['text', 'Text section'], ['brand', 'Brand']] },
   { id: 'Shape', icon: 'shapes', refs: ['tile:animate/trimDraw', 'tile:animate/trimErase', 'tile:animate/trimTravel', 'tile:animate/trimBoth', 'quick:k_repeat', 'tile:expressions/x-wiggle', 'tile:animate/popIn', 'tile:animate/spinIn'], open: [['shapes', 'Shapes & Icons']] },
   { id: 'Comp', icon: 'layers', refs: ['quick:revealProject', 'quick:openPrecomp', 'quick:revealFolder', 'quick:dupComp', 'quick:purge', 'tile:layout/g12', 'tile:layout/safe', 'tile:layout/thirds'], open: [['deliver', 'Deliver']] },
   { id: 'Design', icon: 'palette', refs: [], open: [['shapes', 'Shapes & Icons'], ['backgrounds', 'Backgrounds'], ['looks', 'Looks & Glass'], ['brand', 'Brand']] },
   { id: 'Layout', icon: 'grid', refs: ['tile:layout/grid', 'tile:layout/ring', 'tile:layout/honey', 'tile:layout/spiral', 'tile:zoom/punch', 'tile:zoom/smooth'], open: [['layout', 'Layout & Grid'], ['zoom', 'Zoom & Focus'], ['deliver', 'Deliver']] },
-  { id: 'Finish', icon: 'layers', refs: [], open: [['compositing', 'Compositing'], ['select', 'Select'], ['quick', 'Quick Bar'], ['tools', 'My Tools']] },
+  { id: 'Finish', icon: 'layers', refs: [], open: [['compositing', 'Compositing'], ['quick', 'Quick Bar'], ['tools', 'My Tools']] },
   { id: 'AI', icon: 'spark', refs: ['cmd:copilot', 'cmd:search'], open: [['expressions', 'Expressions']] }
 ];
 /** Which menu the selection points to (it is only highlighted — nothing moves). */
@@ -81,7 +84,8 @@ function menuPopover(app, st) {
   return h('div', { class: 'overlay qb-overlay', onmousedown: (e) => { if (e.target.classList.contains('overlay')) close(); } },
     h('div', { class: 'lay-drop', role: 'menu', 'aria-label': `${m.id} tools`, style: Object.assign({ top: `${st.top}px`, maxWidth: `${Math.min(440, st.maxW)}px` }, st.right != null ? { right: `${st.right}px` } : { left: `${st.left}px` }), onclick: (e) => { if (e.target.closest && e.target.closest('button')) close(); } },
       // v0.43 (SMART_ARRANGE): families stay together and wrap as one unit (Flip H | Flip V, Align H | V …)
-      items.length ? h('div', { class: 'lay-acts flow' }, AR.runs(AR.group(m.refs).filter((r) => A.resolve(r))).map((run) => { const btns = run.map((r) => actBtn(app, A.resolve(r))); return run.length > 1 ? h('div', { class: 'fam', role: 'group', 'aria-label': AR.familyOf(run[0]).name, style: { '--n': String(run.length) } }, btns) : btns[0]; })) : null,
+      m.group ? (() => { const AE = require('./layoutAE'); const tab = AE.TABS.find((x) => x.id === m.group[0]); const g = tab && tab.groups.find((x) => x.id === m.group[1]); return g ? h('div', { class: 'lay-rows' }, (g.rows || []).map((rw) => AE.subRow(app, tab, rw))) : null; })()
+        : items.length ? h('div', { class: 'lay-acts flow' }, AR.runs(AR.group(m.refs).filter((r) => A.resolve(r))).map((run) => { const btns = run.map((r) => actBtn(app, A.resolve(r))); return run.length > 1 ? h('div', { class: 'fam', role: 'group', 'aria-label': AR.familyOf(run[0]).name, style: { '--n': String(run.length) } }, btns) : btns[0]; })) : null,
       h('div', { class: 'lay-drop-open' }, m.open.map(([id, label]) => h('button', { class: 'btn ghost sm', 'data-key': `o-${id}`, onclick: () => app.go(id) }, icon('chev', 'xs'), label)))));
 }
 

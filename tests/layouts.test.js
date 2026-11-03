@@ -110,7 +110,8 @@ test('Classic groups (v0.22): your order is saved per tab, survives new / unknow
   assert.ok(!ids.includes('align'));
   // moving back to the default order stores nothing
   data['ae-order'] = {};
-  AE.moveGroup(app, t, 'transform', 3); AE.moveGroup(app, t, 'transform', 1);
+  const ti = def.indexOf('transform');
+  AE.moveGroup(app, t, 'transform', ti + 1); AE.moveGroup(app, t, 'transform', ti);
   assert.equal(data['ae-order']['ae-layer'], undefined);
   AE.moveGroup(app, t, 'select', 0); AE.resetOrder(app, t);
   assert.deepEqual(AE.groupsOf(app, t).map((g) => g.id), def);

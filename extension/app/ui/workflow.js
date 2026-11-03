@@ -31,8 +31,8 @@ const STAGES = [
     title: 'Animate in / out, draw on, keyframes and loops, text — where most of the day goes',
     groups: [['ae-animate', 'in', 'core'], ['ae-keys', 'assist', 'core'], ['ae-animate', 'text', 'core'], ['ae-animate', 'expr', 'more']] },
   { id: 'st-arrange', label: 'Arrange', icon: 'alignCenter', fits: ['layers', 'shapesMany'],
-    title: 'Transform, parent and link, grids — putting layers where they belong (anchor and align: Motion Control)',
-    groups: [['ae-layer', 'transform', 'core'], ['ae-layer', 'parent', 'core'], ['ae-layer', 'arrange', 'core'], ['ae-comp', 'guides', 'more']] },
+    title: 'Select, transform, parent and link, grids — putting layers where they belong (anchor and align: Motion Control)',
+    groups: [['ae-layer', 'select', 'core'], ['ae-layer', 'transform', 'core'], ['ae-layer', 'parent', 'core'], ['ae-layer', 'arrange', 'core'], ['ae-comp', 'guides', 'more']] },
   { id: 'st-design', label: 'Design', icon: 'palette', fits: ['none'],
     title: 'Shapes and icons, backgrounds, looks and glass, the client brand',
     groups: [['ae-design', 'shapes', 'core'], ['ae-design', 'bg', 'core'], ['ae-design', 'looks', 'core'], ['ae-design', 'brand', 'core']] },
@@ -68,7 +68,7 @@ function stageOfView(view) {
 
 /* ---------- Everyday: the ten things a motion designer does all day (Quick Bar slots 1–10, Alt+1…0) ---------- */
 // Ordered by how often, not by menu: ease, curve, anchor, parent, pre-compose, sequence, loop, wiggle, reverse, duplicate.
-const EVERYDAY = ['k_easy', 'curveExpo', 'centerAnchor', 'parentNull', 'precompose', 'k_stagger', 'tile:expressions/x-loopCycle', 'tile:expressions/x-wiggle', 'reverse', 'dupComp'];
+const EVERYDAY = ['k_easy', 'curveExpo', 'anchorC', 'parentNull', 'precompose', 'k_stagger', 'tile:expressions/x-loopCycle', 'tile:expressions/x-wiggle', 'reverse', 'dupComp'];
 const SLOT_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
 /* ---------- Power tools: deep features that deserve a big card with an explanation ---------- */
@@ -230,7 +230,9 @@ const AR_WORDS = [
   [/زوم|تقريب/, 'zoom'], [/ماوس|كيرسر|كرسر|مؤشر/, 'cursor'], [/كروما|جرين ?سكرين|اخضر|أخضر|كيينج|كي ?اينج/, 'key'],
   [word('الوان|ألوان|لون|تلوين|جريدينج|جريد لون'), 'color'], [/مقاس|فورمات|ريلز|تيك ?توك|عمودي|ستوري|استوري/, 'deliver'], [/سيف|هوامش|منطقة آمنة|منطقه امنه/, 'safe'],
   [/دخول|ظهور|يدخل|يظهر/, 'in'], [/خروج|اختفاء|يخرج|يختفي/, 'out'], [word('فيد|فيد ان|فيد اوت|تلاشي'), 'fade'], [/يترسم|رسم|تريم|ستروك/, 'trim'],
-  [/ستاجر|تتابع|ورا بعض|واحد ورا/, 'stagger'], [/محاذاة|محاذاه|يصطف|الاين/, 'align'], [word('توزيع|وزع|وزعهم'), 'distribute'], [/عكس|ريفيرس/, 'reverse'],
+  [/ستاجر|تتابع|ورا بعض|واحد ورا/, 'stagger'], [/محاذاة|محاذاه|يصطف|الاين/, 'align'], [word('توزيع|وزع|وزعهم'), 'distribute'], [/عكس(?! ?(ال)?تحديد)|ريفيرس/, 'reverse'], [/(اعكس|عكس) ?(ال)?تحديد|انفرت/, 'invert'],
+  // v0.44 (FIND_FAST): select — whole words, so "حددت" in a sentence about something else does not trigger it
+  [word('حدد|حددلي|حددهم|تحديد|سيلكت|سلكت|سليكت|اختار|اختارلي|نقي'), 'select'], [word('كل التكستات|كل النصوص|التكستات|النصوص'), 'text'], [word('الشيبات|الاشكال|الأشكال'), 'shape'], [word('النلز|النل'), 'null'], [word('السوليد|السوليدز'), 'solid'], [word('اللابل|اللون|الليبل'), 'label'],
   [/ايكون|أيقون|ايقون|اشكال|أشكال/, 'icon'], [/وميض|يرمش|بلينك/, 'blink'], [/سكيل|يكبر|تكبير/, 'scale'], [word('لف|يلف|دوران|روتيشن'), 'rotation']
 ];
 const STOP = new Set(['the', 'a', 'an', 'to', 'it', 'this', 'that', 'these', 'those', 'and', 'or', 'of', 'on', 'in', 'for', 'with', 'make', 'do', 'how', 'can', 'i', 'my', 'me', 'please', 'add', 'selected', 'layer', 'layers', 'want', 'from', 'then', 'is', 'be', 'some', 'more', 'all', 'them', 'they']);

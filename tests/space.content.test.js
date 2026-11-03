@@ -20,13 +20,13 @@ function shown(g) {
   return [...new Set([...(g.refs || []), ...(g.minor || []).filter((r) => !(g.refs || []).includes(r)), ...(g.rows || []).flatMap(([, refs]) => refs), ...tiles])];
 }
 
-test('25 groups became 15: each tab holds its jobs once', () => {
+test('25 groups became 15 (+ Select in v0.44): each tab holds its jobs once', () => {
   const n = AE.TABS.reduce((k, t) => k + t.groups.length, 0);
-  assert.equal(n, 15);
+  assert.equal(n, 16);
   const ids = (tab) => AE.TABS.find((t) => t.id === tab).groups.map((g) => g.id);
   assert.deepEqual(ids('ae-keys'), ['assist']);
   assert.deepEqual(ids('ae-animate'), ['in', 'text', 'expr']);
-  assert.deepEqual(ids('ae-layer'), ['transform', 'parent', 'arrange']);
+  assert.deepEqual(ids('ae-layer'), ['select', 'transform', 'parent', 'arrange']);
   assert.deepEqual(ids('ae-effect'), ['keycolor', 'zoom']);
   assert.deepEqual(ids('ae-comp'), ['guides', 'project']);
 });

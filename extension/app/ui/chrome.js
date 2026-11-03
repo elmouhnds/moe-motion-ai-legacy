@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['cursor', 'Select, out front', 'Select has its own group first in Layer (and its own menu in MOE): Text · Shapes · Solids · Nulls · Pre-Comps · Footage · Adjustment · Cameras, Same type / source / label / name as the selected layer, All · Invert · None · Back — one click. The text animators are on Home too, Ctrl+K finds every button (also in Arabic), and look-alike names were cleaned up (Center Anchor is now Anchor → Centre, Clone Keys is Copy Keys).'],
   ['layers', 'Tools that go together, together', 'Flip Horizontal sits right next to Flip Vertical (one tile in Bento), Reverse · Mirror · Clone are one row, Align and Distribute come in pairs — in every style and at every panel width, and no tile drifts into another group any more.'],
   ['bake', 'Bake to Keyframes', 'Motion Kit › Bake: select a grid, cloner or trail null (or rigged layers) and its live expressions become plain keyframes over the work area — only the keys the motion needs. The comp gets lighter and plays anywhere without MOE; Restore brings the expressions back. Alt-click for a key on every frame.'],
   ['copy', 'Clone Trails', 'Select one animated layer and pick Echo, Ghost or Spin Trail: copies replay its motion a little later, fading, shrinking or turning copy by copy — live, no keyframes on the copies. Delay, Fade, Scale Step and Rotate Step sit on one MOE Trail null.'],
@@ -147,7 +148,7 @@ const WHATS_NEW = [
 
 const SHORTCUTS = [
   // v0.28: by distance — what you do all day first
-  [['Alt', '1…0'], 'Everyday: run the first ten Quick Bar buttons (Easy Ease, Out Expo, Center Anchor, Parent Null, Pre-compose, Stagger, Loop, Wiggle, Reverse, Dup Comp) — hold Alt to see the numbers'],
+  [['Alt', '1…0'], 'Everyday: run the first ten Quick Bar buttons (Easy Ease, Out Expo, Anchor → Centre, Parent Null, Pre-compose, Stagger, Loop, Wiggle, Reverse, Dup Comp) — hold Alt to see the numbers'],
   [['F4'], 'Repeat the last change on the current selection'],
   [['Q', 'hold'], 'Pie menu: point and release (tap Q to keep it open, 1–8 to choose)'],
   [['`'], 'Assistant: ask a question or describe a change (also Ctrl+Space; Esc closes)'],

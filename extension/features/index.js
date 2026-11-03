@@ -38,7 +38,7 @@ const TOOLS = [
   zoom.focus, zoom.follow, zoom.cursor,
   text.animate, text.removeAnimation,
   brand.applyColor, brand.applyFont, brand.extractPalette, brandSource.fromSource, brandAll.applyAll,
-  select.selectLayers,
+  select.selectLayers, select.selectStep,
   grid.build, grid.update, grid.items, grid.remove, grid.guides, grid.placeInCells, gridEffector.effector, gridColour.colour, gridTrail.trail, rigBake.bake,
   adapt.resize, adapt.suggest,
   exprQuick.quick, expr.apply, expr.validate, expr.inspect, expr.remove, assist,

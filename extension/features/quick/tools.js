@@ -15,7 +15,7 @@ const keyRestore = (items) => items.map((it) => ({ address: it.address, times: i
 /* ---------------- project ---------------- */
 
 const reveal = {
-  id: 'quick.reveal', version: '1.0.0', category: 'tools', group: 'Quick · Project', name: 'Reveal',
+  id: 'quick.reveal', version: '1.0.0', category: 'tools', group: 'Quick · Project', name: 'Reveal in Project / Folder',
   description: 'Reveal the selected layer’s source (or this comp) in the Project panel, open its folder on disk, or open a pre-comp.',
   keywords: ['reveal', 'project', 'folder', 'explorer', 'finder', 'source', 'open precomp'], icon: 'folder',
   params: { mode: { type: 'enum', label: 'Reveal', default: 'project', options: [{ value: 'project', label: 'In Project' }, { value: 'folder', label: 'Folder' }, { value: 'open', label: 'Open pre-comp' }] } },
@@ -128,7 +128,7 @@ const separate = {
 /* ---------------- properties & keys ---------------- */
 
 const selectSame = {
-  id: 'quick.selectSame', version: '1.0.0', category: 'tools', group: 'Quick · Keys', name: 'Select Same Property',
+  id: 'quick.selectSame', version: '1.0.0', category: 'tools', group: 'Quick · Keys', name: 'Same Property on Other Layers',
   description: 'Select the same property (e.g. Position, a Slider, Trim End) on the other selected layers — or on every layer in the comp.',
   keywords: ['select', 'same', 'matching', 'property', 'properties'], icon: 'selectSame',
   params: { scope: { type: 'enum', label: 'On', default: 'selected', options: [{ value: 'selected', label: 'Selected layers' }, { value: 'all', label: 'All layers' }] } },

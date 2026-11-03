@@ -191,9 +191,10 @@ const centerAnchor = {
   version: '1.0.0',
   category: 'motion',
   group: 'Proximity',
-  name: 'Center Anchor',
-  description: 'Move each layer’s anchor point to the centre of its content without moving the layer (distance is measured from the anchor).',
-  keywords: ['anchor', 'center', 'centre', 'pivot'],
+  name: 'Proximity · Anchor at Content Centre',
+  // v0.44: the everyday button is Anchor → Centre (transform.anchor, keeps keys / 3D / parents); this one stays for Proximity rigs
+  description: 'For Proximity rigs: move each layer’s anchor point to the centre of its content without moving the layer (distance is measured from the anchor). For everyday use: Anchor → Centre.',
+  keywords: ['proximity', 'anchor', 'pivot'],
   icon: 'target',
   params: {},
   requires: { comp: true, minLayers: 1 },

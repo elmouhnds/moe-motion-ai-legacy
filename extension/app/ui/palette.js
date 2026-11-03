@@ -47,8 +47,26 @@ function presetItems(app) {
   return out;
 }
 
+/** v0.44 (FIND_FAST): every one-click button (Quick actions: Select Text, Flip H, Bake…) is findable by its name. */
+function actionItems(app) {
+  const A = require('./actions');
+  const BAR = require('../../features/quick/bar');
+  return BAR.ACTIONS.map((x) => [x, A.resolve(`quick:${x.id}`)]).filter(([, a]) => a).map(([x, a]) => ({ kind: 'action', id: `act-${a.id}`, name: a.label, desc: `${x.group === 'Kit' ? 'Motion Kit' : x.group} · one click`, icon: a.icon, ws: x.group === 'Kit' ? 'kit' : String(x.group).toLowerCase(),
+    run: () => { const rd = a.ready(app); if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else a.run(app); } }));
+}
+
 function results(app, q) {
   const { nav, extra } = commands(app);
+  // Arabic: the same words the assistant understands ("حدد كل التكستات" → select · text) — every word must match
+  if (/[\u0600-\u06FF]/.test(String(q || ''))) {
+    const kws = require('./workflow').keywordsOf(q);
+    if (!kws.length) return [];
+    const pool = [...actionItems(app), ...presetItems(app), ...app.services.registry.search('').map((t) => ({ kind: 'tool', id: t.id, name: t.name, desc: t.description, icon: t.icon, ws: t.category, run: () => app.openTool(t) })), ...nav];
+    const hits = (x) => { const tx = `${x.name} ${x.desc}`.toLowerCase(); return kws.filter((k) => tx.includes(k)).length; };
+    const nameHits = (x) => kws.filter((k) => x.name.toLowerCase().includes(k)).length;
+    return pool.map((x, i) => ({ x, i, h: hits(x), n: nameHits(x) })).filter((o) => o.h === kws.length || o.n >= Math.min(2, kws.length))
+      .sort((a, b) => b.n - a.n || (a.x.kind === 'action' ? -1 : 0) - (b.x.kind === 'action' ? -1 : 0) || a.i - b.i).map((o) => o.x).slice(0, 40);
+  }
   const tools = app.services.registry.search(q).map((t) => ({ kind: 'tool', id: t.id, name: t.name, desc: t.description, icon: t.icon, ws: t.category, run: () => app.openTool(t) }));
   const recipes = app.services.recipes.list().filter((r) => !q || r.name.toLowerCase().includes(q.toLowerCase())).map((r) => ({ kind: 'recipe', id: r.id, name: r.name, desc: r.description || 'Saved tool', icon: 'tools', ws: 'saved', run: () => { app.go('tools'); app.toggleTool(r.id, true); } }));
   const ql = String(q || '').trim().toLowerCase();
@@ -56,7 +74,7 @@ function results(app, q) {
   if (!ql) return [...tools, ...recipes, ...extra, ...nav].slice(0, 40);
   // With a query: presets too, best matches first (name starts with > name contains > description).
   const score = (x) => { const n = x.name.toLowerCase(); return n === ql ? 4 : n.startsWith(ql) ? 3 : n.includes(ql) ? 2 : 1; };
-  const all = [...presetItems(app).filter(match), ...tools, ...recipes, ...extra.filter(match), ...nav.filter(match)];
+  const all = [...actionItems(app).filter(match), ...presetItems(app).filter(match), ...tools, ...recipes, ...extra.filter(match), ...nav.filter(match)];
   return all.map((x, i) => ({ x, i, s: score(x) })).sort((a, b) => b.s - a.s || a.i - b.i).map((o) => o.x).slice(0, 40);
 }
 
@@ -71,7 +89,7 @@ function open(app) {
     clear(list);
     if (!items.length) list.appendChild(h('div', { class: 'empty' }, 'No matches'));
     items.forEach((it, i) => list.appendChild(h('div', { class: 'pal-item', role: 'option', 'aria-selected': String(i === sel), onmouseenter: () => mark(i), onclick: (e) => choose(i, e.shiftKey) },
-      icon(it.icon || 'tools', 'sm'), h('span', { class: 'pn' }, it.name), h('span', { class: 'pd' }, it.desc), it.kind === 'preset' ? h('span', { class: 'pal-apply' }, icon('play', 'xs'), 'apply') : null, h('span', { class: 'ws' }, it.ws))));
+      icon(it.icon || 'tools', 'sm'), h('span', { class: 'pn' }, it.name), h('span', { class: 'pd' }, it.desc), it.kind === 'preset' || it.kind === 'action' ? h('span', { class: 'pal-apply' }, icon('play', 'xs'), 'apply') : null, h('span', { class: 'ws' }, it.ws))));
     const cur = list.children[sel];
     if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
   }
@@ -96,4 +114,4 @@ function open(app) {
   input.focus();
 }
 
-module.exports = { open, results };
+module.exports = { actionItems, open, results };

@@ -54,7 +54,7 @@ module.exports = {
   version: '1.0.0',
   category: 'compositing',
   group: 'Color',
-  name: 'Look from Words',
+  name: 'Grade from Words',
   description: 'Describe a look; Claude proposes Grade settings using the measured shot. Nothing changes until you apply.',
   keywords: ['ai', 'look', 'describe', 'claude', 'mood', 'cinematic', 'style', 'grade'],
   icon: 'spark',

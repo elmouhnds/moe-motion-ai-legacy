@@ -21,7 +21,7 @@ const animate = {
   icon: 'type',
   params: {
     presetId: { type: 'string', label: 'Preset', required: true, description: 'Preset id from the text library' },
-    duration: { type: 'number', label: 'Duration', min: 0.1, max: 10, step: 0.05, default: 0, unit: 's', description: '0 = preset duration' },
+    duration: { type: 'number', label: 'Duration', min: 0, max: 10, step: 0.05, default: 0, unit: 's', description: '0 = preset duration' }, // v0.44: min 0 — the default 0 (= preset) was refused by its own minimum
     distance: { type: 'number', label: 'Distance', min: 0, max: 300, step: 1, default: 100, unit: '%', description: 'Scales movement / tracking' },
     direction: { type: 'enum', label: 'Direction', default: 'preset', description: 'Where text comes from (slide presets)',
       options: [{ value: 'preset', label: 'Preset' }, { value: 'up', label: 'Below' }, { value: 'down', label: 'Above' }, { value: 'right', label: 'Left' }, { value: 'left', label: 'Right' }] },

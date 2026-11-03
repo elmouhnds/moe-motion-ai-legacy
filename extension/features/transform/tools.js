@@ -112,7 +112,7 @@ const align = {
 
 /* ---------------- clone ---------------- */
 const clone = {
-  id: 'transform.clone', version: '1.0.0', category: 'layout', group: 'Anchor & Align', name: 'Clone',
+  id: 'transform.clone', version: '1.0.0', category: 'layout', group: 'Anchor & Align', name: 'Static Copies',
   description: 'Make copies of one layer: around a ring or a fan (radial clone), in a row with offset / rotation / scale / fade steps, or in a grid. Copies are named "MOE Clone N · …".',
   keywords: ['clone', 'duplicate', 'copies', 'radial', 'ring', 'circle', 'array', 'repeat', 'repeater', 'motion 4'],
   icon: 'copy',

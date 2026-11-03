@@ -17,7 +17,7 @@ const FAMILIES = [
   ['Flip', ['quick:flipH', 'quick:flipV']],
   ['Align', ['quick:alignLeft', 'quick:alignH', 'quick:alignV', 'quick:compCentre']],
   ['Distribute', ['quick:distH', 'quick:distV']],
-  ['Anchor', ['quick:anchorTL', 'quick:anchorC', 'quick:anchorB', 'quick:centerAnchor']],
+  ['Anchor', ['quick:anchorTL', 'quick:anchorC', 'quick:anchorB']],
   ['Interpolation', ['quick:k_easy', 'quick:k_linear', 'quick:k_hold']],
   ['Curves', ['quick:curveExpo', 'quick:curveBack']],
   ['Copy keys', ['quick:reverse', 'quick:mirror', 'quick:clone']],

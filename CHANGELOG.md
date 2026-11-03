@@ -2,6 +2,22 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.44.0] — 2026-11-03 — Find Fast
+Details: `docs/features/FIND_FAST.md`.
+### Added
+- **Select out front**: a *Select* group first in the Layer tab / Arrange stage — Type (Text, Shapes, Solids, Nulls, Pre-Comps, Footage, Adjustment, Cam & Light) · Same (Type, Source, Label, Name) · Comp (All, Invert, None, Back) — and its own first menu in MOE. `select.layers` gains same / all / invert / none, footage and cameras & lights; new `select.step` (Back / Forward).
+- **Text animators one click**: In / Out rows of the everyday Arabic-safe presets + Remove.
+- **Ctrl+K**: every one-click button is a result; Arabic queries use the assistant's words.
+### Changed
+- Look-alike names: Center Anchor merged into Anchor → Centre (migrates); Select Same → Same Property; Clone Keys → Copy Keys; Repeat → Ring Copies (tool: Static Copies); Look Near → Face Near; Look from Words → Grade from Words; Reveal → Reveal in Project; text preset Typewriter → Type On.
+- Bento action groups read like Classic: tiles, labelled rows, chips, then the page link.
+### Fixed (found by the audits of this release)
+- `text.animate` refused its own default (Duration 0 = preset duration, but minimum 0.1) — every caller without a duration failed (new text buttons, Assistant / Copilot); minimum is now 0.
+- A failed button said only "failed": it now gives the errors, else the checks that failed (e.g. "Cam — skipped: camera").
+- After Build Grid, *Your grid* scrolled into view whenever the host answered — with a slow host seconds later, moving the page under a pointer aiming elsewhere (stress: Home 4–5/20 in some runs), and its smooth scroll was cut off by the next render. Now one instant scroll, only within 4 s of the build's start and only if nothing was pressed since.
+### Tests
+- `tests/findfast.test.js` (8); audit-arrange 84 screens, all 0. **Mock / preview, not After Effects.**
+
 ## [0.43.0] — 2026-11-03 — Smart Arrange
 Details: `docs/features/SMART_ARRANGE.md`.
 ### Fixed

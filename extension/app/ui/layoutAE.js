@@ -35,7 +35,7 @@ const TABS = [
       { id: 'assist', label: 'Keyframes & Loops', kind: 'acts', fits: ['keys'], open: true, hero: ['quick:k_stagger'], minor: ['quick:k_trimKeys', 'quick:selectSame', 'quick:k_bake'],
         refs: ['quick:k_stagger', 'quick:reverse', 'quick:mirror', 'quick:clone', 'quick:k_trimKeys', 'quick:selectSame', 'quick:k_bake'],
         // v0.43: Reverse / Mirror / Clone are one family — one labelled row, like Loop
-        rows: [['Keys', ['quick:reverse', 'quick:mirror', 'quick:clone'], ['Reverse', 'Mirror', 'Clone']], ['Loop', ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'], ['Cycle', 'Ping-Pong', 'Offset', 'In + Out']]] }
+        rows: [['Keys', ['quick:reverse', 'quick:mirror', 'quick:clone'], ['Reverse', 'Mirror', 'Copy']], ['Loop', ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'], ['Cycle', 'Ping-Pong', 'Offset', 'In + Out']]] }
     ] },
   { id: 'ae-animate', label: 'Animate', title: 'Animate in / out, draw on, text, expressions (Animation menu)', fits: ['layer', 'layers', 'text', 'shapes', 'shapesMany'], owns: ['animate', 'text', 'expressions', 'kit'],
     groups: [
@@ -43,14 +43,27 @@ const TABS = [
       { id: 'in', label: 'Animate In / Out', kind: 'animate', section: 'animate', more: 'animate', fits: ['layer', 'layers', 'shapes', 'shapesMany'], open: true,
         modes: [['in', 'In', ['inRL', 'inBT', 'fadeIn', 'popIn', 'riseIn', 'cascadeIn']], ['out', 'Out', ['outRL', 'outTB', 'fadeOut', 'popOut', 'scaleOut', 'spinOut']], ['draw', 'Draw On', ['trimDraw', 'trimErase', 'trimTravel', 'trimBoth']]],
         ids: ['inRL', 'inBT', 'fadeIn', 'popIn', 'riseIn', 'cascadeIn', 'outRL', 'outTB', 'fadeOut', 'popOut', 'scaleOut', 'spinOut', 'trimDraw', 'trimErase', 'trimTravel', 'trimBoth'] },
-      { id: 'text', label: 'Text Animators', kind: 'acts', fits: ['text'], refs: ['quick:typewriter', 'quick:counter'], links: [['text', 'All text animators']] },
+      // v0.44 (FIND_FAST): the everyday In / Out animators of the Text page, one click (Arabic-safe), like Loop
+      { id: 'text', label: 'Text Animators', kind: 'acts', fits: ['text'], refs: ['quick:typewriter', 'quick:counter', 'quick:t_inUp', 'quick:t_rise', 'quick:t_blurIn', 'quick:t_trackIn', 'quick:t_outDown', 'quick:t_sink', 'quick:t_blurOut', 'quick:t_trackOut', 'quick:t_remove'],
+        minor: ['quick:t_remove'],
+        rows: [['In', ['quick:t_inUp', 'quick:t_rise', 'quick:t_blurIn', 'quick:t_trackIn'], ['Up', 'Soft Rise', 'Blur Focus', 'Tracking']], ['Out', ['quick:t_outDown', 'quick:t_sink', 'quick:t_blurOut', 'quick:t_trackOut'], ['Down', 'Soft Sink', 'Blur Away', 'Tracking']]],
+        links: [['text', 'All 27 text animators · Arabic · .ffx']] },
       // Motion Rigs merged in: Excite = Inertia and Jump = Bounce Land with the numbers on sliders (the "Sliders" switch)
       { id: 'expr', label: 'Expressions', kind: 'tiles', section: 'expressions', live: true, ids: ['x-wiggle', 'x-float', 'x-pendulum', 'x-pulse', 'x-blink', 'x-timeRotate', 'x-inertia', 'x-bounceBack', 'x-orbit'], more: 'expressions', links: [['expressions', 'Expression editor']], fits: [] }
     ] },
-  { id: 'ae-layer', label: 'Layer', title: 'Transform, parent & link, arrange (Layer menu) — anchor and align are in Motion Control', fits: ['layer', 'layers', 'shapes', 'shapesMany', 'text'], owns: ['layout', 'select'],
+  { id: 'ae-layer', label: 'Layer', title: 'Select, transform, parent & link, arrange (Layer menu) — anchor and align are in Motion Control', fits: ['layer', 'layers', 'shapes', 'shapesMany', 'text'], owns: ['layout', 'select'],
     groups: [
+      // v0.44 (FIND_FAST): Select is out front — the Selector's everyday filters, one click each (Shift / Alt, search,
+      // labels, other comps and the project stay on its page)
+      { id: 'select', label: 'Select', kind: 'acts', fits: ['none', 'layer', 'layers', 'text', 'shapes', 'shapesMany'], open: true,
+        refs: ['quick:selText', 'quick:selShape', 'quick:selSolid', 'quick:selNull', 'quick:selPrecomp', 'quick:selFootage', 'quick:selAdjust', 'quick:selCamLight',
+          'quick:selSameType', 'quick:selSameSource', 'quick:selSameLabel', 'quick:selSameName', 'quick:selAll', 'quick:selInvert', 'quick:selNone', 'quick:selBack'],
+        rows: [['Type', ['quick:selText', 'quick:selShape', 'quick:selSolid', 'quick:selNull', 'quick:selPrecomp', 'quick:selFootage', 'quick:selAdjust', 'quick:selCamLight'], ['Text', 'Shapes', 'Solids', 'Nulls', 'Pre-Comps', 'Footage', 'Adjustment', 'Cam & Light']],
+          ['Same', ['quick:selSameType', 'quick:selSameSource', 'quick:selSameLabel', 'quick:selSameName'], ['Type', 'Source', 'Label', 'Name']],
+          ['Comp', ['quick:selAll', 'quick:selInvert', 'quick:selNone', 'quick:selBack'], ['All', 'Invert', 'None', 'Back']]],
+        links: [['select', 'Search · labels · other comps · project']] },
       { id: 'transform', label: 'Transform', kind: 'acts', fits: [], hero: ['quick:precompose'], refs: ['quick:precompose', 'quick:separate', 'quick:flipH', 'quick:flipV'],
-        pairs: [['Flip', 'quick:flipH', 'quick:flipV']], links: [['select', 'Select layers by type, name, label']] },
+        pairs: [['Flip', 'quick:flipH', 'quick:flipV']] },
       { id: 'parent', label: 'Parent & Link', kind: 'acts', fits: ['layers'], hero: ['quick:parentNull', 'quick:k_parent'], refs: ['quick:parentNull', 'quick:k_parent', 'quick:k_delay', 'quick:k_stare'] },
       // v0.33: Arrange · Clone · Effectors — the grid engine's three jobs (mCloner / MoGraph style), one switch
       { id: 'arrange', label: 'Arrange · Clone · Effectors', kind: 'animate', panel: 'grid', section: 'layout', more: 'layout', fits: ['layer', 'layers', 'shapes', 'shapesMany'],
@@ -416,7 +429,7 @@ function searchResults(app, q) {
   return h('div', { class: 'ae-results', role: 'list' }, list.map((it) => h('button', {
     class: 'ae-res', role: 'listitem', 'data-key': `r-${it.kind}-${it.id}`, title: it.desc,
     onclick: () => { app.state.set({ aeQ: '' }); it.run(); }
-  }, icon(it.icon || 'tools', 'sm'), h('span', { class: 'ae-res-n' }, it.name), h('span', { class: 'ae-res-d' }, it.desc), it.kind === 'preset' ? h('span', { class: 'ae-res-a' }, 'apply') : h('span', { class: 'ae-res-w' }, it.ws))));
+  }, icon(it.icon || 'tools', 'sm'), h('span', { class: 'ae-res-n' }, it.name), h('span', { class: 'ae-res-d' }, it.desc), it.kind === 'preset' || it.kind === 'action' ? h('span', { class: 'ae-res-a' }, 'apply') : h('span', { class: 'ae-res-w' }, it.ws))));
 }
 
 /* ---------- tab quick menus (▾ / right-click): every action of a tab, two clicks from anywhere ---------- */

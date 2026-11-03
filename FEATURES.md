@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Find Fast** (v0.44.0): Select is out front (types, same as selected, all / invert / none / back — one click), the everyday text animators are on Home, Ctrl+K finds every button (also in Arabic), and look-alike names were renamed or merged (docs/features/FIND_FAST.md).
+
 **Smart Arrange** (v0.43.0): tools that go together sit together in every style and width — Flip Horizontal | Vertical as one tile, Reverse / Mirror / Clone as one row, no tile drifting into another group (docs/features/SMART_ARRANGE.md).
 
 **Bake to Keyframes** (v0.42.0): Motion Kit › Bake — a grid, cloner, trail or any MOE rig becomes plain keyframes over the work area (only the keys the motion needs), lighter to render and playable without MOE; Restore brings the expressions back (docs/features/BAKE.md).

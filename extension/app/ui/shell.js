@@ -133,7 +133,7 @@ function createApp(root, services, env = {}) {
     Promise.resolve().then(() => { renderQueued = false; if (pressing) { pendingAfterPress = true; return; } app.render(); });
   };
   app.state.sub(() => app.scheduleRender());
-  document.addEventListener('pointerdown', () => { pressing = true; }, true);
+  document.addEventListener('pointerdown', () => { pressing = true; app.lastPressAt = Date.now(); }, true);
   const release = () => { if (!pressing) return; setTimeout(() => { pressing = false; if (pendingAfterPress) { pendingAfterPress = false; app.scheduleRender(); } }, 0); };
   document.addEventListener('pointerup', release, true);
   document.addEventListener('pointercancel', release, true);
@@ -331,6 +331,7 @@ function createApp(root, services, env = {}) {
   const repeatable = (tool) => tool && (tool.permissions || []).some((p) => p !== 'read') && !(tool.ai === null && tool.destructive);
   app.runTool = async (toolId, args, { resultKey, label } = {}) => {
     const key = resultKey || toolId;
+    app.lastStart = { toolId, at: Date.now() }; // v0.44: what the user just started (gridPanel's one-time scroll)
     app.state.set({ running: toolId });
     try {
       let r = await services.executor.run(toolId, args, { origin: 'user' });
@@ -343,7 +344,7 @@ function createApp(root, services, env = {}) {
       }
       app.state.set((s) => ({ results: Object.assign({}, s.results, { [key]: r }) }));
       if ((r.status === 'success' || r.status === 'partial') && repeatable(services.registry.get(toolId))) {
-        app.state.set({ last: { toolId, args: JSON.parse(JSON.stringify(args || {})), label: label || services.registry.get(toolId).name } });
+        app.state.set({ last: { toolId, args: JSON.parse(JSON.stringify(args || {})), label: label || services.registry.get(toolId).name, at: Date.now() } });
       }
       if (r.status === 'success' && r.summary && r.checkpointId) app.toast(r.summary, 2600, 'ok');
       return r;

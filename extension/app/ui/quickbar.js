@@ -56,7 +56,14 @@ async function run(app, a) {
   const r = await app.runTool(a.tool, args, { resultKey: `quick:${a.id}`, label: a.label });
   if (!r) return;
   if (r.status === 'success' || r.status === 'partial') app.toast(r.summary || a.label, 2600, r.status === 'partial' ? 'warn' : 'ok');
-  else app.toast(`${a.label}: ${(r.errors || r.reasons || [r.status]).join(' · ')}`, 5000, r.status === 'blocked' ? 'warn' : 'err');
+  else app.toast(`${a.label}: ${whyFailed(r).join(' · ')}`, 5000, r.status === 'blocked' ? 'warn' : 'err');
+}
+/** v0.44: a failure always says why — its errors, else the checks that failed (e.g. "Cam — skipped: camera"), never just "failed". */
+function whyFailed(r) {
+  if (r.errors && r.errors.length) return r.errors;
+  if (r.reasons && r.reasons.length) return r.reasons;
+  const bad = ((r.verification && r.verification.checks) || []).filter((c) => !c.ok).slice(0, 2).map((c) => (c.detail ? `${c.label} — ${c.detail}` : c.label));
+  return bad.length ? bad : [r.status];
 }
 
 function openOptions(app, a) {
@@ -181,4 +188,4 @@ function pinTile(app, a, pinned, sub) {
 /** Run Everyday slot n (0-based) of the bar — Alt+1…0. */
 function runSlot(app, n) { const a = byId(barIds(app)[n]); if (!a) return false; run(app, a); return a; }
 
-module.exports = { tileAction, togglePin, runSlot, strip, popover, restPopover, view, ACTIONS, run, openOptions, button, fixedBox, byId, barIds };
+module.exports = { whyFailed, tileAction, togglePin, runSlot, strip, popover, restPopover, view, ACTIONS, run, openOptions, button, fixedBox, byId, barIds };
