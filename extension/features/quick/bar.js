@@ -5,6 +5,23 @@
  */
 const A = (id, tool, args, icon, label, group) => ({ id, tool, args: args || {}, icon, label, group });
 
+/*
+ * v0.46 (docs/features/SELECT_MODIFIERS.md): a button can change what it does with a modifier — the same keys as
+ * the Select page and After Effects (Shift adds to the selection, Alt takes away). `mods` merges into the args;
+ * `withMods(a, e)` is the one place that reads the keys, so every button (tile, row, menu, sidebar, Quick Bar,
+ * Ctrl+K) behaves the same.
+ */
+const SELECT_MODS = { shift: { args: { mode: 'add' }, label: 'add' }, alt: { args: { mode: 'remove' }, label: 'remove' } };
+/** The action as a click with these keys runs it: { args, label, mod } (mod = 'shift' | 'alt' | null). */
+function withMods(a, e) {
+  const m = a && a.mods;
+  const key = !m || !e ? null : e.altKey && m.alt ? 'alt' : e.shiftKey && m.shift ? 'shift' : null;
+  if (!key) return { args: a.args, label: a.label, mod: null };
+  return { args: Object.assign({}, a.args, m[key].args), label: `${a.label} (${m[key].label})`, mod: key };
+}
+/** The tooltip line for an action's modifiers ('' when it has none). */
+const modsHint = (a) => (a && a.mods ? `Shift-click: ${a.mods.shift.label} · Alt-click: ${a.mods.alt.label}` : '');
+
 const ACTIONS = [
   A('revealProject', 'quick.reveal', { mode: 'project' }, 'search', 'Reveal in Project', 'Project'),
   A('revealFolder', 'quick.reveal', { mode: 'folder' }, 'folder', 'Open Folder', 'Project'),
@@ -66,18 +83,18 @@ const ACTIONS = [
   A('t_remove', 'text.removeAnimation', { which: 'both' }, 'trash', 'Remove Text Animation', 'Text'),
   A('counter', 'quick.counter', {}, 'counter', 'Number Counter', 'Text'),
   // v0.44 (FIND_FAST): Select — the Selector's everyday filters, one click each (the page keeps search, labels, comps, project)
-  A('selText', 'select.layers', { by: 'type', type: 'text' }, 'type', 'Select Text Layers', 'Select'),
-  A('selShape', 'select.layers', { by: 'type', type: 'shape' }, 'shapes', 'Select Shape Layers', 'Select'),
-  A('selSolid', 'select.layers', { by: 'type', type: 'solid' }, 'background', 'Select Solids', 'Select'),
-  A('selNull', 'select.layers', { by: 'type', type: 'null' }, 'parentNull', 'Select Nulls', 'Select'),
-  A('selPrecomp', 'select.layers', { by: 'type', type: 'precomp' }, 'precomp', 'Select Pre-Comps', 'Select'),
-  A('selFootage', 'select.layers', { by: 'type', type: 'footage' }, 'copyGreen', 'Select Footage (images + videos)', 'Select'),
-  A('selAdjust', 'select.layers', { by: 'type', type: 'adjustment' }, 'contrast', 'Select Adjustment Layers', 'Select'),
-  A('selCamLight', 'select.layers', { by: 'type', type: 'cameraLight' }, 'zoom', 'Select Cameras & Lights', 'Select'),
-  A('selSameType', 'select.layers', { by: 'same', criterion: 'type' }, 'filter', 'Select Same Type as Selected', 'Select'),
-  A('selSameSource', 'select.layers', { by: 'same', criterion: 'source' }, 'filter', 'Select Same Source as Selected', 'Select'),
-  A('selSameLabel', 'select.layers', { by: 'same', criterion: 'label' }, 'filter', 'Select Same Label as Selected', 'Select'),
-  A('selSameName', 'select.layers', { by: 'same', criterion: 'name' }, 'filter', 'Select Same Name as Selected', 'Select'),
+  Object.assign(A('selText', 'select.layers', { by: 'type', type: 'text' }, 'type', 'Select Text Layers', 'Select'), { mods: SELECT_MODS }),
+  Object.assign(A('selShape', 'select.layers', { by: 'type', type: 'shape' }, 'shapes', 'Select Shape Layers', 'Select'), { mods: SELECT_MODS }),
+  Object.assign(A('selSolid', 'select.layers', { by: 'type', type: 'solid' }, 'background', 'Select Solids', 'Select'), { mods: SELECT_MODS }),
+  Object.assign(A('selNull', 'select.layers', { by: 'type', type: 'null' }, 'parentNull', 'Select Nulls', 'Select'), { mods: SELECT_MODS }),
+  Object.assign(A('selPrecomp', 'select.layers', { by: 'type', type: 'precomp' }, 'precomp', 'Select Pre-Comps', 'Select'), { mods: SELECT_MODS }),
+  Object.assign(A('selFootage', 'select.layers', { by: 'type', type: 'footage' }, 'copyGreen', 'Select Footage (images + videos)', 'Select'), { mods: SELECT_MODS }),
+  Object.assign(A('selAdjust', 'select.layers', { by: 'type', type: 'adjustment' }, 'contrast', 'Select Adjustment Layers', 'Select'), { mods: SELECT_MODS }),
+  Object.assign(A('selCamLight', 'select.layers', { by: 'type', type: 'cameraLight' }, 'zoom', 'Select Cameras & Lights', 'Select'), { mods: SELECT_MODS }),
+  Object.assign(A('selSameType', 'select.layers', { by: 'same', criterion: 'type' }, 'filter', 'Select Same Type as Selected', 'Select'), { mods: SELECT_MODS }),
+  Object.assign(A('selSameSource', 'select.layers', { by: 'same', criterion: 'source' }, 'filter', 'Select Same Source as Selected', 'Select'), { mods: SELECT_MODS }),
+  Object.assign(A('selSameLabel', 'select.layers', { by: 'same', criterion: 'label' }, 'filter', 'Select Same Label as Selected', 'Select'), { mods: SELECT_MODS }),
+  Object.assign(A('selSameName', 'select.layers', { by: 'same', criterion: 'name' }, 'filter', 'Select Same Name as Selected', 'Select'), { mods: SELECT_MODS }),
   A('selAll', 'select.layers', { by: 'all' }, 'check', 'Select All Layers', 'Select'),
   A('selInvert', 'select.layers', { by: 'invert' }, 'contrast', 'Invert Selection', 'Select'),
   A('selNone', 'select.layers', { by: 'none' }, 'x', 'Deselect All', 'Select'),
@@ -141,4 +158,4 @@ const KIT_GROUPS = [
 const KIT_ALT = { k_parent: { reverse: true }, clone: { mode: 'mirror' }, k_delay: { mode: 'blend' }, k_bake: { keys: 'every' } };
 const KIT_LABEL = { parentNull: 'Null', k_parent: 'Parent', k_excite: 'Excite', k_delay: 'Delay', k_jump: 'Jump', k_stare: 'Stare', clone: 'Copy keys', reverse: 'Reverse', k_stagger: 'Stagger', k_trimKeys: 'Trim keys', separate: 'Separate', 'tile:animate/trimDraw': 'Draw On', k_repeat: 'Ring Copies', k_vignette: 'Vignette', k_bake: 'Bake', k_trash: 'Trash' };
 
-module.exports = { MIGRATE, migrate, ACTIONS, DEFAULT_BAR, GROUPS, resolve, KIT_TOOLS, KIT_GROUPS, KIT_ALT, KIT_LABEL };
+module.exports = { SELECT_MODS, withMods, modsHint, MIGRATE, migrate, ACTIONS, DEFAULT_BAR, GROUPS, resolve, KIT_TOOLS, KIT_GROUPS, KIT_ALT, KIT_LABEL };

@@ -4,6 +4,8 @@
 
 **Ours, to keep it from coming back:** one button per job on a screen. Your own buttons are exempt (the Quick Bar, your pins), and so are things that come and go (*Next*). Nothing is taken away. A removed button's job stays one or two clicks away, and a test checks every one.
 
+*v0.46 (SIDEBAR_MENUS.md) added three one-job menus back under Select — Parent & Link, In / Out, Loop — by a different rule: one job used from any tab, not a whole tab.*
+
 ## What was removed
 
 ### MOE sidebar: 9 of its 10 menus

@@ -50,13 +50,15 @@ function togglePin(app, id) {
   app.render();
 }
 
-async function run(app, a) {
+async function run(app, a, e) {
   const tool = app.services.registry.get(a.tool);
-  const args = Object.assign(defaults(tool.params || {}), a.args);
-  const r = await app.runTool(a.tool, args, { resultKey: `quick:${a.id}`, label: a.label });
+  // v0.46: Shift / Alt variants (bar.withMods) — the label says which, so Repeat (F4) repeats the same variant
+  const m = require('../../features/quick/bar').withMods(a, e);
+  const args = Object.assign(defaults(tool.params || {}), m.args);
+  const r = await app.runTool(a.tool, args, { resultKey: `quick:${a.id}`, label: m.label });
   if (!r) return;
-  if (r.status === 'success' || r.status === 'partial') app.toast(r.summary || a.label, 2600, r.status === 'partial' ? 'warn' : 'ok');
-  else app.toast(`${a.label}: ${whyFailed(r).join(' · ')}`, 5000, r.status === 'blocked' ? 'warn' : 'err');
+  if (r.status === 'success' || r.status === 'partial') app.toast(r.summary || m.label, 2600, r.status === 'partial' ? 'warn' : 'ok');
+  else app.toast(`${m.label}: ${whyFailed(r).join(' · ')}`, 5000, r.status === 'blocked' ? 'warn' : 'err');
 }
 /** v0.44: a failure always says why — its errors, else the checks that failed (e.g. "Cam — skipped: camera"), never just "failed". */
 function whyFailed(r) {
@@ -80,8 +82,9 @@ function button(app, a, cls = 'qb-btn', slot) {
   // v0.28: the first ten buttons are the Everyday slots — Alt+1…0 runs them (hold Alt to see the numbers)
   const key = slot != null && slot < 10 ? String((slot + 1) % 10) : null;
   return h('button', {
-    class: cls, title: `${a.label}${key ? ` · Alt+${key}` : ''}\nRight-click: options`, 'aria-label': a.label, disabled: !!s.running, 'data-slot': key || undefined,
-    onclick: (e) => (e.altKey ? openOptions(app, a) : run(app, a)),
+    class: cls, title: `${a.label}${key ? ` · Alt+${key}` : ''}${a.mods ? `\n${require('../../features/quick/bar').modsHint(a)}` : ''}\nRight-click: options`, 'aria-label': a.label, disabled: !!s.running, 'data-slot': key || undefined,
+    // Alt-click opens the options — except on a button whose Alt is a variant (Select: Alt removes); right-click always does
+    onclick: (e) => (e.altKey && !a.mods ? openOptions(app, a) : run(app, a, e)),
     oncontextmenu: (e) => { e.preventDefault(); openOptions(app, a); }
   }, icon(a.icon || 'bolt'), cls === 'qt-tile' ? h('span', { class: 'qt-label' }, a.label) : null);
 }

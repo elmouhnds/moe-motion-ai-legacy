@@ -47,8 +47,8 @@ function tile(app, a, size, t, ref, sub) {
   const pinned = ref && pins(app).includes(ref);
   return h('button', {
     class: `bt b-${size} ${rd.ok || a.nav ? '' : 'off'} ${pinned ? 'pinned' : ''}`, 'data-key': `a-${a.id}`, 'aria-label': a.label,
-    title: `${rd.ok || a.nav ? a.label : `${a.label} — ${rd.hint}`}\nRight-click: ${pinned ? 'unpin from' : 'pin to'} NOW`,
-    onclick: () => { if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else { if (t && ref) AE.remember(app, t, ref); a.run(app); } },
+    title: `${rd.ok || a.nav ? a.label : `${a.label} — ${rd.hint}`}${a.hint ? `\n${a.hint}` : ''}\nRight-click: ${pinned ? 'unpin from' : 'pin to'} NOW`,
+    onclick: (e) => { if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else { if (t && ref) AE.remember(app, t, ref); a.run(app, e); } },
     oncontextmenu: (e) => { if (!ref) return; e.preventDefault(); togglePin(app, ref, a.label); },
     // v0.26: pinned tiles reorder by drag (inside NOW)
     draggable: pinned ? 'true' : undefined,
@@ -163,6 +163,7 @@ function groupTiles(app, t, g, kind, skipBlock) {
     // the same reading order as Classic: tiles, labelled rows, rare chips, then the link to the page
     return [cap, ...placed([...entries,
       ...(g.rows || []).map((rw) => ({ el: wide(`row-${g.id}-${rw[0]}`, AE.subRow(app, t, rw)), w: 'full' })),
+      g.keys ? { el: h('div', { class: 'b-4 b-keys' }, AE.keysHint()), w: 'full' } : null,
       minorTiles.length ? { el: h('div', { class: 'b-4 b-chips', 'data-key': `minor-${g.id}` }, AR.runs(minorTiles.map(([r]) => r)).map((run) => { const btns = run.map((r) => { const a = A.resolve(r); return AE.actButton(app, a, () => AE.remember(app, t, r), 's'); }); return run.length > 1 ? h('span', { class: 'fam' }, btns) : btns[0]; })), w: 'full' } : null,
       ...links], g.id)];
   }

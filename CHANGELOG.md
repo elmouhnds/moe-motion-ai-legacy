@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.46.0] — 2026-11-04 — Select Modifiers + Sidebar Menus
+Details: `docs/features/SELECT_MODIFIERS.md`, `docs/features/SIDEBAR_MENUS.md`.
+### Added
+- **MOE sidebar menus under Select**, one job each, used from any tab, in the order of the work: **Parent & Link** (To Null · Chain · Delay · Stare), **In / Out** (Fade · Pop · Slide · Spin with In and Out side by side, Draw On), **Loop** (Cycle · Ping-Pong · Offset · In + Out, Idle: Wiggle · Float · Pendulum · Pulse). Rule: one job, many times a day, labelled rows, at most five — never a whole tab (that is what v0.45 removed).
+- **Shift-click adds, Alt-click removes** on the 12 Select filters (Type · Same) — on Home (Bento, Glass, MOE), the MOE Select menu, the sidebar and the Quick Bar, like the Select page and After Effects. One rule in `bar.withMods`; the label and toast say the variant ("Select Text Layers (add)").
+- A quiet *Shift add · Alt remove* line under the Select rows and in the MOE menu; tooltips say it on each button.
+### Changed
+- Quick Bar / sidebar: Alt-click on these 12 buttons removes instead of opening options (right-click still opens them, for every button).
+### Tests
+- `tests/selectmods.test.js` (4), `tests/norepeat.test.js` sidebar-menu rule; audit-arrange 68 screens (new menus at 4 widths) all 0 + Playwright in all three styles, read back from the mock's selection. **Mock / preview, not After Effects.**
+
 ## [0.45.0] — 2026-11-04 — No Repeats
 Details: `docs/features/NO_REPEATS.md`.
 ### Removed

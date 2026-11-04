@@ -86,8 +86,8 @@ test('Select is out front: first group of the Layer tab and of the Arrange stage
   assert.deepEqual(st.groups[0], ['ae-layer', 'select', 'core']);
   assert.equal(L.MENUS[0].id, 'Select');
   assert.ok(L.MENUS[0].refs.length >= 12 && L.MENUS[0].refs.every((r) => A.resolve(r)));
-  // v0.45 (NO_REPEATS): Select is the sidebar's only menu — the others were the tabs again
-  assert.deepEqual(L.MENUS.map((m) => m.id), ['Select']);
+  // v0.45 (NO_REPEATS) removed the menus that were whole tabs; v0.46 (SIDEBAR_MENUS) adds one-job menus after Select
+  assert.deepEqual(L.MENUS.map((m) => m.id), ['Select', 'Parent & Link', 'In / Out', 'Loop']);
 });
 
 test('Text animators are one click: In / Out rows of Arabic-safe presets (+ Remove), all real presets', () => {

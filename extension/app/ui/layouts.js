@@ -30,8 +30,8 @@ function actBtn(app, a, cls = 'lay-act') {
   const rd = a.ready(app);
   return h('button', {
     class: `${cls} ${rd.ok || a.nav ? '' : 'off'}`, 'data-key': `a-${a.id}`, 'aria-label': a.label,
-    title: rd.ok || a.nav ? `${a.label} — ${a.where}` : `${a.label} — ${rd.hint}`,
-    onclick: () => { if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else a.run(app); }
+    title: `${rd.ok || a.nav ? `${a.label} — ${a.where}` : `${a.label} — ${rd.hint}`}${a.hint ? `\n${a.hint}` : ''}`,
+    onclick: (e) => { if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else a.run(app, e); }
   }, icon(a.icon || 'bolt', 'sm'), h('span', {}, a.label));
 }
 const resolveAll = (refs) => refs.map((r) => A.resolve(r)).filter(Boolean);
@@ -60,18 +60,33 @@ function header(app, title, extra, menuBtn) {
     h('button', { class: 'icon-btn hdr-pie', title: 'Pie menu (hold Q, or hold the right mouse button)', 'aria-label': 'Pie menu', onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(); app.openPie(r.left + r.width / 2, r.bottom + 120, { mode: 'click' }); } }, icon('pie', 'sm')),
     h('button', { class: 'search-btn', title: 'Search tools (Ctrl+K)', 'aria-label': 'Search tools', onclick: () => require('./palette').open(app) }, icon('search', 'sm'), h('span', { class: 'label' }, 'Search'), h('span', { class: 'kbd' }, 'Ctrl K')));
 }
-/* ---------- MOE: the sidebar's own menu ---------- */
+/* ---------- MOE: the sidebar's menus ---------- */
 /*
- * v0.45 (docs/features/NO_REPEATS.md): the sidebar had ten menus "by object". Eight were the tabs again — each tab
- * already shows its tools and has its own ▾ quick menu ("every action in two clicks") and its dot for the selection —
- * and AI was the floating Assistant button and the search box again. Only Select stays: the owner's "its own
- * place" (v0.44), one click from any tab.
+ * v0.45 (docs/features/NO_REPEATS.md): ten menus "by object" were the tabs again (each tab already has its tools,
+ * a ▾ quick menu and the selection dot) — removed.
+ * v0.46 (docs/features/SIDEBAR_MENUS.md, owner: "menus as important as Select deserve to sit under it"): a sidebar
+ * menu is ONE job a motion designer does many times a day from any tab, with variants that read as labelled rows
+ * (never a whole tab). In the order of the work: pick the layers → link them → animate in / out → keep them alive.
+ * Each row is a family side by side (Fade: In · Out), so opposites never sit apart.
  */
+const ROW = (label, refs, short) => [label, refs, short];
 const MENUS = [
-  // v0.44 (FIND_FAST): Select has its own menu — the everyday filters one click away
-  // shown as the Select group's own labelled rows (Type · Same · Comp), so the menu reads like the group
-  { id: 'Select', icon: 'cursor', group: ['ae-layer', 'select'], refs: ['quick:selText', 'quick:selShape', 'quick:selSolid', 'quick:selNull', 'quick:selPrecomp', 'quick:selFootage', 'quick:selAdjust', 'quick:selCamLight', 'quick:selSameType', 'quick:selSameSource', 'quick:selSameLabel', 'quick:selSameName', 'quick:selAll', 'quick:selInvert', 'quick:selNone', 'quick:selBack'], open: [['select', 'Search, labels, comps, project']] }
+  // v0.44 (FIND_FAST): Select — the Select group's own labelled rows (Type · Same · Comp)
+  { id: 'Select', icon: 'cursor', title: 'every filter, one click (Shift adds, Alt removes)', tab: 'ae-layer', group: ['ae-layer', 'select'], refs: ['quick:selText', 'quick:selShape', 'quick:selSolid', 'quick:selNull', 'quick:selPrecomp', 'quick:selFootage', 'quick:selAdjust', 'quick:selCamLight', 'quick:selSameType', 'quick:selSameSource', 'quick:selSameLabel', 'quick:selSameName', 'quick:selAll', 'quick:selInvert', 'quick:selNone', 'quick:selBack'], open: [['select', 'Search, labels, comps, project']] },
+  { id: 'Parent & Link', icon: 'link', title: 'parent to a null or as a chain, follow with delay or stare', tab: 'ae-layer', rows: [
+    ROW('Parent', ['quick:parentNull', 'quick:k_parent'], ['To Null', 'Chain']),
+    ROW('Follow', ['quick:k_delay', 'quick:k_stare'], ['Delay', 'Stare'])], open: [] },
+  { id: 'In / Out', icon: 'fadeIn', title: 'the everyday entrances and exits, In and Out side by side, and Draw On', tab: 'ae-animate', rows: [
+    ROW('Fade', ['tile:animate/fadeIn', 'tile:animate/fadeOut'], ['In', 'Out']),
+    ROW('Pop', ['tile:animate/popIn', 'tile:animate/popOut'], ['In', 'Out']),
+    ROW('Slide', ['tile:animate/inRL', 'tile:animate/inBT', 'tile:animate/outRL', 'tile:animate/outTB'], ['In ←', 'In ↑', 'Out ←', 'Out ↓']),
+    ROW('Spin', ['tile:animate/spinIn', 'tile:animate/spinOut'], ['In', 'Out']),
+    ROW('Draw', ['tile:animate/trimDraw', 'tile:animate/trimErase', 'tile:animate/trimTravel', 'tile:animate/trimBoth'], ['On', 'Erase', 'Travel', 'Both'])], open: [['animate', 'All motion presets']] },
+  { id: 'Loop', icon: 'repeat', title: 'loop the keys, or keep a layer alive (wiggle, float, pendulum, pulse)', tab: 'ae-keys', rows: [
+    ROW('Loop', ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'], ['Cycle', 'Ping-Pong', 'Offset', 'In + Out']),
+    ROW('Idle', ['tile:expressions/x-wiggle', 'tile:expressions/x-float', 'tile:expressions/x-pendulum', 'tile:expressions/x-pulse'], ['Wiggle', 'Float', 'Pendulum', 'Pulse'])], open: [['expressions', 'All expressions']] }
 ];
+MENUS.forEach((m) => { if (m.rows) m.refs = m.rows.flatMap((rw) => rw[1]); });
 /** Menus removed in v0.45 and where their buttons are now (tests/norepeat.test.js checks every one is reachable). */
 const RETIRED_MENUS = {
   Keys: 'Keys tab (▾) + Motion Control', Layer: 'Layer tab (▾) + Motion Control', Text: 'Animate tab › Text Animators', Shape: 'Animate tab › Draw On',
@@ -85,9 +100,10 @@ function menuPopover(app, st) {
   return h('div', { class: 'overlay qb-overlay', onmousedown: (e) => { if (e.target.classList.contains('overlay')) close(); } },
     h('div', { class: 'lay-drop', role: 'menu', 'aria-label': `${m.id} tools`, style: Object.assign({ top: `${st.top}px`, maxWidth: `${Math.min(440, st.maxW)}px` }, st.right != null ? { right: `${st.right}px` } : { left: `${st.left}px` }), onclick: (e) => { if (e.target.closest && e.target.closest('button')) close(); } },
       // v0.43 (SMART_ARRANGE): families stay together and wrap as one unit (Flip H | Flip V, Align H | V …)
-      m.group ? (() => { const AE = require('./layoutAE'); const tab = AE.TABS.find((x) => x.id === m.group[0]); const g = tab && tab.groups.find((x) => x.id === m.group[1]); return g ? h('div', { class: 'lay-rows' }, (g.rows || []).map((rw) => AE.subRow(app, tab, rw))) : null; })()
+      m.group || m.rows ? (() => { const AE = require('./layoutAE'); const tab = AE.TABS.find((x) => x.id === (m.group ? m.group[0] : m.tab)); const g = m.group && tab && tab.groups.find((x) => x.id === m.group[1]); const rows = g ? g.rows : m.rows; return rows && tab ? h('div', { class: 'lay-rows' }, rows.map((rw) => AE.subRow(app, tab, rw))) : null; })()
         : items.length ? h('div', { class: 'lay-acts flow' }, AR.runs(AR.group(m.refs).filter((r) => A.resolve(r))).map((run) => { const btns = run.map((r) => actBtn(app, A.resolve(r))); return run.length > 1 ? h('div', { class: 'fam', role: 'group', 'aria-label': AR.familyOf(run[0]).name, style: { '--n': String(run.length) } }, btns) : btns[0]; })) : null,
-      h('div', { class: 'lay-drop-open' }, m.open.map(([id, label]) => h('button', { class: 'btn ghost sm', 'data-key': `o-${id}`, onclick: () => app.go(id) }, icon('chev', 'xs'), label)))));
+      m.group && m.group[1] === 'select' ? h('div', { class: 'lay-drop-keys' }, require('./layoutAE').keysHint()) : null,
+      m.open.length ? h('div', { class: 'lay-drop-open' }, m.open.map(([id, label]) => h('button', { class: 'btn ghost sm', 'data-key': `o-${id}`, onclick: () => app.go(id) }, icon('chev', 'xs'), label))) : null));
 }
 
 /* ============ Recommended — MOE: the best part of each proposal ============
@@ -118,19 +134,19 @@ function moeRail(app, s) {
     app.state.set({ layMenu: { id: m.id, top: Math.max(4, Math.min(Math.round(r.top - box.top), Math.round(box.height - 260))), left, right: null, maxW: Math.max(220, Math.round(box.width - left - 6)) } });
   };
   const menuBtn = (m) => h('button', {
-    class: 'rail-btn', 'data-key': `rm-${m.id}`, 'aria-label': `${m.id} menu`, 'aria-haspopup': 'true', 'aria-expanded': String(!!(s.layMenu && s.layMenu.id === m.id)),
-    title: `${m.id} — every filter, one click`, onclick: (e) => openMenu(m, e.currentTarget)
+    class: 'rail-btn', 'data-key': `rm-${m.id === 'Select' ? 'Select' : m.id.replace(/[^A-Za-z]+/g, '')}`, 'aria-label': `${m.id} menu`, 'aria-haspopup': 'true', 'aria-expanded': String(!!(s.layMenu && s.layMenu.id === m.id)),
+    title: `${m.id} — ${m.title}`, onclick: (e) => openMenu(m, e.currentTarget)
   }, icon(m.icon, 'sm'), h('span', { class: 'rail-l' }, m.id), h('span', { class: 'rail-more', 'aria-hidden': 'true' }, '›'));
   // v0.26: drag a shortcut onto another to reorder the Quick Bar (saved; same order everywhere)
   const moveTo = (id, beforeId) => { const ids = qb.barIds(app).filter((x) => x !== id); const at = ids.indexOf(beforeId); ids.splice(at < 0 ? ids.length : at, 0, id); app.services.store.set('quick-bar', ids); app.render(); };
   const shortcut = (a) => h('button', {
-    class: 'rail-btn', 'data-key': `rq-${a.id}`, 'aria-label': a.label, title: `${a.label}\nRight-click: options · drag to reorder`, disabled: !!s.running, draggable: 'true',
+    class: 'rail-btn', 'data-key': `rq-${a.id}`, 'aria-label': a.label, title: `${a.label}${a.mods ? `\n${require('../../features/quick/bar').modsHint(a)}` : ''}\nRight-click: options · drag to reorder`, disabled: !!s.running, draggable: 'true',
     ondragstart: (e) => { railDrag = a.id; try { e.dataTransfer.setData('text/plain', a.id); e.dataTransfer.effectAllowed = 'move'; } catch (_) { /* old CEP */ } },
     ondragover: (e) => { if (railDrag && railDrag !== a.id) { e.preventDefault(); e.currentTarget.classList.add('drop-before'); } },
     ondragleave: (e) => e.currentTarget.classList.remove('drop-before'),
     ondrop: (e) => { e.preventDefault(); e.currentTarget.classList.remove('drop-before'); const id = railDrag; railDrag = null; if (id && id !== a.id) moveTo(id, a.id); },
     ondragend: () => { railDrag = null; },
-    onclick: (e) => (e.altKey ? qb.openOptions(app, a) : qb.run(app, a)), oncontextmenu: (e) => { e.preventDefault(); qb.openOptions(app, a); }
+    onclick: (e) => (e.altKey && !a.mods ? qb.openOptions(app, a) : qb.run(app, a, e)), oncontextmenu: (e) => { e.preventDefault(); qb.openOptions(app, a); }
   }, icon(a.icon || 'bolt', 'sm'), h('span', { class: 'rail-l' }, a.label));
   return h('nav', { class: `moe-rail ${wide ? 'wide' : ''}`, 'data-key': 'moe-rail', 'aria-label': 'Shortcuts' },
     h('button', { class: 'rail-btn rail-toggle', 'data-key': 'rail-toggle', 'aria-label': wide ? 'Show icons only' : 'Show names', title: wide ? 'Icons only' : 'Show names', 'aria-pressed': String(wide), onclick: () => { app.services.store.set('moe-rail-wide', !wide); app.render(); } }, icon('chev', `xs rail-chev ${wide ? 'open' : ''}`), h('span', { class: 'rail-l' }, 'Shortcuts')),

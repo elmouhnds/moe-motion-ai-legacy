@@ -55,7 +55,7 @@ const TABS = [
     groups: [
       // v0.44 (FIND_FAST): Select is out front — the Selector's everyday filters, one click each (Shift / Alt, search,
       // labels, other comps and the project stay on its page)
-      { id: 'select', label: 'Select', kind: 'acts', fits: ['none', 'layer', 'layers', 'text', 'shapes', 'shapesMany'], open: true,
+      { id: 'select', label: 'Select', kind: 'acts', fits: ['none', 'layer', 'layers', 'text', 'shapes', 'shapesMany'], open: true, keys: true,
         refs: ['quick:selText', 'quick:selShape', 'quick:selSolid', 'quick:selNull', 'quick:selPrecomp', 'quick:selFootage', 'quick:selAdjust', 'quick:selCamLight',
           'quick:selSameType', 'quick:selSameSource', 'quick:selSameLabel', 'quick:selSameName', 'quick:selAll', 'quick:selInvert', 'quick:selNone', 'quick:selBack'],
         rows: [['Type', ['quick:selText', 'quick:selShape', 'quick:selSolid', 'quick:selNull', 'quick:selPrecomp', 'quick:selFootage', 'quick:selAdjust', 'quick:selCamLight'], ['Text', 'Shapes', 'Solids', 'Nulls', 'Pre-Comps', 'Footage', 'Adjustment', 'Cam & Light']],
@@ -235,8 +235,8 @@ function actButton(app, a, onRun, size) {
   const rd = a.ready(app);
   return h('button', {
     class: `${size === 's' ? 'ae-chip' : 'ae-act'} ${size === 'l' ? 'l' : ''} ${rd.ok || a.nav ? '' : 'off'}`, 'data-key': `a-${a.id}`, 'aria-label': a.label,
-    title: rd.ok || a.nav ? a.label : `${a.label} — ${rd.hint}`,
-    onclick: () => { if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else { if (onRun) onRun(); a.run(app); } }
+    title: `${rd.ok || a.nav ? a.label : `${a.label} — ${rd.hint}`}${a.hint ? `\n${a.hint}` : ''}`,
+    onclick: (e) => { if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else { if (onRun) onRun(); a.run(app, e); } }
   }, icon(a.icon || 'bolt', size === 's' ? 'xs' : ''), h('span', {}, a.label));
 }
 const linkRow = (app, links) => (links || []).map(([id, label]) => h('button', { class: 'ae-link', 'data-key': `l-${id}`, onclick: () => app.go(id) }, h('span', {}, label), icon('chev', 'xs')));
@@ -290,6 +290,9 @@ function groupExtra(app, g) {
     onclick: (e) => { e.stopPropagation(); app.services.store.set('ae-x-live', !on); app.render(); } }, icon('sliders', 'xs'), 'Sliders') : null;
   return live || g.more ? [live, g.more ? moreLink(app, g) : null] : null;
 }
+/** v0.46: "Shift add · Alt remove" — the Select modifiers, said once under the rows (a quiet line, not in the header). */
+const keysHint = () => h('div', { class: 'ae-keys', 'data-key': 'sel-keys', title: 'Shift-click a Select button: add to the selection · Alt-click: take away from it' },
+  h('kbd', {}, 'Shift'), ' add · ', h('kbd', {}, 'Alt'), ' remove');
 /** Open a tile in its library page (to change its settings first). */
 function openTile(app, sec, t) {
   app.state.set((st) => ({ studio: Object.assign({}, st.studio, { [sec.id]: Object.assign({}, (st.studio || {})[sec.id], { tab: 'library', filter: 'All', q: '', tile: t.id, filled: null }) }) }));
@@ -326,7 +329,7 @@ function groupBody(app, g, t) {
     const std = g.refs.filter((r) => !hero.includes(r) && !minor.includes(r) && !paired.includes(r) && !inRows.includes(r));
     return [...lead, row('ae-hero flow', hero, 'l'),
       row('ae-acts flow', std, undefined, (g.pairs || []).map((p) => pairControl(app, t, p))),
-      ...(g.rows || []).map((rw) => subRow(app, t, rw)), row('ae-minor', minor, 's'), ...linkRow(app, g.links)];
+      ...(g.rows || []).map((rw) => subRow(app, t, rw)), g.keys ? keysHint() : null, row('ae-minor', minor, 's'), ...linkRow(app, g.links)];
   }
   if (g.kind === 'animate') return animateBlock(app, g, t);
   if (g.kind === 'tiles') return [tileStrip(app, g, t), row('ae-minor', g.minor, 's'), ...linkRow(app, g.links)];
@@ -364,8 +367,8 @@ function pairControl(app, t, [label, ...refs]) {
 function subRow(app, t, [label, refs, short]) {
   const acts = refs.map((r, i) => [r, A.resolve(r), (short || [])[i]]).filter(([, a]) => a);
   return h('div', { class: 'ae-subrow', role: 'group', 'aria-label': label, 'data-key': `row-${label}` }, h('span', { class: 'ae-sub-l' }, label),
-    h('div', { class: `ae-sub-b n${Math.min(acts.length, 4)}` }, acts.map(([r, a, s]) => { const rd = a.ready(app); return h('button', { class: `ae-act ${rd.ok ? '' : 'off'}`, 'data-key': `a-${a.id}`, 'aria-label': a.label, title: rd.ok ? a.label : `${a.label} — ${rd.hint}`,
-      onclick: () => (rd.ok ? (remember(app, t, r), a.run(app)) : app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn')) }, icon(a.icon || 'bolt', 'sm'), h('span', {}, s || a.label)); })));
+    h('div', { class: `ae-sub-b n${Math.min(acts.length, 4)}` }, acts.map(([r, a, s]) => { const rd = a.ready(app); return h('button', { class: `ae-act ${rd.ok ? '' : 'off'}`, 'data-key': `a-${a.id}`, 'aria-label': a.label, title: `${rd.ok ? a.label : `${a.label} — ${rd.hint}`}${a.hint ? `\n${a.hint}` : ''}`,
+      onclick: (e) => (rd.ok ? (remember(app, t, r), a.run(app, e)) : app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn')) }, icon(a.icon || 'bolt', 'sm'), h('span', {}, s || a.label)); })));
 }
 /** Animate In / Out / Draw On — one block, the mode switch picks the six (or four) moves. Shapes open on Draw On. */
 const ANIM_KEY = 'ae-anim-mode';
@@ -567,4 +570,4 @@ function menuButton(app, s) {
 
 module.exports = { runsOf, nextStrip, controlTop, controlShows, shownRefs, tileCols, animMode, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
   // building blocks reused by the v0.24 style proposals (layoutGlass / layoutApple / layoutBento)
-  twirl, actButton, groupBody, tileStrip, moreLink, groupExtra, subRow, pairControl, linkRow, searchBox, searchResults, panelMenu, menuButton, openTile };
+  twirl, actButton, keysHint, groupBody, tileStrip, moreLink, groupExtra, subRow, pairControl, linkRow, searchBox, searchResults, panelMenu, menuButton, openTile };

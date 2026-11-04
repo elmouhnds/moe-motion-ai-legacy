@@ -49,8 +49,8 @@ function whereNow(ref, reach) {
   return null;
 }
 
-test('MOE sidebar: Select is its only menu; every button of the nine removed menus is still reachable', () => {
-  assert.deepEqual(L.MENUS.map((m) => m.id), ['Select']);
+test('MOE sidebar: the nine whole-tab menus are gone (v0.46 adds one-job menus); every button they held is still reachable', () => {
+  assert.ok(!L.MENUS.some((m) => Object.keys(L.RETIRED_MENUS).includes(m.id)), 'no removed menu came back');
   assert.deepEqual(Object.keys(L.RETIRED_MENUS).sort(), ['AI', 'Comp', 'Design', 'Finish', 'Keys', 'Layer', 'Layout', 'Shape', 'Text']);
   const reach = tabReach();
   for (const [menu, refs] of Object.entries(OLD_MENUS)) {
@@ -138,4 +138,26 @@ test('library tiles have their own data-key (the old one cut the name: Fade In a
     const ids = (sec.tiles || []).map((t) => t.id);
     assert.equal(new Set(ids).size, ids.length, sec.id);
   }
+});
+
+test('v0.46 sidebar menus: one job each, used from any tab — labelled rows, families side by side, never a whole tab', () => {
+  const AR = require('../extension/app/ui/arrange');
+  assert.ok(L.MENUS.length <= 5, 'a short list: more menus would be the clutter v0.45 removed');
+  assert.equal(L.MENUS[0].id, 'Select');
+  const tabLabels = AE.TABS.map((t) => t.label);
+  const reach = tabReach();
+  for (const m of L.MENUS) {
+    assert.ok(!tabLabels.includes(m.id), `${m.id}: not a tab's name (no two things share a name)`);
+    assert.ok(m.title && m.icon, `${m.id}: says what it is for`);
+    assert.ok(AE.TABS.some((t) => t.id === m.tab), `${m.id}: its buttons are remembered in a real tab`);
+    const rows = m.rows || AE.TABS.find((t) => t.id === m.group[0]).groups.find((g) => g.id === m.group[1]).rows;
+    assert.ok(rows.length >= 2 && rows.length <= 5, `${m.id}: 2–5 labelled rows`);
+    rows.forEach(([label, refs, short]) => { assert.ok(label && refs.length >= 2 && refs.length <= 8, `${m.id} › ${label}`); assert.equal(short.length, refs.length); });
+    // every button is a real one-click action that also lives in a tab or its library page (nothing only here)
+    m.refs.forEach((r) => { assert.ok(A.resolve(r), r); assert.ok(whereNow(r, reach), `${m.id}: ${r} also has its place in a tab`); });
+    assert.deepEqual(AR.splits(m.refs), [], `${m.id}: families side by side (Fade In next to Fade Out)`);
+  }
+  // In / Out pairs each move with its opposite on one row
+  const io = L.MENUS.find((m) => m.id === 'In / Out');
+  for (const [label, refs] of io.rows.filter(([l]) => l !== 'Draw' && l !== 'Slide')) assert.deepEqual(refs.map((r) => /In$/.test(r) ? 'in' : 'out'), ['in', 'out'], label);
 });

@@ -4,6 +4,10 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Sidebar Menus** (v0.46.0): under Select in the MOE sidebar — Parent & Link, In / Out (each move next to its opposite) and Loop (loops + idle wiggle / float / pendulum / pulse): one job each, one click from any tab (docs/features/SIDEBAR_MENUS.md).
+
+**Select Modifiers** (v0.46.0): Shift-click a Select button adds to the selection, Alt-click takes away — on every Select button, like the Select page and After Effects (docs/features/SELECT_MODIFIERS.md).
+
 **No Repeats** (v0.45.0): one button per job on a screen — the MOE sidebar is Select + your Quick Bar (the AI menu was the Assistant button and the search box; the other eight were the tabs again), and NOW no longer repeats the search box, the Assistant or the Motion Control above it (docs/features/NO_REPEATS.md).
 
 **Find Fast** (v0.44.0): Select is out front (types, same as selected, all / invert / none / back — one click), the everyday text animators are on Home, Ctrl+K finds every button (also in Arabic), and look-alike names were renamed or merged (docs/features/FIND_FAST.md).

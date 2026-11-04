@@ -122,8 +122,9 @@ function resolve(ref) {
     const a = q.ACTIONS.find((x) => x.id === m);
     if (!a) return null;
     const short = SHORT[a.id] || a.label.replace(/\s*\(.*\)\s*$/, '');
-    return { id: ref, label: short, icon: a.icon || 'bolt', where: 'Quick Bar',
-      run: (app) => q.run(app, a), ready: (app) => require('./studio/library').readiness(app, { id: a.id, label: short, tool: a.tool, args: a.args }) };
+    const BARM = require('../../features/quick/bar');
+    return { id: ref, label: short, icon: a.icon || 'bolt', where: 'Quick Bar', mods: a.mods || null, hint: BARM.modsHint(a),
+      run: (app, e) => q.run(app, a, e), ready: (app) => require('./studio/library').readiness(app, { id: a.id, label: short, tool: a.tool, args: a.args }) };
   }
   if (kind === 'nav') {
     const sec = studio.byId(rest);

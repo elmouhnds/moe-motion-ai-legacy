@@ -1027,6 +1027,10 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .ae-twirl .svg-i { color: var(--text-3); }
 .ae-group.open > .ae-gh .ae-twirl .svg-i { transform: rotate(90deg); }
 .ae-twirl:hover { color: var(--accent); }
+/* v0.46: the Select modifiers, quiet — text, not a chip */
+.ae-keys { color: var(--text-2); font-size: 10px; padding: 2px 2px 0; }
+.ae-keys kbd { font: inherit; padding: 0 3px; border: 1px solid var(--line-strong); border-radius: 3px; }
+.lay-drop-keys { padding: 2px 2px 6px; }
 .ae-fit { padding: 1px 6px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 10px; white-space: nowrap; }
 .ae-more { display: inline-flex; align-items: center; gap: 2px; border: 0; background: none; color: var(--text-3); font: inherit; font-size: 11px; cursor: pointer; white-space: nowrap; }
 .ae-more:hover { color: var(--text); }

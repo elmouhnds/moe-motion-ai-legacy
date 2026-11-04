@@ -179,6 +179,10 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6w. Select Modifiers + Sidebar Menus (v0.46.0)
+- `app/ui/layouts.js` `MENUS`: Select (renders its group's rows) + menus with their own `rows` (`[label, refs, short]`) and the `tab` whose Recent remembers their buttons; `menuPopover` renders either through `layoutAE.subRow`. Rule in `tests/norepeat.test.js`.
+- `features/quick/bar.js`: `SELECT_MODS` on the 12 Select filters (`mods`), `withMods(a, e)` (the one place reading Shift / Alt → args + label), `modsHint`. `quickbar.run(app, a, e)`; `actions.resolve(quick:…).run(app, e)` + `hint`; every renderer passes its click event. `layoutAE.keysHint()` (group `keys: true`, MOE Select menu).
+
 ## 6v. No Repeats (v0.45.0)
 - `app/ui/actions.js`: `ON_SCREEN` (search, Assistant), `IN_CONTROL` (ref → [`rail` | `ease`, the Motion Control button's data-key]), `nowSet(kind, shown)`. `layoutAE.controlShows(app, kind)` → `{ rail, ease }` (ease = the control is open); `layoutAE.shownRefs(app, group, kind)` (an open group's one-click refs). Bento `now()` and Glass `nowCard()` use them; the pie keeps `SETS`.
 - `app/ui/layouts.js`: `MENUS` = [Select]; `RETIRED_MENUS` (where each removed menu's buttons are). Motion Control's Easy / Linear / Hold have keys `ci-easy` / `ci-linear` / `ci-hold`; library tiles `t-<library>/<id>`.
