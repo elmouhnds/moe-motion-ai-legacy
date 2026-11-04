@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.52 — Real Previews ✅ (v0.47.0)
+- Animate / Trim previews play the tool's real keys; live Inspector preview + key strip.
+- Next (premium, owner): bigger libraries (v0.48), native templates (v0.49).
+
 ## M1.51 — Select Modifiers + Sidebar Menus ✅ (v0.46.0)
 - Shift adds / Alt removes on every Select button (Home, MOE menu, sidebar, Quick Bar).
 - MOE sidebar menus under Select: Parent & Link, In / Out, Loop (one job each, rule tested).

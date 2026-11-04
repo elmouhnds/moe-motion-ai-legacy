@@ -5,11 +5,13 @@
  * the command palette, recipes and the Copilot all use the same code.
  */
 const { EASES } = require('../zoom/math');
+// v0.47 (REAL_PREVIEWS.md): the keys Quick Animate and Trim Paths write come from one pure plan — the tile previews draw the same keys
+const PLAN = require('./animatePlan');
 
 const ADDR = (id, mn) => ({ layerId: id, matchNames: ['ADBE Transform Group', mn] });
 const visual = (ctx) => (ctx.layers || []).filter((l) => !['camera', 'light'].includes(l.type));
 const EASE_OPTIONS = [...Object.entries(EASES).map(([value, e]) => ({ value, label: e.label })), { value: 'linear', label: 'Linear' }];
-const easePair = (name) => (name === 'linear' ? { out: { interp: 'linear' }, in: { interp: 'linear' } } : { out: { easeOut: { speed: 0, influence: EASES[name].out } }, in: { easeIn: { speed: 0, influence: EASES[name].in } } });
+const easePair = PLAN.easePair;
 const keyRestore = (items) => items.map((it) => ({ address: it.address, times: it.written.map((w) => w.t), restore: it.replaced }));
 
 /* ---------------- project ---------------- */
@@ -243,11 +245,7 @@ const animate = {
       const L = prepared.layers[i];
       const D = desc.layers.find((x) => x.id === L.id);
       const t0 = comp.time + i * (args.stagger || 0), t1 = t0 + args.duration;
-      const k = (a, b, mid) => {
-        const first = Object.assign({ t: t0, v: a }, e.out, e.out.interp ? {} : { easeIn: { speed: 0, influence: 33.33 } });
-        const last = Object.assign({ t: t1, v: b }, e.in, e.in.interp ? {} : { easeOut: { speed: 0, influence: 33.33 } });
-        return mid !== undefined ? [first, { t: t0 + args.duration * 0.72, v: mid, easeIn: { speed: 0, influence: 50 }, easeOut: { speed: 0, influence: 50 } }, last] : [first, last];
-      };
+      const k = (a, b, mid) => PLAN.keysFor(e, t0, t1 - t0, a, b, mid);
       if (isMove) {
         if (D.parentId) { skipped.push(`${L.name} (parented)`); continue; }
         if (D.posExpr) { skipped.push(`${L.name} (Position has an expression)`); continue; }
@@ -310,17 +308,16 @@ const trim = {
   uses: { hostOps: ['shapes.trim', 'keys.write', 'shapes.untrim', 'keys.remove'], network: false }, compatibility: { minAE: '25.0' }, ui: { primaryLabel: 'Trim' },
   prepare(args, ctx) { const l = (ctx.layers || []).filter((x) => x.type === 'shape'); return l.length ? { ok: true, layers: l, preview: { summary: `${args.mode} · ${args.duration}s · ${l.length} shape layer(s)`, items: [] } } : { ok: false, error: 'Select shape layers' }; },
   async execute({ args, ctx, prepared, host }) {
-    const t0 = ctx.comp.time, d = args.duration;
-    const e = easePair(args.ease);
-    const two = (a, b, s, f) => [Object.assign({ t: s, v: a }, e.out), Object.assign({ t: f, v: b }, e.in)];
+    const t0 = ctx.comp.time;
     const out = [];
     for (const L of prepared.layers) {
       const tr = await host.call('shapes.trim', { compId: ctx.comp.id, layerId: L.id });
       const items = [];
-      if (args.mode === 'draw') items.push({ address: tr.end, keys: two(0, 100, t0, t0 + d) });
-      if (args.mode === 'erase') items.push({ address: tr.start, keys: two(0, 100, t0, t0 + d) });
-      if (args.mode === 'travel') { const lag = d * (args.lag / 100); items.push({ address: tr.end, keys: two(0, 100, t0, t0 + d) }, { address: tr.start, keys: two(0, 100, t0 + lag, t0 + lag + d) }); }
-      if (args.mode === 'drawErase') items.push({ address: tr.end, keys: two(0, 100, t0, t0 + d) }, { address: tr.start, keys: two(0, 100, t0 + d + args.hold, t0 + 2 * d + args.hold) });
+      // the plan's keys (relative times) at the playhead — the same keys the tile preview draws
+      const pl = PLAN.trim(args);
+      const at = (keys) => keys.map((x) => Object.assign({}, x, { t: x.t + t0 }));
+      if (pl.end) items.push({ address: tr.end, keys: at(pl.end) });
+      if (pl.start) items.push({ address: tr.start, keys: at(pl.start) });
       const keys = await host.call('keys.write', { compId: ctx.comp.id, label: 'MOE: Trim Paths', items });
       out.push({ trim: tr, keys });
     }

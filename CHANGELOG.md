@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.47.0] — 2026-11-04 — Real Previews
+Details: `docs/features/REAL_PREVIEWS.md`.
+### Added
+- Every Animate tile plays **the keys its tool writes** — real duration, AE ease (influence → bezier), the overshoot key at 72 %, Cascade's stagger, Trim Paths' lag and hold — instead of a generic look-alike.
+- The Inspector preview **follows your settings** (Duration, Ease, Overshoot, Stagger, Lag, Hold) live, with a **key strip**: the keys in time, the playhead and *0.60 s · snappy · overshoot*.
+### Changed
+- `quick.animate` / `quick.trimPaths` build their keys from `features/quick/animatePlan.js` (the same plan the previews draw).
+### Tests
+- `tests/realpreview.test.js` (4): keys written on the mock = the plan (every ease, overshoot, all trim modes); `valueAt` behaviour. **Mock / preview, not After Effects.**
+
 ## [0.46.0] — 2026-11-04 — Select Modifiers + Sidebar Menus
 Details: `docs/features/SELECT_MODIFIERS.md`, `docs/features/SIDEBAR_MENUS.md`.
 ### Added

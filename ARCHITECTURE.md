@@ -179,6 +179,9 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6x. Real Previews (v0.47.0)
+- `features/quick/animatePlan.js` (pure): `easePair`, `keysFor`, `animate(args, pose)`, `trim(args)`, `valueAt(keys, t)` (AE temporal ease via `bezier.fromTemporal`), `endOf`. Used by `quick.animate` / `quick.trimPaths` (`tools.js`) and by `studio/thumbs.js` (move / fade / scale / spin / stagger / trim recipes when the thumb carries `args`; `keyStrip` under the big preview). `library.thumbEl(tile, cls, liveArgs)` passes the tile's args, or the Inspector's current ones.
+
 ## 6w. Select Modifiers + Sidebar Menus (v0.46.0)
 - `app/ui/layouts.js` `MENUS`: Select (renders its group's rows) + menus with their own `rows` (`[label, refs, short]`) and the `tab` whose Recent remembers their buttons; `menuPopover` renders either through `layoutAE.subRow`. Rule in `tests/norepeat.test.js`.
 - `features/quick/bar.js`: `SELECT_MODS` on the 12 Select filters (`mods`), `withMods(a, e)` (the one place reading Shift / Alt → args + label), `modsHint`. `quickbar.run(app, a, e)`; `actions.resolve(quick:…).run(app, e)` + `hint`; every renderer passes its click event. `layoutAE.keysHint()` (group `keys: true`, MOE Select menu).

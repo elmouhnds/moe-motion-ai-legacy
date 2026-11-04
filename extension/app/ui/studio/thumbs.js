@@ -9,6 +9,8 @@ const { LOOKS } = require('../../../features/glass/tools');
 const { thickValues } = require('../../../features/glass/thick');
 const { hexToRgb } = require('../../../features/brand/brands');
 const PAL = require('../../../features/design/palettes');
+// v0.47 (docs/features/REAL_PREVIEWS.md): Animate / Trim previews play the keys the tool writes (same timing, ease, overshoot)
+const PLAN = require('../../../features/quick/animatePlan');
 
 // Theme-aware ink (light AE brightness → dark ink). Refreshed once per drawn frame.
 let ACC = '#ff7a59';
@@ -29,8 +31,27 @@ function phase(t, dur = 1.1, cycle = 2.4) { return clamp01(((t % cycle) - 0.35) 
 
 function rrect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
 
+/**
+ * The tool's keys and the local time to play them at: wait 0.35 s, play the keys at their real speed, hold the end,
+ * loop. A still frame (no animation) shows the rest pose of an In and the start of an Out.
+ */
+function planOf(th, t) {
+  const args = Object.assign({}, th.args || {});
+  return { args, at: (end) => (th.still ? (th.dir === 'out' || args.dir === 'out' ? 0 : end) : (t % (0.35 + end + 0.9)) - 0.35) };
+}
+const animArgs = (th, kind) => Object.assign({ kind, dir: th.dir || 'in', overshoot: !!th.over }, th.args || {});
 const DRAW = {
   move(c, W, H, th, t) {
+    if (th.args) {
+      // the plan in tile units: rest at the centre, "away" one box-and-a-half off in the move's direction
+      const bw = W * 0.36, bh = H * 0.28;
+      const a = animArgs(th, 'moveRL');
+      const pl = PLAN.animate(a, { position: [0, 0], offset: [th.dx * W * 0.75, th.dy * H * 0.8] });
+      const v = PLAN.valueAt(pl.keys, planOf(th, t).at(PLAN.endOf(pl.keys)));
+      c.fillStyle = DIM; rrect(c, W / 2 - bw / 2, H / 2 - bh / 2, bw, bh, 4); c.setLineDash([3, 3]); c.strokeStyle = DIM; c.stroke(); c.setLineDash([]);
+      c.fillStyle = FG; rrect(c, W / 2 - bw / 2 + v[0], H / 2 - bh / 2 + v[1], bw, bh, 4); c.fill();
+      return;
+    }
     const p = eOut(phase(t));
     const k = th.dir === 'in' ? 1 - p : p;
     const bw = W * 0.36, bh = H * 0.28;
@@ -39,29 +60,48 @@ const DRAW = {
     c.fillStyle = FG; rrect(c, x, y, bw, bh, 4); c.fill();
   },
   fade(c, W, H, th, t) {
+    if (th.args) {
+      const pl = PLAN.animate(animArgs(th, 'fade'), { opacity: 100 });
+      c.globalAlpha = clamp01(PLAN.valueAt(pl.keys, planOf(th, t).at(PLAN.endOf(pl.keys))) / 100);
+      c.fillStyle = FG; rrect(c, W * 0.3, H * 0.34, W * 0.4, H * 0.32, 4); c.fill(); c.globalAlpha = 1;
+      return;
+    }
     const p = eOut(phase(t));
     c.globalAlpha = th.dir === 'in' ? p : 1 - p;
     c.fillStyle = FG; rrect(c, W * 0.3, H * 0.34, W * 0.4, H * 0.32, 4); c.fill(); c.globalAlpha = 1;
   },
   scale(c, W, H, th, t) {
-    const ph = phase(t);
-    const s = th.dir === 'in' ? (th.over ? Math.max(0, eBack(ph)) : eOut(ph)) : 1 - eOut(ph);
+    let s;
+    if (th.args) { const pl = PLAN.animate(animArgs(th, 'scale'), { scale: [100, 100] }); s = Math.max(0, PLAN.valueAt(pl.keys, planOf(th, t).at(PLAN.endOf(pl.keys)))[0] / 100); } else {
+      const ph = phase(t);
+      s = th.dir === 'in' ? (th.over ? Math.max(0, eBack(ph)) : eOut(ph)) : 1 - eOut(ph);
+    }
     const bw = W * 0.34 * s, bh = H * 0.42 * s;
     // the full size as a dashed ghost (like move): shows where the scale starts or ends
     c.setLineDash([3, 3]); c.strokeStyle = DIM; rrect(c, W / 2 - W * 0.17, H / 2 - H * 0.21, W * 0.34, H * 0.42, 4); c.stroke(); c.setLineDash([]);
     c.fillStyle = FG; rrect(c, W / 2 - bw / 2, H / 2 - bh / 2, Math.max(bw, 0.1), Math.max(bh, 0.1), 4); c.fill();
   },
   spin(c, W, H, th, t) {
-    const p = eBack(phase(t));
-    c.save(); c.translate(W / 2, H / 2); c.rotate((1 - p) * -Math.PI); c.fillStyle = FG; rrect(c, -W * 0.15, -H * 0.2, W * 0.3, H * 0.4, 4); c.fill(); c.restore();
+    let ang;
+    if (th.args) { const pl = PLAN.animate(animArgs(th, 'spin'), { rotation: 0 }); ang = PLAN.valueAt(pl.keys, planOf(th, t).at(PLAN.endOf(pl.keys))) * Math.PI / 180; } else ang = (1 - eBack(phase(t))) * -Math.PI;
+    c.save(); c.translate(W / 2, H / 2); c.rotate(ang); c.fillStyle = FG; rrect(c, -W * 0.15, -H * 0.2, W * 0.3, H * 0.4, 4); c.fill(); c.restore();
   },
   trim(c, W, H, th, t) {
-    const ph = phase(t, 1.4, 2.8);
     let a = 0, b = 1;
-    if (th.mode === 'draw') b = eOut(ph);
-    if (th.mode === 'erase') a = eOut(ph);
-    if (th.mode === 'travel') { b = clamp01(eOut(ph) * 1.5); a = clamp01(eOut(ph) * 1.5 - 0.5); }
-    if (th.mode === 'drawErase') { b = clamp01(ph * 2); a = clamp01(ph * 2 - 1); }
+    if (th.args) {
+      // Trim Paths keys (Start / End %) from the plan, played at their real times
+      const pl = PLAN.trim(Object.assign({ mode: th.mode }, th.args));
+      const lt = planOf(Object.assign({}, th, { dir: th.mode === 'erase' ? 'out' : 'in' }), t).at(PLAN.endOf(pl.start, pl.end));
+      if (pl.start) a = PLAN.valueAt(pl.start, lt) / 100;
+      if (pl.end) b = PLAN.valueAt(pl.end, lt) / 100;
+      if (th.still && th.mode === 'drawErase') { a = 0; b = 1; }
+    } else {
+      const ph = phase(t, 1.4, 2.8);
+      if (th.mode === 'draw') b = eOut(ph);
+      if (th.mode === 'erase') a = eOut(ph);
+      if (th.mode === 'travel') { b = clamp01(eOut(ph) * 1.5); a = clamp01(eOut(ph) * 1.5 - 0.5); }
+      if (th.mode === 'drawErase') { b = clamp01(ph * 2); a = clamp01(ph * 2 - 1); }
+    }
     const pts = []; for (let i = 0; i <= 60; i++) { const u = i / 60; pts.push([W * (0.12 + 0.76 * u), H * (0.62 - 0.3 * Math.sin(u * Math.PI * 1.5))]); }
     c.strokeStyle = DIM; c.lineWidth = 1; c.beginPath(); pts.forEach((q, i) => (i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]))); c.stroke();
     c.strokeStyle = ACC; c.lineWidth = 3; c.lineCap = 'round'; c.beginPath();
@@ -79,6 +119,21 @@ const DRAW = {
     c.fillStyle = ACC; c.beginPath(); c.arc(bx, by, 3.5, 0, Math.PI * 2); c.fill();
   },
   stagger(c, W, H, th, t) {
+    if (th.args) {
+      // Cascade: the same Quick Animate keys per layer, each one `stagger` later (selection order) — four layers
+      const a = Object.assign({ kind: 'moveBT', dir: 'in' }, th.args), n = 4, lag = a.stagger || 0;
+      const moveY = a.distance ? Math.min(H * 0.3, a.distance / 1080 * H * 2) : H * 0.6;
+      const pl = PLAN.animate(a, { position: [0, 0], offset: /^move/.test(a.kind) ? [0, moveY * (a.kind === 'moveTB' ? -1 : 1)] : [0, 0], opacity: 100 });
+      const lt = planOf(th, t).at(PLAN.endOf(pl.keys) + lag * (n - 1));
+      for (let i = 0; i < n; i++) {
+        const v = PLAN.valueAt(pl.keys, lt - i * lag);
+        const dy = Array.isArray(v) ? v[1] : 0;
+        c.globalAlpha = Array.isArray(v) ? 1 : clamp01(v / 100);
+        c.fillStyle = i === 0 ? ACC : FG; rrect(c, W * 0.18, H * (0.18 + i * 0.17) + dy, W * 0.64, H * 0.11, 3); c.fill();
+      }
+      c.globalAlpha = 1;
+      return;
+    }
     for (let i = 0; i < 4; i++) { const p = eOut(clamp01((phase(t, 1.6, 2.8) - i * 0.15) / 0.55)); c.globalAlpha = p; c.fillStyle = i === 0 ? ACC : FG; rrect(c, W * 0.18 + (1 - p) * -16, H * (0.18 + i * 0.17), W * 0.64, H * 0.11, 3); c.fill(); }
     c.globalAlpha = 1;
   },
@@ -446,10 +501,40 @@ Object.assign(DRAW, {
 
 let bgDraw = null; // loaded on first use (bgDraw → design tools; keeps thumbs light to load)
 /** Draw one thumbnail frame. */
+/** The keys a planned preview plays (for the Inspector's key strip). */
+function planKeys(th) {
+  if (!th.args) return null;
+  if (th.k === 'trim') { const pl = PLAN.trim(Object.assign({ mode: th.mode }, th.args)); return [].concat(pl.end || [], pl.start || []); }
+  const kind = { move: 'moveRL', fade: 'fade', scale: 'scale', spin: 'spin', stagger: 'moveBT' }[th.k];
+  if (!kind) return null;
+  const a = animArgs(th, kind);
+  const keys = PLAN.animate(a, { position: [0, 0], offset: [1, 1], opacity: 100, scale: [100, 100], rotation: 0 }).keys;
+  return th.k === 'stagger' && a.stagger ? keys.concat(keys.map((k) => Object.assign({}, k, { t: k.t + a.stagger * 3 }))) : keys;
+}
+/**
+ * v0.47: under the big Inspector preview, the keys on a strip with the playhead — where the keys sit in time
+ * (an overshoot is the extra key at 72 %), the duration and the ease, as After Effects will get them.
+ */
+function keyStrip(c, W, H, th, t) {
+  const keys = planKeys(th);
+  if (!keys || !keys.length) return;
+  const end = Math.max(...keys.map((k) => k.t)) || 1;
+  const x0 = W * 0.06, x1 = W * 0.94, y = H - 12;
+  const X = (tt) => x0 + (x1 - x0) * Math.max(0, Math.min(1, tt / end));
+  c.strokeStyle = DIM; c.lineWidth = 1; c.beginPath(); c.moveTo(x0, y); c.lineTo(x1, y); c.stroke();
+  c.fillStyle = FG;
+  keys.forEach((k) => { const x = X(k.t); c.beginPath(); c.moveTo(x, y - 4); c.lineTo(x + 4, y); c.lineTo(x, y + 4); c.lineTo(x - 4, y); c.closePath(); c.fill(); });
+  const lt = th.still ? end : (t % (0.35 + end + 0.9)) - 0.35;
+  if (lt >= 0 && lt <= end) { c.strokeStyle = ACC; c.lineWidth = 2; c.beginPath(); c.moveTo(X(lt), y - 7); c.lineTo(X(lt), y + 7); c.stroke(); c.lineWidth = 1; }
+  c.fillStyle = DIM; c.font = '10px sans-serif'; c.textAlign = 'right';
+  const a = th.args || {};
+  c.fillText(`${end.toFixed(2)} s${a.ease ? ` · ${a.ease}` : ''}${a.overshoot ? ' · overshoot' : ''}`, x1, y - 8); c.textAlign = 'left';
+}
 function draw(c, W, H, thumb, t) {
   theme();
   const fn = DRAW[thumb.k];
   if (fn) fn(c, W, H, thumb, t);
+  if (thumb.strip) keyStrip(c, W, H, thumb, t);
 }
 
-module.exports = { draw, DRAW, EXPR_FN };
+module.exports = { draw, DRAW, EXPR_FN, planKeys };

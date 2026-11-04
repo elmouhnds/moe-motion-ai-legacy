@@ -107,14 +107,18 @@ async function applyNow(app, tile, section, args) {
   return r;
 }
 
-function thumbEl(tile, cls) {
+/** v0.47: the tools whose previews play their real keys (features/quick/animatePlan.js). */
+const PLANNED = ['quick.animate', 'quick.trimPaths'];
+function thumbEl(tile, cls, liveArgs) {
   if (tile.thumb.k === 'icon') return h('div', { class: `st-thumb icon ${cls || ''}` }, icon(tile.thumb.icon));
-  const canvas = h('canvas', { class: `st-thumb ${cls || ''}`, 'aria-hidden': 'true', 'data-key': `${tile.id}|${cls || ''}|${JSON.stringify(tile.thumb)}` });
+  // the preview gets the tool's own args — the tile's preset, or the Inspector's current settings (live)
+  const th = PLANNED.includes(tile.tool) ? Object.assign({}, tile.thumb, { args: Object.assign({}, tile.args || {}, liveArgs || {}) }, cls === 'big' ? { strip: true } : {}) : tile.thumb;
+  const canvas = h('canvas', { class: `st-thumb ${cls || ''}`, 'aria-hidden': 'true', 'data-key': `${tile.id}|${cls || ''}|${JSON.stringify(th)}` });
   const t0 = Math.random() * 3;
   // Still frames use 1.6 s: every recipe has finished its move by then (phase() completes at 1.45 s).
   // An Out move is gone by then, so its still frame is the moment it starts leaving (v0.23: no empty tiles).
   const still = tile.thumb.dir === 'out' ? 0.6 : 1.6;
-  return widgets.animated(canvas, (now) => { const { c, W, H } = widgets.prep(canvas); thumbs.draw(c, W, H, tile.thumb, now === null ? still : now / 1000 + t0); });
+  return widgets.animated(canvas, (now) => { const { c, W, H } = widgets.prep(canvas); thumbs.draw(c, W, H, now === null && th.args ? Object.assign({}, th, { still: true }) : th, now === null ? still : now / 1000 + t0); });
 }
 
 async function saveAsPreset(app, section, tile) {
@@ -226,7 +230,7 @@ function render(app, section) {
       h('button', { class: 'icon-btn pin', 'aria-pressed': String(pinned), title: pinned ? 'Unpin from Favorites' : 'Pin to Favorites', onclick: () => { app.services.favorites.toggle(tool.id); app.render(); } }, icon('star', 'sm')),
       inline ? h('button', { class: 'icon-btn', 'data-key': 'st-ins-close', title: 'Close the settings', 'aria-label': 'Close settings', onclick: () => setSt(app, section, { open: false }) }, icon('x', 'sm')) : null),
     // inline, the tile itself is right above: no second big picture and no repeated title
-    inline || widgets.body[tool.id] || (tool.ui && tool.ui.renderBody) ? null : thumbEl(tile, 'big'),
+    inline || widgets.body[tool.id] || (tool.ui && tool.ui.renderBody) ? null : thumbEl(tile, 'big', PLANNED.includes(tool.id) ? app.state.get().args[tool.id] : null),
     inline ? null : h('div', { class: 'st-ins-title' }, tile.label),
     section.extras === 'palette' ? paletteExtras(app, tile) : h('div', { class: 'why st-ins-desc', title: tool.description }, tile.hint || tool.description),
     h('div', { class: 'st-ins-tool' }, renderTool(app, tool, { openByDefault: true })));
