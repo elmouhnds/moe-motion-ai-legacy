@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.48.0] — 2026-11-04 — Combined Moves
+Details: `docs/features/COMBINED_MOVES.md`.
+### Added
+- **Quick Animate**: *Also fade* (Opacity on the move's timing), *From / to* for Scale (zoom from 130 %, grow from 60 % …; the overshoot dips under the rest when coming from bigger), *Angle* for Spin (the overshoot scales with it).
+- **12 combined presets** (Animate 33 → 45): Rise + Fade, Slide + Fade In, Drop + Fade, Zoom Fade In, Grow + Fade, Pop + Fade, Swing In · Sink + Fade, Slide + Fade Out, Zoom Fade Out, Shrink + Fade, Swing Out — each previewing its real keys (move + fade).
+### Tests
+- `tests/combined.test.js` (3): every preset's keys on the mock = the plan (move, fade, timing, distance, rest pose, restore); defaults keep v0.47 presets unchanged. **Mock / preview, not After Effects.**
+
 ## [0.47.0] — 2026-11-04 — Real Previews
 Details: `docs/features/REAL_PREVIEWS.md`.
 ### Added

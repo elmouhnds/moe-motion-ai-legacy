@@ -36,6 +36,19 @@ const ANIMATE = [
   T('dropIn', 'Drop In', 'quick.animate', { kind: 'moveTB', dir: 'in', overshoot: true, distance: 160 }, { k: 'move', dx: 0, dy: -0.5, dir: 'in' }, ['In', 'Slide'], 'IN'),
   T('cascadeIn', 'Cascade In', 'quick.animate', { kind: 'moveBT', dir: 'in', distance: 80, stagger: 0.08, ease: 'smooth' }, { k: 'stagger' }, ['In', 'Slide'], 'IN'),
   T('cascadeFade', 'Cascade Fade', 'quick.animate', { kind: 'fade', dir: 'in', stagger: 0.06, duration: 0.5 }, { k: 'fade', dir: 'in' }, ['In', 'Fade'], 'IN'),
+  // v0.48 (COMBINED_MOVES.md): two properties on one timing — the entrances and exits designers build by hand
+  T('riseFade', 'Rise + Fade', 'quick.animate', { kind: 'moveBT', dir: 'in', distance: 60, fade: true, ease: 'smooth', duration: 0.7 }, { k: 'move', dx: 0, dy: 0.3, dir: 'in' }, ['In', 'Slide', 'Fade'], 'IN'),
+  T('slideFadeIn', 'Slide + Fade In', 'quick.animate', { kind: 'moveRL', dir: 'in', distance: 140, fade: true, ease: 'expo', duration: 0.7 }, { k: 'move', dx: 0.5, dy: 0, dir: 'in' }, ['In', 'Slide', 'Fade'], 'IN'),
+  T('dropFade', 'Drop + Fade', 'quick.animate', { kind: 'moveTB', dir: 'in', distance: 80, fade: true, overshoot: true, duration: 0.7 }, { k: 'move', dx: 0, dy: -0.3, dir: 'in' }, ['In', 'Slide', 'Fade'], 'IN'),
+  T('zoomFadeIn', 'Zoom Fade In', 'quick.animate', { kind: 'scale', dir: 'in', away: 130, fade: true, ease: 'expo', duration: 0.7 }, { k: 'scale', dir: 'in' }, ['In', 'Scale', 'Fade'], 'IN'),
+  T('growFade', 'Grow + Fade', 'quick.animate', { kind: 'scale', dir: 'in', away: 60, fade: true, ease: 'smooth', duration: 0.6 }, { k: 'scale', dir: 'in' }, ['In', 'Scale', 'Fade'], 'IN'),
+  T('popFade', 'Pop + Fade', 'quick.animate', { kind: 'scale', dir: 'in', overshoot: true, fade: true, duration: 0.6 }, { k: 'scale', dir: 'in' }, ['In', 'Scale', 'Fade'], 'IN'),
+  T('swingIn', 'Swing In', 'quick.animate', { kind: 'spin', dir: 'in', angle: 25, fade: true, overshoot: true, duration: 0.7 }, { k: 'spin', dir: 'in' }, ['In', 'Fade'], 'IN'),
+  T('sinkFade', 'Sink + Fade', 'quick.animate', { kind: 'moveTB', dir: 'out', distance: 60, fade: true, ease: 'smooth', duration: 0.6 }, { k: 'move', dx: 0, dy: 0.3, dir: 'out' }, ['Out', 'Slide', 'Fade'], 'OUT'),
+  T('slideFadeOut', 'Slide + Fade Out', 'quick.animate', { kind: 'moveRL', dir: 'out', distance: 140, fade: true, ease: 'expo', duration: 0.6 }, { k: 'move', dx: -0.5, dy: 0, dir: 'out' }, ['Out', 'Slide', 'Fade'], 'OUT'),
+  T('zoomFadeOut', 'Zoom Fade Out', 'quick.animate', { kind: 'scale', dir: 'out', away: 130, fade: true, ease: 'expo', duration: 0.6 }, { k: 'scale', dir: 'out' }, ['Out', 'Scale', 'Fade'], 'OUT'),
+  T('shrinkFade', 'Shrink + Fade', 'quick.animate', { kind: 'scale', dir: 'out', away: 60, fade: true, ease: 'smooth', duration: 0.5 }, { k: 'scale', dir: 'out' }, ['Out', 'Scale', 'Fade'], 'OUT'),
+  T('swingOut', 'Swing Out', 'quick.animate', { kind: 'spin', dir: 'out', angle: 25, fade: true, duration: 0.6 }, { k: 'spin', dir: 'out' }, ['Out', 'Fade'], 'OUT'),
   T('gentlePop', 'Soft Pop', 'quick.animate', { kind: 'scale', dir: 'in', ease: 'gentle', duration: 0.8 }, { k: 'scale', dir: 'in' }, ['In', 'Scale'], 'IN'),
   T('spinOut', 'Spin Out', 'quick.animate', { kind: 'spin', dir: 'out' }, { k: 'spin', dir: 'out' }, ['Out'], 'OUT'),
   T('popOut', 'Pop Out', 'quick.animate', { kind: 'scale', dir: 'out', overshoot: true, duration: 0.45 }, { k: 'scale', dir: 'out', over: true }, ['Out', 'Scale'], 'OUT'),
@@ -212,7 +225,7 @@ function sectionOf(tool) {
 }
 
 /* v0.6 tiles get a NEW corner badge. */
-const NEW_TILES = new Set(['riseIn', 'dropIn', 'cascadeIn', 'cascadeFade', 'gentlePop', 'spinOut', 'popOut', 'easeExpo', 'easeDecel', 'easeHard', 'easeAccel', 'easeLaunch',
+const NEW_TILES = new Set(['riseFade', 'slideFadeIn', 'dropFade', 'zoomFadeIn', 'growFade', 'popFade', 'swingIn', 'sinkFade', 'slideFadeOut', 'zoomFadeOut', 'shrinkFade', 'swingOut', 'riseIn', 'dropIn', 'cascadeIn', 'cascadeFade', 'gentlePop', 'spinOut', 'popOut', 'easeExpo', 'easeDecel', 'easeHard', 'easeAccel', 'easeLaunch',
   ...['bounceBack', 'squash', 'orbit', 'swing', 'heartbeat', 'breathe', 'wiggleRot', 'wiggleScale', 'organic', 'loopWiggle', 'drift', 'clock', 'faceMotion', 'scatter', 'popIn', 'slideIn'].map((x) => `x-${x}`)]);
 for (const sec of SECTIONS) for (const t of sec.tiles || []) if (NEW_TILES.has(t.id)) t.isNew = true;
 

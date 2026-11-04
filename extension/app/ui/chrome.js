@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['layers', '12 combined moves', 'Entrances and exits the way you build them by hand, in one click: Rise + Fade, Zoom Fade In / Out (from 130 %), Grow / Shrink + Fade, Pop + Fade, Swing In / Out, Slide + Fade, Drop + Fade, Sink + Fade. And on any Quick Animate: Also fade, From / to (scale) and Angle (spin). Each tile plays its real keys.'],
   ['play', 'Previews that are the real motion', 'Every Animate tile now plays the exact keyframes it will write — the real duration, the real ease (Snappy, Smooth, Gentle, Expo look different now), Pop\'s overshoot key, Cascade\'s stagger. Change Duration or Ease in the settings and the big preview follows at once, with a strip that shows where the keys sit.'],
   ['link', 'Menus under Select', 'The MOE sidebar has the jobs you do from any tab, under Select and in the order of the work: Parent & Link (to a null, as a chain, delay, stare), In / Out (Fade, Pop, Slide, Spin — In next to Out — and Draw On) and Loop (cycle, ping-pong, offset, wiggle, float, pendulum, pulse). Each is one click, like Select.'],
   ['cursor', 'Shift adds, Alt removes', 'Every Select button now works like After Effects: Shift-click a filter (Text, Shapes, Same Label …) to add those layers to your selection, Alt-click to take them away; a plain click replaces. On Home, in the MOE Select menu, the sidebar and the Quick Bar. Right-click still opens a button\'s options.'],

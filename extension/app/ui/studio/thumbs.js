@@ -40,6 +40,8 @@ function planOf(th, t) {
   return { args, at: (end) => (th.still ? (th.dir === 'out' || args.dir === 'out' ? 0 : end) : (t % (0.35 + end + 0.9)) - 0.35) };
 }
 const animArgs = (th, kind) => Object.assign({ kind, dir: th.dir || 'in', overshoot: !!th.over }, th.args || {});
+/** v0.48: the "Also fade" opacity at local time lt (1 when the move has no fade). */
+const fadeAt = (a, lt) => { const f = PLAN.fade(a, { opacity: 100 }); return f ? clamp01(PLAN.valueAt(f.keys, lt) / 100) : 1; };
 const DRAW = {
   move(c, W, H, th, t) {
     if (th.args) {
@@ -47,9 +49,11 @@ const DRAW = {
       const bw = W * 0.36, bh = H * 0.28;
       const a = animArgs(th, 'moveRL');
       const pl = PLAN.animate(a, { position: [0, 0], offset: [th.dx * W * 0.75, th.dy * H * 0.8] });
-      const v = PLAN.valueAt(pl.keys, planOf(th, t).at(PLAN.endOf(pl.keys)));
+      const lt = planOf(th, t).at(PLAN.endOf(pl.keys));
+      const v = PLAN.valueAt(pl.keys, lt);
       c.fillStyle = DIM; rrect(c, W / 2 - bw / 2, H / 2 - bh / 2, bw, bh, 4); c.setLineDash([3, 3]); c.strokeStyle = DIM; c.stroke(); c.setLineDash([]);
-      c.fillStyle = FG; rrect(c, W / 2 - bw / 2 + v[0], H / 2 - bh / 2 + v[1], bw, bh, 4); c.fill();
+      c.globalAlpha = fadeAt(a, lt);
+      c.fillStyle = FG; rrect(c, W / 2 - bw / 2 + v[0], H / 2 - bh / 2 + v[1], bw, bh, 4); c.fill(); c.globalAlpha = 1;
       return;
     }
     const p = eOut(phase(t));
@@ -72,19 +76,22 @@ const DRAW = {
   },
   scale(c, W, H, th, t) {
     let s;
-    if (th.args) { const pl = PLAN.animate(animArgs(th, 'scale'), { scale: [100, 100] }); s = Math.max(0, PLAN.valueAt(pl.keys, planOf(th, t).at(PLAN.endOf(pl.keys)))[0] / 100); } else {
+    let alpha = 1;
+    if (th.args) { const a = animArgs(th, 'scale'), pl = PLAN.animate(a, { scale: [100, 100] }), lt = planOf(th, t).at(PLAN.endOf(pl.keys)); s = Math.max(0, PLAN.valueAt(pl.keys, lt)[0] / 100); alpha = fadeAt(a, lt); } else {
       const ph = phase(t);
       s = th.dir === 'in' ? (th.over ? Math.max(0, eBack(ph)) : eOut(ph)) : 1 - eOut(ph);
     }
     const bw = W * 0.34 * s, bh = H * 0.42 * s;
     // the full size as a dashed ghost (like move): shows where the scale starts or ends
     c.setLineDash([3, 3]); c.strokeStyle = DIM; rrect(c, W / 2 - W * 0.17, H / 2 - H * 0.21, W * 0.34, H * 0.42, 4); c.stroke(); c.setLineDash([]);
-    c.fillStyle = FG; rrect(c, W / 2 - bw / 2, H / 2 - bh / 2, Math.max(bw, 0.1), Math.max(bh, 0.1), 4); c.fill();
+    c.globalAlpha = alpha; c.fillStyle = FG; rrect(c, W / 2 - bw / 2, H / 2 - bh / 2, Math.max(bw, 0.1), Math.max(bh, 0.1), 4); c.fill(); c.globalAlpha = 1;
   },
   spin(c, W, H, th, t) {
     let ang;
-    if (th.args) { const pl = PLAN.animate(animArgs(th, 'spin'), { rotation: 0 }); ang = PLAN.valueAt(pl.keys, planOf(th, t).at(PLAN.endOf(pl.keys))) * Math.PI / 180; } else ang = (1 - eBack(phase(t))) * -Math.PI;
-    c.save(); c.translate(W / 2, H / 2); c.rotate(ang); c.fillStyle = FG; rrect(c, -W * 0.15, -H * 0.2, W * 0.3, H * 0.4, 4); c.fill(); c.restore();
+    let alpha = 1;
+    if (th.args) { const a = animArgs(th, 'spin'), pl = PLAN.animate(a, { rotation: 0 }), lt = planOf(th, t).at(PLAN.endOf(pl.keys)); ang = PLAN.valueAt(pl.keys, lt) * Math.PI / 180; alpha = fadeAt(a, lt); } else ang = (1 - eBack(phase(t))) * -Math.PI;
+    c.globalAlpha = alpha;
+    c.save(); c.translate(W / 2, H / 2); c.rotate(ang); c.fillStyle = FG; rrect(c, -W * 0.15, -H * 0.2, W * 0.3, H * 0.4, 4); c.fill(); c.restore(); c.globalAlpha = 1;
   },
   trim(c, W, H, th, t) {
     let a = 0, b = 1;

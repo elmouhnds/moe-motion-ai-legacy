@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Combined Moves** (v0.48.0): 12 entrances and exits built the way designers do by hand — Rise + Fade, Zoom Fade In / Out, Swing, Grow / Shrink + Fade … — with *Also fade*, *From / to* and *Angle* on Quick Animate (docs/features/COMBINED_MOVES.md).
+
 **Real Previews** (v0.47.0): every Animate tile plays the exact keys its tool writes (timing, ease, overshoot, stagger), and the Inspector preview follows your settings live with a key strip (docs/features/REAL_PREVIEWS.md).
 
 **Sidebar Menus** (v0.46.0): under Select in the MOE sidebar — Parent & Link, In / Out (each move next to its opposite) and Loop (loops + idle wiggle / float / pendulum / pulse): one job each, one click from any tab (docs/features/SIDEBAR_MENUS.md).

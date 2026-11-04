@@ -42,16 +42,30 @@ function animate(args, pose) {
     return { prop: 'opacity', keys: args.dir === 'in' ? k(0, rest) : k(rest, 0) };
   }
   if (args.kind === 'scale') {
+    // v0.48: `away` = the scale at the far end in % of the rest (0 = from / to nothing, 130 = zoom from bigger)
     const s = p.scale || [100, 100];
-    const zero = s.map(() => 0);
-    const over = args.overshoot && args.dir === 'in' ? s.map((v) => v * 1.08) : undefined;
-    return { prop: 'scale', keys: args.dir === 'in' ? k(zero, s, over) : k(s, zero) };
+    const f = (args.away === undefined ? 0 : args.away) / 100;
+    const far = s.map((v) => v * f);
+    // the overshoot passes the rest on the far side's opposite: 8 % past it from small, 5 % under it from big
+    const over = args.overshoot && args.dir === 'in' ? s.map((v) => v * (f > 1 ? 0.95 : 1.08)) : undefined;
+    return { prop: 'scale', keys: args.dir === 'in' ? k(far, s, over) : k(s, far) };
   }
   if (args.kind === 'spin') {
-    const r = p.rotation || 0;
-    return { prop: 'rotation', keys: args.dir === 'in' ? k(r - 180, r, args.overshoot ? r + 8 : undefined) : k(r, r + 180) };
+    // v0.48: `angle` (default a half turn); the overshoot is 8° per half turn past the rest
+    const r = p.rotation || 0, ang = args.angle === undefined ? 180 : args.angle;
+    return { prop: 'rotation', keys: args.dir === 'in' ? k(r - ang, r, args.overshoot ? r + ang * (8 / 180) : undefined) : k(r, r + ang) };
   }
   return { prop: null, keys: [] };
+}
+
+/** v0.48: "Also fade" — Opacity keys on the same timing as the move (never an overshoot), or null. */
+function fade(args, pose) {
+  if (!args.fade || args.kind === 'fade') return null;
+  const e = easePair(args.ease || 'snappy');
+  const dur = args.duration > 0 ? args.duration : 0.6;
+  const o = pose && pose.opacity !== undefined ? pose.opacity : 100;
+  const rest = args.dir === 'in' && o === 0 ? 100 : o;
+  return { prop: 'opacity', keys: args.dir === 'in' ? keysFor(e, 0, dur, 0, rest) : keysFor(e, 0, dur, rest, 0) };
 }
 
 /** Trim Paths keys (Start / End in percent) for draw / erase / travel / drawErase — the tool's own timing. */
@@ -86,4 +100,4 @@ function valueAt(keys, t) {
 /** When the keys end (for a preview loop). */
 const endOf = (...lists) => Math.max(0, ...lists.filter(Boolean).map((k) => (k.length ? k[k.length - 1].t : 0)));
 
-module.exports = { easePair, keysFor, animate, trim, valueAt, endOf };
+module.exports = { easePair, keysFor, animate, fade, trim, valueAt, endOf };

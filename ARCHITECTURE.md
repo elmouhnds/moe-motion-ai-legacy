@@ -179,6 +179,9 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6y. Combined Moves (v0.48.0)
+- `animatePlan.animate` reads `away` (scale at the far end, %) and `angle` (spin); `animatePlan.fade(args, pose)` = Opacity on the same timing. `quick.animate` params `fade` / `away` / `angle`; Scale / Spin / fade keys come from the plan. `thumbs.fadeAt` adds the fade to move / scale / spin previews.
+
 ## 6x. Real Previews (v0.47.0)
 - `features/quick/animatePlan.js` (pure): `easePair`, `keysFor`, `animate(args, pose)`, `trim(args)`, `valueAt(keys, t)` (AE temporal ease via `bezier.fromTemporal`), `endOf`. Used by `quick.animate` / `quick.trimPaths` (`tools.js`) and by `studio/thumbs.js` (move / fade / scale / spin / stagger / trim recipes when the thumb carries `args`; `keyStrip` under the big preview). `library.thumbEl(tile, cls, liveArgs)` passes the tile's args, or the Inspector's current ones.
 

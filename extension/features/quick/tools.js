@@ -219,6 +219,10 @@ const animate = {
     ease: { type: 'enum', label: 'Ease', default: 'snappy', options: EASE_OPTIONS },
     distance: { type: 'number', label: 'Distance', min: 0, max: 10000, step: 10, default: 0, unit: 'px', description: '0 = fully off-screen', showIf: (a) => /^move/.test(a.kind) },
     overshoot: { type: 'boolean', label: 'Overshoot', default: false, showIf: (a) => a.dir === 'in' && a.kind !== 'fade' },
+    // v0.48 (COMBINED_MOVES.md): one move, several properties on the same timing
+    fade: { type: 'boolean', label: 'Also fade', default: false, description: 'Opacity in / out on the same timing', showIf: (a) => a.kind !== 'fade' },
+    away: { type: 'number', label: 'From / to', min: 0, max: 400, step: 5, default: 0, unit: '%', description: 'The scale at the far end, in % of the layer\'s own: 0 = from / to nothing, 130 = zoom from bigger', showIf: (a) => a.kind === 'scale' },
+    angle: { type: 'number', label: 'Angle', min: 5, max: 1080, step: 5, default: 180, unit: '°', showIf: (a) => a.kind === 'spin' },
     stagger: { type: 'number', label: 'Stagger', min: 0, max: 2, step: 0.01, default: 0, unit: 's', advanced: true, description: 'Delay between layers (selection order)' }
   },
   requires: { comp: true, minLayers: 1 }, permissions: ['modify.keyframes'], recovery: 'undo+checkpoint',
@@ -266,14 +270,18 @@ const animate = {
         const o = (await host.call('props.values', { compId: comp.id, time: t0, items: [{ address: ADDR(L.id, 'ADBE Opacity') }] })).items[0].value;
         const rest = args.dir === 'in' && o === 0 ? 100 : o;
         items.push({ address: ADDR(L.id, 'ADBE Opacity'), keys: args.dir === 'in' ? k(0, rest) : k(rest, 0) });
-      } else if (args.kind === 'scale') {
-        const s = (await host.call('props.values', { compId: comp.id, time: t0, items: [{ address: ADDR(L.id, 'ADBE Scale') }] })).items[0].value;
-        const zero = s.map(() => 0);
-        const over = args.overshoot && args.dir === 'in' ? s.map((v) => v * 1.08) : undefined;
-        items.push({ address: ADDR(L.id, 'ADBE Scale'), keys: args.dir === 'in' ? k(zero, s, over) : k(s, zero) });
-      } else if (args.kind === 'spin') {
-        const r = (await host.call('props.values', { compId: comp.id, time: t0, items: [{ address: ADDR(L.id, 'ADBE Rotate Z') }] })).items[0].value;
-        items.push({ address: ADDR(L.id, 'ADBE Rotate Z'), keys: args.dir === 'in' ? k(r - 180, r, args.overshoot ? r + 8 : undefined) : k(r, r + 180) });
+      } else if (args.kind === 'scale' || args.kind === 'spin') {
+        // the plan's keys from the layer's own rest value, at the playhead (same keys as the tile preview)
+        const mn = args.kind === 'scale' ? 'ADBE Scale' : 'ADBE Rotate Z';
+        const v = (await host.call('props.values', { compId: comp.id, time: t0, items: [{ address: ADDR(L.id, mn) }] })).items[0].value;
+        const pl = PLAN.animate(args, args.kind === 'scale' ? { scale: v } : { rotation: v });
+        items.push({ address: ADDR(L.id, mn), keys: pl.keys.map((x) => Object.assign({}, x, { t: x.t + t0 })) });
+      }
+      // v0.48: Also fade — Opacity on the same timing as the move
+      if (args.fade && args.kind !== 'fade') {
+        const o = (await host.call('props.values', { compId: comp.id, time: t0, items: [{ address: ADDR(L.id, 'ADBE Opacity') }] })).items[0].value;
+        const f = PLAN.fade(args, { opacity: o });
+        items.push({ address: ADDR(L.id, 'ADBE Opacity'), keys: f.keys.map((x) => Object.assign({}, x, { t: x.t + t0 })) });
       }
     }
     if (!items.length) throw new Error(`Nothing to animate: ${skipped.join(', ')}`);

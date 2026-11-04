@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.53 — Combined Moves ✅ (v0.48.0)
+- Also fade / From / to / Angle on Quick Animate; 12 combined presets with real previews (Animate 45).
+- Next: native templates (v0.49).
+
 ## M1.52 — Real Previews ✅ (v0.47.0)
 - Animate / Trim previews play the tool's real keys; live Inspector preview + key strip.
 - Next (premium, owner): bigger libraries (v0.48), native templates (v0.49).
