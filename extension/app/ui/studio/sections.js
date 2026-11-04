@@ -155,6 +155,18 @@ const BACKGROUNDS = PAL.PALETTES.map((p) => T(`bg-${p.id}`, p.name, 'design.back
  * kind: 'library' (tiles + inspector) | 'view' (custom view id) | 'category' (classic tool list)
  * categories: tool categories / ids listed under "All tools".
  */
+// v0.49 (docs/features/TEMPLATES.md): native templates — real text + shape layers sized to the text, one null, the entrance keyed
+const TPL_T = (id, label, args, tags) => T(`tpl-${id}`, label, 'design.template', args, { k: 'template', id: args.template }, tags, 'NEW');
+const TEMPLATE_TILES = [
+  TPL_T('lowerThird', 'Lower Third', { template: 'lowerThird' }, ['Titles']),
+  TPL_T('titleCard', 'Title Card', { template: 'titleCard' }, ['Titles']),
+  TPL_T('callout', 'Callout', { template: 'callout' }, ['Callouts']),
+  TPL_T('tag', 'Tag', { template: 'tag' }, ['Callouts']),
+  TPL_T('lowerThirdAr', 'شريط الاسم', { template: 'lowerThird', title: 'سارة أحمد', subtitle: 'مصممة موشن جرافيك' }, ['Titles', 'Arabic']),
+  TPL_T('titleCardAr', 'عنوان كبير', { template: 'titleCard', title: 'الإطلاق الكبير', subtitle: 'قريباً هذا الصيف' }, ['Titles', 'Arabic'])
+];
+TEMPLATE_TILES.forEach((t) => { t.hint = (require('../../../features/design/templates').byId(t.args.template) || {}).hint; });
+
 const SECTIONS = [
   { id: 'home', label: 'Home', icon: 'home', kind: 'view' },
   { id: 'kit', label: 'Toolbox', icon: 'kExcite', kind: 'view' },
@@ -165,6 +177,7 @@ const SECTIONS = [
     elsewhere: [['kit', 'Ease', 'Ease presets and the speed graph are in Motion Control']], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) && t.id !== 'motion.easeCurve' && t.id !== 'motion.pasteEase' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },
   { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true },
+  { id: 'templates', label: 'Templates', icon: 'type', kind: 'library', tiles: TEMPLATE_TILES, filters: ['All', 'Titles', 'Callouts', 'Arabic'], tools: (t) => t.id === 'design.template' },
   { id: 'shapes', label: 'Shapes & Icons', icon: 'shapes', kind: 'view' },
   { id: 'backgrounds', label: 'Backgrounds', icon: 'background', kind: 'library', tiles: BACKGROUNDS, filters: PAL.TAGS, tools: (t) => /^design\.(background|colorize)$/.test(t.id), extras: 'palette' },
   { id: 'looks', label: 'Looks & Glass', icon: 'glass', kind: 'library', tiles: LOOK_TILES, filters: ['All', 'Thick', 'Clear', 'Frosted', 'Liquid', 'Tinted'], tools: (t) => /^glass\./.test(t.id) },
@@ -186,7 +199,7 @@ const SECTIONS = [
 const WORKSPACES = [
   { id: 'ws-kit', label: 'Toolbox', icon: 'kExcite', items: ['kit'] },
   { id: 'ws-animate', label: 'Animate', icon: 'motion', items: ['animate', 'text', 'expressions'] },
-  { id: 'ws-design', label: 'Design', icon: 'palette', items: ['shapes', 'backgrounds', 'looks', 'brand'] },
+  { id: 'ws-design', label: 'Design', icon: 'palette', items: ['templates', 'shapes', 'backgrounds', 'looks', 'brand'] },
   { id: 'ws-layout', label: 'Layout', icon: 'grid', items: ['layout', 'zoom', 'deliver'] },
   { id: 'ws-finish', label: 'Finish', icon: 'layers', items: ['compositing'] },
   { id: 'ws-tools', label: 'Utilities', icon: 'tools', items: ['quick', 'select', 'tools'] } // v0.14: was "Tools" (too close to Toolbox)

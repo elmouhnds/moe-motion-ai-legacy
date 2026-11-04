@@ -2,6 +2,7 @@
  * MOE Motion AI - text operations (ExtendScript / ES3).
  *   fonts.list         installed fonts (app.fonts.allFonts, AE 24+)
  *   text.setStyle      font / fill / stroke / direction on text layers (before/after for restore)
+ *   text.create        a new text layer for a template (size from sourceRectAtTime; Arabic = RTL + universal composer)
  *   text.applyAnimator build a named Text Animator from a MOE preset spec
  *   text.removeAnimator remove a named animator (checkpoint restore)
  *   text.applyFfx      apply a .ffx preset to given layers (applyPreset acts on the selection)
@@ -328,6 +329,39 @@
                 L = U.findLayer(comp, { layerId: args.sourceId });
                 L.enabled = args.sourceEnabled !== false;
                 return { removed: removed, sourceEnabled: L.enabled };
+            });
+        }
+    };
+
+    /*
+     * v0.49 (docs/features/TEMPLATES.md): one new text layer for a template, in one Undo group.
+     * args: { compId, text, name, fontSize, color [r,g,b] 0..1, font?, bold?, justify ('left'|'right'|'center'), rtl,
+     *         position [x,y], label? }
+     * -> { layerId, name, size: [w, h] } - size is sourceRectAtTime at the comp's time (After Effects measures it).
+     * Arabic: direction right-to-left + the universal composer, as text.setStyle does (CLAUDE.md, Arabic text).
+     */
+    ops['text.create'] = {
+        mutates: true,
+        run: function (args) {
+            var comp = U.compById(args.compId);
+            if (args.text === undefined || String(args.text) === '') { U.fail('BAD_ARGS', 'No text.'); }
+            return U.withUndo('MOE: Template Text', function () {
+                var L = comp.layers.addText(String(args.text)), sp = L.property('ADBE Text Properties').property('ADBE Text Document'), d = sp.value, r, c;
+                d.fontSize = num(args.fontSize) || 48;
+                if (args.font) { try { d.font = String(args.font); } catch (eF) { /* font not installed: keep the default */ } }
+                if (args.bold) { try { d.fauxBold = true; } catch (eB) { } }
+                if (args.color) { c = arr(args.color); d.applyFill = true; d.fillColor = [c[0], c[1], c[2]]; }
+                d.justification = args.justify === 'right' ? ParagraphJustification.RIGHT_JUSTIFY : args.justify === 'center' ? ParagraphJustification.CENTER_JUSTIFY : ParagraphJustification.LEFT_JUSTIFY;
+                if (args.rtl || hasArabic(String(args.text))) {
+                    try { d.composerEngine = ComposerEngine.UNIVERSAL_TYPE_ENGINE; } catch (eC) { }
+                    try { d.direction = ParagraphDirection.DIRECTION_RIGHT_TO_LEFT; } catch (eD) { /* AE < 24: direction not scriptable */ }
+                }
+                sp.setValue(d);
+                L.name = String(args.name || 'MOE Text');
+                if (args.label !== undefined) { L.label = num(args.label); }
+                if (args.position) { L.property('ADBE Transform Group').property('ADBE Position').setValue([num(args.position[0]), num(args.position[1])]); }
+                r = L.sourceRectAtTime(comp.time, false);
+                return { layerId: L.id, name: L.name, size: [num(r.width), num(r.height)] };
             });
         }
     };

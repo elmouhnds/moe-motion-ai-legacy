@@ -108,7 +108,7 @@ async function applyNow(app, tile, section, args) {
 }
 
 /** v0.47: the tools whose previews play their real keys (features/quick/animatePlan.js). */
-const PLANNED = ['quick.animate', 'quick.trimPaths'];
+const PLANNED = ['quick.animate', 'quick.trimPaths', 'design.template'];
 function thumbEl(tile, cls, liveArgs) {
   if (tile.thumb.k === 'icon') return h('div', { class: `st-thumb icon ${cls || ''}` }, icon(tile.thumb.icon));
   // the preview gets the tool's own args — the tile's preset, or the Inspector's current settings (live)

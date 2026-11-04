@@ -1274,8 +1274,12 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .assistant.open .as-sheet { width: 100%; max-height: min(55vh, 520px); border-width: 1px 0 0; border-radius: 14px 14px 0 0; box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.28); }
 .app.layout-glass .gl-nav { order: 2; }
 .app.layout-glass .assistant.open { bottom: auto; }
-/* v0.29 audit: on pages with the sticky Apply bar the assistant button sits above it, never on Apply */
-.app.has-actbar .assistant:not(.open) { bottom: 62px; }
+/* v0.29 audit: on pages with the sticky Apply bar the assistant button never sits on Apply.
+ * v0.49 audit: lifting it was not enough — on a short page the bar is not at the bottom, so the lifted button landed
+ * on Build. The bar now keeps the button's corner free on its side, wherever the bar is. */
+.app.has-actbar .assistant:not(.open) { bottom: 8px; }
+.app.has-actbar.fab-right .st-actbar { padding-right: 64px; }
+.app.has-actbar.fab-left .st-actbar { padding-left: 64px; }
 .app.layout-glass.has-actbar .assistant:not(.open) { bottom: 122px; }
 
 /* ---------- v0.30 Motion Control: graph + anchor + align in one block (docs/features/MOTION_CONTROL.md) ---------- */

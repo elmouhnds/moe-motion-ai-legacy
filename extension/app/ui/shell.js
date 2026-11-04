@@ -211,7 +211,7 @@ function createApp(root, services, env = {}) {
     const L = require('./layouts');
     const body = (id) => [chrome.banner(app, id), views[id] ? views[id].render(app) : h('div', { class: 'empty' }, 'This page moved — open it from Home or search (Ctrl+K)')];
     const p = L.build(app, s, layout, body);
-    const appEl = h('div', { class: `app layout-${layout} ${s.kitBand || ''} ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.tilesCompact ? 'tiles-compact' : ''} ${(studio.byId(s.view) || {}).kind === 'library' || s.view === 'text' ? 'has-actbar' : ''}` },
+    const appEl = h('div', { class: `app layout-${layout} ${s.kitBand || ''} ${s.compact ? 'compact' : ''} ${s.wide ? 'wide' : ''} ${s.tilesCompact ? 'tiles-compact' : ''} ${(studio.byId(s.view) || {}).kind === 'library' || s.view === 'text' ? 'has-actbar' : ''} fab-${app.services.store.get('assistant-side', 'right') === 'left' ? 'left' : 'right'}` },
       p.side || null, // v0.25: a layout's own sidebar (MOE)
       h('div', { class: 'main' },
         p.header,

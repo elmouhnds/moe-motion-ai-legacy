@@ -11,6 +11,8 @@ const { hexToRgb } = require('../../../features/brand/brands');
 const PAL = require('../../../features/design/palettes');
 // v0.47 (docs/features/REAL_PREVIEWS.md): Animate / Trim previews play the keys the tool writes (same timing, ease, overshoot)
 const PLAN = require('../../../features/quick/animatePlan');
+// v0.49 (docs/features/TEMPLATES.md): template previews draw the tool's own layout and keys
+const TPL = require('../../../features/design/templates');
 
 // Theme-aware ink (light AE brightness → dark ink). Refreshed once per drawn frame.
 let ACC = '#ff7a59';
@@ -508,6 +510,62 @@ Object.assign(DRAW, {
 
 let bgDraw = null; // loaded on first use (bgDraw → design tools; keeps thumbs light to load)
 /** Draw one thumbnail frame. */
+/**
+ * v0.49: a template as the tool builds it — the same layout (`templates.layout`) and the same entrance keys, drawn on
+ * a 1920 × 1080 frame scaled into the tile. Only the text widths come from the browser (After Effects measures the real
+ * ones; the bar / pill then fits them the same way).
+ */
+const TPL_COMP = { width: 1920, height: 1080 };
+function templatePlan(c, th) {
+  const opts = Object.assign({}, th.args || {});
+  const id = opts.template || th.id;
+  const T = TPL.byId(id);
+  if (!opts.title) opts.title = T.title;
+  if (opts.subtitle === undefined || opts.subtitle === '') opts.subtitle = id === 'tag' ? '' : T.subtitle;
+  const specs = TPL.textSpecs(id, opts, TPL_COMP);
+  const measured = {};
+  specs.forEach((s) => { c.font = `${s.bold ? '700 ' : ''}${s.fontSize}px sans-serif`; const mt = c.measureText && c.measureText(s.text); measured[s.key] = [mt && mt.width > 0 ? mt.width : s.text.length * s.fontSize * 0.55, s.fontSize * 0.75]; });
+  return { id, plan: TPL.layout(id, opts, TPL_COMP, measured) };
+}
+const css = (rgb, a) => `rgba(${Math.round(rgb[0] * 255)},${Math.round(rgb[1] * 255)},${Math.round(rgb[2] * 255)},${a === undefined ? 1 : a})`;
+DRAW.template = function (c, W, H, th, t) {
+  const { plan } = templatePlan(c, th);
+  const end = Math.max(0.01, ...plan.keys.map((k) => PLAN.endOf(k.keys)));
+  const lt = th.still ? end : (t % (0.35 + end + 1.6)) - 0.35;
+  // the big preview shows the whole frame (where it sits); a small tile frames the template itself
+  const b = plan.box, pad = 0.35;
+  const view = th.strip ? [0, 0, 1920, 1080] : [b[0] - b[2] * pad, b[1] - Math.max(b[3], 60) * pad * 2, b[2] * (1 + 2 * pad), Math.max(b[3], 60) * (1 + 4 * pad)];
+  const k = Math.min(W / view[2], H / view[3]), ox = (W - view[2] * k) / 2 - view[0] * k, oy = (H - view[3] * k) / 2 - view[1] * k;
+  c.save(); c.translate(ox, oy); c.scale(k, k);
+  if (th.strip) { c.fillStyle = 'rgba(0,0,0,0.25)'; c.fillRect(0, 0, 1920, 1080); }
+  const val = (key, prop, dflt) => { const kk = plan.keys.find((x) => x.key === key && x.prop === prop); return kk ? PLAN.valueAt(kk.keys, lt) : dflt; };
+  for (const el of plan.elements) {
+    const pos = val(el.key, 'position', el.kind === 'path' ? el.points[0] : el.position);
+    const sc = val(el.key, 'scale', [100, 100]);
+    c.save();
+    c.globalAlpha = clamp01(val(el.key, 'opacity', 100) / 100);
+    c.translate(pos[0], pos[1]); c.scale(sc[0] / 100, sc[1] / 100);
+    if (el.kind === 'rect') { c.fillStyle = css(el.color); rrect(c, -el.size[0] / 2, -el.size[1] / 2, el.size[0], el.size[1], Math.min(el.roundness || 0, el.size[1] / 2, el.size[0] / 2)); c.fill(); }
+    if (el.kind === 'ellipse') { c.fillStyle = css(el.color); c.beginPath(); c.ellipse(0, 0, el.size[0] / 2, el.size[1] / 2, 0, 0, Math.PI * 2); c.fill(); }
+    if (el.kind === 'path') {
+      // Trim End: draw the leader up to the keyed percentage of its length
+      const pts = el.points.map((p) => [p[0] - el.points[0][0], p[1] - el.points[0][1]]);
+      const segs = []; let total = 0; for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); segs.push(l); total += l; }
+      let left = total * clamp01(val(el.key, 'trimEnd', 100) / 100);
+      c.strokeStyle = css(el.stroke.color); c.lineWidth = el.stroke.width; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); c.moveTo(0, 0);
+      for (let i = 1; i < pts.length && left > 0; i++) { const u = Math.min(1, left / segs[i - 1]); c.lineTo(pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * u, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * u); left -= segs[i - 1]; }
+      c.stroke();
+    }
+    if (el.kind === 'text') {
+      c.fillStyle = css(el.color); c.font = `${el.bold ? '700 ' : ''}${el.fontSize}px sans-serif`;
+      c.textAlign = el.justify === 'center' ? 'center' : el.justify; c.direction = el.rtl ? 'rtl' : 'ltr';
+      c.fillText(el.text, 0, 0);
+    }
+    c.restore();
+  }
+  c.restore(); c.direction = 'ltr'; c.textAlign = 'left';
+};
+
 /** The keys a planned preview plays (for the Inspector's key strip). */
 function planKeys(th) {
   if (!th.args) return null;

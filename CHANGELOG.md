@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.49.0] — 2026-11-04 — Native Templates
+Details: `docs/features/TEMPLATES.md`.
+### Added
+- **Templates** (Design tab, first group; Design stage; Templates page): Lower Third, Title Card, Callout, Tag + Arabic شريط الاسم / عنوان كبير — built in the comp as real text and shape layers, sized to the text After Effects measures, parented to one null `MOE Template N`, the entrance keyed (Quick Animate's keys). Arabic: right to left + universal composer, layout mirrored. Previews draw the same plan and follow what you type.
+- Host op `text.create` (one text layer, one Undo group, measured size back).
+- AE Self-Test: *Template: Lower Third* and *Template: Arabic Lower Third* (positions vs `templates.js` with AE's own measurements).
+### Fixed (found by this release's audit)
+- On a short library page the sticky Apply / Build bar is not at the bottom, so the assistant button (lifted above where the bar usually is) covered the bar's button — 6 Build clicks hit it. The bar now keeps the button's corner free on its side (`fab-right` / `fab-left`), wherever it is. Every library page.
+### Tests
+- `tests/templates.test.js` (6); self-test checks pass on the mock (0 px). **Mock / preview, not After Effects.**
+
 ## [0.48.0] — 2026-11-04 — Combined Moves
 Details: `docs/features/COMBINED_MOVES.md`.
 ### Added

@@ -39,7 +39,9 @@ const CHECKS = [
   { id: 'textArabic', label: 'Text Cloner: Arabic words (right to left)', run: (T) => checkText(T, { text: 'مرحبا بالعالم', justification: 'right', rtl: true }) },
   { id: 'trail', label: 'Clone Trail: copies = the source, later', run: checkTrail },
   { id: 'bake', label: 'Bake: keyframes = the live grid', run: checkBake },
-  { id: 'speed', label: 'Speed: 48 clones, Spring on vs off', run: checkSpeed }
+  { id: 'speed', label: 'Speed: 48 clones, Spring on vs off', run: checkSpeed },
+  { id: 'template', label: 'Template: Lower Third = templates.js', run: (T) => checkTemplate(T, { template: 'lowerThird' }) },
+  { id: 'templateArabic', label: 'Template: Arabic Lower Third (right to left)', run: (T) => checkTemplate(T, { template: 'lowerThird', title: 'سارة أحمد', subtitle: 'مصممة موشن' }) }
 ];
 
 /* ---------- helpers ---------- */
@@ -302,6 +304,33 @@ async function checkBake(T) {
   const worst = maxOf(errs);
   const ok = worst <= 0.01 && exprLeft === 0 && errBack <= 0.001 && ub.back && u.back;
   return { status: ok ? 'pass' : 'fail', detail: `${r.result.written.length} properties baked in ${ms} ms (${r.result.keysTotal} keys, ${r.result.constants} plain values) · ${errs.length} values at ${times.length} frames, worst ${r2(worst)} from the live rig · restore ${errBack <= 0.001 ? 'brought the expressions back' : `differs by ${r2(errBack)}`} · undo ${ub.back && u.back ? 'ok' : 'left layers'}`, numbers: { worst: r2(worst), bakeMs: ms, keys: r.result.keysTotal, keysPerItem: keys.slice(0, 3), restoreErr: r2(errBack) } };
+}
+
+/**
+ * v0.49: build a template; After Effects measures the texts, the plan (templates.layout) is recomputed with those
+ * sizes, and every part's place after the entrance (its position at the last key + the null's) is compared with it.
+ */
+async function checkTemplate(T, args) {
+  const TPL = require('../design/templates');
+  const before = (await T.layerIds()).length;
+  const r = await T.run('design.template', args);
+  const res = r.result;
+  const opts = { title: args.title || TPL.byId(args.template).title, subtitle: args.subtitle || TPL.byId(args.template).subtitle };
+  const plan = TPL.layout(args.template, opts, { width: T.comp.width, height: T.comp.height }, res.measured);
+  const end = T.comp.time + Math.max(...plan.keys.map((k) => k.keys[k.keys.length - 1].t)) + 0.05;
+  const nulPos = (await T.values(end, [{ layerId: res.nullId, matchNames: POS }]))[0].value;
+  const errs = [];
+  for (const el of plan.elements) {
+    const id = res.ids[el.key];
+    const p = (await T.values(end, [{ layerId: id, matchNames: POS }]))[0].value;
+    const want = el.kind === 'path' ? el.points[0] : el.position;
+    errs.push(Math.hypot(p[0] + nulPos[0] - want[0], p[1] + nulPos[1] - want[1]));
+  }
+  const widths = Object.keys(res.measured).map((k) => Math.round(res.measured[k][0]));
+  const u = await T.undo(r, before);
+  const worst = maxOf(errs);
+  const ok = worst < 0.6 && widths.every((w) => w > 0) && u.back;
+  return { status: ok ? 'pass' : 'fail', detail: `${res.made.length} layers · text measured by After Effects ${widths.join(' / ')} px · ${errs.length} parts, worst ${r2(worst)} px from templates.js after the entrance · undo ${u.back ? 'removed it' : 'left layers'}`, numbers: { layers: res.made.length, textWidths: widths, worstPx: r2(worst), undo: u.back } };
 }
 
 async function checkSpeed(T) {

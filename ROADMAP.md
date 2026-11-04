@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.54 — Native Templates ✅ (v0.49.0)
+- Lower Third / Title Card / Callout / Tag (+ Arabic): real layers sized to the measured text, one null, keyed entrance, live previews; Self-Test checks.
+- Next: the owner's Self-Test report from AE 2025 (now with the template checks) → fixes first; more templates on the same plan (quote, end card, social frame).
+
 ## M1.53 — Combined Moves ✅ (v0.48.0)
 - Also fade / From / to / Angle on Quick Animate; 12 combined presets with real previews (Animate 45).
 - Next: native templates (v0.49).
