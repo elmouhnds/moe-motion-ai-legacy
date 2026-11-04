@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**No Repeats** (v0.45.0): one button per job on a screen — the MOE sidebar is Select + your Quick Bar (the AI menu was the Assistant button and the search box; the other eight were the tabs again), and NOW no longer repeats the search box, the Assistant or the Motion Control above it (docs/features/NO_REPEATS.md).
+
 **Find Fast** (v0.44.0): Select is out front (types, same as selected, all / invert / none / back — one click), the everyday text animators are on Home, Ctrl+K finds every button (also in Arabic), and look-alike names were renamed or merged (docs/features/FIND_FAST.md).
 
 **Smart Arrange** (v0.43.0): tools that go together sit together in every style and width — Flip Horizontal | Vertical as one tile, Reverse / Mirror / Clone as one row, no tile drifting into another group (docs/features/SMART_ARRANGE.md).
@@ -56,7 +58,7 @@
 
 **Moving backgrounds** (v0.18.0): Backgrounds › Motion (Drift, Orbit, Swirl, Wave, Breathe, Wander) and Colours (Cycle, Swap, Hue, Pulse) — expressions on the gradient points and colours, seamless loops, live sliders MOE BG Loop / Amount / Colour, live preview in the Inspector.
 
-**★ MOE layout** (v0.17.0, recommended): menus by object (lit for the selection) + your Quick Bar + four stable task tabs — Settings › Panel layout › MOE ★.
+**★ MOE layout** (v0.17.0, recommended): menus by object (lit for the selection) + your Quick Bar + four stable task tabs — Settings › Panel layout › MOE ★. *(v0.45: the sidebar keeps only the Select menu; the others were the tabs again — each tab has its ▾ quick menu and selection dot.)*
 
 **Panel layouts** (v0.16.0): Settings › Panel layout — Current · **Hub** (screens + fixed Home + *For this* strip) · **Command Bar** (menus by object, highlighted for the selection + your bars) · **Workspace** (context bar + four stable task tabs + your bar). Every tool keeps one place; context areas only copy (docs/features/UI_LAYOUTS.md).
 

@@ -260,7 +260,7 @@ function tileStrip(app, g, tab, idsOverride) {
     const t = withLive(app, g, t0);
     const rd = lib.readiness(app, t);
     return h('button', {
-      class: `ae-tile ${rd.ok ? '' : 'off'}`, 'data-key': `t-${t.id.slice(3)}`, 'aria-label': `Apply ${t.label}`,
+      class: `ae-tile ${rd.ok ? '' : 'off'}`, 'data-key': `t-${sec.id}/${t.id}`, 'aria-label': `Apply ${t.label}`,
       title: rd.ok ? `${t.label} — click to apply · right-click to open its settings` : `${t.label} — ${rd.hint}`,
       onclick: () => (rd.ok ? (remember(app, tab, `tile:${sec.id}:${t.id}`), lib.applyNow(app, t, sec)) : app.toast(`${t.label}: ${rd.hint}`, 4500, 'warn')),
       oncontextmenu: (e) => { e.preventDefault(); openTile(app, sec, t); }
@@ -273,7 +273,7 @@ function compactTiles(app, g, tab, sec, tiles) {
   const btn = (t, size) => {
     const rd = lib.readiness(app, t);
     return h('button', {
-      class: `ae-act ${size === 'l' ? 'l' : ''} ${rd.ok ? '' : 'off'}`, 'data-key': `t-${t.id.slice(3)}`, 'aria-label': `Apply ${t.label}`,
+      class: `ae-act ${size === 'l' ? 'l' : ''} ${rd.ok ? '' : 'off'}`, 'data-key': `t-${sec.id}/${t.id}`, 'aria-label': `Apply ${t.label}`,
       title: rd.ok ? `${t.label} — ${t.hint || 'click to apply'} · right-click: settings` : `${t.label} — ${rd.hint}`,
       onclick: () => (rd.ok ? (remember(app, tab, `tile:${sec.id}:${t.id}`), lib.applyNow(app, t, sec)) : (t.needsInput ? openTile(app, sec, t) : app.toast(`${t.label}: ${rd.hint}`, 4500, 'warn'))),
       oncontextmenu: (e) => { e.preventDefault(); openTile(app, sec, t); }
@@ -403,6 +403,23 @@ function controlTop(app, kind) {
   // anchor · align) keeps every placement tool in ~90 px. Open or fold it yourself: remembered per kind of selection.
   const prev = kit.K.scope; kit.K.scope = { ctx: `__ctl-${kind}`, focus: kind === 'keys' ? ['ease', 'pinned'] : ['pinned'] };
   try { return kit.controlBlock(app); } finally { kit.K.scope = prev; }
+}
+
+/** v0.45 (NO_REPEATS): the one-click refs an open group shows right now (tiles as 'tile:<section>/<id>'). */
+function shownRefs(app, g, kind) {
+  if (!isOpen(app, g, kind)) return [];
+  if (g.kind === 'acts') return [].concat(g.refs || [], g.hero || [], g.minor || [], ...(g.rows || []).map((rw) => rw[1]), ...(g.pairs || []).map(([, ...refs]) => refs));
+  if (g.kind === 'animate') { const m = g.modes.find(([id]) => id === animMode(app, g)) || g.modes[0]; return m[2].map((id) => `tile:${g.section}/${id}`); }
+  if (g.kind === 'tiles') return (g.ids || []).map((id) => `tile:${g.section}/${id}`);
+  return [];
+}
+/** v0.45 (NO_REPEATS): which parts of the Motion Control controlTop shows — { rail, ease }, or null (none). */
+function controlShows(app, kind) {
+  const c = app.state.get().ctx;
+  if (!c || !c.comp || kind === 'none') return null;
+  const kit = require('./views/kit');
+  const sc = { ctx: `__ctl-${kind}`, focus: kind === 'keys' ? ['ease', 'pinned'] : ['pinned'] };
+  return { rail: true, ease: !kit.isFolded(kit.prefs(app), sc, 'ease') };
 }
 
 /** v0.30: the steps that usually follow the last run (MOE puts them under the Motion Control). */
@@ -548,6 +565,6 @@ function menuButton(app, s) {
     onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(), box = require('./quickbar').fixedBox(e.currentTarget.closest('.app') || document.body); app.state.set({ aeMenu: !s.aeMenu, aeMenuAt: { top: Math.round(r.bottom - box.top + 2), right: Math.max(4, Math.round(box.left + box.width - r.right)) } }); } }, icon('menu', 'sm'));
 }
 
-module.exports = { runsOf, nextStrip, controlTop, tileCols, animMode, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
+module.exports = { runsOf, nextStrip, controlTop, controlShows, shownRefs, tileCols, animMode, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
   // building blocks reused by the v0.24 style proposals (layoutGlass / layoutApple / layoutBento)
   twirl, actButton, groupBody, tileStrip, moreLink, groupExtra, subRow, pairControl, linkRow, searchBox, searchResults, panelMenu, menuButton, openTile };

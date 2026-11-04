@@ -6,7 +6,8 @@
  *
  *   bento  one page by how often you use things (layoutBento.js, workflow.js)
  *   glass  the five stages as spaces, frosted cards (layoutGlass.js)
- *   moe    After Effects menu tabs (layoutAE.js) + a sidebar with menus by object and the whole Quick Bar
+ *   moe    After Effects menu tabs (layoutAE.js) + a sidebar with Select and the whole Quick Bar (v0.45: the other
+ *          menus by object were the tabs again — NO_REPEATS.md)
  */
 const { h, icon } = require('./dom');
 const art = require('./art');
@@ -59,23 +60,23 @@ function header(app, title, extra, menuBtn) {
     h('button', { class: 'icon-btn hdr-pie', title: 'Pie menu (hold Q, or hold the right mouse button)', 'aria-label': 'Pie menu', onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(); app.openPie(r.left + r.width / 2, r.bottom + 120, { mode: 'click' }); } }, icon('pie', 'sm')),
     h('button', { class: 'search-btn', title: 'Search tools (Ctrl+K)', 'aria-label': 'Search tools', onclick: () => require('./palette').open(app) }, icon('search', 'sm'), h('span', { class: 'label' }, 'Search'), h('span', { class: 'kbd' }, 'Ctrl K')));
 }
-/* ---------- MOE: menus by object ---------- */
+/* ---------- MOE: the sidebar's own menu ---------- */
+/*
+ * v0.45 (docs/features/NO_REPEATS.md): the sidebar had ten menus "by object". Eight were the tabs again — each tab
+ * already shows its tools and has its own ▾ quick menu ("every action in two clicks") and its dot for the selection —
+ * and AI was the floating Assistant button and the search box again. Only Select stays: the owner's "its own
+ * place" (v0.44), one click from any tab.
+ */
 const MENUS = [
   // v0.44 (FIND_FAST): Select has its own menu — the everyday filters one click away
   // shown as the Select group's own labelled rows (Type · Same · Comp), so the menu reads like the group
-  { id: 'Select', icon: 'cursor', group: ['ae-layer', 'select'], refs: ['quick:selText', 'quick:selShape', 'quick:selSolid', 'quick:selNull', 'quick:selPrecomp', 'quick:selFootage', 'quick:selAdjust', 'quick:selCamLight', 'quick:selSameType', 'quick:selSameSource', 'quick:selSameLabel', 'quick:selSameName', 'quick:selAll', 'quick:selInvert', 'quick:selNone', 'quick:selBack'], open: [['select', 'Search, labels, comps, project']] },
-  { id: 'Keys', icon: 'easeCurve', refs: ['quick:k_easy', 'quick:k_linear', 'quick:k_hold', 'quick:curveExpo', 'quick:curveBack', 'quick:reverse', 'quick:mirror', 'quick:clone', 'quick:k_stagger', 'quick:k_trimKeys', 'tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong'], open: [['kit', 'Ease panel']] },
-  { id: 'Layer', icon: 'layers', refs: ['quick:anchorTL', 'quick:anchorC', 'quick:anchorB', 'quick:alignH', 'quick:alignV', 'quick:distH', 'quick:distV', 'quick:parentNull', 'quick:k_parent', 'quick:flipH', 'quick:flipV', 'quick:precompose', 'quick:separate', 'quick:k_excite', 'tile:expressions/x-wiggle', 'quick:k_delay', 'quick:k_stare', 'quick:k_trash'], open: [['animate', 'Motion presets'], ['kit', 'Toolbox']] },
-  { id: 'Text', icon: 'type', refs: ['quick:typewriter', 'quick:counter', 'tile:animate/riseIn', 'tile:animate/cascadeIn', 'tile:animate/fadeIn', 'tile:animate/fadeOut'], open: [['text', 'Text section'], ['brand', 'Brand']] },
-  { id: 'Shape', icon: 'shapes', refs: ['tile:animate/trimDraw', 'tile:animate/trimErase', 'tile:animate/trimTravel', 'tile:animate/trimBoth', 'quick:k_repeat', 'tile:expressions/x-wiggle', 'tile:animate/popIn', 'tile:animate/spinIn'], open: [['shapes', 'Shapes & Icons']] },
-  { id: 'Comp', icon: 'layers', refs: ['quick:revealProject', 'quick:openPrecomp', 'quick:revealFolder', 'quick:dupComp', 'quick:purge', 'tile:layout/g12', 'tile:layout/safe', 'tile:layout/thirds'], open: [['deliver', 'Deliver']] },
-  { id: 'Design', icon: 'palette', refs: [], open: [['shapes', 'Shapes & Icons'], ['backgrounds', 'Backgrounds'], ['looks', 'Looks & Glass'], ['brand', 'Brand']] },
-  { id: 'Layout', icon: 'grid', refs: ['tile:layout/grid', 'tile:layout/ring', 'tile:layout/honey', 'tile:layout/spiral', 'tile:zoom/punch', 'tile:zoom/smooth'], open: [['layout', 'Layout & Grid'], ['zoom', 'Zoom & Focus'], ['deliver', 'Deliver']] },
-  { id: 'Finish', icon: 'layers', refs: [], open: [['compositing', 'Compositing'], ['quick', 'Quick Bar'], ['tools', 'My Tools']] },
-  { id: 'AI', icon: 'spark', refs: ['cmd:copilot', 'cmd:search'], open: [['expressions', 'Expressions']] }
+  { id: 'Select', icon: 'cursor', group: ['ae-layer', 'select'], refs: ['quick:selText', 'quick:selShape', 'quick:selSolid', 'quick:selNull', 'quick:selPrecomp', 'quick:selFootage', 'quick:selAdjust', 'quick:selCamLight', 'quick:selSameType', 'quick:selSameSource', 'quick:selSameLabel', 'quick:selSameName', 'quick:selAll', 'quick:selInvert', 'quick:selNone', 'quick:selBack'], open: [['select', 'Search, labels, comps, project']] }
 ];
-/** Which menu the selection points to (it is only highlighted — nothing moves). */
-const MENU_FOR = { keys: 'Keys', layer: 'Layer', layers: 'Layer', text: 'Text', shapes: 'Shape', shapesMany: 'Shape', none: 'Comp' };
+/** Menus removed in v0.45 and where their buttons are now (tests/norepeat.test.js checks every one is reachable). */
+const RETIRED_MENUS = {
+  Keys: 'Keys tab (▾) + Motion Control', Layer: 'Layer tab (▾) + Motion Control', Text: 'Animate tab › Text Animators', Shape: 'Animate tab › Draw On',
+  Comp: 'Comp tab', Design: 'Design tab', Layout: 'Layer tab › Arrange, Comp tab › Guides', Finish: 'Effect tab, Customize, ≡ menu', AI: 'Assistant button, search box (Ctrl+K)'
+};
 function menuPopover(app, st) {
   const m = MENUS.find((x) => x.id === st.id);
   if (!m) return null;
@@ -96,7 +97,7 @@ function menuPopover(app, st) {
  * bottom bar: three rows above the content, so a docked panel keeps its height for the tools. */
 function moe(app, s, body) {
   // v0.25 (owner): the same tabs and twirl-down groups as Classic, and EVERY shortcut in a sidebar
-  // instead of two rows on top — menus by object (the one for the selection lit) + the whole Quick Bar
+  // instead of two rows on top — Select (v0.45: the only menu left) + the whole Quick Bar
   // (no "+N": every button, with its name when the sidebar is open wide).
   const p = require('./layoutAE').build(app, s, body);
   p.top = p.top.slice(1); // the Quick Bar strip moves into the sidebar
@@ -106,11 +107,9 @@ function moe(app, s, body) {
 }
 let railDrag = null;
 // one picture per menu in the sidebar (the top-row menus shared the layers icon)
-const RAIL_ICON = { Comp: 'layout', Layout: 'grid', Finish: 'download', AI: 'spark' };
-/** MOE's sidebar: menus by object, then every Quick Bar shortcut; ⇔ shows names (remembered). */
+/** MOE's sidebar: Select, then every Quick Bar shortcut; ⇔ shows names (remembered). */
 function moeRail(app, s) {
   const qb = require('./quickbar');
-  const kind = A.profile(s.ctx);
   const wide = !!app.services.store.get('moe-rail-wide', false);
   const openMenu = (m, el) => {
     if (s.layMenu && s.layMenu.id === m.id) { app.state.set({ layMenu: null }); return; }
@@ -119,9 +118,9 @@ function moeRail(app, s) {
     app.state.set({ layMenu: { id: m.id, top: Math.max(4, Math.min(Math.round(r.top - box.top), Math.round(box.height - 260))), left, right: null, maxW: Math.max(220, Math.round(box.width - left - 6)) } });
   };
   const menuBtn = (m) => h('button', {
-    class: `rail-btn ${MENU_FOR[kind] === m.id ? 'hint' : ''}`, 'data-key': `rm-${m.id}`, 'aria-label': `${m.id} menu`, 'aria-haspopup': 'true', 'aria-expanded': String(!!(s.layMenu && s.layMenu.id === m.id)),
-    title: `${m.id}${MENU_FOR[kind] === m.id ? ' — fits what you selected' : ''}`, onclick: (e) => openMenu(m, e.currentTarget)
-  }, icon(RAIL_ICON[m.id] || m.icon, 'sm'), h('span', { class: 'rail-l' }, m.id), h('span', { class: 'rail-more', 'aria-hidden': 'true' }, '›'));
+    class: 'rail-btn', 'data-key': `rm-${m.id}`, 'aria-label': `${m.id} menu`, 'aria-haspopup': 'true', 'aria-expanded': String(!!(s.layMenu && s.layMenu.id === m.id)),
+    title: `${m.id} — every filter, one click`, onclick: (e) => openMenu(m, e.currentTarget)
+  }, icon(m.icon, 'sm'), h('span', { class: 'rail-l' }, m.id), h('span', { class: 'rail-more', 'aria-hidden': 'true' }, '›'));
   // v0.26: drag a shortcut onto another to reorder the Quick Bar (saved; same order everywhere)
   const moveTo = (id, beforeId) => { const ids = qb.barIds(app).filter((x) => x !== id); const at = ids.indexOf(beforeId); ids.splice(at < 0 ? ids.length : at, 0, id); app.services.store.set('quick-bar', ids); app.render(); };
   const shortcut = (a) => h('button', {
@@ -135,7 +134,6 @@ function moeRail(app, s) {
   }, icon(a.icon || 'bolt', 'sm'), h('span', { class: 'rail-l' }, a.label));
   return h('nav', { class: `moe-rail ${wide ? 'wide' : ''}`, 'data-key': 'moe-rail', 'aria-label': 'Shortcuts' },
     h('button', { class: 'rail-btn rail-toggle', 'data-key': 'rail-toggle', 'aria-label': wide ? 'Show icons only' : 'Show names', title: wide ? 'Icons only' : 'Show names', 'aria-pressed': String(wide), onclick: () => { app.services.store.set('moe-rail-wide', !wide); app.render(); } }, icon('chev', `xs rail-chev ${wide ? 'open' : ''}`), h('span', { class: 'rail-l' }, 'Shortcuts')),
-    h('div', { class: 'rail-cap' }, h('span', { class: 'rail-l' }, 'By object')),
     MENUS.map(menuBtn),
     h('div', { class: 'rail-sep', 'aria-hidden': 'true' }),
     h('div', { class: 'rail-cap' }, h('span', { class: 'rail-l' }, 'Quick Bar')),
@@ -150,4 +148,4 @@ function build(app, s, layout, body) {
   return parts;
 }
 
-module.exports = { LAYOUTS, RETIRED, DEFAULT_LAYOUT, layoutOf, build, MENUS, MENU_FOR };
+module.exports = { LAYOUTS, RETIRED, DEFAULT_LAYOUT, layoutOf, build, MENUS, RETIRED_MENUS };

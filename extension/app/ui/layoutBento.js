@@ -120,7 +120,8 @@ function now(app, s, kind) {
   const nb = nowBlock(kind);
   const mineRefs = pins(app);
   const mine = mineRefs.map((r) => [r, A.resolve(r)]).filter(([, a]) => a);
-  const acts = (A.SETS[kind] || []).map((r) => [r, A.resolve(r)]).filter(([, a]) => a).slice(0, 8);
+  // v0.45 (NO_REPEATS): not what the Motion Control above, the search box or the Assistant button already give
+  const acts = A.nowSet(kind, nb ? AE.controlShows(app, kind) : null).map((r) => [r, A.resolve(r)]).filter(([, a]) => a).slice(0, 8);
   const block = nb ? AE.controlTop(app, kind) : null;
   return h('section', { class: 'b-sec b-now', 'data-key': 'b-now', 'aria-label': 'Now' },
     h('div', { class: 'b-now-h' }, h('span', { class: 'b-kick' }, 'NOW'), h('b', {}, !c ? 'Reading After Effects…' : !c.comp ? 'No active composition' : A.CONTEXT_LABEL[kind]),

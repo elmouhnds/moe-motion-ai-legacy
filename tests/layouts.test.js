@@ -65,7 +65,8 @@ test('every section stays reachable: Bento / Glass stages, MOE tabs and menus', 
     m.refs.forEach((r) => assert.ok(A.resolve(r), `${m.id}: ${r} resolves`));
     m.open.forEach(([id]) => assert.ok(studio.byId(id), `${m.id}: opens ${id}`));
   }
-  for (const k of ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany', 'none']) assert.ok(L.MENUS.some((m) => m.id === L.MENU_FOR[k]), `hint for ${k}`);
+  // v0.45: the selection's hint is the tab's dot (the sidebar's menus by object were the tabs again)
+  assert.ok(AE.TABS.every((t) => Array.isArray(t.fits)) && ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany', 'none'].every((k) => AE.TABS.some((t) => t.fits.includes(k))), 'every kind lights a tab');
 });
 
 test('MOE tabs: every tab action and preset is in its ▾ quick menu', () => {

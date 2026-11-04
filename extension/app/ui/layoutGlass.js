@@ -21,13 +21,15 @@ const SPACE_IDS = SPACES.map((x) => x.id);
 const ownerOf = (view) => { const st = W.stageOfView(view); return st ? SPACES.find((sp) => sp.stage === st) : null; };
 
 /** The Now card: what is selected, and the eight best actions for it. */
-function nowCard(app, s, kind) {
+function nowCard(app, s, kind, below) {
   const c = s.ctx;
   const fold = !!app.services.store.get('glass-now-folded', false);
   const what = !c ? 'Reading After Effects…' : !c.comp ? 'No active composition' : A.CONTEXT_LABEL[kind];
   const sub = c && c.comp ? `${c.comp.name} · ${(c.layers || []).length} layers${c.keys ? ` · ${c.keys} keys` : ''}` : '';
   // v0.43: the pie keeps its fixed positions; here the same eight sit with their families (Loop Cycle next to Ping-Pong)
-  const acts = require('./arrange').group((A.SETS[kind] || []).filter((r) => A.resolve(r)).slice(0, 8)).map((r) => A.resolve(r));
+  // v0.45 (NO_REPEATS): not what the Motion Control in this card, the search box or the Assistant button already give
+  // and not what the open groups right below already show (the space is picked by the selection too)
+  const acts = require('./arrange').group(A.nowSet(kind, fold ? null : AE.controlShows(app, kind)).filter((r) => !(below || new Set()).has(r) && A.resolve(r)).slice(0, 8)).map((r) => A.resolve(r));
   // v0.26: the client you work for, one click away (when layers are selected)
   const client = require('../../features/brand/kit').activeBrand(app.services.store, app.services.brands);
   if (client && kind !== 'none' && kind !== 'keys') acts.push(A.resolve('brand:apply'));
@@ -63,8 +65,10 @@ function build(app, s, body) {
   if (q) content = h('div', { class: 'view ae-page gl-page' }, AE.searchResults(app, q));
   else if (isSpace) {
     // everyday groups first; the stage's rare groups follow, folded until you open them (remembered per group)
-    content = h('div', { class: 'view kit ae-page gl-page' }, nowCard(app, s, kind),
-      W.stageGroups(sp.stage).map(({ tab, group, tier }) => AE.twirl(app, tab, tier === 'more' && group.open ? Object.assign({}, group, { open: false }) : group, kind, () => AE.groupBody(app, group, tab),
+    const groups = W.stageGroups(sp.stage).map((x) => Object.assign({}, x, { shown: x.tier === 'more' && x.group.open ? Object.assign({}, x.group, { open: false }) : x.group }));
+    const below = new Set(groups.flatMap((x) => AE.shownRefs(app, x.shown, kind)));
+    content = h('div', { class: 'view kit ae-page gl-page' }, nowCard(app, s, kind, below),
+      groups.map(({ tab, group, tier, shown }) => AE.twirl(app, tab, shown, kind, () => AE.groupBody(app, group, tab),
         tier === 'more' ? h('span', { class: 'gl-rare', title: 'Used less often' }, 'more') : AE.groupExtra(app, group))));
   } else {
     const back = sp || SPACES.find((x) => x.id === (s.glSpace || first));

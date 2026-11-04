@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.50 — No Repeats ✅ (v0.45.0)
+- One button per job on a screen: MOE sidebar menus that were the tabs / Assistant / search again removed (Select stays); NOW without copies; audit + test.
+- Next: the owner's Self-Test report from AE 2025 → fixes first; Shift / Alt (add / remove) on the Select buttons.
+
 ## M1.49 — Find Fast ✅ (v0.44.0)
 - Select out front, text animators on Home, buttons in Ctrl+K (Arabic too), no shared names (tested).
 - Next: the owner's Self-Test report from AE 2025 → fixes first; Shift / Alt (add / remove) on the Select buttons.

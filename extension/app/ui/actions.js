@@ -45,6 +45,30 @@ function slotsFor(ctx, pieSettings) {
   return SETS[profile(ctx)].slice();
 }
 
+/*
+ * v0.45 (docs/features/NO_REPEATS.md): a button is shown once per screen. The NOW card (Bento, Glass) shows the
+ * selection's eight minus what is already one click on that screen:
+ *   ON_SCREEN — always there: the search box (Ctrl+K) and the floating Assistant button;
+ *   IN_CONTROL — the Motion Control that leads NOW for any selection: the same job, the same click
+ *                (Easy / Linear / Hold, the Out Expo / Out Back curve chips, the anchor dots, the align row).
+ * The pie keeps all eight: it opens at the cursor, where none of these are.
+ */
+const ON_SCREEN = { 'cmd:search': 'the search box (Ctrl+K)', 'cmd:copilot': 'the Assistant button' };
+// ref → [the part of the Motion Control that shows it, that button's data-key]. 'rail' (anchor dots + align row) is
+// always shown, 'ease' (Easy / Linear / Hold + curve chips) only while the control is open.
+const IN_CONTROL = {
+  'quick:k_easy': ['ease', 'ci-easy'], 'quick:k_linear': ['ease', 'ci-linear'], 'quick:k_hold': ['ease', 'ci-hold'],
+  'quick:curveExpo': ['ease', 'chip-outExpo'], 'quick:curveBack': ['ease', 'chip-outBack'],
+  'quick:anchorTL': ['rail', 'ap-tl'], 'quick:anchorC': ['rail', 'ap-c'], 'quick:anchorB': ['rail', 'ap-b'],
+  'quick:alignLeft': ['rail', 'al-left'], 'quick:alignH': ['rail', 'al-hcenter'], 'quick:alignV': ['rail', 'al-vcenter'],
+  'quick:distH': ['rail', 'al-distH'], 'quick:distV': ['rail', 'al-distV']
+};
+/** NOW's actions for this kind of selection: the smart set without what the screen already shows.
+ *  shown: which parts of the Motion Control are on screen — { rail, ease } (null = no control). */
+function nowSet(kind, shown) {
+  return (SETS[kind] || []).filter((r) => !ON_SCREEN[r] && !(shown && IN_CONTROL[r] && shown[IN_CONTROL[r][0]]));
+}
+
 const TILE_ICON = { fadeIn: 'fadeIn', fadeOut: 'fadeOut', popIn: 'scaleUp', gentlePop: 'scaleUp', scaleOut: 'scaleDown', popOut: 'scaleDown', spinIn: 'spin', spinOut: 'spin', riseIn: 'moveBT', dropIn: 'moveTB', cascadeIn: 'stagger', cascadeFade: 'stagger', stagger: 'stagger', reverse: 'reverse', mirror: 'mirror', grid: 'grid', honey: 'grid', ring: 'target', fan: 'target', spiral: 'target', g12: 'guides', thirds: 'guides', safe: 'guides', punch: 'zoom', smooth: 'zoom', spot: 'zoom', inRL: 'moveRL', inLR: 'moveLR', inTB: 'moveTB', inBT: 'moveBT' };
 
 /** Shorter names for slices and chips (the full name stays in the tooltip / Quick Bar). */
@@ -130,4 +154,4 @@ function catalog() {
   return out;
 }
 
-module.exports = { SETS, CONTEXT_LABEL, profile, slotsFor, resolve, catalog, setBrandSource };
+module.exports = { SETS, ON_SCREEN, IN_CONTROL, nowSet, CONTEXT_LABEL, profile, slotsFor, resolve, catalog, setBrandSource };

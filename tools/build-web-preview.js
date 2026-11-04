@@ -113,7 +113,7 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
         <li><b>Power tools</b>: big cards that explain themselves (✓ makes one small); then the stages <b>Animate · Arrange · Design · Finish · Deliver</b> (<kbd>Ctrl</kbd> <kbd>1</kbd>–<kbd>5</kbd>), rare groups behind <i>More in…</i>.</li>
         <li>The round <b>Assistant</b> bottom-right (<kbd>\`</kbd>): ask in Arabic or English, or describe a change (demo answers in this preview).</li></ol></div>
       <div class="pv-lguide" data-for="moe"><h2>MOE — every shortcut in a sidebar</h2><ol>
-        <li>The <b>sidebar</b> holds the menus by object (the one for your selection lit — click it, the menu opens beside it) and <b>your whole Quick Bar</b>.</li>
+        <li>The <b>sidebar</b> holds <b>Select</b> (every filter, one click — it opens beside it) and <b>your whole Quick Bar</b>. Each tab's <b>▾</b> is its quick menu; the round button is the Assistant.</li>
         <li><b>⇔</b> at its top shows the names; right-click a shortcut for its options; <i>Customize</i> edits them.</li>
         <li>Above the tools only the AE tabs (<kbd>Ctrl</kbd> <kbd>1</kbd>–<kbd>6</kbd>) and search remain — two rows freed for the graphs.</li></ol></div>
     </aside>

@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.45.0] — 2026-11-04 — No Repeats
+Details: `docs/features/NO_REPEATS.md`.
+### Removed
+- **MOE sidebar: 9 of 10 menus.** AI (= the floating Assistant button + the search box), and Keys, Layer, Text, Shape, Comp, Design, Layout, Finish — each was its tab again, which already has the tools, a ▾ quick menu and the selection dot. **Select stays** (its own place, v0.44). The sidebar is Select + your Quick Bar + Customize.
+- **NOW copies** (Bento, Glass): the Search and Assistant tiles; tiles the Motion Control above already gives (Out Expo / Out Back = curve chips, Easy / Linear / Hold, Anchor Bottom = a dot, Align / Distribute = the align row). The ease ones come back when the control is folded. Glass NOW also skips what the open groups of its space show.
+### Fixed
+- Library tile keys cut the name (`t-${id.slice(3)}`: Fade In, Rise In, Cascade In were all `t-eIn`) → `t-<library>/<id>`.
+### Tests
+- `tests/norepeat.test.js` (5); `node tools/audit-repeat.js` (84 screens: v0.44 had 44 repeats, v0.45 has 0). **Mock / preview, not After Effects.**
+
 ## [0.44.0] — 2026-11-03 — Find Fast
 Details: `docs/features/FIND_FAST.md`.
 ### Added
