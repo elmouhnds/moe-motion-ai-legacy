@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.57 — Auto-fit Templates ✅ (v0.52.0)
+- Template text is measured in After Effects and shrunk to its safe width (≥ 40 % of the design size); shapes follow; previews too.
+- Next: the owner's Self-Test report from AE 2025 → fixes first.
+
 ## M1.56 — Branded Templates ✅ (v0.51.0)
 - Templates use the active client's primary colour, best-reading text colour and fonts; previews too.
 - Next: the owner's Self-Test report from AE 2025 → fixes first.

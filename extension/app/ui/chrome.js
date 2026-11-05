@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['type', 'Long text fits by itself', 'A long name or a long quote no longer runs off the frame. Each template line has a safe width: After Effects measures your text and makes the font smaller until it fits (never under 40 %), and the bar, pill and underline follow it. Short text keeps its size. The preview shows it as you type.'],
   ['brand', 'Templates in your client\'s brand', 'With a client active in Brand Kit, every template comes out in its colours and fonts — the accent from the brand, the word on a pill or button in the brand colour that reads best on it, the Arabic or English font by the text. The tiles show it before you build. What you set yourself always wins.'],
   ['type', 'Four more templates — and they leave by themselves', 'Design › Templates now also has Quote, End Card, Social Handle and Chapter (and Arabic اقتباس / شكراً للمشاهدة). New on every template: Hold, then exit — after the time you choose it leaves the way it came in, so a lower third needs no extra keys.'],
   ['type', 'Templates, built in your comp', 'Design › Templates: Lower Third, Title Card, Callout and Tag (and Arabic شريط الاسم / عنوان كبير). Type your text and Build — real text and shape layers appear in your comp, sized to your words as After Effects measures them, all on one null you can move, with the entrance already animated. Arabic is laid out right to left. Everything stays editable.'],

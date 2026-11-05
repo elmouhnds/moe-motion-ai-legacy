@@ -59,6 +59,19 @@ What you set yourself wins (an accent you changed, a font you typed); *Use the b
 
 The tiles and the big preview already show the client's colours (`templateTool.withBrand` is used by both the tool and the previews), and the result says *· <client> brand*. The preview cannot show the brand's font; After Effects uses it.
 
+## v0.52: Auto-fit, the text always stays inside the frame
+
+A long name or a long quote used to run off the edge. Now each line has a **safe width**: a share of the comp's width (Title Card 85 %, Quote 72 %, End Card 80 %, Lower Third 60 %, Chapter 55 %, Tag 50 %, Social Handle 45 %, Callout 32 %).
+
+- After Effects creates the text and **measures it** (`sourceRectAtTime`).
+- If it is wider than the safe width, the font gets smaller (`fontSize × safe / measured × 0.98`). It is measured again, up to 4 times, until it fits.
+- It never goes under **40 %** of the design size, so a very long line gets small but stays readable.
+- The shapes (bar, underline, pill, button) are then sized from the **fitted** text.
+- The quote mark and the chapter number keep their size.
+- Short text is not touched.
+- The result lists each fitted line (*Fitted to the safe area · Title 120 → 74 px*), read back from the layer.
+- The preview uses the same rule with the browser's measurement (`templates.fitSize`), so what you type shows its fitted size before you build.
+
 ## Safety
 
 - One new host op, `text.create`: one text layer in one Undo group. It returns the measured size.
@@ -79,4 +92,5 @@ The tiles and the big preview already show the client's colours (`templateTool.w
   - Arabic: right-to-left direction on both lines, the bar on the right in the title-safe area; English stays left to right on the left;
   - numbering (MOE Template 2), Restore removes only its own, your layer untouched; a bad colour is refused and nothing changes;
   - the previews use the same plan; the library is on the Design tab and stage.
+- v0.52 Auto-fit (`tests/templates.test.js`, 12): a long Title Card title measures ≤ its safe width on the mock with a smaller font (never under 40 %), and the result lists it; the underline follows the fitted width; a short title keeps 120 px; a long Arabic quote fits and the quote mark keeps 220 px; `fitSize` cases; the preview uses the same formula.
 - **AE Self-Test:** two new checks, *Template: Lower Third* and *Template: Arabic Lower Third*. Each builds a template in the test comp, reads After Effects' own measured text widths and positions, compares them with `templates.js`, then undoes. On the mock: 0 px.

@@ -2,7 +2,8 @@
  * MOE Motion AI - text operations (ExtendScript / ES3).
  *   fonts.list         installed fonts (app.fonts.allFonts, AE 24+)
  *   text.setStyle      font / fill / stroke / direction on text layers (before/after for restore)
- *   text.create        a new text layer for a template (size from sourceRectAtTime; Arabic = RTL + universal composer)
+ *   text.create        a new text layer for a template (size from sourceRectAtTime; Arabic = RTL + universal composer;
+ *                      maxWidth: a smaller font until it fits)
  *   text.applyAnimator build a named Text Animator from a MOE preset spec
  *   text.removeAnimator remove a named animator (checkpoint restore)
  *   text.applyFfx      apply a .ffx preset to given layers (applyPreset acts on the selection)
@@ -361,7 +362,15 @@
                 if (args.label !== undefined) { L.label = num(args.label); }
                 if (args.position) { L.property('ADBE Transform Group').property('ADBE Position').setValue([num(args.position[0]), num(args.position[1])]); }
                 r = L.sourceRectAtTime(comp.time, false);
-                return { layerId: L.id, name: L.name, size: [num(r.width), num(r.height)] };
+                /* v0.52: Auto-fit - wider than maxWidth: a smaller font, measured again (the panel's templates.fitSize rule) */
+                var fs0 = d.fontSize, k, mw = num(args.maxWidth), want;
+                for (k = 0; k < 4 && mw > 0 && num(r.width) > mw; k++) {
+                    want = Math.max(Math.round(fs0 * 0.4), Math.floor(d.fontSize * (mw / num(r.width)) * 0.98));
+                    if (want >= d.fontSize) { break; }
+                    d = sp.value; d.fontSize = want; sp.setValue(d);
+                    r = L.sourceRectAtTime(comp.time, false);
+                }
+                return { layerId: L.id, name: L.name, size: [num(r.width), num(r.height)], fontSize: num(sp.value.fontSize), fitted: sp.value.fontSize < fs0 };
             });
         }
     };

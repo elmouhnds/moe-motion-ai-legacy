@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Auto-fit Templates** (v0.52.0): a long name or quote shrinks until After Effects measures it inside the frame, and the bar / pill / underline follow it (docs/features/TEMPLATES.md).
+
 **Branded Templates** (v0.51.0): with a client active in Brand Kit, every template comes out in its colours and fonts — the word on a pill in the colour that reads best (docs/features/TEMPLATES.md).
 
 **More Templates + Exit** (v0.50.0): Quote, End Card, Social Handle, Chapter (+ Arabic) — and *Hold, then exit* on every template: it leaves by itself the way it came (docs/features/TEMPLATES.md).

@@ -74,10 +74,11 @@ const template = {
     const ids = {};
     try {
       // 1. the texts, measured by After Effects
-      const measured = {};
+      const measured = {}, fitted = [];
       for (const sp of TPL.textSpecs(args.template, opts, comp)) {
-        const r = await host.call('text.create', { compId: comp.id, text: sp.text, name: `${base} · ${TPL.nameOf(sp)}`, fontSize: sp.fontSize, color: sp.color, bold: !!sp.bold, justify: sp.justify, rtl: sp.rtl, font: args.font || undefined, position: [comp.width / 2, comp.height / 2] });
-        made.push(r.layerId); ids[sp.key] = r.layerId; measured[sp.key] = r.size;
+        const r = await host.call('text.create', { compId: comp.id, text: sp.text, name: `${base} · ${TPL.nameOf(sp)}`, fontSize: sp.fontSize, color: sp.color, bold: !!sp.bold, justify: sp.justify, rtl: sp.rtl, font: args.font || undefined, position: [comp.width / 2, comp.height / 2], maxWidth: sp.maxWidth });
+        made.push(r.layerId); ids[sp.key] = r.layerId; measured[sp.key] = [r.size[0], r.size[1], r.fontSize];
+        if (r.fitted) fitted.push(`${TPL.nameOf(sp)} ${sp.fontSize} → ${r.fontSize} px`);
       }
       // 2. the plan with the real sizes, then the shapes
       const L = TPL.layout(args.template, opts, comp, measured);
@@ -108,7 +109,7 @@ const template = {
       const keys = items.length ? await host.call('keys.write', { compId: comp.id, label: 'MOE: Template', items }) : { items: [] };
       // read back what is in the comp now (verify checks it)
       const back = ((await host.call('layers.describe', { compId: comp.id })).layers || []).filter((l) => made.includes(l.id)).map((l) => ({ id: l.id, name: l.name, parentId: l.parentId || null }));
-      return { base, made, ids, measured, keys, back, nullId: nul.layerId, template: T.label, title: opts.title, brand: args.brandName || null };
+      return { base, made, ids, measured, keys, back, nullId: nul.layerId, template: T.label, title: opts.title, brand: args.brandName || null, fitted };
     } catch (e) {
       // never leave half a template behind
       if (made.length) { try { await host.call('layers.remove', { compId: comp.id, layerIds: made, onlyNamed: base }); } catch (e2) { /* report the first error */ } }
@@ -123,6 +124,7 @@ const template = {
       return { ok: !!l && l.name.indexOf(result.base) === 0 && placed, label: l ? l.name : `layer ${id}`, detail: !l ? 'missing' : id === result.nullId ? 'the template null' : placed ? 'parented to the template null' : 'not parented' };
     });
     for (const k of Object.keys(result.measured)) checks.push({ ok: result.measured[k][0] > 0, label: `${k} measured`, detail: `${Math.round(result.measured[k][0])} × ${Math.round(result.measured[k][1])} px` });
+    for (const f of result.fitted || []) checks.push({ ok: true, label: 'Fitted to the safe area', detail: f });
     for (const it of result.keys.items) checks.push({ ok: it.written.length >= 2, label: `${it.layerName} › ${it.name}`, detail: `${it.written.length} keys` });
     return { ok: checks.every((c) => c.ok), checks };
   },

@@ -68,7 +68,20 @@ function textSpecs(id, opts, comp) {
     out.push({ key: 'title', text: title, fontSize: Math.round(66 * s), bold: true, color: textColor, justify: side, rtl });
     if (sub) out.push({ key: 'subtitle', text: sub, fontSize: Math.round(32 * s), color: textColor.map((v) => v * 0.82), justify: side, rtl });
   }
-  return out.filter((t) => t.text.trim());
+  // v0.52 (TEMPLATES.md, Auto-fit): every line has a widest it may be inside the safe area; After Effects measures it and
+  // a longer text gets a smaller font (text.create → fit), the quote mark and the chapter number keep their size
+  const W = comp && comp.width > 0 ? comp.width : 1920;
+  return out.filter((t) => t.text.trim()).map((t) => Object.assign(t, { maxWidth: ['mark', 'number'].includes(t.key) ? 0 : Math.round(W * (FIT[id] || 0.8)) }));
+}
+/** The widest a template's lines may be, as a share of the comp width (inside title safe, beside the template's parts). */
+const FIT = { lowerThird: 0.6, titleCard: 0.85, callout: 0.32, tag: 0.5, quote: 0.72, endCard: 0.8, handle: 0.45, chapter: 0.55 };
+/**
+ * The font size that makes a line measured `width` wide at `fontSize` fit in `maxWidth` (2 % margin), never under
+ * 40 % of the design size — the same rule the host runs on After Effects' own measurement.
+ */
+function fitSize(fontSize, width, maxWidth, design) {
+  if (!(maxWidth > 0) || !(width > maxWidth)) return fontSize;
+  return Math.max(Math.round((design || fontSize) * 0.4), Math.floor(fontSize * (maxWidth / width) * 0.98));
 }
 
 /** A text part's layer name: Title, Subtitle, or its own (Quote Mark, Number, Button Text). */
@@ -90,7 +103,8 @@ function layout(id, opts, comp, measured) {
   const dur = opts.duration > 0 ? opts.duration : 0.7;
   const specs = textSpecs(id, opts, comp);
   const spec = (k) => specs.find((x) => x.key === k);
-  const text = (k, pos) => { const sp = spec(k); if (sp) els.push(Object.assign({ kind: 'text', name: nameOf(sp), position: pos }, sp)); return !!sp; };
+  // a text that was fitted keeps the size it was measured at (measured[key][2])
+  const text = (k, pos) => { const sp = spec(k); if (sp) els.push(Object.assign({ kind: 'text', name: nameOf(sp), position: pos }, sp, m(k)[2] ? { fontSize: m(k)[2] } : {})); return !!sp; };
   if (id === 'lowerThird') {
     // 7.5 % from the side (title safe), the block's bottom at 82 % of the height
     const x0 = rtl ? W - W * 0.075 : W * 0.075, dir = rtl ? -1 : 1;
@@ -255,4 +269,4 @@ function brandOpts(brand, opts) {
   return { accent, tagText: scored[0].hex, font: font && font.ps ? font.ps : null, contrast: +scored[0].ratio.toFixed(2), brand: brand.name };
 }
 
-module.exports = { TEMPLATES, byId, textSpecs, layout, finish, nameOf, brandOpts, isRtl, unit, hexRgb };
+module.exports = { TEMPLATES, FIT, byId, textSpecs, layout, finish, fitSize, nameOf, brandOpts, isRtl, unit, hexRgb };

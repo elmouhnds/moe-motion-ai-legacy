@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.52.0] — 2026-11-05 — Auto-fit Templates
+### Added
+- Template text always stays inside the frame: each line has a safe width (a share of the comp width per template). `text.create` measures the text in After Effects and shrinks the font until it fits (up to 4 measurements, never under 40 % of the design size); shapes are sized from the fitted text. The result lists each fitted line; the preview uses the same rule.
+### Tests
+- `tests/templates.test.js` (12): a long title / Arabic quote fits its safe width, smaller font, ≥ 40 %, underline follows it, short text unchanged, quote mark unchanged, `fitSize` cases. **Mock / preview, not After Effects.**
+
 ## [0.51.0] — 2026-11-05 — Branded Templates
 ### Added
 - Templates in the active client's brand (*Use the brand*, on by default): the brand's primary as the accent, the best-reading brand colour (≥ 4.5:1 when possible) for the word on a pill / button, the brand's Arabic or English font by the text's script. Hand-set values win. Tiles and the big preview show the client's colours.

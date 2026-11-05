@@ -259,3 +259,34 @@ test('v0.51 brand: the template tiles and the big preview show the client\'s col
   assert.equal(withBrand({ template: 'tag', accent: '#123456' }, services).accent, '#123456');
   assert.equal(withBrand({ template: 'tag', useBrand: false }, services).accent, undefined);
 });
+
+test('v0.52 Auto-fit: a long line gets a smaller font until After Effects measures it inside the safe area; short lines keep theirs', async () => {
+  const long = 'The most ambitious launch of the year, live from the main stage';
+  const { comp, r } = await build({ template: 'titleCard', title: long });
+  assert.equal(r.status, 'success');
+  const title = byName(comp, 'MOE Template 1 · Title');
+  const spec = TPL.textSpecs('titleCard', { title: long }, comp).find((x) => x.key === 'title');
+  const w = title.sourceRectAtTime(1, false).width;
+  assert.ok(spec.maxWidth > 0 && w <= spec.maxWidth, `${Math.round(w)} ≤ ${spec.maxWidth}`);
+  assert.ok(textDoc(title).fontSize < spec.fontSize, 'smaller font');
+  assert.ok(textDoc(title).fontSize >= Math.round(spec.fontSize * 0.4), 'never under 40 %');
+  assert.ok(r.verification.checks.some((c) => c.label === 'Fitted to the safe area' && /Title 120 → \d+ px/.test(c.detail)));
+  // the underline follows the fitted title (35 % of what was measured)
+  const uw = find(byName(comp, 'MOE Template 1 · Underline').property('ADBE Root Vectors Group'), 'ADBE Vector Rect Size').value[0];
+  assert.ok(near(uw, Math.max(80 * TPL.unit(comp), w * 0.35)));
+  // a short title is not touched
+  const short = await build({ template: 'titleCard', title: 'Launch' });
+  assert.equal(textDoc(byName(short.comp, 'MOE Template 1 · Title')).fontSize, 120);
+  assert.ok(!short.r.verification.checks.some((c) => c.label === 'Fitted to the safe area'));
+  // Arabic fits too, and the quote mark keeps its size
+  const q = await build({ template: 'quote', title: 'الحركة الجميلة لا تحتاج إلى كلمات كثيرة، تحتاج فقط إلى توقيت صحيح وإحساس بالإيقاع', subtitle: 'سارة' });
+  const qs = TPL.textSpecs('quote', { title: 'x' }, q.comp).find((x) => x.key === 'title');
+  assert.ok(byName(q.comp, 'MOE Template 1 · Title').sourceRectAtTime(1, false).width <= qs.maxWidth);
+  assert.equal(textDoc(byName(q.comp, 'MOE Template 1 · Quote Mark')).fontSize, 220);
+  // the pure rule the preview uses = the host's
+  assert.equal(TPL.fitSize(100, 900, 1000), 100);
+  assert.equal(TPL.fitSize(100, 2000, 1000), 49);
+  assert.equal(TPL.fitSize(100, 100000, 1000), 40);
+  const th = fs.readFileSync(path.join(__dirname, '../extension/app/ui/studio/thumbs.js'), 'utf8');
+  assert.match(th, /Math\.max\(Math\.round\(s\.fontSize \* 0\.4\), Math\.floor\(fs \* \(s\.maxWidth \/ w\) \* 0\.98\)\)/);
+});

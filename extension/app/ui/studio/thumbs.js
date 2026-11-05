@@ -526,7 +526,9 @@ function templatePlan(c, th) {
   if (opts.subtitle === undefined || opts.subtitle === '') opts.subtitle = id === 'tag' ? '' : T.subtitle;
   const specs = TPL.textSpecs(id, opts, TPL_COMP);
   const measured = {};
-  specs.forEach((s) => { c.font = `${s.bold ? '700 ' : ''}${s.fontSize}px sans-serif`; const mt = c.measureText && c.measureText(s.text); measured[s.key] = [mt && mt.width > 0 ? mt.width : s.text.length * s.fontSize * 0.55, s.fontSize * 0.75]; });
+    const meas = (s, fs) => { c.font = `${s.bold ? '700 ' : ''}${fs}px sans-serif`; const mt = c.measureText && c.measureText(s.text); return mt && mt.width > 0 ? mt.width : s.text.length * fs * 0.55; };
+  // v0.52: the same Auto-fit as the host (templates.fitSize on the measured width), so a long line shrinks here too
+  specs.forEach((s) => { let fs = s.fontSize, w = meas(s, fs); for (let k = 0; k < 4 && s.maxWidth && w > s.maxWidth; k++) { const nf = Math.max(Math.round(s.fontSize * 0.4), Math.floor(fs * (s.maxWidth / w) * 0.98)); if (nf >= fs) break; fs = nf; w = meas(s, fs); } measured[s.key] = [w, fs * 0.75, fs]; });
   return { id, plan: TPL.layout(id, opts, TPL_COMP, measured) };
 }
 const css = (rgb, a) => `rgba(${Math.round(rgb[0] * 255)},${Math.round(rgb[1] * 255)},${Math.round(rgb[2] * 255)},${a === undefined ? 1 : a})`;
