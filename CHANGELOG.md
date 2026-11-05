@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.51.0] — 2026-11-05 — Branded Templates
+### Added
+- Templates in the active client's brand (*Use the brand*, on by default): the brand's primary as the accent, the best-reading brand colour (≥ 4.5:1 when possible) for the word on a pill / button, the brand's Arabic or English font by the text's script. Hand-set values win. Tiles and the big preview show the client's colours.
+### Tests
+- `tests/templates.test.js` (11): `brandOpts` (primary, best contrast, font by script, no colours → none); built with Nile & Co. active — pill = primary, word = best colour, font Montserrat; own accent wins; *Use the brand* off; previews use the same rule. **Mock / preview, not After Effects.**
+
 ## [0.50.0] — 2026-11-05 — More Templates + Exit
 Details: `docs/features/TEMPLATES.md` (v0.50 section).
 ### Added

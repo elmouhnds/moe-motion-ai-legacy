@@ -48,6 +48,17 @@ Plus Arabic اقتباس and شكراً للمشاهدة; 8 templates, 12 tiles.
 
 The Lower Third and Social Handle tiles come with a 3 s hold. A small tile shows a 1 s hold so it is never empty for long; the big preview plays your real Hold.
 
+## v0.51: in your client's brand
+
+With a client active in Brand Kit (or only one saved) and *Use the brand* on, which is the default:
+- **Accent:** the brand's primary colour.
+- **The word on a pill or button** (Tag, End Card, Social Handle): whichever reads best on that accent, out of the brand's text colour, its background, black and white. It is contrast-checked, at least 4.5:1 when one of them reaches it.
+- **Font:** the brand's Arabic font for Arabic text, its English font otherwise.
+
+What you set yourself wins (an accent you changed, a font you typed); *Use the brand* off ignores the brand.
+
+The tiles and the big preview already show the client's colours (`templateTool.withBrand` is used by both the tool and the previews), and the result says *· <client> brand*. The preview cannot show the brand's font; After Effects uses it.
+
 ## Safety
 
 - One new host op, `text.create`: one text layer in one Undo group. It returns the measured size.

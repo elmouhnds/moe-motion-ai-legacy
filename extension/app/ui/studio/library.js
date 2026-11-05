@@ -59,6 +59,8 @@ function fill(app, tile) {
 }
 /** Background tiles move with the Motion / Colours picked in the Inspector (your own presets with theirs). */
 function tileThumb(app, t) {
+  // v0.51: template tiles show the active client's colours (the same rule as the tool: templateTool.withBrand)
+  if (t.tool === 'design.template') return Object.assign({}, t, { args: brandedArgs(app, t.args) });
   if (t.thumb.k !== 'bg') return t;
   const a = t.user ? t.args : Object.assign({}, app.state.get().args['design.background'] || {}, { palette: t.thumb.palette });
   const pick = {};
@@ -107,6 +109,10 @@ async function applyNow(app, tile, section, args) {
   return r;
 }
 
+/** v0.51: a template's args with the active brand filled in (what the tool will build). */
+function brandedArgs(app, args) {
+  try { return require('../../../features/design/templateTool').withBrand(Object.assign({}, args || {}), app.services); } catch (e) { return args; }
+}
 /** v0.47: the tools whose previews play their real keys (features/quick/animatePlan.js). */
 const PLANNED = ['quick.animate', 'quick.trimPaths', 'design.template'];
 function thumbEl(tile, cls, liveArgs) {
@@ -230,7 +236,7 @@ function render(app, section) {
       h('button', { class: 'icon-btn pin', 'aria-pressed': String(pinned), title: pinned ? 'Unpin from Favorites' : 'Pin to Favorites', onclick: () => { app.services.favorites.toggle(tool.id); app.render(); } }, icon('star', 'sm')),
       inline ? h('button', { class: 'icon-btn', 'data-key': 'st-ins-close', title: 'Close the settings', 'aria-label': 'Close settings', onclick: () => setSt(app, section, { open: false }) }, icon('x', 'sm')) : null),
     // inline, the tile itself is right above: no second big picture and no repeated title
-    inline || widgets.body[tool.id] || (tool.ui && tool.ui.renderBody) ? null : thumbEl(tile, 'big', PLANNED.includes(tool.id) ? app.state.get().args[tool.id] : null),
+    inline || widgets.body[tool.id] || (tool.ui && tool.ui.renderBody) ? null : thumbEl(tile, 'big', PLANNED.includes(tool.id) ? (tool.id === 'design.template' ? brandedArgs(app, Object.assign({}, tile.args, app.state.get().args[tool.id] || {})) : app.state.get().args[tool.id]) : null),
     inline ? null : h('div', { class: 'st-ins-title' }, tile.label),
     section.extras === 'palette' ? paletteExtras(app, tile) : h('div', { class: 'why st-ins-desc', title: tool.description }, tile.hint || tool.description),
     h('div', { class: 'st-ins-tool' }, renderTool(app, tool, { openByDefault: true })));

@@ -211,3 +211,51 @@ test('v0.50 Quote, End Card, Social Handle, Chapter: their own parts, Arabic mir
   assert.ok(byName(c.comp, 'MOE Template 1 · Divider'));
   assert.ok(TPL.TEMPLATES.length === 8);
 });
+
+const NILE = { name: 'Nile & Co.', colors: [{ name: 'Nile Green', hex: '#0E7C66', role: 'primary' }, { name: 'Sunset', hex: '#F2A541', role: 'accent' }, { name: 'Sand', hex: '#F4E9D8', role: 'background' }, { name: 'Ink', hex: '#1F2421', role: 'text' }],
+  fonts: { arabic: { ps: 'Cairo-Bold', family: 'Cairo', style: 'Bold' }, english: { ps: 'Montserrat-Bold', family: 'Montserrat', style: 'Bold' }, extra: [] } };
+const fillOf = (L) => find(L.property('ADBE Root Vectors Group'), 'ADBE Vector Fill Color').value;
+const nearRGB = (a, b) => [0, 1, 2].every((i) => Math.abs(a[i] - b[i]) < 0.005);
+
+test('v0.51 brand: the accent is the brand\'s primary, the word on it the brand colour that reads best, the brand\'s font by script', async () => {
+  const B = require('../extension/features/brand/brands');
+  const o = TPL.brandOpts(NILE, { title: 'NEW' });
+  assert.equal(o.accent, '#0E7C66');
+  // on Nile Green the best of Ink / Sand / black / white is chosen, and it really reads (≥ 4.5)
+  const ratios = ['#1F2421', '#F4E9D8', '#111111', '#ffffff'].map((h) => B.contrast(B.hexToRgb(h), B.hexToRgb('#0E7C66')));
+  assert.ok(Math.abs(o.contrast - Math.max(...ratios)) < 0.01 && o.contrast >= 4.5, `${o.tagText} ${o.contrast}`);
+  assert.equal(o.font, 'Montserrat-Bold');
+  assert.equal(TPL.brandOpts(NILE, { title: 'جديد' }).font, 'Cairo-Bold', 'Arabic text → the Arabic font');
+  assert.equal(TPL.brandOpts({ name: 'Empty', colors: [], fonts: {} }, {}), null);
+
+  // built with the client active: the pill is Nile Green, its word the best-reading colour, the font Montserrat
+  const { services, comp } = await createTestServices(studioComp([], { comp: { time: 1 } }));
+  const id = services.brands.save(Object.assign({}, NILE)).brand.id;
+  require('../extension/features/brand/kit').setActive(services.store, id);
+  const r = await services.executor.run('design.template', { template: 'tag' });
+  assert.equal(r.status, 'success');
+  assert.match(r.summary, /Nile & Co\. brand/);
+  assert.ok(nearRGB(fillOf(byName(comp, 'MOE Template 1 · Pill')), B.hexToRgb('#0E7C66')), 'pill = primary');
+  const word = textDoc(byName(comp, 'MOE Template 1 · Title'));
+  assert.ok(nearRGB(word.fillColor, B.hexToRgb(o.tagText)), 'word = best reading colour');
+  assert.equal(word.font, 'Montserrat-Bold');
+  // what you set yourself wins; Use the brand off ignores it
+  const own = await services.executor.run('design.template', { template: 'tag', accent: '#3c9dff' });
+  assert.ok(nearRGB(fillOf(byName(comp, 'MOE Template 2 · Pill')), B.hexToRgb('#3c9dff')));
+  const off = await services.executor.run('design.template', { template: 'tag', useBrand: false });
+  assert.ok(nearRGB(fillOf(byName(comp, 'MOE Template 3 · Pill')), B.hexToRgb('#ff5a3c')));
+  assert.doesNotMatch(off.summary, /brand/);
+  assert.ok(own.status === 'success');
+});
+
+test('v0.51 brand: the template tiles and the big preview show the client\'s colours (the tool\'s own rule)', () => {
+  const lib = fs.readFileSync(path.join(__dirname, '../extension/app/ui/studio/library.js'), 'utf8');
+  assert.match(lib, /if \(t\.tool === 'design\.template'\) return Object\.assign\(\{\}, t, \{ args: brandedArgs\(app, t\.args\) \}\);/);
+  assert.match(lib, /require\('\.\.\/\.\.\/\.\.\/features\/design\/templateTool'\)\.withBrand/);
+  const { withBrand } = require('../extension/features/design/templateTool');
+  const store = new Map();
+  const services = { store: { get: (k, d) => (store.has(k) ? store.get(k) : d), set: (k, v) => store.set(k, v) }, brands: { list: () => [Object.assign({ id: 'b1' }, NILE)], get: (id) => (id === 'b1' ? Object.assign({ id: 'b1' }, NILE) : null) } };
+  assert.equal(withBrand({ template: 'tag' }, services).accent, '#0E7C66', 'one client = the active one');
+  assert.equal(withBrand({ template: 'tag', accent: '#123456' }, services).accent, '#123456');
+  assert.equal(withBrand({ template: 'tag', useBrand: false }, services).accent, undefined);
+});

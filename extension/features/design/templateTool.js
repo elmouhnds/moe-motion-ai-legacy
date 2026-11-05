@@ -7,6 +7,22 @@
  */
 const TPL = require('./templates');
 
+const DEFAULT_ACCENT = '#ff5a3c';
+/**
+ * v0.51: the active brand fills what you did not set yourself (the accent left at its default, an empty font).
+ * Pure apart from reading the active client; returns new args.
+ */
+function withBrand(args, services) {
+  if (args.useBrand === false || !services || !services.store || !services.brands) return args;
+  const brand = require('../brand/kit').activeBrand(services.store, services.brands);
+  const b = brand && TPL.brandOpts(brand, { title: args.title, subtitle: args.subtitle, side: args.side });
+  if (!b) return args;
+  const out = Object.assign({}, args, { brandName: b.brand, tagText: args.tagText || b.tagText });
+  if (!args.accent || String(args.accent).toLowerCase() === DEFAULT_ACCENT) out.accent = b.accent;
+  if (!args.font && b.font) out.font = b.font;
+  return out;
+}
+
 const TR = (id, mn) => ({ layerId: id, matchNames: ['ADBE Transform Group', mn] });
 const PROP = { position: 'ADBE Position', opacity: 'ADBE Opacity', scale: 'ADBE Scale' };
 
@@ -26,7 +42,9 @@ const template = {
     duration: { type: 'number', label: 'Duration', min: 0.2, max: 4, step: 0.05, default: 0.7, unit: 's' },
     // v0.50: how long it stays before it leaves by itself (0 = it stays)
     hold: { type: 'number', label: 'Hold, then exit', min: 0, max: 60, step: 0.5, default: 0, unit: 's', description: '0 = it stays. Otherwise it leaves after this long, the way it came in' },
-    font: { type: 'string', label: 'Font', default: '', placeholder: 'After Effects default', advanced: true }
+    font: { type: 'string', label: 'Font', default: '', placeholder: 'After Effects default', advanced: true },
+    // v0.51: the active client's colours and fonts (Brand Kit); what you set by hand wins
+    useBrand: { type: 'boolean', label: 'Use the brand', default: true, description: 'With a client active in Brand Kit: its primary colour, the best-reading text on it, and its Arabic / English font' }
   },
   requires: { comp: true },
   permissions: ['modify.layers', 'modify.keyframes'],
@@ -42,10 +60,11 @@ const template = {
     const title = args.title || T.title;
     return { ok: true, preview: { summary: `${T.label} · “${title}”${TPL.isRtl({ title, subtitle: args.subtitle, side: args.side }) ? ' · right to left' : ''}`, items: [] } };
   },
-  async execute({ args, ctx, host }) {
+  async execute({ args, ctx, host, services }) {
     const comp = ctx.comp;
     const T = TPL.byId(args.template);
-    const opts = { title: args.title || T.title, subtitle: args.subtitle === undefined || args.subtitle === '' ? (['tag', 'handle'].includes(args.template) ? '' : T.subtitle) : args.subtitle, accent: args.accent, textColor: args.textColor, side: args.side, duration: args.duration, hold: args.hold, number: args.number };
+    args = withBrand(args, services);
+    const opts = { title: args.title || T.title, subtitle: args.subtitle === undefined || args.subtitle === '' ? (['tag', 'handle'].includes(args.template) ? '' : T.subtitle) : args.subtitle, accent: args.accent, textColor: args.textColor, tagText: args.tagText, side: args.side, duration: args.duration, hold: args.hold, number: args.number };
     // the next free number (never reuse a name: Trash and Restore find the parts by it)
     const desc = await host.call('layers.describe', { compId: comp.id });
     const used = (desc.layers || []).map((l) => (/^MOE Template (\d+)$/.exec(l.name) || [])[1]).filter(Boolean).map(Number);
@@ -89,7 +108,7 @@ const template = {
       const keys = items.length ? await host.call('keys.write', { compId: comp.id, label: 'MOE: Template', items }) : { items: [] };
       // read back what is in the comp now (verify checks it)
       const back = ((await host.call('layers.describe', { compId: comp.id })).layers || []).filter((l) => made.includes(l.id)).map((l) => ({ id: l.id, name: l.name, parentId: l.parentId || null }));
-      return { base, made, ids, measured, keys, back, nullId: nul.layerId, template: T.label, title: opts.title };
+      return { base, made, ids, measured, keys, back, nullId: nul.layerId, template: T.label, title: opts.title, brand: args.brandName || null };
     } catch (e) {
       // never leave half a template behind
       if (made.length) { try { await host.call('layers.remove', { compId: comp.id, layerIds: made, onlyNamed: base }); } catch (e2) { /* report the first error */ } }
@@ -109,7 +128,7 @@ const template = {
   },
   checkpoint({ result, ctx }) { return { compId: ctx.comp.id, layerIds: result.made, base: result.base }; },
   async restore({ data, host }) { return host.call('layers.remove', { compId: data.compId, layerIds: data.layerIds, onlyNamed: data.base }); },
-  summarize(result) { return `${result.template} “${result.title}” — ${result.made.length} layers in ${result.base}`; }
+  summarize(result) { return `${result.template} “${result.title}” — ${result.made.length} layers in ${result.base}${result.brand ? ` · ${result.brand} brand` : ''}`; }
 };
 
-module.exports = { template };
+module.exports = { template, withBrand };

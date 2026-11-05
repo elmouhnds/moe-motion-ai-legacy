@@ -235,4 +235,24 @@ function finish(opts, plan) {
   return plan;
 }
 
-module.exports = { TEMPLATES, byId, textSpecs, layout, finish, nameOf, isRtl, unit, hexRgb };
+/**
+ * v0.51 (docs/features/TEMPLATES.md, Brand): a template in the active client's brand — the accent from the brand's
+ * primary colour, the word on a pill / button in the brand colour (or black / white) that reads best on that accent
+ * (contrast-checked, ≥ 4.5 when one exists), the brand's Arabic or English font by the text's script.
+ * → { accent, tagText, font, contrast, brand } or null (no brand / no colours). Pure: the tool and the previews use it.
+ */
+function brandOpts(brand, opts) {
+  const BR = require('../brand/brands');
+  const roles = require('../brand/applyAll').brandRoles(brand);
+  if (!roles) return null;
+  const accent = roles.primary.hex;
+  const acc = BR.hexToRgb(accent);
+  const pool = [roles.text, roles.background, { hex: '#111111' }, { hex: '#ffffff' }].filter((c) => c && BR.hexToRgb(c.hex));
+  const scored = pool.map((c) => ({ hex: c.hex, ratio: BR.contrast(BR.hexToRgb(c.hex), acc) })).sort((a, b) => b.ratio - a.ratio);
+  const rtl = isRtl(opts || {});
+  const f = brand.fonts || {};
+  const font = (rtl ? f.arabic : f.english) || f.english || f.arabic || null;
+  return { accent, tagText: scored[0].hex, font: font && font.ps ? font.ps : null, contrast: +scored[0].ratio.toFixed(2), brand: brand.name };
+}
+
+module.exports = { TEMPLATES, byId, textSpecs, layout, finish, nameOf, brandOpts, isRtl, unit, hexRgb };

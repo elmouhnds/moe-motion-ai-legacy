@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['brand', 'Templates in your client\'s brand', 'With a client active in Brand Kit, every template comes out in its colours and fonts — the accent from the brand, the word on a pill or button in the brand colour that reads best on it, the Arabic or English font by the text. The tiles show it before you build. What you set yourself always wins.'],
   ['type', 'Four more templates — and they leave by themselves', 'Design › Templates now also has Quote, End Card, Social Handle and Chapter (and Arabic اقتباس / شكراً للمشاهدة). New on every template: Hold, then exit — after the time you choose it leaves the way it came in, so a lower third needs no extra keys.'],
   ['type', 'Templates, built in your comp', 'Design › Templates: Lower Third, Title Card, Callout and Tag (and Arabic شريط الاسم / عنوان كبير). Type your text and Build — real text and shape layers appear in your comp, sized to your words as After Effects measures them, all on one null you can move, with the entrance already animated. Arabic is laid out right to left. Everything stays editable.'],
   ['layers', '12 combined moves', 'Entrances and exits the way you build them by hand, in one click: Rise + Fade, Zoom Fade In / Out (from 130 %), Grow / Shrink + Fade, Pop + Fade, Swing In / Out, Slide + Fade, Drop + Fade, Sink + Fade. And on any Quick Animate: Also fade, From / to (scale) and Angle (spin). Each tile plays its real keys.'],

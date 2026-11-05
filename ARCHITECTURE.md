@@ -179,6 +179,9 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6zb. Branded Templates (v0.51.0)
+- `templates.brandOpts(brand, opts)` (pure: `brandRoles` primary, best contrast among text / background / black / white, font by script); `templateTool.withBrand(args, services)` fills what was not set by hand (used in `execute` and by `library.tileThumb` / the big preview). Param `useBrand`.
+
 ## 6za. More Templates + Exit (v0.50.0)
 - `templates.js`: `quote` / `endCard` / `handle` / `chapter` in `textSpecs` + `layout`; text parts carry their own `name` (`nameOf`); `finish(opts, plan)` appends the exit keys after `hold` (`exitAt`). `design.template` params `number`, `hold`. `thumbs.DRAW.template` caps a small tile's hold at 1 s.
 
