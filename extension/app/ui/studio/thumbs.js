@@ -518,6 +518,8 @@ let bgDraw = null; // loaded on first use (bgDraw → design tools; keeps thumbs
 const TPL_COMP = { width: 1920, height: 1080 };
 function templatePlan(c, th) {
   const opts = Object.assign({}, th.args || {});
+  // a small tile shows the exit after a short hold (1 s) so it is never empty for long; the big preview keeps Hold
+  if (!th.strip && opts.hold > 1) opts.hold = 1;
   const id = opts.template || th.id;
   const T = TPL.byId(id);
   if (!opts.title) opts.title = T.title;
@@ -531,7 +533,10 @@ const css = (rgb, a) => `rgba(${Math.round(rgb[0] * 255)},${Math.round(rgb[1] * 
 DRAW.template = function (c, W, H, th, t) {
   const { plan } = templatePlan(c, th);
   const end = Math.max(0.01, ...plan.keys.map((k) => PLAN.endOf(k.keys)));
-  const lt = th.still ? end : (t % (0.35 + end + 1.6)) - 0.35;
+  // with an exit the loop rests 0.5 s after it, without one it holds the finished template 1.6 s; a still frame is the
+  // template in place (the moment the exit would start, or the end of the entrance)
+  const rest = plan.exitAt ? 0.5 : 1.6;
+  const lt = th.still ? (plan.exitAt || end) : (t % (0.35 + end + rest)) - 0.35;
   // the big preview shows the whole frame (where it sits); a small tile frames the template itself
   const b = plan.box, pad = 0.35;
   const view = th.strip ? [0, 0, 1920, 1080] : [b[0] - b[2] * pad, b[1] - Math.max(b[3], 60) * pad * 2, b[2] * (1 + 2 * pad), Math.max(b[3], 60) * (1 + 4 * pad)];

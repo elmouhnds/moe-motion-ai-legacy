@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**More Templates + Exit** (v0.50.0): Quote, End Card, Social Handle, Chapter (+ Arabic) — and *Hold, then exit* on every template: it leaves by itself the way it came (docs/features/TEMPLATES.md).
+
 **Native Templates** (v0.49.0): Lower Third, Title Card, Callout, Tag (+ Arabic) built in your comp as real, editable layers sized to your text, on one null, with the entrance animated (docs/features/TEMPLATES.md).
 
 **Combined Moves** (v0.48.0): 12 entrances and exits built the way designers do by hand — Rise + Fade, Zoom Fade In / Out, Swing, Grow / Shrink + Fade … — with *Also fade*, *From / to* and *Angle* on Quick Animate (docs/features/COMBINED_MOVES.md).

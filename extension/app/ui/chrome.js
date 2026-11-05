@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['type', 'Four more templates — and they leave by themselves', 'Design › Templates now also has Quote, End Card, Social Handle and Chapter (and Arabic اقتباس / شكراً للمشاهدة). New on every template: Hold, then exit — after the time you choose it leaves the way it came in, so a lower third needs no extra keys.'],
   ['type', 'Templates, built in your comp', 'Design › Templates: Lower Third, Title Card, Callout and Tag (and Arabic شريط الاسم / عنوان كبير). Type your text and Build — real text and shape layers appear in your comp, sized to your words as After Effects measures them, all on one null you can move, with the entrance already animated. Arabic is laid out right to left. Everything stays editable.'],
   ['layers', '12 combined moves', 'Entrances and exits the way you build them by hand, in one click: Rise + Fade, Zoom Fade In / Out (from 130 %), Grow / Shrink + Fade, Pop + Fade, Swing In / Out, Slide + Fade, Drop + Fade, Sink + Fade. And on any Quick Animate: Also fade, From / to (scale) and Angle (spin). Each tile plays its real keys.'],
   ['play', 'Previews that are the real motion', 'Every Animate tile now plays the exact keyframes it will write — the real duration, the real ease (Snappy, Smooth, Gentle, Expo look different now), Pop\'s overshoot key, Cascade\'s stagger. Change Duration or Ease in the settings and the big preview follows at once, with a strip that shows where the keys sit.'],

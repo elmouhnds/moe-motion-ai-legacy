@@ -12,23 +12,26 @@ const PROP = { position: 'ADBE Position', opacity: 'ADBE Opacity', scale: 'ADBE 
 
 const template = {
   id: 'design.template', version: '1.0.0', category: 'design', group: 'Design · Templates', name: 'Template',
-  description: 'A native, editable template built in the comp: real text layers and shape layers, sized to your text, parented to one null, with its entrance animated — Lower Third, Title Card, Callout, Tag. Arabic is laid out right-to-left.',
-  keywords: ['template', 'lower third', 'title', 'callout', 'tag', 'badge', 'name', 'caption', 'label', 'قالب', 'عنوان'],
+  description: 'A native, editable template built in the comp: real text layers and shape layers, sized to your text, parented to one null, with its entrance animated (and its exit after Hold) — Lower Third, Title Card, Callout, Tag, Quote, End Card, Social Handle, Chapter. Arabic is laid out right-to-left.',
+  keywords: ['template', 'lower third', 'title', 'callout', 'tag', 'badge', 'name', 'caption', 'label', 'quote', 'end card', 'outro', 'subscribe', 'handle', 'social', 'chapter', 'section', 'قالب', 'عنوان', 'اقتباس', 'نهاية', 'فصل'],
   icon: 'type',
   params: {
     template: { type: 'enum', label: 'Template', default: 'lowerThird', options: TPL.TEMPLATES.map((t) => ({ value: t.id, label: t.short || t.label })) },
     title: { type: 'string', label: 'Title', default: '', placeholder: 'The template\'s own example if empty', maxLength: 120 },
-    subtitle: { type: 'string', label: 'Second line', default: '', maxLength: 160, showIf: (a) => a.template !== 'tag' },
+    subtitle: { type: 'string', label: 'Second line', default: '', maxLength: 160, showIf: (a) => !['tag', 'handle'].includes(a.template) },
     accent: { type: 'string', label: 'Accent', default: '#ff5a3c', placeholder: '#RRGGBB', maxLength: 7 },
     textColor: { type: 'string', label: 'Text colour', default: '#ffffff', placeholder: '#RRGGBB', maxLength: 7, showIf: (a) => a.template !== 'tag' },
     side: { type: 'enum', label: 'Direction', default: 'auto', options: [{ value: 'auto', label: 'Auto' }, { value: 'ltr', label: 'LTR' }, { value: 'rtl', label: 'RTL' }], description: 'Auto: Arabic text is laid out right to left (the bar on the right)' },
+    number: { type: 'string', label: 'Number', default: '', placeholder: '01', maxLength: 4, showIf: (a) => a.template === 'chapter' },
     duration: { type: 'number', label: 'Duration', min: 0.2, max: 4, step: 0.05, default: 0.7, unit: 's' },
+    // v0.50: how long it stays before it leaves by itself (0 = it stays)
+    hold: { type: 'number', label: 'Hold, then exit', min: 0, max: 60, step: 0.5, default: 0, unit: 's', description: '0 = it stays. Otherwise it leaves after this long, the way it came in' },
     font: { type: 'string', label: 'Font', default: '', placeholder: 'After Effects default', advanced: true }
   },
   requires: { comp: true },
   permissions: ['modify.layers', 'modify.keyframes'],
   recovery: 'undo+checkpoint',
-  ai: { callable: true, hint: 'Build a native template (lowerThird, titleCard, callout, tag) with the given title / subtitle / accent.' },
+  ai: { callable: true, hint: 'Build a native template (lowerThird, titleCard, callout, tag, quote, endCard, handle, chapter) with the given title / subtitle / accent; hold > 0 adds the exit.' },
   uses: { hostOps: ['layers.describe', 'text.create', 'shapes.insert', 'shapes.trim', 'layers.createNull', 'layers.setParent', 'props.setValues', 'keys.write', 'layers.remove'], network: false },
   compatibility: { minAE: '25.0' },
   ui: { primaryLabel: 'Build' },
@@ -42,7 +45,7 @@ const template = {
   async execute({ args, ctx, host }) {
     const comp = ctx.comp;
     const T = TPL.byId(args.template);
-    const opts = { title: args.title || T.title, subtitle: args.subtitle === undefined || args.subtitle === '' ? (args.template === 'tag' ? '' : T.subtitle) : args.subtitle, accent: args.accent, textColor: args.textColor, side: args.side, duration: args.duration };
+    const opts = { title: args.title || T.title, subtitle: args.subtitle === undefined || args.subtitle === '' ? (['tag', 'handle'].includes(args.template) ? '' : T.subtitle) : args.subtitle, accent: args.accent, textColor: args.textColor, side: args.side, duration: args.duration, hold: args.hold, number: args.number };
     // the next free number (never reuse a name: Trash and Restore find the parts by it)
     const desc = await host.call('layers.describe', { compId: comp.id });
     const used = (desc.layers || []).map((l) => (/^MOE Template (\d+)$/.exec(l.name) || [])[1]).filter(Boolean).map(Number);
@@ -54,7 +57,7 @@ const template = {
       // 1. the texts, measured by After Effects
       const measured = {};
       for (const sp of TPL.textSpecs(args.template, opts, comp)) {
-        const r = await host.call('text.create', { compId: comp.id, text: sp.text, name: `${base} · ${sp.key === 'title' ? 'Title' : 'Subtitle'}`, fontSize: sp.fontSize, color: sp.color, bold: !!sp.bold, justify: sp.justify, rtl: sp.rtl, font: args.font || undefined, position: [comp.width / 2, comp.height / 2] });
+        const r = await host.call('text.create', { compId: comp.id, text: sp.text, name: `${base} · ${TPL.nameOf(sp)}`, fontSize: sp.fontSize, color: sp.color, bold: !!sp.bold, justify: sp.justify, rtl: sp.rtl, font: args.font || undefined, position: [comp.width / 2, comp.height / 2] });
         made.push(r.layerId); ids[sp.key] = r.layerId; measured[sp.key] = r.size;
       }
       // 2. the plan with the real sizes, then the shapes

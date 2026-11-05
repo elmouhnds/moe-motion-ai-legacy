@@ -33,7 +33,7 @@ async function build(args, layers) {
 }
 
 test('each template: real layers named MOE Template 1 · …, all parented to one null, placed where the plan says', async () => {
-  for (const id of ['lowerThird', 'titleCard', 'callout', 'tag']) {
+  for (const id of TPL.TEMPLATES.map((t) => t.id)) { // v0.50: all eight
     const { comp, r } = await build({ template: id });
     assert.equal(r.status, 'success', `${id}: ${JSON.stringify(r.errors || r.verification)}`);
     const nul = byName(comp, 'MOE Template 1');
@@ -43,7 +43,7 @@ test('each template: real layers named MOE Template 1 · …, all parented to on
     // the plan, with the sizes After Effects measured (read back from the text layers themselves)
     const opts = { title: TPL.byId(id).title, subtitle: id === 'tag' ? '' : TPL.byId(id).subtitle };
     const measured = {};
-    for (const sp of TPL.textSpecs(id, opts, comp)) { const L = byName(comp, `MOE Template 1 · ${sp.key === 'title' ? 'Title' : 'Subtitle'}`); const rr = L.sourceRectAtTime(comp.time, false); measured[sp.key] = [rr.width, rr.height]; }
+    for (const sp of TPL.textSpecs(id, opts, comp)) { const L = byName(comp, `MOE Template 1 · ${TPL.nameOf(sp)}`); assert.ok(L, `${id}: ${TPL.nameOf(sp)}`); const rr = L.sourceRectAtTime(comp.time, false); measured[sp.key] = [rr.width, rr.height]; }
     const plan = TPL.layout(id, opts, comp, measured);
     for (const el of plan.elements) {
       const L = byName(comp, `MOE Template 1 · ${el.name}`);
@@ -164,4 +164,50 @@ test('v0.49 audit: the assistant button never covers the bar\'s button — the b
     assert.ok(Number(m[1]) >= 44 + 12, `${side}: ${m[1]} px`);
   }
   assert.ok(!/\.app\.has-actbar \.assistant:not\(\.open\) \{ bottom: 62px; \}/.test(css), 'no more lifting over a bar that may not be at the bottom');
+});
+
+test('v0.50 Hold: after the entrance and the hold, every part leaves the way it came — the keys written are the plan', async () => {
+  const { comp, r } = await build({ template: 'lowerThird', hold: 3, duration: 0.8 });
+  assert.equal(r.status, 'success');
+  const nul = byName(comp, 'MOE Template 1');
+  const opts = { title: 'Sara Ahmed', subtitle: 'Motion Designer', duration: 0.8, hold: 3 };
+  const measured = {};
+  for (const k of ['title', 'subtitle']) { const rr = byName(comp, `MOE Template 1 · ${k === 'title' ? 'Title' : 'Subtitle'}`).sourceRectAtTime(1, false); measured[k] = [rr.width, rr.height]; }
+  const plan = TPL.layout('lowerThird', opts, comp, measured);
+  const noHold = TPL.layout('lowerThird', Object.assign({}, opts, { hold: 0 }), comp, measured);
+  const inEnd = Math.max(...noHold.keys.map((k) => k.keys[k.keys.length - 1].t));
+  assert.ok(Math.abs(plan.exitAt - (inEnd + 3)) < 1e-9);
+  const P = tr(nul, 'ADBE Position').value;
+  for (const k of plan.keys) {
+    const el = plan.elements.find((e) => e.key === k.key);
+    const prop = tr(byName(comp, `MOE Template 1 · ${el.name}`), { position: 'ADBE Position', opacity: 'ADBE Opacity', scale: 'ADBE Scale' }[k.prop]);
+    const n0 = noHold.keys.find((x) => x.key === k.key && x.prop === k.prop).keys.length;
+    assert.equal(prop._keys.length, n0 + 2, `${el.name} ${k.prop}: entrance + 2 exit keys`);
+    // the exit starts after the hold and ends where the entrance started
+    assert.ok(prop._keys[n0].t >= 1 + inEnd + 3 - 1e-9, `${el.name} ${k.prop}: exit after the hold`);
+    const first = prop._keys[0].value, last = prop._keys[prop._keys.length - 1].value;
+    assert.deepEqual(Array.isArray(first) ? Array.from(first).slice(0, 2) : first, Array.isArray(last) ? Array.from(last).slice(0, 2) : last, `${el.name} ${k.prop}: leaves the way it came`);
+    k.keys.forEach((x, i) => assert.ok(near(prop._keys[i].t, x.t + 1, 1e-6), `${el.name} ${k.prop} key ${i}`));
+  }
+  // hold 0 = it stays (no exit keys)
+  const stay = await build({ template: 'lowerThird' });
+  assert.equal(tr(byName(stay.comp, 'MOE Template 1 · Title'), 'ADBE Opacity')._keys.length, 2);
+});
+
+test('v0.50 Quote, End Card, Social Handle, Chapter: their own parts, Arabic mirrored, the chapter number', async () => {
+  const q = await build({ template: 'quote', title: 'الحركة تحكي القصة', subtitle: 'سارة' });
+  const mark = world(q.comp, byName(q.comp, 'MOE Template 1 · Quote Mark')), qt = world(q.comp, byName(q.comp, 'MOE Template 1 · Title'));
+  assert.ok(mark[0] >= qt[0], 'Arabic: the quote mark on the right');
+  assert.equal(textDoc(byName(q.comp, 'MOE Template 1 · Quote Mark')).text, '\u201D');
+  const e = await build({ template: 'endCard', subtitle: 'Subscribe now' });
+  const btn = find(byName(e.comp, 'MOE Template 1 · Button').property('ADBE Root Vectors Group'), 'ADBE Vector Rect Size').value;
+  assert.ok(near(btn[0], byName(e.comp, 'MOE Template 1 · Button Text').sourceRectAtTime(1, false).width + 64 * TPL.unit(e.comp)), 'the button fits its word');
+  const h = await build({ template: 'handle', title: '@sara.motion.design' });
+  const pill = find(byName(h.comp, 'MOE Template 1 · Pill').property('ADBE Root Vectors Group'), 'ADBE Vector Rect Size').value;
+  assert.ok(pill[0] > byName(h.comp, 'MOE Template 1 · Title').sourceRectAtTime(1, false).width, 'the pill holds the handle');
+  assert.ok(world(h.comp, byName(h.comp, 'MOE Template 1 · Pill'))[1] > h.comp.height * 0.8, 'bottom corner');
+  const c = await build({ template: 'chapter', number: '07' });
+  assert.equal(textDoc(byName(c.comp, 'MOE Template 1 · Number')).text, '07');
+  assert.ok(byName(c.comp, 'MOE Template 1 · Divider'));
+  assert.ok(TPL.TEMPLATES.length === 8);
 });

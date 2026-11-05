@@ -33,6 +33,21 @@ Plus the Arabic ones: **شريط الاسم** and **عنوان كبير**.
   - Only the text widths in the preview come from the browser. After Effects measures the real ones, and the bar fits them the same way.
 - **Where:** the Design tab (first group), the Design stage (first), and the Templates page (Design workspace). Ctrl+K finds it ("lower third", "قالب").
 
+## v0.50: four more, and the exit
+
+| Template | Parts | Entrance |
+|---|---|---|
+| **Quote** | a big quote mark (accent) · the words · — author | the mark pops, the words rise in, the author fades in |
+| **End Card** | logo circle · thank-you line · button pill with its word (sized to the word) | the circle pops, the line rises, the button pops |
+| **Social Handle** | pill · dot · @name, in the bottom corner | the pill grows, the dot pops, the name rises |
+| **Chapter** | big number (accent, *Number* setting) · divider · title · subtitle | the number rises, the line grows, the title slides in |
+
+Plus Arabic اقتباس and شكراً للمشاهدة; 8 templates, 12 tiles.
+
+**Hold, then exit.** After the entrance and *Hold* seconds, every animated property goes back the way it came, on Quick Animate's keys (the last part in leaves first). Hold 0 means the template stays.
+
+The Lower Third and Social Handle tiles come with a 3 s hold. A small tile shows a 1 s hold so it is never empty for long; the big preview plays your real Hold.
+
 ## Safety
 
 - One new host op, `text.create`: one text layer in one Undo group. It returns the measured size.

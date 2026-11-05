@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.50.0] — 2026-11-05 — More Templates + Exit
+Details: `docs/features/TEMPLATES.md` (v0.50 section).
+### Added
+- **Quote**, **End Card**, **Social Handle**, **Chapter** (+ Arabic اقتباس / شكراً للمشاهدة): 8 templates, 12 tiles; the End Card's button and the handle's pill are sized to their measured words; Chapter has a *Number* setting.
+- **Hold, then exit** on every template: after the entrance and the hold, each part leaves the way it came (Quick Animate's keys); Lower Third and Social Handle tiles hold 3 s.
+### Tests
+- `tests/templates.test.js` (9): all 8 templates placed by the plan; Hold writes entrance + exit keys = the plan, ending where it started; the new parts (Arabic quote mirrored, button fits its word, handle in the corner, chapter number). **Mock / preview, not After Effects.**
+
 ## [0.49.0] — 2026-11-04 — Native Templates
 Details: `docs/features/TEMPLATES.md`.
 ### Added

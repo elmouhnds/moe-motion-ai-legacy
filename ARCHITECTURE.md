@@ -179,6 +179,9 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6za. More Templates + Exit (v0.50.0)
+- `templates.js`: `quote` / `endCard` / `handle` / `chapter` in `textSpecs` + `layout`; text parts carry their own `name` (`nameOf`); `finish(opts, plan)` appends the exit keys after `hold` (`exitAt`). `design.template` params `number`, `hold`. `thumbs.DRAW.template` caps a small tile's hold at 1 s.
+
 ## 6z. Native Templates (v0.49.0)
 - `features/design/templates.js` (pure): `TEMPLATES`, `textSpecs(id, opts, comp)`, `layout(id, opts, comp, measured)` → elements (text / rect / ellipse / path, comp px) + entrance keys (`animatePlan.keysFor`), `isRtl`. `features/design/templateTool.js` (`design.template`): `text.create` (new host op, `host/ops/text.jsx`) → measured sizes → `layout` → `shapes.insert` / `shapes.trim` → `layers.createNull` + `layers.setParent` + `props.setValues` (local positions) → `keys.write`; read-back in execute, `layers.remove` on failure and restore. UI: section `templates` (Design workspace), `ae-design/templates` group, `st-design` stage; `thumbs.DRAW.template` draws the same plan. Self-Test `checkTemplate`.
 

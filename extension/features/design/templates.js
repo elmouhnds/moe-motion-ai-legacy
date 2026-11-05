@@ -21,7 +21,12 @@ const TEMPLATES = [
   { id: 'lowerThird', label: 'Lower Third', short: 'Lower', hint: 'Name and role at the bottom, an accent bar that grows, the lines rise in one after the other', title: 'Sara Ahmed', subtitle: 'Motion Designer' },
   { id: 'titleCard', label: 'Title Card', short: 'Title', hint: 'A big centred title, a line that draws under it, the subtitle rises in', title: 'The Big Launch', subtitle: 'Coming this summer' },
   { id: 'callout', label: 'Callout', hint: 'A dot on the point, a line that draws out to the label', title: 'New feature', subtitle: 'Tap to try it' },
-  { id: 'tag', label: 'Tag', hint: 'A rounded pill that pops in around its word', title: 'NEW', subtitle: '' }
+  { id: 'tag', label: 'Tag', hint: 'A rounded pill that pops in around its word', title: 'NEW', subtitle: '' },
+  // v0.50 (TEMPLATES.md): four more on the same plan
+  { id: 'quote', label: 'Quote', hint: 'A big quote mark pops, the words rise in, the author follows', title: 'Make it move, then make it matter.', subtitle: 'Sara Ahmed' },
+  { id: 'endCard', label: 'End Card', short: 'End', hint: 'A logo circle, a thank-you line and a button that pops — the last seconds of a video', title: 'Thanks for watching', subtitle: 'Subscribe' },
+  { id: 'handle', label: 'Social Handle', short: 'Handle', hint: 'Your @name in a pill with a dot, bottom corner — grows in, the name fades up', title: '@moe.motion', subtitle: '' },
+  { id: 'chapter', label: 'Chapter', hint: 'A big number, a line that grows and the chapter\'s title — for sections of a longer video', title: 'Getting started', subtitle: 'Your first animation', number: '01' }
 ];
 const byId = (id) => TEMPLATES.find((t) => t.id === id) || null;
 
@@ -49,9 +54,25 @@ function textSpecs(id, opts, comp) {
     if (sub) out.push({ key: 'subtitle', text: sub, fontSize: Math.round(28 * s), color: textColor.map((v) => v * 0.82), justify: side, rtl });
   } else if (id === 'tag') {
     out.push({ key: 'title', text: title, fontSize: Math.round(36 * s), bold: true, color: hexRgb(opts.tagText || '#111111'), justify: 'center', rtl });
+  } else if (id === 'quote') {
+    out.push({ key: 'mark', name: 'Quote Mark', text: rtl ? '\u201D' : '\u201C', fontSize: Math.round(220 * s), bold: true, color: hexRgb(opts.accent || '#ff5a3c'), justify: side, rtl });
+    out.push({ key: 'title', text: title, fontSize: Math.round(58 * s), bold: true, color: textColor, justify: side, rtl });
+    if (sub) out.push({ key: 'subtitle', text: `${rtl ? '' : '\u2014 '}${sub}${rtl ? ' \u2014' : ''}`, fontSize: Math.round(32 * s), color: textColor.map((v) => v * 0.82), justify: side, rtl });
+  } else if (id === 'endCard') {
+    out.push({ key: 'title', text: title, fontSize: Math.round(72 * s), bold: true, color: textColor, justify: 'center', rtl });
+    if (sub) out.push({ key: 'subtitle', name: 'Button Text', text: sub, fontSize: Math.round(34 * s), bold: true, color: hexRgb(opts.tagText || '#111111'), justify: 'center', rtl });
+  } else if (id === 'handle') {
+    out.push({ key: 'title', text: title, fontSize: Math.round(36 * s), bold: true, color: textColor, justify: side, rtl });
+  } else if (id === 'chapter') {
+    out.push({ key: 'number', name: 'Number', text: String(opts.number === undefined || opts.number === '' ? T.number : opts.number), fontSize: Math.round(150 * s), bold: true, color: hexRgb(opts.accent || '#ff5a3c'), justify: rtl ? 'left' : 'right', rtl: false });
+    out.push({ key: 'title', text: title, fontSize: Math.round(66 * s), bold: true, color: textColor, justify: side, rtl });
+    if (sub) out.push({ key: 'subtitle', text: sub, fontSize: Math.round(32 * s), color: textColor.map((v) => v * 0.82), justify: side, rtl });
   }
   return out.filter((t) => t.text.trim());
 }
+
+/** A text part's layer name: Title, Subtitle, or its own (Quote Mark, Number, Button Text). */
+const nameOf = (sp) => sp.name || (sp.key === 'title' ? 'Title' : 'Subtitle');
 
 /** Entrance keys from Quick Animate's own plan, shifted by `delay`. */
 function enter(key, prop, a, b, delay, dur, ease) {
@@ -69,7 +90,7 @@ function layout(id, opts, comp, measured) {
   const dur = opts.duration > 0 ? opts.duration : 0.7;
   const specs = textSpecs(id, opts, comp);
   const spec = (k) => specs.find((x) => x.key === k);
-  const text = (k, pos) => { const sp = spec(k); if (sp) els.push(Object.assign({ kind: 'text', name: k === 'title' ? 'Title' : 'Subtitle', position: pos }, sp)); return !!sp; };
+  const text = (k, pos) => { const sp = spec(k); if (sp) els.push(Object.assign({ kind: 'text', name: nameOf(sp), position: pos }, sp)); return !!sp; };
   if (id === 'lowerThird') {
     // 7.5 % from the side (title safe), the block's bottom at 82 % of the height
     const x0 = rtl ? W - W * 0.075 : W * 0.075, dir = rtl ? -1 : 1;
@@ -85,7 +106,7 @@ function layout(id, opts, comp, measured) {
     keys.push(enter('bar', 'scale', [100, 0], [100, 100], 0, dur * 0.8, 'expo'));
     keys.push(enter('title', 'position', [tx - dir * 40 * s, top + th * 0.8], [tx, top + th * 0.8], 0.12, dur), fadeIn('title', 0.12, dur * 0.8));
     if (spec('subtitle')) keys.push(enter('subtitle', 'position', [tx - dir * 40 * s, top + th + gap + sh * 0.8], [tx, top + th + gap + sh * 0.8], 0.24, dur), fadeIn('subtitle', 0.24, dur * 0.8));
-    return { elements: els, keys, box: [Math.min(x0, tx + dir * Math.max(tw, sw)), top, Math.abs(tx + dir * Math.max(tw, sw) - x0), blockH] };
+    return finish(opts, { elements: els, keys, box: [Math.min(x0, tx + dir * Math.max(tw, sw)), top, Math.abs(tx + dir * Math.max(tw, sw) - x0), blockH] });
   }
   if (id === 'titleCard') {
     const [tw, th] = m('title'), [, sh] = m('subtitle');
@@ -98,7 +119,7 @@ function layout(id, opts, comp, measured) {
     keys.push(enter('title', 'scale', [112, 112], [100, 100], 0, dur, 'expo'), fadeIn('title', 0, dur * 0.8));
     keys.push(enter('line', 'scale', [0, 100], [100, 100], 0.2, dur * 0.8, 'expo'));
     if (spec('subtitle')) keys.push(enter('subtitle', 'position', [W / 2, ly + lineGap + sh * 0.8 + 30 * s], [W / 2, ly + lineGap + sh * 0.8], 0.35, dur), fadeIn('subtitle', 0.35, dur * 0.8));
-    return { elements: els, keys, box: [W / 2 - tw / 2, ty - th, tw, th + 2 * lineGap + sh] };
+    return finish(opts, { elements: els, keys, box: [W / 2 - tw / 2, ty - th, tw, th + 2 * lineGap + sh] });
   }
   if (id === 'callout') {
     // the point (default: right of centre, a bit up); the label sits up and out from it
@@ -115,7 +136,7 @@ function layout(id, opts, comp, measured) {
     keys.push(enter('line', 'trimEnd', 0, 100, 0.15, dur, 'smooth'));
     keys.push(fadeIn('title', 0.45, dur * 0.7));
     if (spec('subtitle')) keys.push(fadeIn('subtitle', 0.55, dur * 0.7));
-    return { elements: els, keys, box: [Math.min(P[0], end[0]), elbow[1] - th - 14 * s, Math.abs(end[0] - P[0]), P[1] - elbow[1] + th + 14 * s] };
+    return finish(opts, { elements: els, keys, box: [Math.min(P[0], end[0]), elbow[1] - th - 14 * s, Math.abs(end[0] - P[0]), P[1] - elbow[1] + th + 14 * s] });
   }
   if (id === 'tag') {
     const P = opts.point && opts.point.length === 2 ? opts.point : [W / 2, H * 0.3];
@@ -125,9 +146,93 @@ function layout(id, opts, comp, measured) {
     text('title', [P[0], P[1] + th * 0.35]);
     const pop = PLAN.animate({ kind: 'scale', dir: 'in', overshoot: true, duration: dur * 0.8, ease: 'snappy' }, { scale: [100, 100] });
     keys.push({ key: 'pill', prop: 'scale', keys: pop.keys }, { key: 'title', prop: 'scale', keys: pop.keys.map((k) => Object.assign({}, k, { t: k.t + 0.08 })) });
-    return { elements: els, keys, box: [P[0] - tw / 2 - padX, P[1] - h / 2, tw + 2 * padX, h] };
+    return finish(opts, { elements: els, keys, box: [P[0] - tw / 2 - padX, P[1] - h / 2, tw + 2 * padX, h] });
+  }
+  if (id === 'quote') {
+    const dir = rtl ? -1 : 1, x0 = rtl ? W * 0.86 : W * 0.14;
+    const [, mh] = m('mark'), [tw, th] = m('title'), [sw, sh] = m('subtitle');
+    const ty = H * 0.5 + th * 0.35, sy = ty + 26 * s + sh;
+    text('mark', [x0 - dir * 10 * s, ty - th - 10 * s + mh * 0.35]);
+    text('title', [x0, ty]);
+    text('subtitle', [x0, sy]);
+    const pop = PLAN.animate({ kind: 'scale', dir: 'in', overshoot: true, duration: dur * 0.7, ease: 'snappy' }, { scale: [100, 100] });
+    keys.push({ key: 'mark', prop: 'scale', keys: pop.keys });
+    keys.push(enter('title', 'position', [x0, ty + 40 * s], [x0, ty], 0.15, dur), fadeIn('title', 0.15, dur * 0.8));
+    if (spec('subtitle')) keys.push(fadeIn('subtitle', 0.4, dur * 0.8));
+    const right = x0 + dir * Math.max(tw, sw);
+    return finish(opts, { elements: els, keys, box: [Math.min(x0, right), ty - th - mh * 0.5, Math.abs(right - x0), th + sh + mh * 0.5 + 26 * s] });
+  }
+  if (id === 'endCard') {
+    const [tw, th] = m('title'), [sw, sh] = m('subtitle');
+    const r = 90 * s, cy = H * 0.36;
+    els.push({ key: 'logo', kind: 'ellipse', name: 'Logo Circle', position: [W / 2, cy], size: [2 * r, 2 * r], color: accent });
+    const ty = cy + r + 40 * s + th * 0.8;
+    text('title', [W / 2, ty]);
+    const bh = sh + 32 * s, by = ty + 40 * s + bh / 2;
+    if (spec('subtitle')) {
+      els.push({ key: 'button', kind: 'rect', name: 'Button', position: [W / 2, by], size: [sw + 64 * s, bh], roundness: bh / 2, color: accent });
+      text('subtitle', [W / 2, by + sh * 0.35]);
+    }
+    const pop = (d) => PLAN.animate({ kind: 'scale', dir: 'in', overshoot: true, duration: dur * 0.8, ease: 'snappy' }, { scale: [100, 100] }).keys.map((k) => Object.assign({}, k, { t: k.t + d }));
+    keys.push({ key: 'logo', prop: 'scale', keys: pop(0) });
+    keys.push(enter('title', 'position', [W / 2, ty + 30 * s], [W / 2, ty], 0.2, dur), fadeIn('title', 0.2, dur * 0.8));
+    if (spec('subtitle')) keys.push({ key: 'button', prop: 'scale', keys: pop(0.45) }, { key: 'subtitle', prop: 'scale', keys: pop(0.5) });
+    return finish(opts, { elements: els, keys, box: [W / 2 - Math.max(tw, 2 * r) / 2, cy - r, Math.max(tw, 2 * r), by + bh / 2 - (cy - r)] });
+  }
+  if (id === 'handle') {
+    const [tw, th] = m('title');
+    const h = th + 30 * s, dot = 14 * s, pad = 22 * s, gap = 14 * s;
+    const w = pad + dot + gap + tw + pad;
+    const cx = rtl ? W - W * 0.06 - w / 2 : W * 0.06 + w / 2, cy = H - H * 0.08 - h / 2;
+    els.push({ key: 'pill', kind: 'rect', name: 'Pill', position: [cx, cy], size: [w, h], roundness: h / 2, color: accent });
+    const dx = rtl ? cx + w / 2 - pad - dot / 2 : cx - w / 2 + pad + dot / 2;
+    els.push({ key: 'dot', kind: 'ellipse', name: 'Dot', position: [dx, cy], size: [dot, dot], color: hexRgb(opts.textColor || '#ffffff') });
+    const tx = rtl ? dx - dot / 2 - gap : dx + dot / 2 + gap;
+    text('title', [tx, cy + th * 0.35]);
+    keys.push(enter('pill', 'scale', [0, 100], [100, 100], 0, dur * 0.8, 'expo'));
+    keys.push(enter('dot', 'scale', [0, 0], [100, 100], 0.2, dur * 0.5, 'snappy'));
+    keys.push(enter('title', 'position', [tx, cy + th * 0.35 + 16 * s], [tx, cy + th * 0.35], 0.25, dur * 0.8), fadeIn('title', 0.25, dur * 0.7));
+    return finish(opts, { elements: els, keys, box: [cx - w / 2, cy - h / 2, w, h] });
+  }
+  if (id === 'chapter') {
+    // number | line | title + subtitle, centred vertically, from the side (title safe)
+    const dir = rtl ? -1 : 1, x0 = rtl ? W * 0.88 : W * 0.12;
+    const [nw, nh] = m('number'), [tw, th] = m('title'), [sw, sh] = m('subtitle');
+    const blockH = th + (spec('subtitle') ? 18 * s + sh : 0);
+    const cy = H * 0.5, top = cy - blockH / 2;
+    const nx = x0 + dir * nw, lineX = nx + dir * 36 * s, tx = lineX + dir * 36 * s;
+    text('number', [nx, cy + nh * 0.35]);
+    els.push({ key: 'line', kind: 'rect', name: 'Divider', position: [lineX, cy], size: [6 * s, Math.max(blockH, nh * 0.8) + 20 * s], roundness: 3 * s, color: accent });
+    text('title', [tx, top + th * 0.8]);
+    text('subtitle', [tx, top + th + 18 * s + sh * 0.8]);
+    keys.push(enter('number', 'position', [nx, cy + nh * 0.35 + 50 * s], [nx, cy + nh * 0.35], 0, dur), fadeIn('number', 0, dur * 0.7));
+    keys.push(enter('line', 'scale', [100, 0], [100, 100], 0.15, dur * 0.8, 'expo'));
+    keys.push(enter('title', 'position', [tx - dir * 50 * s, top + th * 0.8], [tx, top + th * 0.8], 0.3, dur), fadeIn('title', 0.3, dur * 0.8));
+    if (spec('subtitle')) keys.push(fadeIn('subtitle', 0.45, dur * 0.8));
+    const far = tx + dir * Math.max(tw, sw);
+    return finish(opts, { elements: els, keys, box: [Math.min(x0, far), Math.min(top, cy - nh / 2), Math.abs(far - x0), Math.max(blockH, nh)] });
   }
   throw new Error(`Unknown template ${id}`);
 }
 
-module.exports = { TEMPLATES, byId, textSpecs, layout, isRtl, unit, hexRgb };
+/**
+ * v0.50: Hold → the exit. After the entrance and `hold` seconds, every animated property goes back the way it came
+ * (the last part in leaves first), on Quick Animate's keys — so a lower third leaves by itself. Hold 0 = it stays.
+ */
+function finish(opts, plan) {
+  const hold = Number(opts.hold) || 0;
+  if (hold <= 0) return plan;
+  const dur = (opts.duration > 0 ? opts.duration : 0.7) * 0.7;
+  const inEnd = Math.max(...plan.keys.map((k) => k.keys[k.keys.length - 1].t));
+  const firsts = plan.keys.map((k) => k.keys[0].t), last = Math.max(...firsts);
+  const e = PLAN.easePair('snappy');
+  plan.keys = plan.keys.map((k) => {
+    const from = k.keys[k.keys.length - 1].v, to = k.keys[0].v;
+    const t0 = inEnd + hold + (last - k.keys[0].t) * 0.5;
+    return Object.assign({}, k, { keys: k.keys.concat(PLAN.keysFor(e, t0, dur, from, to)) });
+  });
+  plan.exitAt = inEnd + hold;
+  return plan;
+}
+
+module.exports = { TEMPLATES, byId, textSpecs, layout, finish, nameOf, isRtl, unit, hexRgb };
