@@ -2,6 +2,10 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.54.1] — 2026-11-05 — Sidebar toggle always opens
+### Fixed
+- Owner's comment on the live preview: on a narrow panel *Show names* did nothing visible. It now opens the names over the page (no squeeze, the page does not move, shaded behind), closed by a click outside or a shortcut. `pointerdown` so graphs that cancel mouse events still close it.
+
 ## [0.54.0] — 2026-11-05 — No Cut Names
 ### Changed
 - The MOE sidebar shows names only when the panel is 600 px or wider (icons on a narrow dock; the choice is kept).

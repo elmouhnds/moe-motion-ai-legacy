@@ -18,10 +18,10 @@ const { createTestServices } = require('./helpers/harness');
 const { createState } = require('../extension/app/ui/state');
 const fixture = require('../dev/preview-fixture.js');
 
-async function rail(navWide, want) {
+async function rail(navWide, want, railPeek) {
   const { services } = await createTestServices(fixture);
   const ctx = await services.executor.readContext();
-  const app = { services, state: createState({ ctx, studio: {}, args: {}, running: null, view: 'home', navWide }), toast: () => {}, go: () => {}, render: () => {}, scheduleRender: () => {} };
+  const app = { services, state: createState({ ctx, studio: {}, args: {}, running: null, view: 'home', navWide, railPeek }), toast: () => {}, go: () => {}, render: () => {}, scheduleRender: () => {} };
   services.store.set('moe-rail-wide', want);
   return require('../extension/app/ui/layouts').moeRail(app, app.state.get());
 }
@@ -32,9 +32,12 @@ test('the MOE sidebar shows names only with room (≥ 600 px); a narrow dock kee
   const narrow = await rail(false, true);
   assert.ok(!narrow.classList.contains('wide'), 'icons on a narrow dock');
   const t = narrow.querySelector('[data-key="rail-toggle"]');
-  assert.equal(t.getAttribute('aria-pressed'), 'true', 'the choice is still on');
-  assert.match(t.title, /600 px/);
-  assert.ok(!(await rail(true, false)).classList.contains('wide'), 'off stays off');
+    assert.ok(!(await rail(true, false)).classList.contains('wide'), 'off stays off');
+  // owner comment: the toggle must always open — on a narrow dock the names open over the page
+  const peek = await rail(false, false, true);
+  assert.ok(peek.classList.contains('wide') && peek.classList.contains('float'), 'opens over the page');
+  assert.equal(peek.querySelector('[data-key="rail-toggle"]').getAttribute('aria-pressed'), 'true');
+  assert.ok(!(await rail(true, false, true)).classList.contains('float'), 'with room it never floats');
 });
 
 test('names wrap to two lines instead of "…" (sidebar, tiles, power cards, Quick Bar rows, action bar, segmented)', () => {

@@ -127,6 +127,13 @@ function moe(app, s, body) {
   return p;
 }
 let railDrag = null;
+let railOutside = false;
+/** v0.54: a click anywhere outside the floating sidebar closes it (added once). */
+function closeRailOnOutside(app) {
+  if (railOutside || typeof document === 'undefined') return;
+  railOutside = true;
+  document.addEventListener('pointerdown', (e) => { if (app.state.get().railPeek && !(e.target.closest && e.target.closest('.moe-rail'))) app.state.set({ railPeek: false }); }, true);
+}
 // one picture per menu in the sidebar (the top-row menus shared the layers icon)
 /** MOE's sidebar: Select, then every Quick Bar shortcut; ⇔ shows names (remembered). */
 function moeRail(app, s) {
@@ -134,7 +141,13 @@ function moeRail(app, s) {
   // v0.54: names show only when the panel has room (≥ 600 px); a narrow dock keeps icons so the page is not squeezed
   const want = !!app.services.store.get('moe-rail-wide', false);
   const room = s.navWide !== false;
-  const wide = want && room;
+  // owner (v0.54 comment): the toggle must always open the names. With room they sit beside the page; on a narrow
+  // dock they open OVER the page (it is not squeezed) and close on a click outside or after a shortcut runs.
+  const peek = !room && !!s.railPeek;
+  closeRailOnOutside(app);
+  const wide = (want && room) || peek;
+  const open = room ? want : peek;
+  const toggle = () => { if (room) { app.services.store.set('moe-rail-wide', !want); app.render(); } else app.state.set({ railPeek: !peek }); };
   const openMenu = (m, el) => {
     if (s.layMenu && s.layMenu.id === m.id) { app.state.set({ layMenu: null }); return; }
     const r = el.getBoundingClientRect(), box = qb.fixedBox(el.closest('.app') || document.body);
@@ -154,10 +167,10 @@ function moeRail(app, s) {
     ondragleave: (e) => e.currentTarget.classList.remove('drop-before'),
     ondrop: (e) => { e.preventDefault(); e.currentTarget.classList.remove('drop-before'); const id = railDrag; railDrag = null; if (id && id !== a.id) moveTo(id, a.id); },
     ondragend: () => { railDrag = null; },
-    onclick: (e) => (e.altKey && !a.mods ? qb.openOptions(app, a) : qb.run(app, a, e)), oncontextmenu: (e) => { e.preventDefault(); qb.openOptions(app, a); }
+    onclick: (e) => { if (peek) app.state.set({ railPeek: false }); return e.altKey && !a.mods ? qb.openOptions(app, a) : qb.run(app, a, e); }, oncontextmenu: (e) => { e.preventDefault(); qb.openOptions(app, a); }
   }, icon(a.icon || 'bolt', 'sm'), h('span', { class: 'rail-l' }, a.label));
-  return h('nav', { class: `moe-rail ${wide ? 'wide' : ''}`, 'data-key': 'moe-rail', 'aria-label': 'Shortcuts' },
-    h('button', { class: 'rail-btn rail-toggle', 'data-key': 'rail-toggle', 'aria-label': want ? 'Show icons only' : 'Show names', title: want ? (room ? 'Icons only' : 'Names show when the panel is 600 px or wider — drag it wider, or click for icons only') : 'Show names (when the panel is 600 px or wider)', 'aria-pressed': String(want), onclick: () => { app.services.store.set('moe-rail-wide', !want); app.render(); } }, icon('chev', `xs rail-chev ${want ? 'open' : ''}`), h('span', { class: 'rail-l' }, 'Shortcuts')),
+  return h('nav', { class: `moe-rail ${wide ? 'wide' : ''} ${peek ? 'float' : ''}`, 'data-key': 'moe-rail', 'aria-label': 'Shortcuts', onclick: (e) => { if (peek && e.target === e.currentTarget) app.state.set({ railPeek: false }); } },
+    h('button', { class: 'rail-btn rail-toggle', 'data-key': 'rail-toggle', 'aria-label': open ? 'Show icons only' : 'Show names', title: open ? 'Icons only' : (room ? 'Show names' : 'Show names (they open over the page on a narrow panel)'), 'aria-pressed': String(open), onclick: toggle }, icon('chev', `xs rail-chev ${open ? 'open' : ''}`), h('span', { class: 'rail-l' }, 'Shortcuts')),
     MENUS.map(menuBtn),
     h('div', { class: 'rail-sep', 'aria-hidden': 'true' }),
     h('div', { class: 'rail-cap' }, h('span', { class: 'rail-l' }, 'Quick Bar')),

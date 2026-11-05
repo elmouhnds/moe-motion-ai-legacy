@@ -8,7 +8,8 @@ A name that loses its end looks unfinished, and *Mirror Keys at Play…* could b
 
 - **The MOE sidebar shows names only when the panel has room** (600 px or wider, the same point where the Inspector moves beside the tiles).
   - On a narrow dock it keeps icons, so the page is not squeezed into 250 px.
-  - Your choice (names on / off) is remembered, and the toggle's tooltip says why names are hidden.
+  - Your choice (names on / off) is remembered.
+  - **v0.54.1 (owner's comment: "useless if it doesn't open the sidebar"):** on a narrow panel the toggle still opens the names, *over* the page. The sidebar keeps its 44 px slot so nothing moves, the rest of the panel is shaded, and a click outside or a shortcut closes it.
 - **Names wrap to two lines instead of "…"**:
   - sidebar shortcuts;
   - library tiles and text presets;
