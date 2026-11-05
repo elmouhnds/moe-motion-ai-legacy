@@ -1484,3 +1484,9 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 /* v0.54: the action bar keeps its name readable — when the panel is too narrow the buttons take a second row */
 .st-actbar { flex-wrap: wrap; row-gap: 6px; }
 .st-act-text { flex: 1 1 120px; min-width: 120px; }
+/* v0.55 hidden slider on the velocity numbers: sideways cursor, a thin accent bar that shows on hover / while dragging */
+.kit-vfield { position: relative; overflow: hidden; }
+.kit-vel:not(:focus) { cursor: ew-resize; }
+.kit-vfill { position: absolute; left: 0; bottom: 0; height: 2px; width: var(--p, 0%); background: var(--accent); opacity: 0; pointer-events: none; transition: opacity var(--t); }
+.kit-vfield:hover .kit-vfill, .kit-vel.scrubbing + .kit-vunit + .kit-vfill { opacity: 0.85; }
+.kit-vel.scrubbing { color: var(--accent); }

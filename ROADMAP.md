@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.60 — Hidden sliders ✅ (v0.55.0)
+- Keyframe Velocity numbers scrub sideways (Shift ×10, Ctrl fine), the graph follows live, release applies.
+- Next: the owner's Self-Test report from AE 2025 → fixes first.
+
 ## M1.59 — No cut names ✅ (v0.54.0)
 - Names wrap instead of "…" across the panel; the MOE sidebar is wide only with room; `tools/audit-cut.js` (126 screens, 0).
 - Next: the owner's Self-Test report from AE 2025 → fixes first.

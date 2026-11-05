@@ -7,7 +7,7 @@ const fx = require('./fixtures/comps');
 test('host loads and answers ping', async () => {
   const { services } = await createTestServices(fx.easeComp());
   const info = await services.host.call('host.ping', {});
-  assert.equal(info.hostModuleVersion, '0.54.1');
+  assert.equal(info.hostModuleVersion, '0.55.0');
   assert.match(info.appVersion, /^25\./);
 });
 

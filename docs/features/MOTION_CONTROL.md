@@ -69,3 +69,18 @@ Fixed lists (memory), at most four, every ref checked by tests (`workflow.NEXT`)
 - Ease Copy copies the curve **shape** (normalised), not absolute speeds: the same feel on a short and a
   long move. A Position overshoot is limited to 0 speed exactly like the Ease Curve tool (reported).
 - The copy holds up to 24 segments.
+
+## v0.55: hidden sliders on Keyframe Velocity
+
+**The owner** (comment on the live preview): this row should be controlled by *a smart hidden slider*.
+
+Each of the four numbers (Out speed, Out influence, In speed, In influence) is now also a slider you do not see:
+- **Drag sideways on a number** to change it, like After Effects' scrubby values.
+  - Shift = 10× faster, Ctrl = fine.
+  - The graph follows live, and releasing applies it (auto) or keeps it ready (manual).
+- **A plain click** still types a value; Enter applies.
+- **A thin accent bar** under the field shows where the value sits, on hover and while dragging.
+  - Influence: 0–100 %.
+  - Speed: 0–3× the segment's average speed.
+- **Limits:** influence stays 1–99 %, and speed never goes below 0 (Position takes one non-negative speed).
+- Checked in the preview: dragging Out influence 33 → 53 % moved the graph, and release wrote the curve (*Curve on 7 keyframes*); a click on In speed focused it for typing.

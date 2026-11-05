@@ -336,22 +336,55 @@ function velocity(app) {
   const pr = prefs(app);
   const avg = curSeg() ? curSeg().avg : 0, unit = K.unit;
   const sp = KG.keySpeeds(K.curve);
-  const field = (label, value, suffix, on) => {
-    const input = h('input', { class: 'kit-vel', value, inputmode: 'decimal', spellcheck: 'false', 'aria-label': label, 'data-vel': label, title: `${label} — Enter applies` });
+  // v0.55 (owner: "a smart hidden slider"): each number is also a slider you do not see — drag sideways on it like
+  // After Effects' scrubby values (Shift ×10, Ctrl fine), the graph follows live, release applies; a plain click types.
+  // A thin bar under the field shows where the value sits (on hover / while dragging).
+  const field = (label, value, suffix, on, scrub) => {
+    const input = h('input', { class: 'kit-vel', value, inputmode: 'decimal', spellcheck: 'false', 'aria-label': label, 'data-vel': label, title: `${label} — drag sideways to change (Shift ×10, Ctrl fine) · click to type, Enter applies` });
+    const fill = h('span', { class: 'kit-vfill', 'aria-hidden': 'true' });
+    const show = (v) => fill.style.setProperty('--p', `${Math.round(Math.max(0, Math.min(1, scrub.frac(v))) * 1000) / 10}%`);
+    show(Number(value));
+    const commit = (v) => { const cv = on(v); K.curve = cv; if (K.graph) K.graph.set(cv); if (pr.auto) applyCurve(app, cv, pr.side, label); else app.render(); };
     input.addEventListener('focus', () => input.select());
-    input.addEventListener('keydown', (e) => { if (e.key !== 'Enter') return; const v = Number(String(input.value).replace(',', '.')); if (!Number.isFinite(v)) { app.toast('Type a number', 2400, 'warn'); return; } const cv = on(v); K.curve = cv; if (K.graph) K.graph.set(cv); if (pr.auto) applyCurve(app, cv, pr.side, label); else app.render(); });
-    return h('label', { class: 'kit-vfield' }, input, h('span', { class: 'kit-vunit' }, suffix));
+    input.addEventListener('keydown', (e) => { if (e.key !== 'Enter') return; const v = Number(String(input.value).replace(',', '.')); if (!Number.isFinite(v)) { app.toast('Type a number', 2400, 'warn'); return; } commit(v); });
+    input.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || document.activeElement === input) return; // typing: leave the caret alone
+      e.preventDefault();
+      const x0 = e.clientX, v0 = Number(String(input.value).replace(',', '.')) || 0;
+      let moved = false, v = v0;
+      try { input.setPointerCapture(e.pointerId); } catch (_) { /* old CEP */ }
+      const move = (m) => {
+        const dx = m.clientX - x0;
+        if (!moved && Math.abs(dx) < 3) return;
+        if (!moved) { moved = true; input.classList.add('scrubbing'); }
+        const k = m.shiftKey ? 10 : (m.ctrlKey || m.metaKey) ? 0.1 : 1;
+        v = scrub.clamp(scrub.round(v0 + dx * scrub.step * k));
+        input.value = String(v); show(v);
+        const cv = on(v); K.curve = cv; if (K.graph) K.graph.set(cv);
+      };
+      const up = () => {
+        input.removeEventListener('pointermove', move); input.removeEventListener('pointerup', up); input.removeEventListener('pointercancel', up);
+        input.classList.remove('scrubbing');
+        if (moved) commit(v); else { input.focus(); input.select(); }
+      };
+      input.addEventListener('pointermove', move); input.addEventListener('pointerup', up); input.addEventListener('pointercancel', up);
+    });
+    return h('label', { class: 'kit-vfield' }, input, h('span', { class: 'kit-vunit' }, suffix), fill);
   };
   const spd = (rel) => (avg ? String(Math.round(rel * avg * 10) / 10) : String(Math.round(rel * 100) / 100));
   const toRel = (v) => (avg ? v / avg : v);
   const unitTxt = avg ? `${unit || 'units'}/s` : '× avg';
+  // the hidden sliders' ranges: influence 1–99 % (1 % a pixel); speed ≥ 0, 1 % of the average speed a pixel, the bar spans 0–3× the average
+  const INFL = { step: 1, clamp: (v) => Math.max(1, Math.min(99, v)), round: (v) => Math.round(v), frac: (v) => v / 100 };
+  const base = avg || 1;
+  const SPEED = { step: base * 0.01, clamp: (v) => Math.max(0, v), round: (v) => Math.round(v * 10) / 10, frac: (v) => v / (base * 3) };
   return h('div', { class: 'kit-velocity', role: 'group', 'aria-label': 'Keyframe velocity' },
     h('span', { class: 'kit-slider-l' }, 'Out'),
-    field('Outgoing speed', spd(sp.out), unitTxt, (v) => KG.fromSpeed(K.curve, 1, K.curve.x1, toRel(v))),
-    field('Outgoing influence', String(Math.round(K.curve.x1 * 100)), '%', (v) => KG.fromSpeed(K.curve, 1, v / 100, sp.out)),
+    field('Outgoing speed', spd(sp.out), unitTxt, (v) => KG.fromSpeed(K.curve, 1, K.curve.x1, toRel(v)), SPEED),
+    field('Outgoing influence', String(Math.round(K.curve.x1 * 100)), '%', (v) => KG.fromSpeed(K.curve, 1, v / 100, sp.out), INFL),
     h('span', { class: 'kit-slider-l' }, 'In'),
-    field('Incoming speed', spd(sp.in), unitTxt, (v) => KG.fromSpeed(K.curve, 2, K.curve.x2, toRel(v))),
-    field('Incoming influence', String(Math.round((1 - K.curve.x2) * 100)), '%', (v) => KG.fromSpeed(K.curve, 2, 1 - v / 100, sp.in)));
+    field('Incoming speed', spd(sp.in), unitTxt, (v) => KG.fromSpeed(K.curve, 2, K.curve.x2, toRel(v)), SPEED),
+    field('Incoming influence', String(Math.round((1 - K.curve.x2) * 100)), '%', (v) => KG.fromSpeed(K.curve, 2, 1 - v / 100, sp.in), INFL));
 }
 
 /**

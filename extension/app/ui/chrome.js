@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['easeCurve', 'Drag the velocity numbers', 'The Keyframe Velocity numbers (Out / In speed and influence) are now hidden sliders: drag sideways on a number and the curve follows live, like After Effects\' scrubby values — Shift for big steps, Ctrl for fine. Release applies it; a click still lets you type.'],
   ['type', 'Every name shows whole', 'No more “Duplicate Comp (d…”: long names now wrap to two lines everywhere — the sidebar, tiles, the Quick Bar, the action bar. On a narrow dock the MOE sidebar keeps its icons so your page is not squeezed, and shows names again when the panel is wider. Choices that do not fit take a second row instead of losing letters.'],
   ['guides', 'Guides in one click — and the social safe zones', 'A new Guides menu in the MOE sidebar (also Comp › Guides & Safe Areas): Centre, Thirds, Golden ratio, 12 columns, TV title / action safe, and the safe zones of TikTok, Reels, Shorts and Stories, so your text never hides under the app\'s buttons. Pressed twice adds nothing; Clear removes them all. The anchor pad now looks like the layer\'s box, and the Parent & Link icon is back.'],
   ['type', 'Long text fits by itself', 'A long name or a long quote no longer runs off the frame. Each template line has a safe width: After Effects measures your text and makes the font smaller until it fits (never under 40 %), and the bar, pill and underline follow it. Short text keeps its size. The preview shows it as you type.'],

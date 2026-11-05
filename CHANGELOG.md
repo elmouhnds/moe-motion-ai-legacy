@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.55.0] — 2026-11-05 — Hidden sliders on Keyframe Velocity
+### Added
+- Owner's comment on the live preview: the Keyframe Velocity numbers (Out / In speed and influence) are now hidden sliders. Drag sideways on a number, like After Effects' scrubby values (Shift ×10, Ctrl fine); the graph follows live and release applies. A plain click still types. A thin accent bar shows where the value sits on hover and while dragging. Influence stays 1–99 %, speed never below 0.
+### Tests
+- `tests/nocut.test.js` (+1). **Preview, not After Effects.**
+
 ## [0.54.1] — 2026-11-05 — Sidebar toggle always opens
 ### Fixed
 - Owner's comment on the live preview: on a narrow panel *Show names* did nothing visible. It now opens the names over the page (no squeeze, the page does not move, shaded behind), closed by a click outside or a shortcut. `pointerdown` so graphs that cancel mouse events still close it.

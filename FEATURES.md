@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Hidden sliders** (v0.55.0): drag sideways on any Keyframe Velocity number to change it, like After Effects' scrubby values; the graph follows live (docs/features/MOTION_CONTROL.md).
+
 **No cut names** (v0.54.0): every name in the panel shows whole — long names wrap to two lines, the MOE sidebar shows names only when there is room, and an audit checks 126 screens (docs/features/NO_CUT_NAMES.md).
 
 **Guides menu** (v0.53.0): the famous guides (Centre, Thirds, Golden, 12 Col, TV Safe) and the safe zones of TikTok, Reels, Shorts and Stories, one click from the MOE sidebar; the anchor pad drawn as the layer's box (docs/features/GUIDE_PRESETS.md).
