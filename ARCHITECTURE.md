@@ -179,6 +179,9 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6ze. No Cut Names (v0.54.0)
+- CSS: names use a two-line clamp (`white-space: normal`), `.seg` and `.st-actbar` wrap; `layouts.moeRail` is wide only when the stored choice is on and `state.navWide` (≥ 600 px). `tools/audit-cut.js` measures every text with an ellipsis / clamp / hidden overflow across 126 screens; only tooltipped descriptions may be shortened.
+
 ## 6zd. Guide Presets (v0.53.0)
 - `grid/guidePresets.js` (pure: `PRESETS`, `lines(id, W, H)` → `{ v, h, box?, note? }`); tool `grid.guidePreset` → `guides.set` (`clearAll` for Clear, `skipSame` otherwise; checkpoint = added + cleared). `layouts.MENUS` Guides (rows Lines / Safe / Social, refs `tile:layout/gp*`); `arrange.FAMILIES` Guide Lines / Safe Areas / Social Safe; `thumbs.gpreset`.
 

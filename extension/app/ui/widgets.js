@@ -226,7 +226,7 @@ function adaptPreview(args, setArgs, { h, app, ctx }) {
     const o = overrides[l.layerId] || {};
     return h('div', { class: 'plan-row' },
       h('span', { class: 'label-dot', style: { background: ROLE_COLORS[l.role] || '#888' } }),
-      h('span', { class: 'pn', title: l.reason }, l.name),
+      h('span', { class: 'pn', title: l.reason ? `${l.name} — ${l.reason}` : l.name }, l.name),
       h('select', { 'aria-label': `${l.name} role`, onchange: (e) => setOverride(l.layerId, { role: e.target.value === 'auto' ? undefined : e.target.value }) },
         ROLE_OPTIONS.map((r) => h('option', { value: r, selected: (o.role || 'auto') === r }, r === 'auto' ? `auto (${l.role})` : r))),
       h('select', { 'aria-label': `${l.name} zone`, onchange: (e) => setOverride(l.layerId, { zone: e.target.value === 'auto' ? undefined : e.target.value }) },

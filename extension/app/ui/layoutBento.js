@@ -222,7 +222,7 @@ function stageSection(app, st, kind, skip) {
   return h('section', { class: `b-sec ${f ? 'folded' : ''}`, 'data-key': `bs-${st.id}`, 'aria-label': st.label },
     h('h2', { class: 'b-h' }, h('button', { class: 'b-fold', 'data-key': `fold-${st.id}`, 'aria-expanded': String(!f), title: `${f ? 'Open' : 'Fold'} ${st.label} · Ctrl+${n} jumps here`, onclick: () => toggleFold(app, st.id) },
       icon('chev', 'xs'), icon(st.icon, ''), h('span', {}, st.label), st.fits.includes(kind) ? h('span', { class: 'ae-dot', 'aria-hidden': 'true' }) : null),
-      h('span', { class: 'b-h-n' }, f ? `${gs.length} groups folded` : st.title)),
+      h('span', { class: 'b-h-n', title: f ? '' : st.title }, f ? `${gs.length} groups folded` : st.title)),
     f ? null : h('div', { class: 'b-grid' }, core.map(({ tab, group }) => groupTiles(app, tab, group, kind, skip)),
       more.length ? h('button', { class: `b-4 b-more ${mo ? 'on' : ''}`, 'data-key': `more-${st.id}`, 'aria-expanded': String(mo), title: mo ? `Hide the less used groups of ${st.label}` : `Show the less used groups of ${st.label}`, onclick: () => toggleMore(app, st.id) },
         icon('chev', 'xs'), h('span', {}, mo ? `Less in ${st.label}` : `More in ${st.label}`), h('span', { class: 'b-more-n' }, more.map((x) => x.group.label).join(' · '))) : null,

@@ -255,3 +255,8 @@
 .b-tall { grid-row: span 2; }
 .bt-anchor .kit-anchor-body { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .bt-anchor .kit-block > .kit-h { margin-bottom: 4px; }
+/* v0.54 (docs/features/NO_CUT_NAMES.md): in the wide sidebar a long name wraps to two lines instead of "…"
+   (Smart Arrange: words are never cut). The button grows to fit; 32 px stays the minimum. */
+.moe-rail.wide .rail-btn { height: auto; min-height: 32px; padding-top: 5px; padding-bottom: 5px; }
+.moe-rail.wide .rail-l { white-space: normal; overflow-wrap: anywhere; line-height: 1.25; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.pw-t { white-space: normal; text-overflow: clip; line-height: 1.2; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }

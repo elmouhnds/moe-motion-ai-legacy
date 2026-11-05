@@ -1467,3 +1467,20 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .kit-dot[data-key="ap-c"]:hover span { background: var(--accent-soft); border-color: var(--accent); }
 .kit-dot[data-key="ap-c"]:hover span::before, .kit-dot[data-key="ap-c"]:hover span::after { background: var(--accent); }
 .kit-dots.off .kit-dot span { opacity: .45; }
+
+/* ---------- v0.54 No cut names (docs/features/NO_CUT_NAMES.md) ----------
+   A name is never cut with "…": it wraps to a second line (Smart Arrange: words are never cut). Long descriptions and
+   hints may still be shortened, and always carry the full text in their tooltip. */
+.st-name, .tp-name { white-space: normal; text-overflow: clip; line-height: 1.2; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.qt-grid.rows .qt-tile { min-height: 30px; padding-top: 4px; padding-bottom: 4px; }
+.qt-grid.rows .qt-tile span { white-space: normal; text-overflow: clip; line-height: 1.2; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+/* segmented controls: an option never loses letters — the control takes a second row when the panel is narrow */
+.seg { flex-wrap: wrap; height: auto; min-height: var(--ctl); row-gap: 2px; }
+.seg button { flex: 1 0 auto; min-height: calc(var(--ctl) - 6px); text-overflow: clip; }
+/* v0.54: field labels, the action bar's name and the preview lines wrap instead of "…" */
+.field > label { white-space: normal; text-overflow: clip; line-height: 1.2; }
+.st-act-name { white-space: normal; text-overflow: clip; line-height: 1.2; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.preview-list li { white-space: normal; text-overflow: clip; }
+/* v0.54: the action bar keeps its name readable — when the panel is too narrow the buttons take a second row */
+.st-actbar { flex-wrap: wrap; row-gap: 6px; }
+.st-act-text { flex: 1 1 120px; min-width: 120px; }

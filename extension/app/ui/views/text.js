@@ -70,7 +70,7 @@ function render(app) {
     h('div', { class: 'st-actbar', role: 'region', 'aria-label': 'Apply' },
       h('div', { class: 'st-act-text' },
         h('div', { class: 'st-act-name' }, chosen ? chosen.name : 'Pick a text preset'),
-        h('div', { class: `st-act-hint ${texts.length ? '' : 'warn'}` }, texts.length ? `${texts.length} text layer${texts.length > 1 ? 's' : ''} selected` : 'Select text layers in After Effects')),
+        h('div', { class: `st-act-hint ${texts.length ? '' : 'warn'}`, title: texts.length ? '' : 'Select text layers in After Effects' }, texts.length ? `${texts.length} text layer${texts.length > 1 ? 's' : ''} selected` : 'Select text layers in After Effects')),
       chosen && !s.studioWide ? h('button', { class: 'btn ghost', title: 'Show the settings of this preset', onclick: () => { const el = document.querySelector('.tp-apply'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); } }, icon('sliders', 'sm'), h('span', { class: 'label' }, 'Settings')) : null,
       h('button', { class: 'btn primary', disabled: !chosen || !texts.length || !!s.running, title: texts.length ? '' : 'Select text layers first', onclick: () => chosen && applyPreset(chosen) },
         s.running === 'text.animate' ? h('span', { class: 'spin' }) : icon('play', 'sm'), texts.length ? `Apply to ${texts.length}` : 'Apply')));

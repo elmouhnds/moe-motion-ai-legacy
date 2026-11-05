@@ -109,7 +109,7 @@ function createApp(root, services, env = {}) {
     const fps = Math.round(c.comp.frameRate * 1000) / 1000;
     return h('div', { class: 'ctx', title: c.truncated ? 'Large selection: only the first part is read (see Settings › Performance)' : '' },
       h('span', { class: 'dot live' }),
-      h('span', { class: 'comp' }, c.comp.name),
+      h('span', { class: 'comp', title: c.comp.name }, c.comp.name),
       h('span', { class: 'chip opt' }, `${fps} fps`),
       h('span', { class: 'sep' }, '·'),
       h('span', { class: 'chip' }, h('b', {}, c.layers.length + (c.truncated ? '+' : '')), ' lyr'),

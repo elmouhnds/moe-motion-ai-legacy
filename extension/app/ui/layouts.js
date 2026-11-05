@@ -131,7 +131,10 @@ let railDrag = null;
 /** MOE's sidebar: Select, then every Quick Bar shortcut; ⇔ shows names (remembered). */
 function moeRail(app, s) {
   const qb = require('./quickbar');
-  const wide = !!app.services.store.get('moe-rail-wide', false);
+  // v0.54: names show only when the panel has room (≥ 600 px); a narrow dock keeps icons so the page is not squeezed
+  const want = !!app.services.store.get('moe-rail-wide', false);
+  const room = s.navWide !== false;
+  const wide = want && room;
   const openMenu = (m, el) => {
     if (s.layMenu && s.layMenu.id === m.id) { app.state.set({ layMenu: null }); return; }
     const r = el.getBoundingClientRect(), box = qb.fixedBox(el.closest('.app') || document.body);
@@ -154,7 +157,7 @@ function moeRail(app, s) {
     onclick: (e) => (e.altKey && !a.mods ? qb.openOptions(app, a) : qb.run(app, a, e)), oncontextmenu: (e) => { e.preventDefault(); qb.openOptions(app, a); }
   }, icon(a.icon || 'bolt', 'sm'), h('span', { class: 'rail-l' }, a.label));
   return h('nav', { class: `moe-rail ${wide ? 'wide' : ''}`, 'data-key': 'moe-rail', 'aria-label': 'Shortcuts' },
-    h('button', { class: 'rail-btn rail-toggle', 'data-key': 'rail-toggle', 'aria-label': wide ? 'Show icons only' : 'Show names', title: wide ? 'Icons only' : 'Show names', 'aria-pressed': String(wide), onclick: () => { app.services.store.set('moe-rail-wide', !wide); app.render(); } }, icon('chev', `xs rail-chev ${wide ? 'open' : ''}`), h('span', { class: 'rail-l' }, 'Shortcuts')),
+    h('button', { class: 'rail-btn rail-toggle', 'data-key': 'rail-toggle', 'aria-label': want ? 'Show icons only' : 'Show names', title: want ? (room ? 'Icons only' : 'Names show when the panel is 600 px or wider — drag it wider, or click for icons only') : 'Show names (when the panel is 600 px or wider)', 'aria-pressed': String(want), onclick: () => { app.services.store.set('moe-rail-wide', !want); app.render(); } }, icon('chev', `xs rail-chev ${want ? 'open' : ''}`), h('span', { class: 'rail-l' }, 'Shortcuts')),
     MENUS.map(menuBtn),
     h('div', { class: 'rail-sep', 'aria-hidden': 'true' }),
     h('div', { class: 'rail-cap' }, h('span', { class: 'rail-l' }, 'Quick Bar')),
@@ -169,4 +172,4 @@ function build(app, s, layout, body) {
   return parts;
 }
 
-module.exports = { LAYOUTS, RETIRED, DEFAULT_LAYOUT, layoutOf, build, MENUS, RETIRED_MENUS };
+module.exports = { LAYOUTS, RETIRED, DEFAULT_LAYOUT, layoutOf, build, MENUS, RETIRED_MENUS, moeRail };

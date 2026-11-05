@@ -119,7 +119,7 @@ function render(app) {
       const o = overrides[l.layerId] || {};
       return h('div', { class: 'plan-row' },
         h('span', { class: 'label-dot', style: { background: widgets.ROLE_COLORS[l.role] || '#888' } }),
-        h('span', { class: 'pn', title: l.reason }, l.name),
+        h('span', { class: 'pn', title: l.reason ? `${l.name} — ${l.reason}` : l.name }, l.name),
         h('select', { 'aria-label': `${l.name} role`, onchange: (e) => setOverride(l.layerId, { role: e.target.value === 'auto' ? undefined : e.target.value }) }, ROLE_OPTIONS.map((r) => h('option', { value: r, selected: (o.role || 'auto') === r }, r === 'auto' ? `auto · ${l.role}` : r))),
         h('select', { 'aria-label': `${l.name} zone`, onchange: (e) => setOverride(l.layerId, { zone: e.target.value === 'auto' ? undefined : e.target.value }) }, ZONE_OPTIONS.map((z) => h('option', { value: z, selected: (o.zone || 'auto') === z }, z === 'auto' ? `auto · ${l.zone}` : z))));
     })) : h('div', { class: 'why' }, st.busy === 'measure' ? 'Measuring layers…' : 'Measure the comp to see each layer’s plan.'),
@@ -136,7 +136,7 @@ function render(app) {
   return h('div', { class: 'view studio-sec deliver' },
     tabBar,
     h('div', { class: 'st-tabs sub' },
-      h('span', { class: 'st-kicker' }, `ALL FORMATS AT ONCE — EVERY KEYFRAME KEPT · reference ${comp.time.toFixed(2)}s`),
+      h('span', { class: 'st-kicker', title: `ALL FORMATS AT ONCE — EVERY KEYFRAME KEPT · reference ${comp.time.toFixed(2)}s` }, `ALL FORMATS AT ONCE — EVERY KEYFRAME KEPT · reference ${comp.time.toFixed(2)}s`),
       h('span', { class: 'spacer' }),
       h('button', { class: 'btn ghost', disabled: !!st.busy, onclick: measure, title: 'Measure again (after moving the playhead or editing layers)' }, st.busy === 'measure' ? h('span', { class: 'spin' }) : icon('refresh', 'sm'), 'Measure'),
       h('button', { class: 'btn ghost', disabled: !!st.busy || !st.selected, onclick: refine, title: 'Claude proposes the layout for the selected format (names, text and boxes are sent — no pixels)' }, st.busy === 'claude' ? h('span', { class: 'spin' }) : icon('spark', 'sm'), 'Refine with Claude')),

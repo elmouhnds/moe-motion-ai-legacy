@@ -1,0 +1,52 @@
+'use strict';
+/**
+ * v0.54 No cut names (docs/features/NO_CUT_NAMES.md): the MOE sidebar shows names only when the panel has room, and a
+ * name wraps instead of "…". The whole UI is checked in the browser by tools/audit-cut.js (126 screens).
+ */
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('fs');
+const path = require('path');
+const { JSDOM } = require('jsdom');
+
+const dom = new JSDOM('<!doctype html><html><body></body></html>');
+global.window = dom.window;
+global.document = dom.window.document;
+global.Node = dom.window.Node;
+
+const { createTestServices } = require('./helpers/harness');
+const { createState } = require('../extension/app/ui/state');
+const fixture = require('../dev/preview-fixture.js');
+
+async function rail(navWide, want) {
+  const { services } = await createTestServices(fixture);
+  const ctx = await services.executor.readContext();
+  const app = { services, state: createState({ ctx, studio: {}, args: {}, running: null, view: 'home', navWide }), toast: () => {}, go: () => {}, render: () => {}, scheduleRender: () => {} };
+  services.store.set('moe-rail-wide', want);
+  return require('../extension/app/ui/layouts').moeRail(app, app.state.get());
+}
+
+test('the MOE sidebar shows names only with room (≥ 600 px); a narrow dock keeps icons, the choice is remembered', async () => {
+  const roomy = await rail(true, true);
+  assert.ok(roomy.classList.contains('wide'), 'names when the panel is wide');
+  const narrow = await rail(false, true);
+  assert.ok(!narrow.classList.contains('wide'), 'icons on a narrow dock');
+  const t = narrow.querySelector('[data-key="rail-toggle"]');
+  assert.equal(t.getAttribute('aria-pressed'), 'true', 'the choice is still on');
+  assert.match(t.title, /600 px/);
+  assert.ok(!(await rail(true, false)).classList.contains('wide'), 'off stays off');
+});
+
+test('names wrap to two lines instead of "…" (sidebar, tiles, power cards, Quick Bar rows, action bar, segmented)', () => {
+  const css = ['app.css', 'styles.css'].map((f) => fs.readFileSync(path.join(__dirname, '../extension/css', f), 'utf8')).join('\n');
+  for (const sel of ['.moe-rail.wide .rail-l', '.st-name, .tp-name', '.qt-grid.rows .qt-tile span', '.st-act-name', '.pw-t']) {
+    const i = css.lastIndexOf(`${sel} {`);
+    assert.ok(i > 0, sel);
+    const rule = css.slice(i, css.indexOf('}', i));
+    assert.match(rule, /white-space: normal/, `${sel} wraps`);
+    assert.match(rule, /-webkit-line-clamp: 2/, `${sel} two lines`);
+  }
+  assert.match(css, /\.seg \{ flex-wrap: wrap;/, 'segmented options take a second row instead of losing letters');
+  assert.match(css, /\.st-actbar \{ flex-wrap: wrap;/, 'the action bar keeps its name readable');
+  assert.ok(fs.existsSync(path.join(__dirname, '../tools/audit-cut.js')));
+});

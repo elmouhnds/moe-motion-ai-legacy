@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.54.0] — 2026-11-05 — No Cut Names
+### Changed
+- The MOE sidebar shows names only when the panel is 600 px or wider (icons on a narrow dock; the choice is kept).
+- Names wrap to two lines instead of "…" everywhere (sidebar, tiles, text presets, power cards, Quick Bar rows, action bar, field labels, preview lines); segmented controls and the action bar take a second row when narrow; shortened descriptions carry their full text in a tooltip.
+### Added
+- `tools/audit-cut.js`: 21 pages × 3 styles × 2 widths (126 screens) — 155 cut texts before, 0 cut names after.
+### Tests
+- `tests/nocut.test.js` (2). **Preview, not After Effects.**
+
 ## [0.53.0] — 2026-11-05 — Guides menu, social safe zones, anchor pad
 ### Added
 - **Guides** sidebar menu (MOE style, the fifth): Lines (Centre · Thirds · Golden · 12 Col), Safe (TV Title / Action · Margins · Clear), Social (TikTok · Reels · Shorts · Stories safe zones), each with its own icon; also in Comp › Guides & Safe Areas and the Layout page.

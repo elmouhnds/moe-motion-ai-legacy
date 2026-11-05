@@ -158,7 +158,7 @@ function easeCopyBar(app, pr, slim) {
     h('button', { class: 'btn sm kit-ec', 'data-key': 'kit-copy', 'aria-label': 'Copy ease', title: 'Ease Copy: copy the ease of the selected keys, every segment (or the curve on the graph when no keys are selected)', onclick: () => copyEase(app) }, icon('easeCopy', 'sm'), h('span', {}, 'Copy ease')),
     h('button', { class: 'btn sm kit-ec', 'data-key': 'kit-paste', 'aria-label': 'Paste ease', disabled: !c,
       title: c ? `Paste ${clipLabel(c)} on the selected keys — any property, any distance (${pr.side === 'both' ? 'in + out' : `ease ${pr.side} only`})` : 'Copy an ease first', onclick: () => pasteEase(app) }, icon('easePaste', 'sm'), h('span', {}, 'Paste ease')),
-    slim ? null : h('span', { class: `kit-ec-clip ${c ? '' : 'dim'}`, title: c ? clipLabel(c) : 'Select keys and press Copy ease' }, short));
+    slim ? null : h('span', { class: `kit-ec-clip ${c ? '' : 'dim'}`, title: c ? clipLabel(c) : `${short} — select keys and press Copy ease` }, short));
 }
 function copyEase(app) {
   const segs = keyed(ctxOf(app)).length && K.segs && K.segs.length ? K.segs : null;
