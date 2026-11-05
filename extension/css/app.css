@@ -1490,3 +1490,6 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .kit-vfill { position: absolute; left: 0; bottom: 0; height: 2px; width: var(--p, 0%); background: var(--accent); opacity: 0; pointer-events: none; transition: opacity var(--t); }
 .kit-vfield:hover .kit-vfill, .kit-vel.scrubbing + .kit-vunit + .kit-vfill { opacity: 0.85; }
 .kit-vel.scrubbing { color: var(--accent); }
+/* v0.56 Smart controls: every number is a hidden slider — sideways cursor until you click in to type */
+input.scrubbable:not(:focus) { cursor: ew-resize; }
+input.scrubbable.scrubbing { color: var(--accent); }

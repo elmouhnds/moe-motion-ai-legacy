@@ -56,9 +56,7 @@ test('names wrap to two lines instead of "…" (sidebar, tiles, power cards, Qui
 
 test('v0.55 hidden slider: each Keyframe Velocity number scrubs sideways (Shift ×10, Ctrl fine), clamps, and a click still types', () => {
   const src = fs.readFileSync(path.join(__dirname, '../extension/app/ui/views/kit.js'), 'utf8');
-  assert.match(src, /addEventListener\('pointerdown'/);
-  assert.match(src, /m\.shiftKey \? 10 : \(m\.ctrlKey \|\| m\.metaKey\) \? 0\.1 : 1/);
-  assert.match(src, /if \(moved\) commit\(v\); else \{ input\.focus\(\); input\.select\(\); \}/);
+  assert.match(src, /require\('\.\.\/scrub'\)\.attach\(input/, 'v0.56: the velocity row uses the shared hidden slider');
   // influence stays 1–99 %, speed never negative
   const INFL = { clamp: (v) => Math.max(1, Math.min(99, v)) };
   assert.equal(INFL.clamp(140), 99); assert.equal(INFL.clamp(-5), 1);

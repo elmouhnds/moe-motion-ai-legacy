@@ -27,15 +27,22 @@ function control(key, p, value, set, ctx) {
       onchange: (e) => { const n = Number(e.target.value); if (Number.isFinite(n)) set(p.type === 'integer' ? Math.round(n) : n); }
     });
     const ranged = p.min !== undefined && p.max !== undefined && p.max - p.min <= 400;
-    if (!ranged) return h('div', { class: 'slider-row' }, num, p.unit ? h('span', { class: 'unit' }, p.unit) : null);
+    const fix = (n) => (p.type === 'integer' ? Math.round(n) : n);
+    // v0.56 Smart controls: the number is a hidden slider too (drag sideways, ↑ ↓, wheel while focused)
+    const scrub = (live) => require('./scrub').attach(num, { step, min: p.min, max: p.max, round: p.type === 'integer' ? Math.round : undefined, live, commit: (n) => set(fix(n)) });
+    if (!ranged) { scrub(); return h('div', { class: 'slider-row' }, num, p.unit ? h('span', { class: 'unit' }, p.unit) : null); }
     const pct = ((value - p.min) / (p.max - p.min)) * 100;
-    const range = h('input', { type: 'range', min: p.min, max: p.max, step, value, style: { '--pct': `${pct}%` }, 'aria-label': p.label });
+    const range = h('input', { type: 'range', min: p.min, max: p.max, step, value, style: { '--pct': `${pct}%` }, 'aria-label': p.label, title: p.default !== undefined ? `Double-click: back to ${p.default}${p.unit ? ` ${p.unit}` : ''}` : '' });
+    const moveRange = (n) => { range.value = n; range.style.setProperty('--pct', `${((n - p.min) / (p.max - p.min)) * 100}%`); };
     range.addEventListener('input', (e) => {
       const n = Number(e.target.value);
       num.value = n;
-      range.style.setProperty('--pct', `${((n - p.min) / (p.max - p.min)) * 100}%`);
+      moveRange(n);
     });
     range.addEventListener('change', (e) => set(Number(e.target.value)));
+    // v0.56: double-click a slider to put its default back
+    if (p.default !== undefined) range.addEventListener('dblclick', () => { num.value = p.default; moveRange(p.default); set(p.default); });
+    scrub(moveRange);
     return h('div', { class: 'slider-row' }, range, num, p.unit ? h('span', { class: 'unit' }, p.unit) : null);
   }
   if (p.type === 'text') {
@@ -81,4 +88,4 @@ function renderForm(params, args, onChange, { advancedOpen, onToggleAdvanced, ct
     adv.length && advancedOpen ? adv.map(field) : null);
 }
 
-module.exports = { renderForm };
+module.exports = { renderForm, control };

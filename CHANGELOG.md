@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.56.0] — 2026-11-05 — Smart Controls
+### Added
+- Every number in the panel is a hidden slider (`app/ui/scrub.js`): drag sideways (Shift ×10, Ctrl fine), live while dragging, one commit on release; a click types; Esc cancels a drag; ↑ ↓ step with one commit after the burst; the wheel steps only while the field is focused.
+- Double-click a slider to restore the tool's default.
+- The Align gap is scrubbable; the Keyframe Velocity row uses the shared helper.
+- A standing rule (CLAUDE.md, docs/features/SMART_CONTROLS.md): give the existing control the power before adding a button.
+### Tests
+- `tests/smartcontrols.test.js` (4). **Preview, not After Effects.**
+
 ## [0.55.0] — 2026-11-05 — Hidden sliders on Keyframe Velocity
 ### Added
 - Owner's comment on the live preview: the Keyframe Velocity numbers (Out / In speed and influence) are now hidden sliders. Drag sideways on a number, like After Effects' scrubby values (Shift ×10, Ctrl fine); the graph follows live and release applies. A plain click still types. A thin accent bar shows where the value sits on hover and while dragging. Influence stays 1–99 %, speed never below 0.

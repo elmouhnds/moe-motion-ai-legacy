@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['wand', 'Every number is a hidden slider', 'Drag sideways on any number in the panel to change it, like After Effects — Shift for big steps, Ctrl for fine, Esc to cancel. ↑ ↓ step it, the wheel works while you are in the field, and a double-click on a slider puts its default back. Clicking still lets you type.'],
   ['easeCurve', 'Drag the velocity numbers', 'The Keyframe Velocity numbers (Out / In speed and influence) are now hidden sliders: drag sideways on a number and the curve follows live, like After Effects\' scrubby values — Shift for big steps, Ctrl for fine. Release applies it; a click still lets you type.'],
   ['type', 'Every name shows whole', 'No more “Duplicate Comp (d…”: long names now wrap to two lines everywhere — the sidebar, tiles, the Quick Bar, the action bar. On a narrow dock the MOE sidebar keeps its icons so your page is not squeezed, and shows names again when the panel is wider. Choices that do not fit take a second row instead of losing letters.'],
   ['guides', 'Guides in one click — and the social safe zones', 'A new Guides menu in the MOE sidebar (also Comp › Guides & Safe Areas): Centre, Thirds, Golden ratio, 12 columns, TV title / action safe, and the safe zones of TikTok, Reels, Shorts and Stories, so your text never hides under the app\'s buttons. Pressed twice adds nothing; Clear removes them all. The anchor pad now looks like the layer\'s box, and the Parent & Link icon is back.'],

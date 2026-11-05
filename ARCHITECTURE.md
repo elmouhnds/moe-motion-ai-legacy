@@ -179,6 +179,9 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6zg. Smart controls (v0.56.0)
+- `app/ui/scrub.js attach(input, { step, min, max, round, live, commit, fill })`: pointer scrub with capture (Shift ×10 / Ctrl ×0.1, Esc restores), ↑ ↓ with a 400 ms debounced commit, wheel only while focused. Used by `form.control` (every Inspector number; ranged ones also move the range), `kit.velocity` and the Align gap. Range `dblclick` → `p.default`.
+
 ## 6zf. Hidden sliders (v0.55.0)
 - `views/kit.js velocity()`: each field gets a scrub spec (`INFL` 1–99 % / 1 % per px, `SPEED` ≥ 0 / 1 % of the average speed per px); `pointerdown` on an unfocused field captures the pointer, moves update `K.curve` + `K.graph.set`, release commits through the same path as Enter (`applyCurve` when auto). `.kit-vfill` is the hidden bar.
 

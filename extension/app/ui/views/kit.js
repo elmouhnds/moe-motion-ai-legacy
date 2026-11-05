@@ -340,44 +340,25 @@ function velocity(app) {
   // After Effects' scrubby values (Shift ×10, Ctrl fine), the graph follows live, release applies; a plain click types.
   // A thin bar under the field shows where the value sits (on hover / while dragging).
   const field = (label, value, suffix, on, scrub) => {
-    const input = h('input', { class: 'kit-vel', value, inputmode: 'decimal', spellcheck: 'false', 'aria-label': label, 'data-vel': label, title: `${label} — drag sideways to change (Shift ×10, Ctrl fine) · click to type, Enter applies` });
+    const input = h('input', { class: 'kit-vel', value, inputmode: 'decimal', spellcheck: 'false', 'aria-label': label, 'data-vel': label, title: `${label} — drag sideways to change (Shift ×10, Ctrl fine) · ↑ ↓ step · click to type, Enter applies` });
     const fill = h('span', { class: 'kit-vfill', 'aria-hidden': 'true' });
     const show = (v) => fill.style.setProperty('--p', `${Math.round(Math.max(0, Math.min(1, scrub.frac(v))) * 1000) / 10}%`);
     show(Number(value));
     const commit = (v) => { const cv = on(v); K.curve = cv; if (K.graph) K.graph.set(cv); if (pr.auto) applyCurve(app, cv, pr.side, label); else app.render(); };
     input.addEventListener('focus', () => input.select());
     input.addEventListener('keydown', (e) => { if (e.key !== 'Enter') return; const v = Number(String(input.value).replace(',', '.')); if (!Number.isFinite(v)) { app.toast('Type a number', 2400, 'warn'); return; } commit(v); });
-    input.addEventListener('pointerdown', (e) => {
-      if (e.button !== 0 || document.activeElement === input) return; // typing: leave the caret alone
-      e.preventDefault();
-      const x0 = e.clientX, v0 = Number(String(input.value).replace(',', '.')) || 0;
-      let moved = false, v = v0;
-      try { input.setPointerCapture(e.pointerId); } catch (_) { /* old CEP */ }
-      const move = (m) => {
-        const dx = m.clientX - x0;
-        if (!moved && Math.abs(dx) < 3) return;
-        if (!moved) { moved = true; input.classList.add('scrubbing'); }
-        const k = m.shiftKey ? 10 : (m.ctrlKey || m.metaKey) ? 0.1 : 1;
-        v = scrub.clamp(scrub.round(v0 + dx * scrub.step * k));
-        input.value = String(v); show(v);
-        const cv = on(v); K.curve = cv; if (K.graph) K.graph.set(cv);
-      };
-      const up = () => {
-        input.removeEventListener('pointermove', move); input.removeEventListener('pointerup', up); input.removeEventListener('pointercancel', up);
-        input.classList.remove('scrubbing');
-        if (moved) commit(v); else { input.focus(); input.select(); }
-      };
-      input.addEventListener('pointermove', move); input.addEventListener('pointerup', up); input.addEventListener('pointercancel', up);
-    });
+    // v0.56: the shared hidden slider (app/ui/scrub.js) — same behaviour as every number in the panel
+    require('../scrub').attach(input, { step: scrub.step, min: scrub.lo, max: scrub.hi, round: scrub.round, fill: null,
+      live: (v) => { show(v); const cv = on(v); K.curve = cv; if (K.graph) K.graph.set(cv); }, commit });
     return h('label', { class: 'kit-vfield' }, input, h('span', { class: 'kit-vunit' }, suffix), fill);
   };
   const spd = (rel) => (avg ? String(Math.round(rel * avg * 10) / 10) : String(Math.round(rel * 100) / 100));
   const toRel = (v) => (avg ? v / avg : v);
   const unitTxt = avg ? `${unit || 'units'}/s` : '× avg';
   // the hidden sliders' ranges: influence 1–99 % (1 % a pixel); speed ≥ 0, 1 % of the average speed a pixel, the bar spans 0–3× the average
-  const INFL = { step: 1, clamp: (v) => Math.max(1, Math.min(99, v)), round: (v) => Math.round(v), frac: (v) => v / 100 };
+  const INFL = { step: 1, lo: 1, hi: 99, clamp: (v) => Math.max(1, Math.min(99, v)), round: (v) => Math.round(v), frac: (v) => v / 100 };
   const base = avg || 1;
-  const SPEED = { step: base * 0.01, clamp: (v) => Math.max(0, v), round: (v) => Math.round(v * 10) / 10, frac: (v) => v / (base * 3) };
+  const SPEED = { step: base * 0.01, lo: 0, clamp: (v) => Math.max(0, v), round: (v) => Math.round(v * 10) / 10, frac: (v) => v / (base * 3) };
   return h('div', { class: 'kit-velocity', role: 'group', 'aria-label': 'Keyframe velocity' },
     h('span', { class: 'kit-slider-l' }, 'Out'),
     field('Outgoing speed', spd(sp.out), unitTxt, (v) => KG.fromSpeed(K.curve, 1, K.curve.x1, toRel(v)), SPEED),
@@ -497,6 +478,9 @@ function alignBlock(app, mini) {
   const setGap = () => { const t = String(gap.value).trim().replace(',', '.'); const v = t === '' ? null : Number(t); if (t !== '' && !Number.isFinite(v)) { app.toast('Type a number of pixels, or leave it empty for even gaps', 3000, 'warn'); return; } if (v !== pr.gap) setPref(app, { gap: v }); };
   gap.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); setGap(); } });
   gap.addEventListener('change', setGap);
+  // v0.56: the gap is a hidden slider too (drag sideways from "even" = 0 px)
+  require('../scrub').attach(gap, { step: 1, min: 0, max: 2000, round: Math.round, commit: (v) => { if (v !== pr.gap) setPref(app, { gap: v }); } });
+  gap.title = 'Gap for Space evenly, in px — drag sideways or type; empty = equal gaps across the current span';
   const f = !mini && folded(app, 'align');
   return h('section', { class: `kit-block kit-align ${mini ? 'mini' : ''}`, 'aria-label': 'Align' },
     h('div', { class: 'kit-h' }, mini ? h('span', { class: 'kit-cap' }, 'Align') : foldTitle(app, 'align', 'Align'), h('span', { class: 'spacer' }),

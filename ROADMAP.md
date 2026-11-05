@@ -37,6 +37,10 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.61 — Smart controls ✅ (v0.56.0)
+- Every number scrubs (shared `scrub.js`), sliders reset on double-click; the principle is a standing rule.
+- Next: the owner's Self-Test report from AE 2025 → fixes first.
+
 ## M1.60 — Hidden sliders ✅ (v0.55.0)
 - Keyframe Velocity numbers scrub sideways (Shift ×10, Ctrl fine), the graph follows live, release applies.
 - Next: the owner's Self-Test report from AE 2025 → fixes first.
