@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['guides', 'Guides in one click — and the social safe zones', 'A new Guides menu in the MOE sidebar (also Comp › Guides & Safe Areas): Centre, Thirds, Golden ratio, 12 columns, TV title / action safe, and the safe zones of TikTok, Reels, Shorts and Stories, so your text never hides under the app\'s buttons. Pressed twice adds nothing; Clear removes them all. The anchor pad now looks like the layer\'s box, and the Parent & Link icon is back.'],
   ['type', 'Long text fits by itself', 'A long name or a long quote no longer runs off the frame. Each template line has a safe width: After Effects measures your text and makes the font smaller until it fits (never under 40 %), and the bar, pill and underline follow it. Short text keeps its size. The preview shows it as you type.'],
   ['brand', 'Templates in your client\'s brand', 'With a client active in Brand Kit, every template comes out in its colours and fonts — the accent from the brand, the word on a pill or button in the brand colour that reads best on it, the Arabic or English font by the text. The tiles show it before you build. What you set yourself always wins.'],
   ['type', 'Four more templates — and they leave by themselves', 'Design › Templates now also has Quote, End Card, Social Handle and Chapter (and Arabic اقتباس / شكراً للمشاهدة). New on every template: Hold, then exit — after the time you choose it leaves the way it came in, so a lower third needs no extra keys.'],

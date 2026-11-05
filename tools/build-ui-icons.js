@@ -20,7 +20,7 @@ const MAP = {
   download: 'download', import: 'import', info: 'info', keyboard: 'keyboard', gift: 'gift', sun: 'sun',
   moon: 'moon', heart: 'heart', filter: 'funnel', home: 'house', layers: 'layers', bolt: 'zap', tools: 'wrench',
   sparkles: 'sparkles', wand: 'wand-sparkles', crown: 'crown', lightbulb: 'lightbulb', clock: 'clock',
-  drop: 'droplet', palette: 'palette', type: 'type', target: 'crosshair', cursor: 'mouse-pointer-2',
+  link: 'link', gThirds: 'grid-3x3', gGolden: 'ratio', gCols: 'columns-4', gTv: 'tv', gMargin: 'square-dashed', gClear: 'eraser', gTiktok: 'eighth-note', gReels: 'clapperboard', gShorts: 'circle-play', gStories: 'circle-dashed', gPhone: 'smartphone', drop: 'droplet', palette: 'palette', type: 'type', target: 'crosshair', cursor: 'mouse-pointer-2',
   edit: 'pencil', sliders: 'sliders-horizontal', menu: 'menu', grip: 'grip-vertical', repeat: 'repeat',
   dots: 'ellipsis', code: 'code', expr: 'braces', zoom: 'zoom-in', contrast: 'contrast', presets: 'bookmark',
   pulse: 'activity', layout: 'layout-template',

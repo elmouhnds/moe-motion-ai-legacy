@@ -179,6 +179,9 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6zd. Guide Presets (v0.53.0)
+- `grid/guidePresets.js` (pure: `PRESETS`, `lines(id, W, H)` → `{ v, h, box?, note? }`); tool `grid.guidePreset` → `guides.set` (`clearAll` for Clear, `skipSame` otherwise; checkpoint = added + cleared). `layouts.MENUS` Guides (rows Lines / Safe / Social, refs `tile:layout/gp*`); `arrange.FAMILIES` Guide Lines / Safe Areas / Social Safe; `thumbs.gpreset`.
+
 ## 6zc. Auto-fit Templates (v0.52.0)
 - `templates.textSpecs` gives each line a `maxWidth` (`FIT[id]` × comp width; 0 for the quote mark / number). `text.create` (host) shrinks `fontSize` while `sourceRectAtTime` width > `maxWidth` (≤ 4 passes, floor 40 %) and returns `{ fontSize, fitted }`; `layout` reads the fitted size from `measured[key][2]`. `templates.fitSize` is the pure rule; `thumbs.js` runs it with canvas measurement.
 

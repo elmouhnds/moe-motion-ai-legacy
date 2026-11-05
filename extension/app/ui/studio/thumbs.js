@@ -13,6 +13,8 @@ const PAL = require('../../../features/design/palettes');
 const PLAN = require('../../../features/quick/animatePlan');
 // v0.49 (docs/features/TEMPLATES.md): template previews draw the tool's own layout and keys
 const TPL = require('../../../features/design/templates');
+// v0.53 (docs/features/GUIDE_PRESETS.md): guide-preset tiles draw the preset's own lines
+const GPR = require('../../../features/grid/guidePresets');
 
 // Theme-aware ink (light AE brightness → dark ink). Refreshed once per drawn frame.
 let ACC = '#ff7a59';
@@ -249,6 +251,49 @@ const DRAW = {
       c.fillStyle = `rgb(${col.slice(0, 3).map((v) => Math.round(v * 255)).join(',')})`;
       c.beginPath(); c.arc(W / 2 + Math.cos(a) * R * k, H / 2 + Math.sin(a) * R * k, 11 * k, 0, Math.PI * 2); c.fill();
     }
+  },
+  // v0.53: a guide preset in its own frame — the real lines from guidePresets.lines(); social zones on a phone,
+  // with the areas the app covers shaded and its buttons / caption sketched where they really sit
+  gpreset(c, W, H, th, t) {
+    const P = GPR.byId(th.id); if (!P) return;
+    const tall = !!P.social, ar = tall ? 9 / 16 : 16 / 9;
+    let fh = H * (tall ? 0.9 : 0.74), fw = fh * ar;
+    if (fw > W * 0.86) { fw = W * 0.86; fh = fw / ar; }
+    const fx = (W - fw) / 2, fy = (H - fh) / 2, CW = tall ? 1080 : 1920, CH = tall ? 1920 : 1080, k = fw / CW;
+    c.fillStyle = 'rgba(255,255,255,0.04)'; rrect(c, fx, fy, fw, fh, tall ? 6 : 3); c.fill();
+    c.strokeStyle = DIM; c.lineWidth = 1; rrect(c, fx + 0.5, fy + 0.5, fw - 1, fh - 1, tall ? 6 : 3); c.stroke();
+    const g = GPR.lines(th.id, CW, CH);
+    const pulse = 0.55 + 0.45 * Math.sin(t * 2.2);
+    if (g.box && P.social) {
+      const b = g.box;
+      c.save(); rrect(c, fx, fy, fw, fh, 6); c.clip();
+      c.fillStyle = 'rgba(255,90,60,0.16)';
+      c.fillRect(fx, fy, fw, b.y * k); c.fillRect(fx, fy + (b.y + b.h) * k, fw, fh - (b.y + b.h) * k);
+      c.fillRect(fx + (b.x + b.w) * k, fy + b.y * k, fw - (b.x + b.w) * k, b.h * k);
+      // the app's own furniture: buttons down the right, caption lines and a profile at the bottom
+      c.fillStyle = 'rgba(255,255,255,0.55)';
+      const bx = fx + fw - Math.max(5, (CW - b.x - b.w) * k * 0.5);
+      for (let i = 0; i < (th.id === 'stories' ? 0 : 4); i++) { c.beginPath(); c.arc(bx, fy + fh * (0.52 + i * 0.075), Math.max(1.6, fw * 0.035), 0, Math.PI * 2); c.fill(); }
+      const cy = fy + (b.y + b.h) * k + 5;
+      c.fillRect(fx + fw * 0.08, cy, fw * 0.42, 2); c.fillRect(fx + fw * 0.08, cy + 5, fw * 0.6, 2);
+      c.restore();
+      c.setLineDash([3, 2]); c.strokeStyle = ACC; c.globalAlpha = pulse; c.lineWidth = 1.25;
+      c.strokeRect(fx + b.x * k + 0.5, fy + b.y * k + 0.5, b.w * k - 1, b.h * k - 1); c.setLineDash([]); c.globalAlpha = 1;
+      return;
+    }
+    if (th.id === 'clear') {
+      c.strokeStyle = 'rgba(80,190,255,0.35)'; c.setLineDash([2, 3]);
+      [0.33, 0.66].forEach((u) => { c.beginPath(); c.moveTo(fx + fw * u, fy); c.lineTo(fx + fw * u, fy + fh); c.moveTo(fx, fy + fh * u); c.lineTo(fx + fw, fy + fh * u); c.stroke(); });
+      c.setLineDash([]); c.strokeStyle = ACC; c.lineWidth = 2; const m = Math.min(fw, fh) * 0.16, cx = W / 2, cy = H / 2;
+      c.beginPath(); c.moveTo(cx - m, cy - m); c.lineTo(cx + m, cy + m); c.moveTo(cx + m, cy - m); c.lineTo(cx - m, cy + m); c.stroke();
+      return;
+    }
+    if (g.box) { c.fillStyle = 'rgba(80,190,255,0.08)'; c.fillRect(fx + g.box.x * k, fy + g.box.y * k, g.box.w * k, g.box.h * k); }
+    c.strokeStyle = 'rgba(80,190,255,0.9)'; c.lineWidth = 1;
+    g.v.forEach((x) => { const X = Math.round(fx + x * k) + 0.5; c.beginPath(); c.moveTo(X, fy); c.lineTo(X, fy + fh); c.stroke(); });
+    g.h.forEach((y) => { const Y = Math.round(fy + y * k) + 0.5; c.beginPath(); c.moveTo(fx, Y); c.lineTo(fx + fw, Y); c.stroke(); });
+    if (th.id === 'golden') { c.fillStyle = ACC; c.globalAlpha = pulse; c.beginPath(); c.arc(fx + g.v[1] * k, fy + g.h[0] * k, 2.5, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1; }
+    if (th.id === 'center') { c.strokeStyle = ACC; c.globalAlpha = pulse; c.beginPath(); c.arc(W / 2, H / 2, 4, 0, Math.PI * 2); c.stroke(); c.globalAlpha = 1; }
   },
   guides(c, W, H, th) {
     const m = th.safe ? 0.08 : th.c === 12 ? 0.07 : 0;

@@ -1440,3 +1440,30 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .lay-rows { display: grid; gap: 2px; }
 .lay-rows .ae-subrow { grid-template-columns: 1fr; gap: 3px; margin-top: 4px; }
 .lay-rows .ae-subrow:first-child { margin-top: 0; }
+
+/* ---------- v0.53 anchor pad: the layer's box, AE-style (docs/features/GUIDE_PRESETS.md § Anchor pad) ----------
+   The 3×3 is drawn as what it means: a layer's bounding box with square handles on the corners and edges, and the
+   anchor symbol (a ring with a crosshair) in the middle. Hover lights the handle and a soft ring — colour and shadow
+   only, never size (UI rule: nothing moves under a resting pointer). */
+.kit-dots { --p: 6px; position: relative; border: 0; background: var(--bg-sunken); border-radius: var(--r-lg); padding: var(--p); }
+.kit-anchor.mini .kit-dots { --p: 4px; padding: var(--p); }
+.app.kit-narrow .kit-dots, .app.kit-tiny .kit-dots { --p: 4px; }
+.kit-dots::before { content: ''; position: absolute; pointer-events: none;
+  left: calc(var(--p) + (100% - 2 * var(--p)) / 6); right: calc(var(--p) + (100% - 2 * var(--p)) / 6);
+  top: calc(var(--p) + (100% - 2 * var(--p)) / 6); bottom: calc(var(--p) + (100% - 2 * var(--p)) / 6);
+  border: 1px solid var(--line-strong); border-radius: 2px;
+  background: linear-gradient(var(--line) 0 0) center / 1px 100% no-repeat, linear-gradient(var(--line) 0 0) center / 100% 1px no-repeat; opacity: .9; }
+.kit-dot { position: relative; z-index: 1; border-radius: var(--r); }
+.kit-dot span { width: 8px; height: 8px; border-radius: 1.5px; background: var(--bg-raised, var(--bg)); border: 1.5px solid var(--text-3); box-sizing: border-box;
+  transition: background var(--t), border-color var(--t), box-shadow var(--t); }
+.kit-dot:hover span { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.kit-dot:active span { background: var(--text); border-color: var(--text); }
+.kit-dot:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* the centre is the anchor itself: a ring with a crosshair */
+.kit-dot[data-key="ap-c"] span { position: relative; width: 14px; height: 14px; border-radius: 50%; background: transparent; border-color: var(--text-2); }
+.kit-dot[data-key="ap-c"] span::before, .kit-dot[data-key="ap-c"] span::after { content: ''; position: absolute; background: var(--text-2); transition: background var(--t); }
+.kit-dot[data-key="ap-c"] span::before { left: 50%; top: -4px; bottom: -4px; width: 1.5px; margin-left: -0.75px; }
+.kit-dot[data-key="ap-c"] span::after { top: 50%; left: -4px; right: -4px; height: 1.5px; margin-top: -0.75px; }
+.kit-dot[data-key="ap-c"]:hover span { background: var(--accent-soft); border-color: var(--accent); }
+.kit-dot[data-key="ap-c"]:hover span::before, .kit-dot[data-key="ap-c"]:hover span::after { background: var(--accent); }
+.kit-dots.off .kit-dot span { opacity: .45; }

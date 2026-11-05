@@ -13,7 +13,7 @@ v0.45 removed nine menus because each one was **a whole tab again**: the tab alr
 
 Every button in a menu also keeps its own place in a tab or library page. The menu is the fast way in from anywhere.
 
-## The four menus, in the order of the work
+## The menus, in the order of the work (five since v0.53, the most allowed)
 
 | Menu | Rows | Its place in the tabs |
 |---|---|---|
@@ -21,6 +21,7 @@ Every button in a menu also keeps its own place in a tab or library page. The me
 | **Parent & Link** | Parent: To Null · Chain — Follow: Delay · Stare | Layer › Parent & Link |
 | **In / Out** | Fade: In · Out — Pop: In · Out — Slide: In ← · In ↑ · Out ← · Out ↓ — Spin: In · Out — Draw: On · Erase · Travel · Both | Animate › Animate In / Out (one mode at a time there) |
 | **Loop** | Loop: Cycle · Ping-Pong · Offset · In + Out — Idle: Wiggle · Float · Pendulum · Pulse | Keys › Keyframes & Loops, Animate › Expressions |
+| **Guides** (v0.53) | Lines: Centre · Thirds · Golden · 12 Col — Safe: TV Safe · Margins · Clear — Social: TikTok · Reels · Shorts · Stories | Comp › Guides & Safe Areas (docs/features/GUIDE_PRESETS.md) |
 
 In the tab, Animate In / Out shows one mode at a time (In, Out or Draw On). The menu puts each move next to its opposite, so Fade In and Fade Out are one row.
 

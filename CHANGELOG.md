@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.53.0] — 2026-11-05 — Guides menu, social safe zones, anchor pad
+### Added
+- **Guides** sidebar menu (MOE style, the fifth): Lines (Centre · Thirds · Golden · 12 Col), Safe (TV Title / Action · Margins · Clear), Social (TikTok · Reels · Shorts · Stories safe zones), each with its own icon; also in Comp › Guides & Safe Areas and the Layout page.
+- Tool `grid.guidePreset` (pure presets in `grid/guidePresets.js`); social margins are the widely published 1080 × 1920 figures, scaled to the comp and labelled approximate. `guides.set` `skipSame`: a preset pressed twice adds nothing.
+### Fixed
+- The Parent & Link menu had an empty icon (`link` did not exist). A test now checks every icon name the UI uses.
+### Changed
+- The anchor pad is drawn as the layer's box: square handles on corners and edges, the anchor crosshair in the centre.
+### Tests
+- `tests/guides.test.js` (5). **Mock / preview, not After Effects.**
+
 ## [0.52.0] — 2026-11-05 — Auto-fit Templates
 ### Added
 - Template text always stays inside the frame: each line has a safe width (a share of the comp width per template). `text.create` measures the text in After Effects and shrinks the font until it fits (up to 4 measurements, never under 40 % of the design size); shapes are sized from the fitted text. The result lists each fitted line; the preview uses the same rule.

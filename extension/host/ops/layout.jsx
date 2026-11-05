@@ -519,11 +519,16 @@
                         if (sameGuide(g, args.remove[i].o, args.remove[i].pos)) { comp.removeGuide(j); removed++; break; }
                     }
                 }
+                var skipped = 0, dup;
                 for (i = 0; args.add && i < args.add.length; i++) {
+                    /* v0.53: skipSame - a guide already at that place is not added twice (a preset pressed again) */
+                    dup = false;
+                    if (args.skipSame) { for (j = 0; j < comp.guides.length; j++) { if (sameGuide(comp.guides[j], args.add[i].o, args.add[i].pos)) { dup = true; break; } } }
+                    if (dup) { skipped++; continue; }
                     comp.addGuide(args.add[i].o, num(args.add[i].pos));
                     added.push({ o: args.add[i].o, pos: num(args.add[i].pos) });
                 }
-                return { added: added, removed: removed, cleared: cleared, total: comp.guides.length };
+                return { added: added, removed: removed, cleared: cleared, skipped: skipped, total: comp.guides.length };
             });
         }
     };

@@ -619,6 +619,53 @@ const guides = {
   summarize(result) { return `${result.added.length} guides added`; }
 };
 
+/* ---------- v0.53 guide presets (features/grid/guidePresets.js) ---------- */
+
+const GP = require('./guidePresets');
+const guidePreset = {
+  id: 'grid.guidePreset',
+  version: '1.0.0',
+  category: 'layout',
+  group: 'Layout Grid',
+  name: 'Guide Preset',
+  description: 'One click for the guides you add every day: Centre, Golden ratio, broadcast Title / Action safe, and the safe zones of TikTok, Reels, Shorts and Stories (where the app covers your video). Clear removes every guide.',
+  keywords: ['guides', 'safe zone', 'safe area', 'title safe', 'action safe', 'tiktok', 'reels', 'shorts', 'stories', 'instagram', 'youtube', 'social', 'golden ratio', 'centre', 'center', 'clear guides', 'دليل', 'منطقة آمنة'],
+  icon: 'guides',
+  params: {
+    preset: { type: 'enum', label: 'Guides', default: 'center', options: GP.PRESETS.map((p) => ({ value: p.id, label: p.group === 'Social' ? `${p.label} safe zone` : p.label })) },
+    replaceAll: { type: 'boolean', label: 'Clear existing guides first', default: false, showIf: (a) => a.preset !== 'clear' }
+  },
+  requires: { comp: true },
+  permissions: ['modify.layers'],
+  recovery: 'undo+checkpoint',
+  ai: { callable: true, hint: 'Add a guide preset (center, golden, tvSafe, tiktok, reels, shorts, stories) or clear all guides.' },
+  uses: { hostOps: ['guides.set'], network: false },
+  compatibility: { minAE: '25.0' },
+  ui: { primaryLabel: 'Add Guides' },
+  prepare(args, ctx) {
+    const P = GP.byId(args.preset);
+    if (!P) return { ok: false, error: `Unknown guide preset ${args.preset}` };
+    const g = GP.lines(args.preset, ctx.comp.width, ctx.comp.height);
+    if (g.error) return { ok: false, error: g.error };
+    const n = g.v.length + g.h.length;
+    const summary = args.preset === 'clear' ? 'Remove every guide in the comp' : `${P.label}${P.social ? ' safe zone' : ''} · ${n} guides${g.box ? ` · safe ${Math.round(g.box.w)}×${Math.round(g.box.h)} px` : ''}${g.note ? ` · ${g.note}` : ''}${P.social ? ' · approximate, apps change their UI' : ''}`;
+    return { ok: true, g, preview: { summary, items: [] } };
+  },
+  async execute({ args, ctx, prepared, host }) {
+    if (args.preset === 'clear') return Object.assign(await host.call('guides.set', { compId: ctx.comp.id, add: [], clearAll: true }), { preset: 'clear' });
+    const add = [...prepared.g.v.map((x) => ({ o: 1, pos: x })), ...prepared.g.h.map((y) => ({ o: 0, pos: y }))];
+    return Object.assign(await host.call('guides.set', { compId: ctx.comp.id, add, clearAll: !!args.replaceAll, skipSame: !args.replaceAll }), { preset: args.preset });
+  },
+  verify({ result, prepared, args }) {
+    if (args.preset === 'clear') return { ok: result.total === 0, checks: [{ ok: result.total === 0, label: 'Guides cleared', detail: `${result.cleared.length} removed · ${result.total} left` }] };
+    const n = prepared.g.v.length + prepared.g.h.length, got = result.added.length + (result.skipped || 0);
+    return { ok: got === n, checks: [{ ok: got === n, label: 'Guides', detail: `${result.added.length} added${result.skipped ? ` · ${result.skipped} already there` : ''} · ${result.total} in comp` }] };
+  },
+  checkpoint({ result, ctx }) { return { compId: ctx.comp.id, added: result.added, cleared: result.cleared || [] }; },
+  async restore({ data, host }) { return host.call('guides.set', { compId: data.compId, remove: data.added, add: data.cleared }); },
+  summarize(result) { return result.preset === 'clear' ? `${result.cleared.length} guides removed` : `${result.added.length} guides added`; }
+};
+
 /* ---------- place in cells ---------- */
 
 const placeInCells = {
@@ -688,4 +735,4 @@ const placeInCells = {
   summarize(result) { return `${result.items.length} layer(s) placed in cells`; }
 };
 
-module.exports = { build, update, items, remove, guides, placeInCells, layoutGuides, resolveParams, sortSlots, gridFor, GRID_NAME };
+module.exports = { build, update, items, remove, guides, guidePreset, placeInCells, layoutGuides, resolveParams, sortSlots, gridFor, GRID_NAME };

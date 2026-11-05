@@ -88,7 +88,7 @@ const TABS = [
     ] },
   { id: 'ae-comp', label: 'Comp', title: 'Guides, deliver, project (Composition menu)', fits: ['none'], owns: ['deliver', 'quick', 'tools'],
     groups: [
-      { id: 'guides', label: 'Guides & Safe Areas', kind: 'tiles', section: 'layout', ids: ['g12', 'thirds', 'safe', 'split2', 'quad', 'wall6'], more: 'layout', fits: ['none'], open: true },
+      { id: 'guides', label: 'Guides & Safe Areas', kind: 'tiles', section: 'layout', ids: ['g12', 'thirds', 'gpCenter', 'gpGolden', 'gpTv', 'safe', 'gpClear', 'gpTiktok', 'gpReels', 'gpShorts', 'gpStories', 'split2', 'quad', 'wall6'], more: 'layout', fits: ['none'], open: true },
       { id: 'project', label: 'Deliver & Project', kind: 'acts', fits: [], open: true, hero: ['quick:dupComp'], minor: ['quick:revealFolder', 'quick:purge', 'quick:k_trash'],
         refs: ['quick:dupComp', 'quick:revealProject', 'quick:openPrecomp', 'quick:revealFolder', 'quick:purge', 'quick:k_trash'], lead: [['deliver', 'Every format at once (16:9, 9:16, 1:1, 4:5…)']] }
     ] }

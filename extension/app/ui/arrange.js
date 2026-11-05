@@ -28,7 +28,10 @@ const FAMILIES = [
   ['Parent', ['quick:parentNull', 'quick:k_parent']],
   ['Project', ['quick:revealProject', 'quick:openPrecomp']],
   ['Text', ['quick:typewriter', 'quick:counter']],
-  ['Guides', ['tile:layout/g12', 'tile:layout/safe', 'tile:layout/thirds']],
+  // v0.53: one family per row of the Guides menu
+  ['Guide Lines', ['tile:layout/g12', 'tile:layout/thirds', 'tile:layout/gpCenter', 'tile:layout/gpGolden']],
+  ['Safe Areas', ['tile:layout/gpTv', 'tile:layout/safe', 'tile:layout/gpClear']],
+  ['Social Safe', ['tile:layout/gpTiktok', 'tile:layout/gpReels', 'tile:layout/gpShorts', 'tile:layout/gpStories']],
   ['Zoom', ['tile:zoom/punch', 'tile:zoom/smooth']],
   ['Clean up', ['quick:k_bake', 'quick:k_trash']]
 ];

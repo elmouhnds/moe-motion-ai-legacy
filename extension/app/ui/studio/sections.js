@@ -116,7 +116,16 @@ const LAYOUT = [
   T('efImageReveal', 'Image Reveal', 'grid.effector', { type: 'plain', falloff: 'image', invert: true, scale: -100 }, { k: 'eff', type: 'plain', falloff: 'image', invert: true, scale: -100 }, ['Effectors']),
   T('g12', '12 Columns', 'grid.guides', { columns: 12, rows: 1, gutterX: 24, marginX: 96, marginY: 72 }, { k: 'guides', c: 12, r: 1 }, ['Guides']),
   T('thirds', 'Thirds', 'grid.guides', { columns: 3, rows: 3, gutterX: 0, gutterY: 0, marginX: 0, marginY: 0 }, { k: 'guides', c: 3, r: 3 }, ['Guides']),
+  // v0.53 guide presets (features/grid/guidePresets.js): composition lines, broadcast safe, social safe zones, clear
+  T('gpCenter', 'Centre Guides', 'grid.guidePreset', { preset: 'center' }, { k: 'gpreset', id: 'center' }, ['Guides']),
+  T('gpGolden', 'Golden Ratio', 'grid.guidePreset', { preset: 'golden' }, { k: 'gpreset', id: 'golden' }, ['Guides']),
+  T('gpTv', 'Title / Action Safe', 'grid.guidePreset', { preset: 'tvSafe' }, { k: 'gpreset', id: 'tvSafe' }, ['Guides']),
   T('safe', 'Safe Area', 'grid.guides', { columns: 1, rows: 1, marginX: 96, marginY: 54, gutterX: 0, gutterY: 0, center: true }, { k: 'guides', c: 1, r: 1, safe: true }, ['Guides']),
+  T('gpClear', 'Clear Guides', 'grid.guidePreset', { preset: 'clear' }, { k: 'gpreset', id: 'clear' }, ['Guides']),
+  T('gpTiktok', 'TikTok Safe', 'grid.guidePreset', { preset: 'tiktok' }, { k: 'gpreset', id: 'tiktok' }, ['Guides'], 'NEW'),
+  T('gpReels', 'Reels Safe', 'grid.guidePreset', { preset: 'reels' }, { k: 'gpreset', id: 'reels' }, ['Guides'], 'NEW'),
+  T('gpShorts', 'Shorts Safe', 'grid.guidePreset', { preset: 'shorts' }, { k: 'gpreset', id: 'shorts' }, ['Guides'], 'NEW'),
+  T('gpStories', 'Stories Safe', 'grid.guidePreset', { preset: 'stories' }, { k: 'gpreset', id: 'stories' }, ['Guides'], 'NEW'),
   T('split2', 'Split 2', 'grid.placeInCells', { columns: 2, rows: 1, gutterX: 0, marginX: 0, marginY: 0, fit: 'fill', padding: 0 }, { k: 'cells', c: 2, r: 1 }, ['Cells']),
   T('quad', '2 × 2', 'grid.placeInCells', { columns: 2, rows: 2, gutterX: 12, gutterY: 12, marginX: 0, marginY: 0, fit: 'fill', padding: 0 }, { k: 'cells', c: 2, r: 2 }, ['Cells']),
   T('wall6', '3 × 2 Tiles', 'grid.placeInCells', { columns: 3, rows: 2 }, { k: 'cells', c: 3, r: 2 }, ['Cells'])

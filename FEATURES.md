@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Guides menu** (v0.53.0): the famous guides (Centre, Thirds, Golden, 12 Col, TV Safe) and the safe zones of TikTok, Reels, Shorts and Stories, one click from the MOE sidebar; the anchor pad drawn as the layer's box (docs/features/GUIDE_PRESETS.md).
+
 **Auto-fit Templates** (v0.52.0): a long name or quote shrinks until After Effects measures it inside the frame, and the bar / pill / underline follow it (docs/features/TEMPLATES.md).
 
 **Branded Templates** (v0.51.0): with a client active in Brand Kit, every template comes out in its colours and fonts — the word on a pill in the colour that reads best (docs/features/TEMPLATES.md).

@@ -84,7 +84,12 @@ const MENUS = [
     ROW('Draw', ['tile:animate/trimDraw', 'tile:animate/trimErase', 'tile:animate/trimTravel', 'tile:animate/trimBoth'], ['On', 'Erase', 'Travel', 'Both'])], open: [['animate', 'All motion presets']] },
   { id: 'Loop', icon: 'repeat', title: 'loop the keys, or keep a layer alive (wiggle, float, pendulum, pulse)', tab: 'ae-keys', rows: [
     ROW('Loop', ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'], ['Cycle', 'Ping-Pong', 'Offset', 'In + Out']),
-    ROW('Idle', ['tile:expressions/x-wiggle', 'tile:expressions/x-float', 'tile:expressions/x-pendulum', 'tile:expressions/x-pulse'], ['Wiggle', 'Float', 'Pendulum', 'Pulse'])], open: [['expressions', 'All expressions']] }
+    ROW('Idle', ['tile:expressions/x-wiggle', 'tile:expressions/x-float', 'tile:expressions/x-pendulum', 'tile:expressions/x-pulse'], ['Wiggle', 'Float', 'Pendulum', 'Pulse'])], open: [['expressions', 'All expressions']] },
+  // v0.53 (owner: "a list like Guides — the famous guides and the social-media safe zones"): set up every new comp
+  { id: 'Guides', icon: 'guides', title: 'composition lines, broadcast safe, the safe zones of TikTok / Reels / Shorts / Stories', tab: 'ae-comp', rows: [
+    ROW('Lines', ['tile:layout/gpCenter', 'tile:layout/thirds', 'tile:layout/gpGolden', 'tile:layout/g12'], ['Centre', 'Thirds', 'Golden', '12 Col']),
+    ROW('Safe', ['tile:layout/gpTv', 'tile:layout/safe', 'tile:layout/gpClear'], ['TV Safe', 'Margins', 'Clear']),
+    ROW('Social', ['tile:layout/gpTiktok', 'tile:layout/gpReels', 'tile:layout/gpShorts', 'tile:layout/gpStories'], ['TikTok', 'Reels', 'Shorts', 'Stories'])], open: [['layout', 'All guides & grids']] }
 ];
 MENUS.forEach((m) => { if (m.rows) m.refs = m.rows.flatMap((rw) => rw[1]); });
 /** Menus removed in v0.45 and where their buttons are now (tests/norepeat.test.js checks every one is reachable). */

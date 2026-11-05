@@ -87,7 +87,7 @@ test('Select is out front: first group of the Layer tab and of the Arrange stage
   assert.equal(L.MENUS[0].id, 'Select');
   assert.ok(L.MENUS[0].refs.length >= 12 && L.MENUS[0].refs.every((r) => A.resolve(r)));
   // v0.45 (NO_REPEATS) removed the menus that were whole tabs; v0.46 (SIDEBAR_MENUS) adds one-job menus after Select
-  assert.deepEqual(L.MENUS.map((m) => m.id), ['Select', 'Parent & Link', 'In / Out', 'Loop']);
+  assert.deepEqual(L.MENUS.map((m) => m.id), ['Select', 'Parent & Link', 'In / Out', 'Loop', 'Guides']); // v0.53: Guides (owner)
 });
 
 test('Text animators are one click: In / Out rows of Arabic-safe presets (+ Remove), all real presets', () => {
