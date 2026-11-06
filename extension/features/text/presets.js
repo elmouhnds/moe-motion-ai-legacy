@@ -39,12 +39,19 @@ const PRESETS = [
   P({ id: 'spin-in', name: 'Spin In', group: 'Rotate', basedOn: 2, duration: 1.2, props: { rotation: 180, scale: [0, 0, 100], opacity: 0 } }),
   P({ id: 'cascade', name: 'Cascade', group: 'Rotate', basedOn: 2, duration: 1.2, props: { position: [0, 40, 0], rotation: -18, opacity: 0 } }),
   P({ id: 'tracking-in', name: 'Tracking In', group: 'Type', basedOn: 4, duration: 1.3, easeHigh: 70, props: { tracking: 60, opacity: 0 } }),
+  // ---- v0.58 Apple-style (APPLE_MOTION.md): scale + blur + opacity, by line or by word (Arabic-safe) ----
+  P({ id: 'hero-reveal', name: 'Hero Reveal', group: 'Hero', basedOn: 4, duration: 1.2, easeHigh: 60, props: { scale: [118, 118, 100], opacity: 0, blur: [30, 30] } }),
+  P({ id: 'word-stagger', name: 'Word Stagger', group: 'Hero', basedOn: 3, duration: 1.1, easeHigh: 45, props: { position: [0, 40, 0], opacity: 0, blur: [14, 14] } }),
+  P({ id: 'word-burst', name: 'Word Burst', group: 'Hero', basedOn: 3, duration: 0.9, props: { scale: [40, 40, 100], opacity: 0, blur: [20, 20] } }),
+  P({ id: 'iris-in', name: 'Iris In', group: 'Hero', basedOn: 4, duration: 1.0, easeHigh: 70, props: { scale: [160, 160, 100], opacity: 0, blur: [50, 50] } }),
   // ---- new premium OUT ----
   P({ id: 'sink-out', name: 'Soft Sink', group: 'Slide', kind: 'out', duration: 0.9, props: { position: [0, 45, 0], opacity: 0, blur: [6, 6] } }),
   P({ id: 'blur-out', name: 'Blur Away', group: 'Blur', kind: 'out', duration: 1.0, props: { opacity: 0, blur: [40, 40] } }),
   P({ id: 'zoom-out', name: 'Zoom Out', group: 'Scale', kind: 'out', basedOn: 2, duration: 0.9, props: { scale: [0, 0, 100], opacity: 0 } }),
   P({ id: 'scatter-out', name: 'Scatter Out', group: 'Fade', kind: 'out', basedOn: 2, randomize: 1, duration: 1.0, props: { opacity: 0, position: [0, -30, 0], blur: [10, 10] } }),
   P({ id: 'backspace', name: 'Backspace', group: 'Type', kind: 'out', basedOn: 1, shape: 1, smoothness: 0, easeHigh: 0, easeLow: 0, duration: 1.0, ease: { first: [0.1, 0.1], last: [0.1, 0.1] }, props: { opacity: 0 } }),
+  P({ id: 'hero-out', name: 'Hero Out', group: 'Hero', kind: 'out', basedOn: 4, duration: 0.9, props: { scale: [92, 92, 100], opacity: 0, blur: [24, 24] } }),
+  P({ id: 'stagger-out', name: 'Stagger Out', group: 'Hero', kind: 'out', basedOn: 3, duration: 0.9, props: { position: [0, -30, 0], opacity: 0, blur: [12, 12] } }),
   P({ id: 'tracking-out', name: 'Tracking Out', group: 'Type', kind: 'out', basedOn: 4, duration: 1.0, props: { tracking: 80, opacity: 0, blur: [12, 0] } })
 ];
 

@@ -20,7 +20,7 @@ const { createBrandStore } = require('../features/brand/brands');
 const { createTextLibrary } = require('../features/text/library');
 const { createSelector } = require('../features/select/service');
 
-const VERSION = '0.57.0';
+const VERSION = '0.58.0';
 
 function createServices({ platform, evalScript, rootPath, hostTimeoutMs }) {
   const store = createStore(platform.fs);

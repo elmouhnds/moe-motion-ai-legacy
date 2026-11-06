@@ -49,6 +49,14 @@ const ANIMATE = [
   T('zoomFadeOut', 'Zoom Fade Out', 'quick.animate', { kind: 'scale', dir: 'out', away: 130, fade: true, ease: 'expo', duration: 0.6 }, { k: 'scale', dir: 'out' }, ['Out', 'Scale', 'Fade'], 'OUT'),
   T('shrinkFade', 'Shrink + Fade', 'quick.animate', { kind: 'scale', dir: 'out', away: 60, fade: true, ease: 'smooth', duration: 0.5 }, { k: 'scale', dir: 'out' }, ['Out', 'Scale', 'Fade'], 'OUT'),
   T('swingOut', 'Swing Out', 'quick.animate', { kind: 'spin', dir: 'out', angle: 25, fade: true, duration: 0.6 }, { k: 'spin', dir: 'out' }, ['Out', 'Fade'], 'OUT'),
+  // v0.58 (docs/features/APPLE_MOTION.md): Apple-style — the layer comes in sharp from a blur, on the same timing
+  T('blurIn', 'Blur In', 'quick.animate', { kind: 'fade', dir: 'in', blur: 40, ease: 'smooth', duration: 0.7 }, { k: 'fade', dir: 'in' }, ['In', 'Fade', 'Blur'], 'IN'),
+  T('blurOut', 'Blur Out', 'quick.animate', { kind: 'fade', dir: 'out', blur: 40, ease: 'smooth', duration: 0.6 }, { k: 'fade', dir: 'out' }, ['Out', 'Fade', 'Blur'], 'OUT'),
+  T('focusIn', 'Focus In', 'quick.animate', { kind: 'scale', dir: 'in', away: 112, fade: true, blur: 30, ease: 'expo', duration: 0.8 }, { k: 'scale', dir: 'in' }, ['In', 'Scale', 'Blur'], 'IN'),
+  T('focusOut', 'Focus Out', 'quick.animate', { kind: 'scale', dir: 'out', away: 92, fade: true, blur: 24, ease: 'smooth', duration: 0.6 }, { k: 'scale', dir: 'out' }, ['Out', 'Scale', 'Blur'], 'OUT'),
+  T('whipIn', 'Whip In', 'quick.animate', { kind: 'moveRL', dir: 'in', distance: 420, fade: true, blur: 60, ease: 'expo', duration: 0.5 }, { k: 'move', dx: 0.6, dy: 0, dir: 'in' }, ['In', 'Slide', 'Blur'], 'IN'),
+  T('whipOut', 'Whip Out', 'quick.animate', { kind: 'moveRL', dir: 'out', distance: 420, fade: true, blur: 60, ease: 'expo', duration: 0.45 }, { k: 'move', dx: -0.6, dy: 0, dir: 'out' }, ['Out', 'Slide', 'Blur'], 'OUT'),
+  T('riseBlur', 'Rise + Blur', 'quick.animate', { kind: 'moveBT', dir: 'in', distance: 60, fade: true, blur: 24, ease: 'smooth', duration: 0.7 }, { k: 'move', dx: 0, dy: 0.3, dir: 'in' }, ['In', 'Slide', 'Blur'], 'IN'),
   T('gentlePop', 'Soft Pop', 'quick.animate', { kind: 'scale', dir: 'in', ease: 'gentle', duration: 0.8 }, { k: 'scale', dir: 'in' }, ['In', 'Scale'], 'IN'),
   T('spinOut', 'Spin Out', 'quick.animate', { kind: 'spin', dir: 'out' }, { k: 'spin', dir: 'out' }, ['Out'], 'OUT'),
   T('popOut', 'Pop Out', 'quick.animate', { kind: 'scale', dir: 'out', overshoot: true, duration: 0.45 }, { k: 'scale', dir: 'out', over: true }, ['Out', 'Scale'], 'OUT'),
@@ -207,7 +215,7 @@ const SECTIONS = [
   { id: 'kit', label: 'Toolbox', icon: 'kExcite', kind: 'view' },
   // v0.32 modes: In / Out / Draw On / Proximity are what the moves are for — one set at a time. The ease tiles
   // live in the Motion Control (graph + curve presets); they still resolve (Quick Bar, search) and show when searched.
-  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Trim', 'Ease', 'Keys', 'Proximity'],
+  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Blur', 'Trim', 'Ease', 'Keys', 'Proximity'],
     modes: [['In', 'In', 'The layer arrives'], ['Out', 'Out', 'The layer leaves'], ['Trim', 'Draw On', 'Trim paths for shape lines'], ['Proximity', 'Proximity', 'Layers react to a moving point']],
     elsewhere: [['kit', 'Ease', 'Ease presets and the speed graph are in Motion Control']], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) && t.id !== 'motion.easeCurve' && t.id !== 'motion.pasteEase' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },
@@ -274,7 +282,7 @@ function sectionOf(tool) {
 }
 
 /* v0.6 tiles get a NEW corner badge. */
-const NEW_TILES = new Set(['riseFade', 'slideFadeIn', 'dropFade', 'zoomFadeIn', 'growFade', 'popFade', 'swingIn', 'sinkFade', 'slideFadeOut', 'zoomFadeOut', 'shrinkFade', 'swingOut', 'riseIn', 'dropIn', 'cascadeIn', 'cascadeFade', 'gentlePop', 'spinOut', 'popOut', 'easeExpo', 'easeDecel', 'easeHard', 'easeAccel', 'easeLaunch',
+const NEW_TILES = new Set(['blurIn', 'blurOut', 'focusIn', 'focusOut', 'whipIn', 'whipOut', 'riseBlur', 'riseFade', 'slideFadeIn', 'dropFade', 'zoomFadeIn', 'growFade', 'popFade', 'swingIn', 'sinkFade', 'slideFadeOut', 'zoomFadeOut', 'shrinkFade', 'swingOut', 'riseIn', 'dropIn', 'cascadeIn', 'cascadeFade', 'gentlePop', 'spinOut', 'popOut', 'easeExpo', 'easeDecel', 'easeHard', 'easeAccel', 'easeLaunch',
   ...['bounceBack', 'squash', 'orbit', 'swing', 'heartbeat', 'breathe', 'wiggleRot', 'wiggleScale', 'organic', 'loopWiggle', 'drift', 'clock', 'faceMotion', 'scatter', 'popIn', 'slideIn'].map((x) => `x-${x}`)]);
 for (const sec of SECTIONS) for (const t of sec.tiles || []) if (NEW_TILES.has(t.id)) t.isNew = true;
 

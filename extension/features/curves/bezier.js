@@ -48,9 +48,17 @@ const PRESETS = [
   C('glide', 'Glide', 0.2, 0.6, 0.1, 1, 'Motion'),
   C('punch', 'Punch', 0.05, 0.7, 0.1, 1, 'Motion'),
   C('swoosh', 'Swoosh', 0.7, 0, 0, 1, 'Motion'),
-  C('settle', 'Settle', 0.3, 1.25, 0.5, 1, 'Motion')
+  C('settle', 'Settle', 0.3, 1.25, 0.5, 1, 'Motion'),
+  // v0.58 (docs/features/APPLE_MOTION.md): calm, OS-style interface motion — named by what they do
+  C('nativeStandard', 'Native Standard', 0.4, 0, 0.2, 1, 'Native'),
+  C('nativeEmphasized', 'Native Emphasized', 0.2, 0, 0, 1, 'Native'),
+  C('nativeEnter', 'Native Enter', 0, 0, 0.2, 1, 'Native'),
+  C('nativeExit', 'Native Exit', 0.4, 0, 1, 1, 'Native'),
+  C('springSoft', 'Spring Soft', 0.25, 1.18, 0.5, 1, 'Native'),
+  C('springBouncy', 'Spring Bouncy', 0.3, 1.5, 0.45, 1, 'Native'),
+  C('anticipate', 'Anticipate', 0.55, -0.35, 0.3, 1, 'Native')
 ];
-const TAGS = ['Basic', 'In', 'Out', 'In-Out', 'Motion'];
+const TAGS = ['Basic', 'In', 'Out', 'In-Out', 'Motion', 'Native'];
 const X_MIN = 0.01, X_MAX = 0.99, Y_MIN = -1, Y_MAX = 2;
 
 /** Keep a curve inside what AE can store (influence 0.1–100 % on each side). */

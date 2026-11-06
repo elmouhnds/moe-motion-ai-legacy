@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.58.0] — 2026-11-06 — Apple Motion
+### Added
+- **Blur** on every Quick Animate move (px): a `MOE Blur` (Gaussian Blur) keyed on the move's timing and ease, reused, exactly restorable; tile previews draw the blur. Seven tiles: Blur In / Out, Focus In / Out, Whip In / Out, Rise + Blur.
+- **Native curves** in the Ease library: Native Standard / Emphasized / Enter / Exit, Spring Soft, Spring Bouncy, Anticipate.
+- **Text presets** (Hero): Hero Reveal, Word Stagger, Word Burst, Iris In, Hero Out, Stagger Out — by line / word (Arabic-safe), with blur.
+### Tests
+- `tests/applemotion.test.js` (4). **Mock / preview, not After Effects.**
+
 ## [0.57.0] — 2026-11-06 — Product UI
 ### Added
 - Design › Product UI: eight interface pieces built as real layers on the Templates engine, each animated the way it is used — Button Click (press + ripple), Toggle Switch, Search Bar (cursor blinks), Task Done (check + strike), Notification, Progress Bar (fills), Chat Message (typing dots), Stat Card (trend line draws). Light / Dark look, the brand's colour, Auto-fit, Hold → exit. 12 tiles; a Design tab group; the Design stage.

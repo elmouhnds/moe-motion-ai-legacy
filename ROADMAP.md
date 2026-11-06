@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.63 — Apple Motion ✅ (v0.58.0)
+- Blur on entrances, Native curves, Hero text presets (wave 1 of the reference plan).
+
 ## Next (from docs/research/REFERENCE_PLUGINS.md — the owner's two references)
 1. Apple Motion: Apple curves set, Blur on entrances, Hero Reveal / Word Stagger + blur / Burst / Iris / Elastic text, Blur In-Out and Whip Pan.
 2. Styles + Shakes: Soft Shadow, Glow, Hairline, Inner Highlight, Light Sweep, Chrome, Liquid Color; Bump, Zoom Punch, Whip, Slam, Jitter as real keys.

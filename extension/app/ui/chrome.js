@@ -23,7 +23,7 @@ function counts(app) {
 }
 
 const COPY = {
-  animate: (n) => ({ kicker: 'ANIMATE', title: 'Motion in one click', pitch: 'Slides, pops, fades, draw-ons, eases and proximity — keyed from the playhead, always restorable.', stats: [[n.animate, 'animations'], [n.ease, 'ease curves']], tip: 'Press ▶ on a tile to apply it straight away.' }),
+  animate: (n) => ({ kicker: 'ANIMATE', title: 'Motion in one click', pitch: 'Slides, pops, fades, blurs, draw-ons, eases and proximity — keyed from the playhead, always restorable.', stats: [[n.animate, 'animations'], [n.ease, 'ease curves']], tip: 'Press ▶ on a tile to apply it straight away.' }),
   text: (n) => ({ kicker: 'TEXT', title: 'Type that moves well', pitch: 'Signature text animators with Arabic-safe defaults (words / lines, RTL).', stats: [[n.text, 'text presets']] }),
   layout: (n) => ({ kicker: 'LAYOUT & GRID', title: 'Live grids & layouts', pitch: 'Grid, radial, spiral, path and 3D arrangements driven by one null — plus guides and cells.', stats: [[n.layout, 'layouts']] }),
   looks: (n) => ({ kicker: 'LOOKS & GLASS', title: 'Thick, liquid & frosted glass', pitch: 'Editable glass from native effects: thick refraction with bevel, dispersion, chrome and caustics — or flat UI glass with lens, frost, tint and rim.', stats: [[n.looks, 'glass looks']] }),
@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['fadeIn', 'Apple-style motion', 'Every move in Motion now has a Blur setting: the layer comes in sharp from a blur on the same timing (try Blur In, Focus In, Whip In). The Ease library has seven calm Native curves with springs and anticipation, and Text has Hero presets — Hero Reveal, Word Stagger, Word Burst, Iris In — that work with Arabic too.'],
   ['uiKit', 'Product UI for app and SaaS videos', 'Design › Product UI: a button that gets clicked, a toggle that switches, a search bar that types, a task that ticks itself off, a notification, a progress bar, a chat with typing dots and a stat card whose chart draws — real layers in your comp, light or dark, in your client\'s colours. Also fixed: a template\'s text could sit under its own pill in After Effects.'],
   ['wand', 'Every number is a hidden slider', 'Drag sideways on any number in the panel to change it, like After Effects — Shift for big steps, Ctrl for fine, Esc to cancel. ↑ ↓ step it, the wheel works while you are in the field, and a double-click on a slider puts its default back. Clicking still lets you type.'],
   ['easeCurve', 'Drag the velocity numbers', 'The Keyframe Velocity numbers (Out / In speed and influence) are now hidden sliders: drag sideways on a number and the curve follows live, like After Effects\' scrubby values — Shift for big steps, Ctrl for fine. Release applies it; a click still lets you type.'],

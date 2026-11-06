@@ -68,6 +68,18 @@ function fade(args, pose) {
   return { prop: 'opacity', keys: args.dir === 'in' ? keysFor(e, 0, dur, 0, rest) : keysFor(e, 0, dur, rest, 0) };
 }
 
+/**
+ * v0.58 (docs/features/APPLE_MOTION.md): "Blur" — the layer comes in sharp from a blur (or leaves into one), on the
+ * same timing and ease as the move: Blurriness of the layer's `MOE Blur` (Gaussian Blur), in px. null when blur is 0.
+ */
+function blur(args) {
+  const b = Number(args.blur) || 0;
+  if (b <= 0) return null;
+  const e = easePair(args.ease || 'snappy');
+  const dur = args.duration > 0 ? args.duration : 0.6;
+  return { prop: 'blur', keys: args.dir === 'in' ? keysFor(e, 0, dur, b, 0) : keysFor(e, 0, dur, 0, b) };
+}
+
 /** Trim Paths keys (Start / End in percent) for draw / erase / travel / drawErase — the tool's own timing. */
 function trim(args) {
   const e = easePair(args.ease || 'smooth');
@@ -100,4 +112,4 @@ function valueAt(keys, t) {
 /** When the keys end (for a preview loop). */
 const endOf = (...lists) => Math.max(0, ...lists.filter(Boolean).map((k) => (k.length ? k[k.length - 1].t : 0)));
 
-module.exports = { easePair, keysFor, animate, fade, trim, valueAt, endOf };
+module.exports = { easePair, keysFor, animate, fade, blur, trim, valueAt, endOf };

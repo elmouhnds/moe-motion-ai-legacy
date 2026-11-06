@@ -46,6 +46,8 @@ function planOf(th, t) {
 const animArgs = (th, kind) => Object.assign({ kind, dir: th.dir || 'in', overshoot: !!th.over }, th.args || {});
 /** v0.48: the "Also fade" opacity at local time lt (1 when the move has no fade). */
 const fadeAt = (a, lt) => { const f = PLAN.fade(a, { opacity: 100 }); return f ? clamp01(PLAN.valueAt(f.keys, lt) / 100) : 1; };
+/** v0.58: the plan's Blur at local time lt as a canvas filter (comp pixels → tile pixels; 'none' without blur). */
+const blurAt = (a, lt, W) => { const b = PLAN.blur(a); const px = b ? PLAN.valueAt(b.keys, lt) * (W / 1920) * 2.2 : 0; return px > 0.05 ? `blur(${px.toFixed(2)}px)` : 'none'; };
 const DRAW = {
   move(c, W, H, th, t) {
     if (th.args) {
@@ -56,8 +58,8 @@ const DRAW = {
       const lt = planOf(th, t).at(PLAN.endOf(pl.keys));
       const v = PLAN.valueAt(pl.keys, lt);
       c.fillStyle = DIM; rrect(c, W / 2 - bw / 2, H / 2 - bh / 2, bw, bh, 4); c.setLineDash([3, 3]); c.strokeStyle = DIM; c.stroke(); c.setLineDash([]);
-      c.globalAlpha = fadeAt(a, lt);
-      c.fillStyle = FG; rrect(c, W / 2 - bw / 2 + v[0], H / 2 - bh / 2 + v[1], bw, bh, 4); c.fill(); c.globalAlpha = 1;
+      c.globalAlpha = fadeAt(a, lt); c.filter = blurAt(a, lt, W);
+      c.fillStyle = FG; rrect(c, W / 2 - bw / 2 + v[0], H / 2 - bh / 2 + v[1], bw, bh, 4); c.fill(); c.globalAlpha = 1; c.filter = 'none';
       return;
     }
     const p = eOut(phase(t));
@@ -69,9 +71,9 @@ const DRAW = {
   },
   fade(c, W, H, th, t) {
     if (th.args) {
-      const pl = PLAN.animate(animArgs(th, 'fade'), { opacity: 100 });
-      c.globalAlpha = clamp01(PLAN.valueAt(pl.keys, planOf(th, t).at(PLAN.endOf(pl.keys))) / 100);
-      c.fillStyle = FG; rrect(c, W * 0.3, H * 0.34, W * 0.4, H * 0.32, 4); c.fill(); c.globalAlpha = 1;
+      const fa = animArgs(th, 'fade'), pl = PLAN.animate(fa, { opacity: 100 }), flt = planOf(th, t).at(PLAN.endOf(pl.keys));
+      c.globalAlpha = clamp01(PLAN.valueAt(pl.keys, flt) / 100); c.filter = blurAt(fa, flt, W);
+      c.fillStyle = FG; rrect(c, W * 0.3, H * 0.34, W * 0.4, H * 0.32, 4); c.fill(); c.globalAlpha = 1; c.filter = 'none';
       return;
     }
     const p = eOut(phase(t));
@@ -80,15 +82,15 @@ const DRAW = {
   },
   scale(c, W, H, th, t) {
     let s;
-    let alpha = 1;
-    if (th.args) { const a = animArgs(th, 'scale'), pl = PLAN.animate(a, { scale: [100, 100] }), lt = planOf(th, t).at(PLAN.endOf(pl.keys)); s = Math.max(0, PLAN.valueAt(pl.keys, lt)[0] / 100); alpha = fadeAt(a, lt); } else {
+    let alpha = 1, flt = 'none';
+    if (th.args) { const a = animArgs(th, 'scale'), pl = PLAN.animate(a, { scale: [100, 100] }), lt = planOf(th, t).at(PLAN.endOf(pl.keys)); s = Math.max(0, PLAN.valueAt(pl.keys, lt)[0] / 100); alpha = fadeAt(a, lt); flt = blurAt(a, lt, W); } else {
       const ph = phase(t);
       s = th.dir === 'in' ? (th.over ? Math.max(0, eBack(ph)) : eOut(ph)) : 1 - eOut(ph);
     }
     const bw = W * 0.34 * s, bh = H * 0.42 * s;
     // the full size as a dashed ghost (like move): shows where the scale starts or ends
     c.setLineDash([3, 3]); c.strokeStyle = DIM; rrect(c, W / 2 - W * 0.17, H / 2 - H * 0.21, W * 0.34, H * 0.42, 4); c.stroke(); c.setLineDash([]);
-    c.globalAlpha = alpha; c.fillStyle = FG; rrect(c, W / 2 - bw / 2, H / 2 - bh / 2, Math.max(bw, 0.1), Math.max(bh, 0.1), 4); c.fill(); c.globalAlpha = 1;
+    c.globalAlpha = alpha; c.filter = flt; c.fillStyle = FG; rrect(c, W / 2 - bw / 2, H / 2 - bh / 2, Math.max(bw, 0.1), Math.max(bh, 0.1), 4); c.fill(); c.globalAlpha = 1; c.filter = 'none';
   },
   spin(c, W, H, th, t) {
     let ang;

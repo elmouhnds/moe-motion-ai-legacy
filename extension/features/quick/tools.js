@@ -1,4 +1,5 @@
 'use strict';
+const S = require('../compositing/shared'); // v0.58: MOE Blur (effects.ensure / restore)
 /**
  * Quick Bar actions (RKBar-style one-click helpers). Each is a normal registered tool
  * (validated, permission-checked, verified by read-back, restorable), so the Quick Bar,
@@ -223,11 +224,13 @@ const animate = {
     fade: { type: 'boolean', label: 'Also fade', default: false, description: 'Opacity in / out on the same timing', showIf: (a) => a.kind !== 'fade' },
     away: { type: 'number', label: 'From / to', min: 0, max: 400, step: 5, default: 0, unit: '%', description: 'The scale at the far end, in % of the layer\'s own: 0 = from / to nothing, 130 = zoom from bigger', showIf: (a) => a.kind === 'scale' },
     angle: { type: 'number', label: 'Angle', min: 5, max: 1080, step: 5, default: 180, unit: '°', showIf: (a) => a.kind === 'spin' },
+    // v0.58 (APPLE_MOTION.md): comes in sharp from a blur — a `MOE Blur` (Gaussian Blur) keyed on the same timing
+    blur: { type: 'number', label: 'Blur', min: 0, max: 200, step: 1, default: 0, unit: 'px', description: '0 = none. The layer comes in sharp from this blur (or leaves into it), on the same timing — a MOE Blur effect, removed by Restore' },
     stagger: { type: 'number', label: 'Stagger', min: 0, max: 2, step: 0.01, default: 0, unit: 's', advanced: true, description: 'Delay between layers (selection order)' }
   },
-  requires: { comp: true, minLayers: 1 }, permissions: ['modify.keyframes'], recovery: 'undo+checkpoint',
-  ai: { callable: true, hint: 'Quick in/out animation at the playhead: slide from a side, fade, scale up/down, spin.' },
-  uses: { hostOps: ['layers.describe', 'layers.bounds', 'props.values', 'keys.write', 'keys.remove'], network: false }, compatibility: { minAE: '25.0' },
+  requires: { comp: true, minLayers: 1 }, permissions: ['modify.keyframes', 'modify.effects'], recovery: 'undo+checkpoint',
+  ai: { callable: true, hint: 'Quick in/out animation at the playhead: slide from a side, fade, scale up/down, spin; blur (px) adds an Apple-style blur in / out.' },
+  uses: { hostOps: ['layers.describe', 'layers.bounds', 'props.values', 'keys.write', 'keys.remove', 'effects.ensure', 'effects.restore'], network: false }, compatibility: { minAE: '25.0' },
   ui: { primaryLabel: 'Animate' },
   prepare(args, ctx) {
     const l = visual(ctx).filter((x) => !x.locked);
@@ -285,17 +288,32 @@ const animate = {
       }
     }
     if (!items.length) throw new Error(`Nothing to animate: ${skipped.join(', ')}`);
+    // v0.58: Blur — one MOE Blur per animated layer (reused if it is there), keyed on the move's timing
+    let fx = null;
+    const bl = PLAN.blur(args);
+    if (bl) {
+      const animated = [...new Set(items.map((it) => it.address.layerId))];
+      fx = await S.writeEffects(host, ctx, animated.map((id) => ({ layer: { layerId: id }, items: [{ key: 'MOE Blur', matchName: 'ADBE Gaussian Blur 2', before: [], params: [{ id: 'Repeat Edge Pixels', value: 1, names: ['Repeat Edge Pixels'] }] }] })), 'MOE: Blur');
+      animated.forEach((id) => {
+        const i = prepared.layers.findIndex((l) => l.id === id), t0 = comp.time + i * (args.stagger || 0);
+        items.push({ address: { layerId: id, matchNames: ['ADBE Effect Parade', 'name:MOE Blur', 'name:Blurriness'] }, keys: bl.keys.map((x) => Object.assign({}, x, { t: x.t + t0 })) });
+      });
+    }
     const keys = await host.call('keys.write', { compId: comp.id, label: 'MOE: Quick Animate', items });
-    return { keys, skipped };
+    return { keys, skipped, fx };
   },
   verify({ result }) {
     const c = result.keys.items.map((it) => ({ ok: it.written.length >= 2, label: `${it.layerName} › ${it.name}`, detail: `${it.written.length} keys ${it.written[0].t.toFixed(2)}–${it.written[it.written.length - 1].t.toFixed(2)}s` }));
     for (const s of result.skipped) c.push({ ok: true, label: 'Skipped', detail: s });
     return { ok: c.every((x) => x.ok), checks: c };
   },
-  checkpoint({ result, ctx }) { return { compId: ctx.comp.id, items: keyRestore(result.keys.items) }; },
-  async restore({ data, host }) { return host.call('keys.remove', data); },
-  summarize(result) { return `Animated ${result.keys.items.length} propert(ies)`; }
+  checkpoint({ result, ctx }) { return { compId: ctx.comp.id, items: keyRestore(result.keys.items), fx: result.fx ? S.effectsCheckpoint(result.fx, ctx) : null }; },
+  async restore({ data, host }) {
+    const r = await host.call('keys.remove', { compId: data.compId, items: data.items });
+    if (data.fx) await S.restoreEffects({ data: data.fx, host }); // a MOE Blur this run added goes away; one that was there keeps its values
+    return r;
+  },
+  summarize(result) { return `Animated ${result.keys.items.length} propert(ies)${result.fx ? ' · blur' : ''}`; }
 };
 
 /* ---------------- trim paths ---------------- */

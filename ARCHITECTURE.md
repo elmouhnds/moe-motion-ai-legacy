@@ -179,6 +179,9 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6zi. Apple Motion (v0.58.0)
+- `animatePlan.blur(args)` → Blurriness keys on the move's timing; `quick.animate` param `blur` → `effects.ensure` (`MOE Blur`, Gaussian Blur 2) + keys at `['ADBE Effect Parade', 'name:MOE Blur', 'name:Blurriness']`; checkpoint adds `S.effectsCheckpoint`. `thumbs.blurAt` draws it. `bezier.PRESETS` tag `Native`; text presets group `Hero`.
+
 ## 6zh. Product UI (v0.57.0)
 - `design/uiKit.js` (pure): `COMPONENTS` registered into `templates.TEMPLATES` with `kit: 'ui'`; `templates.textSpecs` / `layout` delegate to it with shared helpers (`unit`, `hexRgb`, `enter`, `fadeIn`, `PLAN`). One key list per (part, property) (`dedupe`). Tool param `theme` (Light / Dark). `templateTool` moves the texts above the topmost shape (`layers.move`). Section `productui` (Design workspace), `ae-design` group `productui`, stage `st-design`.
 
