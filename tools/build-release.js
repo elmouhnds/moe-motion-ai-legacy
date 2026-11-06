@@ -69,6 +69,7 @@ function main() {
   const setup = path.join(DIST, setupName);
   execFileSync('makensis', ['-V2', `-DVERSION=${version}`, `-DSRC=${stage}`, `-DOUTFILE=${setup}`,
     `-DICON=${path.join(ROOT, 'installer/assets/moe.ico')}`, `-DSIDEBAR=${path.join(ROOT, 'installer/assets/sidebar.bmp')}`,
+    `-DHEADER=${path.join(ROOT, 'installer/assets/header.bmp')}`,
     path.join(ROOT, 'installer/moe-motion-ai.nsi')], { stdio: 'inherit' });
 
   const zipName = `MOE-Motion-AI-${version}-portable.zip`;

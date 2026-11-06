@@ -15,7 +15,8 @@
 ;   /WAITAE     wait until After Effects (AfterFX.exe) has closed, then install silently
 ;               (used by the panel's "Install when I close After Effects")
 ;
-; Build: node tools/build-release.js   (passes VERSION, SRC, OUTFILE, ICON, SIDEBAR)
+; Build: node tools/build-release.js   (passes VERSION, SRC, OUTFILE, ICON, SIDEBAR, HEADER)
+; Artwork: node tools/build-installer-art.js
 
 Target amd64-unicode
 !include "MUI2.nsh"
@@ -24,6 +25,11 @@ Target amd64-unicode
 !include "WordFunc.nsh"
 !include "StrFunc.nsh"
 ${StrStr}
+
+Var Legacy
+Var Status   ; welcome: new install / update from x / reinstall
+Var AELine   ; welcome: After Effects found or not
+Var AEExe    ; AfterFX.exe when found (finish: "Open After Effects now")
 
 !ifndef VERSION
   !error "Define VERSION, e.g. makensis -DVERSION=0.6.1"
@@ -48,8 +54,9 @@ RequestExecutionLevel user
 InstallDir "$APPDATA\Adobe\CEP\extensions\${BUNDLE}"
 SetCompressor /SOLID lzma
 BrandingText "${APPNAME} ${VERSION}"
-ShowInstDetails show
-ShowUninstDetails show
+ShowInstDetails hide
+ShowUninstDetails hide
+ManifestSupportedOS all
 
 VIProductVersion "${VERSION}.0"
 VIAddVersionKey "ProductName" "${APPNAME}"
@@ -63,42 +70,110 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
   !define MUI_ICON "${ICON}"
   !define MUI_UNICON "${ICON}"
 !endif
+
+; ---------------------------------------------------------------- look (v0.65.1)
+; One dark surface like the panel: welcome, finish and the page headers share MUI_BGCOLOR, and the artwork
+; (tools/build-installer-art.js) is drawn on the same colour so it has no edge. Keep BG in sync with that script.
+!define MUI_BGCOLOR   "111116"
+!define MUI_TEXTCOLOR "EDEDF2"
 !ifdef SIDEBAR
   !define MUI_WELCOMEFINISHPAGE_BITMAP "${SIDEBAR}"
   !define MUI_UNWELCOMEFINISHPAGE_BITMAP "${SIDEBAR}"
 !endif
+!ifdef HEADER
+  !define MUI_HEADERIMAGE
+  !define MUI_HEADERIMAGE_RIGHT
+  !define MUI_HEADERIMAGE_BITMAP "${HEADER}"
+  !define MUI_HEADERIMAGE_UNBITMAP "${HEADER}"
+!endif
 !define MUI_ABORTWARNING
+!define MUI_FINISHPAGE_LINK_COLOR "FF8A66"
 
+; 1 · Welcome: what will happen (new install or update from x), whether After Effects is there, what is new
 !define MUI_WELCOMEPAGE_TITLE "$(WelcomeTitle)"
-!define MUI_WELCOMEPAGE_TEXT "$(WelcomeText)"
+!define MUI_WELCOMEPAGE_TEXT "$Status$\r$\n$AELine$\r$\n$\r$\n$(WhatsNew)$\r$\n$\r$\n$(KeepData)"
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW WelcomeShow
 !insertmacro MUI_PAGE_WELCOME
+; 2 · Install: a few seconds, one clear line per step (details on request)
+!define MUI_PAGE_HEADER_TEXT "$(InstTitle)"
+!define MUI_PAGE_HEADER_SUBTEXT "$(InstSub)"
+!define MUI_INSTFILESPAGE_FINISHHEADER_TEXT "$(InstDone)"
+!define MUI_INSTFILESPAGE_FINISHHEADER_SUBTEXT "$(InstDoneSub)"
 !insertmacro MUI_PAGE_INSTFILES
+; 3 · Finish: where to find it, and open After Effects in one click when it is installed
 !define MUI_FINISHPAGE_TITLE "$(FinishTitle)"
 !define MUI_FINISHPAGE_TEXT "$(FinishText)"
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_TEXT "$(OpenAE)"
+!define MUI_FINISHPAGE_RUN_FUNCTION LaunchAE
+!define MUI_PAGE_CUSTOMFUNCTION_SHOW FinishShow
 !insertmacro MUI_PAGE_FINISH
 
+!define MUI_PAGE_HEADER_TEXT "$(UnTitle)"
+!define MUI_PAGE_HEADER_SUBTEXT "$(UnSub)"
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 
 !insertmacro MUI_LANGUAGE "English"
 !insertmacro MUI_LANGUAGE "Arabic"
 
+; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.65: tabs in the order of your work (Animate · Timing · Layer · Design · Look · Deliver) and a one-row Motion Bar."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.65: التابات بقت بترتيب الشغل، وشريط الحركة بقى سطر واحد"
+
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"
-LangString WelcomeText ${LANG_ENGLISH} "This installs (or updates) the MOE Motion AI panel for After Effects 2025.$\r$\n$\r$\nUpdates replace the previous version in place. Your settings, presets, clients and API key are kept.$\r$\n$\r$\nPlease close After Effects before continuing."
-LangString WelcomeText ${LANG_ARABIC}  "سيتم تثبيت (أو تحديث) لوحة MOE Motion AI لبرنامج After Effects 2025.$\r$\n$\r$\nالتحديث يستبدل النسخة السابقة في مكانها، وتبقى إعداداتك والبريستس والعملاء ومفتاح الـ API كما هي.$\r$\n$\r$\nمن فضلك أغلق After Effects قبل المتابعة."
+LangString StNew ${LANG_ENGLISH} "●  New install for After Effects"
+LangString StNew ${LANG_ARABIC}  "●  تثبيت جديد"
+LangString StUpdate ${LANG_ENGLISH} "●  Update  $R2  →  ${VERSION}"
+LangString StUpdate ${LANG_ARABIC}  "●  تحديث من $R2 إلى ${VERSION}"
+LangString StSame ${LANG_ENGLISH} "●  Reinstall ${VERSION} (repairs the panel's files)"
+LangString StSame ${LANG_ARABIC}  "●  إعادة تثبيت ${VERSION} (يصلّح ملفات اللوحة)"
+LangString AEFound ${LANG_ENGLISH} "●  After Effects found — the panel will be ready in it"
+LangString AEFound ${LANG_ARABIC}  "●  لقينا After Effects، واللوحة هتبقى جاهزة فيه"
+LangString AEMissing ${LANG_ENGLISH} "●  After Effects 2025 was not found — the panel installs anyway and appears once it is installed"
+LangString AEMissing ${LANG_ARABIC}  "●  مالقيناش After Effects 2025، بس اللوحة هتتثبت وهتظهر أول ما تثبّته"
+LangString KeepData ${LANG_ENGLISH} "Your settings, presets, clients and API key stay as they are."
+LangString KeepData ${LANG_ARABIC}  "إعداداتك والبريستس والعملاء ومفتاح الـ API محفوظين زي ما هم"
+LangString BtnInstall ${LANG_ENGLISH} "Install"
+LangString BtnInstall ${LANG_ARABIC}  "تثبيت"
+LangString BtnUpdate ${LANG_ENGLISH} "Update"
+LangString BtnUpdate ${LANG_ARABIC}  "تحديث"
+LangString InstTitle ${LANG_ENGLISH} "Installing MOE Motion AI ${VERSION}"
+LangString InstTitle ${LANG_ARABIC}  "جاري تثبيت MOE Motion AI ${VERSION}"
+LangString InstSub ${LANG_ENGLISH} "A few seconds."
+LangString InstSub ${LANG_ARABIC}  "ثواني وتخلص"
+LangString InstDone ${LANG_ENGLISH} "Installed and checked"
+LangString InstDone ${LANG_ARABIC}  "اتثبت واتأكدنا منه"
+LangString InstDoneSub ${LANG_ENGLISH} "Every file is in place."
+LangString InstDoneSub ${LANG_ARABIC}  "كل الملفات في مكانها."
+LangString StepClean ${LANG_ENGLISH} "Removing old copies…"
+LangString StepClean ${LANG_ARABIC}  "شيل النسخ القديمة…"
+LangString StepCopy ${LANG_ENGLISH} "Copying the panel…"
+LangString StepCopy ${LANG_ARABIC}  "نسخ اللوحة…"
+LangString StepRegister ${LANG_ENGLISH} "Registering with After Effects…"
+LangString StepRegister ${LANG_ARABIC}  "تسجيلها في After Effects…"
+LangString StepVerify ${LANG_ENGLISH} "Checking the installed files…"
+LangString StepVerify ${LANG_ARABIC}  "التأكد من الملفات…"
+LangString VerifyFail ${LANG_ENGLISH} "The panel's files could not be written to $INSTDIR (the check after copying failed). Run the installer again; if it repeats, check that the folder is not read-only or blocked by antivirus. Your settings are untouched."
+LangString VerifyFail ${LANG_ARABIC}  "ملفات اللوحة ماتكتبتش صح في $INSTDIR (الفحص بعد النسخ فشل). شغّل المثبّت تاني؛ لو اتكرر، اتأكد إن الفولدر مش للقراءة بس ومش متقفل من الأنتي فايرس. إعداداتك ماتلمستش."
 LangString FinishTitle ${LANG_ENGLISH} "MOE Motion AI is ready"
-LangString FinishTitle ${LANG_ARABIC}  "MOE Motion AI جاهز"
-LangString FinishText ${LANG_ENGLISH} "Open After Effects, then Window › Extensions › MOE Motion AI.$\r$\n$\r$\nFuture updates: Settings › Updates inside the panel, or run a newer installer — it replaces this one."
-LangString FinishText ${LANG_ARABIC}  "افتح After Effects ثم Window › Extensions › MOE Motion AI.$\r$\n$\r$\nالتحديثات القادمة: من Settings › Updates داخل اللوحة، أو شغّل مثبّت أحدث وسيستبدل هذه النسخة."
-LangString CloseAE ${LANG_ENGLISH} "After Effects is running. Close it, then press Retry (the panel's files are replaced while it is closed)."
-LangString CloseAE ${LANG_ARABIC}  "برنامج After Effects مفتوح. أغلقه ثم اضغط إعادة المحاولة (يتم استبدال ملفات اللوحة وهو مغلق)."
+LangString FinishTitle ${LANG_ARABIC}  "جاهز للشغل"
+LangString FinishText ${LANG_ENGLISH} "In After Effects: Window › Extensions › MOE Motion AI.$\r$\n$\r$\nNext updates come from the panel itself (Settings › Updates), installed when you close After Effects."
+LangString FinishText ${LANG_ARABIC}  "افتحها من جوه After Effects:$\r$\nWindow › Extensions › MOE Motion AI$\r$\n$\r$\nالتحديثات الجاية بتيجي من اللوحة نفسها، وبتتثبت لما تقفل After Effects"
+LangString OpenAE ${LANG_ENGLISH} "Open After Effects now"
+LangString OpenAE ${LANG_ARABIC}  "افتح After Effects دلوقتي"
+LangString UnTitle ${LANG_ENGLISH} "Remove MOE Motion AI"
+LangString UnTitle ${LANG_ARABIC}  "إزالة MOE Motion AI"
+LangString UnSub ${LANG_ENGLISH} "The panel is removed; you choose whether your data goes too."
+LangString UnSub ${LANG_ARABIC}  "اللوحة هتتشال، وبياناتك ماتتمسحش غير لو اخترت ده"
+LangString CloseAE ${LANG_ENGLISH} "After Effects is open. Close it, then press Retry — the panel's files are replaced while it is closed."
+LangString CloseAE ${LANG_ARABIC}  "After Effects مفتوح. اقفله ودوس إعادة المحاولة — ملفات اللوحة بتتبدل وهو مقفول."
 LangString Downgrade ${LANG_ENGLISH} "A newer version ($R2) is installed. Replace it with ${VERSION}?"
-LangString Downgrade ${LANG_ARABIC}  "يوجد إصدار أحدث ($R2) مثبت. هل تريد استبداله بالإصدار ${VERSION}؟"
+LangString Downgrade ${LANG_ARABIC}  "فيه إصدار أحدث ($R2) متثبت. تحب تبدله بالإصدار ${VERSION}؟"
 LangString AskData ${LANG_ENGLISH} "Also delete your MOE settings, presets, clients and saved API key?$\r$\n($APPDATA\MOE Motion AI)"
-LangString AskData ${LANG_ARABIC}  "هل تريد أيضاً حذف إعدادات MOE والبريستس والعملاء ومفتاح الـ API المحفوظ؟$\r$\n($APPDATA\MOE Motion AI)"
+LangString AskData ${LANG_ARABIC}  "تحب تمسح كمان إعدادات MOE والبريستس والعملاء ومفتاح الـ API المحفوظ؟$\r$\n($APPDATA\MOE Motion AI)"
 
-Var Legacy
 
 ; ---------------------------------------------------------------- helpers
 ; $0 = "1" when AfterFX.exe is running, else "0"
@@ -187,6 +262,54 @@ Function RemoveLegacy
   ${EndIf}
 FunctionEnd
 
+
+; $AEExe = AfterFX.exe of After Effects 2025 (or 2026), "" when not found.
+; Registry first (HKLM ...\After Effects\<ver> InstallPath — read-only, no admin needed), then the default folders.
+Function FindAE
+  StrCpy $AEExe ""
+  SetRegView 64
+  ${ForEach} $R5 26 25 - 1
+    ReadRegStr $R6 HKLM "SOFTWARE\Adobe\After Effects\$R5.0" "InstallPath"
+    ${If} $R6 != ""
+    ${AndIf} ${FileExists} "$R6\AfterFX.exe"
+      StrCpy $AEExe "$R6\AfterFX.exe"
+      ${Break}
+    ${EndIf}
+  ${Next}
+  SetRegView lastused
+  ${If} $AEExe == ""
+    ${If} ${FileExists} "$PROGRAMFILES64\Adobe\Adobe After Effects 2025\Support Files\AfterFX.exe"
+      StrCpy $AEExe "$PROGRAMFILES64\Adobe\Adobe After Effects 2025\Support Files\AfterFX.exe"
+    ${ElseIf} ${FileExists} "$PROGRAMFILES64\Adobe\Adobe After Effects 2026\Support Files\AfterFX.exe"
+      StrCpy $AEExe "$PROGRAMFILES64\Adobe\Adobe After Effects 2026\Support Files\AfterFX.exe"
+    ${EndIf}
+  ${EndIf}
+FunctionEnd
+
+Function LaunchAE
+  ${If} $AEExe != ""
+    Exec '"$AEExe"'
+  ${EndIf}
+FunctionEnd
+
+; Welcome: the main button says what it will do (Install / Update)
+Function WelcomeShow
+  GetDlgItem $0 $HWNDPARENT 1
+  ${If} $R2 == ""
+  ${OrIf} $R2 == "${VERSION}"
+    SendMessage $0 ${WM_SETTEXT} 0 "STR:$(BtnInstall)"
+  ${Else}
+    SendMessage $0 ${WM_SETTEXT} 0 "STR:$(BtnUpdate)"
+  ${EndIf}
+FunctionEnd
+
+; Finish: the "Open After Effects" box only when After Effects was found
+Function FinishShow
+  ${If} $AEExe == ""
+    ShowWindow $mui.FinishPage.Run ${SW_HIDE}
+  ${EndIf}
+FunctionEnd
+
 ; ---------------------------------------------------------------- install
 Function .onInit
   ${GetParameters} $R0
@@ -197,7 +320,21 @@ Function .onInit
     Call WaitForAE
   ${EndIf}
 
+  Call FindAE
+  ${If} $AEExe != ""
+    StrCpy $AELine "$(AEFound)"
+  ${Else}
+    StrCpy $AELine "$(AEMissing)"
+  ${EndIf}
+
   ReadRegStr $R2 HKCU "${UNINST}" "DisplayVersion"
+  ${If} $R2 == ""
+    StrCpy $Status "$(StNew)"
+  ${ElseIf} $R2 == "${VERSION}"
+    StrCpy $Status "$(StSame)"
+  ${Else}
+    StrCpy $Status "$(StUpdate)"
+  ${EndIf}
   ${If} $R2 != ""
     ${VersionCompare} "${VERSION}" "$R2" $R3
     ${If} $R3 == 2
@@ -219,12 +356,37 @@ FunctionEnd
 Section "MOE Motion AI" SecMain
   SectionIn RO
   SetShellVarContext current
+  DetailPrint "$(StepClean)"
   Call RemoveLegacy
 
   ; Clean replace: the previous version's files go, the new ones come in.
+  DetailPrint "$(StepCopy)"
+  SetDetailsPrint listonly
   RMDir /r "$INSTDIR"
   SetOutPath "$INSTDIR"
   File /r "${SRC}\*.*"
+  SetDetailsPrint both
+
+  ; Read back what was written: the manifest must be there and carry this version.
+  DetailPrint "$(StepVerify)"
+  StrCpy $5 ""
+  ClearErrors
+  FileOpen $4 "$INSTDIR\CSXS\manifest.xml" r
+  ${IfNot} ${Errors}
+    verify_line:
+      FileRead $4 $6
+      ${IfNot} ${Errors}
+        ${StrStr} $7 $6 'ExtensionBundleVersion="${VERSION}"'
+        StrCmp $7 "" verify_line
+        StrCpy $5 "1"
+      ${EndIf}
+    FileClose $4
+  ${EndIf}
+  ${If} $5 != "1"
+  ${OrIfNot} ${FileExists} "$INSTDIR\index.html"
+    MessageBox MB_OK|MB_ICONSTOP "$(VerifyFail)" /SD IDOK
+    Abort
+  ${EndIf}
 
   ; Install record read by the panel (Settings › Updates).
   ${GetTime} "" "L" $0 $1 $2 $3 $4 $5 $6
@@ -232,6 +394,7 @@ Section "MOE Motion AI" SecMain
   FileWrite $9 '{"installer":"nsis","version":"${VERSION}","installedAt":"$2-$1-$0T$4:$5:$6"}'
   FileClose $9
 
+  DetailPrint "$(StepRegister)"
   ; Unsigned CEP extensions load only with PlayerDebugMode for CSXS 12 (After Effects 2025).
   WriteRegStr HKCU "${CSXS}" "PlayerDebugMode" "1"
 

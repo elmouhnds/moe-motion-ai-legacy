@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.65.1] — 2026-11-06 — A redesigned installer
+### Changed
+- **The installer looks like the panel**: one dark surface (welcome, headers, finish), new artwork in the panel's own font (`tools/build-installer-art.js`), a header image on the install pages.
+- **It says what it will do before you click**: *New install*, *Update 0.65.0 → 0.65.1* or *Reinstall*; whether After Effects was found; the release headline; that your data stays. The main button reads **Install** or **Update**.
+- **Faster to read**: one line per step (Removing old copies · Copying the panel · Checking the installed files · Registering with After Effects); the file list only on *Show details*.
+- **Checked, not assumed**: after copying, the installer reads the installed manifest back and requires this version and the panel's page — otherwise it stops with a clear message.
+- **Open After Effects now** on the last page (shown only when After Effects 2025 / 2026 was found — registry `InstallPath`, then the default folder).
+- Uninstall pages have their own title and say your data is only removed if you choose.
+### Tests
+- Built and run under Wine (pages screenshotted, silent update kept); the version check caught a mismatched test build. **Not run on real Windows.**
+
 ## [0.65.0] — 2026-11-06 — Workspaces: tabs in the order of the work
 ### Changed
 - **MOE tabs follow the work**: Animate · Timing · Layer · Design · Look · Deliver (were Keys · Animate · Layer · Design · Effect · Comp), each with an icon; ids unchanged, so saved order, Recent and pins keep working.

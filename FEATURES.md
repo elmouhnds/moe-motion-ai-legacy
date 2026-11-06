@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Installer** (v0.65.1): a dark installer that matches the panel, says whether it installs or updates (from which version), finds After Effects, checks the installed files and can open After Effects at the end.
+
 **Workspaces** (v0.65.0): MOE tabs in the order of the work (Animate · Timing · Layer · Design · Look · Deliver) with icons; the full graph in Timing, a one-row Motion Bar elsewhere; the new tools placed where their job is (docs/features/WORKSPACES.md).
 
 **Wave 4** (v0.64.0): Decode / Scramble and Explode / Assemble text, and Depth Reveal from the depth of the scene (docs/features/WAVE4.md).
