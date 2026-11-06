@@ -37,6 +37,12 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## Next (from docs/research/REFERENCE_PLUGINS.md — the owner's two references)
+1. Apple Motion: Apple curves set, Blur on entrances, Hero Reveal / Word Stagger + blur / Burst / Iris / Elastic text, Blur In-Out and Whip Pan.
+2. Styles + Shakes: Soft Shadow, Glow, Hairline, Inner Highlight, Light Sweep, Chrome, Liquid Color; Bump, Zoom Punch, Whip, Slam, Jitter as real keys.
+3. SaaS Interaction: Click on Layer, UI Reveal by screen position, Carousel 3D, product backdrops, Wipe Reveal.
+4. Later: Depth Reveal, Scramble / Exploder text, Figma import.
+
 ## M1.62 — Product UI ✅ (v0.57.0)
 - Eight UI pieces on the Templates engine (`design/uiKit.js`); texts above shapes fixed for every template.
 - Next ideas: soft shadows, a cursor that clicks the button, device frames, more pieces (pricing, tab bar, slider, toast).
