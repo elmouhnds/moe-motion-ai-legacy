@@ -444,7 +444,8 @@ class MockNode {
 const TEXT_PROPS = {
   'ADBE Text Position 3D': ['Position', 'ThreeD_SPATIAL', [0, 0, 0]], 'ADBE Text Scale 3D': ['Scale', 'ThreeD', [100, 100, 100]],
   'ADBE Text Rotation': ['Rotation', 'OneD', 0], 'ADBE Text Opacity': ['Opacity', 'OneD', 100], 'ADBE Text Blur': ['Blur', 'TwoD', [0, 0]],
-  'ADBE Text Tracking Amount': ['Tracking Amount', 'OneD', 0], 'ADBE Text Skew': ['Skew', 'OneD', 0], 'ADBE Text Fill Color': ['Fill Color', 'COLOR', [1, 0, 0, 1]]
+  'ADBE Text Tracking Amount': ['Tracking Amount', 'OneD', 0], 'ADBE Text Skew': ['Skew', 'OneD', 0], 'ADBE Text Fill Color': ['Fill Color', 'COLOR', [1, 0, 0, 1]],
+  'ADBE Text Character Offset': ['Character Offset', 'OneD', 0]
 };
 const ADV_PROPS = [['Units', 'ADBE Text Range Units', 1], ['Based On', 'ADBE Text Range Type2', 1], ['Mode', 'ADBE Text Selector Mode', 1], ['Amount', 'ADBE Text Selector Max Amount', 100],
   ['Shape', 'ADBE Text Range Shape', 1], ['Smoothness', 'ADBE Text Selector Smoothness', 100], ['Ease High', 'ADBE Text Levels Max Ease', 0], ['Ease Low', 'ADBE Text Levels Min Ease', 0], ['Randomize Order', 'ADBE Text Randomize Order', 0]];
@@ -459,10 +460,17 @@ function makeSelector(parent) {
   ADV_PROPS.forEach(([n, mn, v]) => adv._prop(n, mn, 'OneD', v));
   return sel;
 }
+function makeWiggly(parent) {
+  const w = new MockNode('Wiggly Selector 1', 'ADBE Text Wiggly Selector', parent);
+  [['Mode', 'ADBE Text Wiggly Mode', 3], ['Max Amount', 'ADBE Text Wiggly Max Amount', 100], ['Min Amount', 'ADBE Text Wiggly Min Amount', -100], ['Based On', 'ADBE Text Range Type2', 1],
+    ['Wiggles/Second', 'ADBE Text Temporal Freq', 2], ['Correlation', 'ADBE Text Character Correlation', 50], ['Temporal Phase', 'ADBE Text Temporal Phase', 0], ['Spatial Phase', 'ADBE Text Spatial Phase', 0],
+    ['Lock Dimensions', 'ADBE Text Wiggly Lock Dim', 0], ['Random Seed', 'ADBE Text Wiggly Random Seed', 0]].forEach(([n, mn, v]) => w._prop(n, mn, 'OneD', v));
+  return w;
+}
 function makeAnimator(parent) {
   const a = new MockNode('Animator ' + (parent._children.length + 1), 'ADBE Text Animator', parent);
   const sels = new MockNode('Selectors', 'ADBE Text Selectors', a, PropertyType.INDEXED_GROUP);
-  sels._factory = { 'ADBE Text Selector': makeSelector };
+  sels._factory = { 'ADBE Text Selector': makeSelector, 'ADBE Text Wiggly Selector': makeWiggly };
   const props = new MockNode('Properties', 'ADBE Text Animator Properties', a, PropertyType.INDEXED_GROUP);
   props._factory = {};
   Object.entries(TEXT_PROPS).forEach(([mn, [n, vt, v]]) => { props._factory[mn] = (g) => new MockProperty({ name: n, matchName: mn, valueType: vt, value: v }, g, g._children.length + 1); });

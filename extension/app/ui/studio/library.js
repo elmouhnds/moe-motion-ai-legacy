@@ -115,7 +115,7 @@ function brandedArgs(app, args) {
   try { return require('../../../features/design/templateTool').withBrand(Object.assign({}, args || {}), app.services); } catch (e) { return args; }
 }
 /** v0.47: the tools whose previews play their real keys (features/quick/animatePlan.js). */
-const PLANNED = ['quick.animate', 'quick.trimPaths', 'design.template', 'interact.click', 'quick.wipe', 'layout.carousel'];
+const PLANNED = ['quick.animate', 'quick.trimPaths', 'design.template', 'interact.click', 'quick.wipe', 'layout.carousel', 'quick.depth'];
 function thumbEl(tile, cls, liveArgs) {
   if (tile.thumb.k === 'icon') return h('div', { class: `st-thumb icon ${cls || ''}` }, icon(tile.thumb.icon));
   // the preview gets the tool's own args — the tile's preset, or the Inspector's current settings (live)

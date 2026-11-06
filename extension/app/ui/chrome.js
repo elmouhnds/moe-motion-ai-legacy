@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['type', 'Decode, Explode, and Depth', 'Text has Decode and Scramble (the letters settle into the word) and Explode / Assemble (each letter flies its own way). Motion has Depth In / Out: your layers come forward from deep in the scene, sharpening as they land — no plugin, nothing to download.'],
   ['refresh', 'Carousel, Wipe, and a Stop button', 'Layout › Arrange has Carousel 3D: your cards on a ring that turns one at a time, the back ones fading. Motion has Wipe In / Out with a soft edge from any side. And any long run now shows what it is doing — with Stop, which leaves what was made as one Ctrl+Z.'],
   ['link', 'Rename anything — nothing breaks', 'Rename a Grid null, an Effector, a Glass or a layer you follow: MOE sees it and relinks its expressions to the new name at once (one Ctrl+Z if you want it back). It finds the layer by its permanent After Effects id, never by guessing.'],
   ['bolt', 'One Ctrl+Z, every time', 'Every MOE run is now ONE step in After Effects\' undo — however many layers, keys and effects it made. Keys always land on a frame, locked layers are never touched (the panel says which it skipped), and big selections are fast: 60 layers cost the same few calls as 3.'],

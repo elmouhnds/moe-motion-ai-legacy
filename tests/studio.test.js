@@ -143,7 +143,7 @@ test('Animate Text builds the animator at CTI; Out ends at layer out point; re-a
   assert.equal(adv.property('ADBE Text Levels Max Ease').value, 25);
   const off = sel.property('ADBE Text Percent Offset');
   assert.equal(off.numKeys, 2);
-  assert.ok(near(off.keyTime(1), 1) && near(off.keyTime(2), 1 + 1.733));
+  assert.ok(near(off.keyTime(1), 1) && near(off.keyTime(2), require('../extension/core/framegrid').snap(1 + 1.733, 1 / 25)) /* v0.64: on the frame grid */);
   assert.equal(off.keyOutTemporalEase(2)[0].influence.toFixed(2), '16.67');
   const props = a.property('ADBE Text Animator Properties');
   assert.deepEqual(A(props.property('ADBE Text Position 3D').value), [0, -100, 0]);

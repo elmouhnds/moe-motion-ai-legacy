@@ -49,7 +49,7 @@ Also in AppleFX: **seven colorways and Light / Dark** (MOE has 8 accents × 3 th
    - a Styles group with Soft Shadow, Glow, Hairline, Inner Highlight, Light Sweep, Chrome and Liquid Color (native effects, named, restorable);
    - Shakes: Bump, Zoom Punch, Whip, Slam and Jitter, as real keys with Intensity / Rotation / Frequency / Settle.
 3. **SaaS Interaction**: Click on Layer, UI Reveal (by screen position), Carousel 3D, product backdrops, Wipe Reveal. **Done:** Click on Layer, UI Reveal, product backdrops (v0.60), Wipe Reveal and Carousel 3D (v0.63).
-4. **Later**: Depth Reveal, Scramble / Exploder text, Figma import.
+4. **Later**: Depth Reveal, Scramble / Exploder text, Figma import. **Done in v0.64:** Depth Reveal (native, nothing downloaded), Decode / Scramble, Explode / Assemble (WAVE4.md). Figma import waits for the owner's decision on a Figma token and network access.
 
 **What MOE keeps over both:**
 - Arabic-safe text;

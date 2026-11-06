@@ -59,7 +59,7 @@ const animate = {
     });
     const isFfx = preset.source === 'ffx';
     return {
-      ok: true, preset, isFfx, duration, layers,
+      ok: true, preset, isFfx, duration, layers, fd,
       spec: isFfx ? null : buildSpec(preset, { duration, distance: args.distance, basedOn, direction: args.direction }),
       preview: {
         summary: `${preset.name} on ${layers.length} text layer${layers.length > 1 ? 's' : ''} · ${duration.toFixed(2)}s`,
@@ -83,9 +83,12 @@ const animate = {
     const checks = result.layers.map((L) => {
       if (L.skipped) return { ok: false, label: L.name, detail: L.skipped };
       const want = prepared.layers.find((x) => x.layerId === L.layerId);
-      const okTime = Math.abs(L.firstKey - want.startTime) < 1e-4 && Math.abs(L.lastKey - (want.startTime + prepared.duration)) < 1e-3;
-      const ok = okTime && L.keys === 2 && L.props === prepared.spec.props.length;
-      return { ok, label: L.name, detail: ok ? `${L.animator}: ${L.props} propert${L.props === 1 ? 'y' : 'ies'}, keys ${L.firstKey.toFixed(2)}–${L.lastKey.toFixed(2)}s${L.replaced ? ' · replaced previous' : ''}` : 'animator read-back mismatch' };
+      // v0.64: keys sit on the comp's frame grid — within half a frame of the plan
+      const half = (prepared.fd || 1 / 24) / 2 + 1e-6;
+      const okTime = Math.abs(L.firstKey - want.startTime) <= half && Math.abs(L.lastKey - (want.startTime + prepared.duration)) <= half;
+      const wig = L.wiggly && L.wiggly.missing.length ? `Wiggly Selector: not found by name — ${L.wiggly.missing.join(', ')}` : '';
+      const ok = okTime && L.keys === 2 && L.props === prepared.spec.props.length && !wig;
+      return { ok, label: L.name, detail: ok ? `${L.animator}: ${L.props} propert${L.props === 1 ? 'y' : 'ies'}${L.wiggly ? ` + Wiggly Selector (${L.wiggly.set.length} settings by name)` : ''}, keys ${L.firstKey.toFixed(2)}–${L.lastKey.toFixed(2)}s${L.replaced ? ' · replaced previous' : ''}` : (wig || 'animator read-back mismatch') };
     });
     return { ok: checks.length > 0 && checks.every((c) => c.ok), checks };
   },

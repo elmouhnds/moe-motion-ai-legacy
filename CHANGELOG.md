@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.64.0] — 2026-11-06 — Wave 4: Decode, Exploder, Depth Reveal
+### Added
+- **Decode / Scramble** text presets: Character Offset settles the letters into the word (left to right or random); not offered for Arabic.
+- **Explode / Assemble** text presets: a frozen Wiggly Selector (Intersect) gives each letter its own direction; every setting found by its English name, verified; Self-Test proves the names in After Effects.
+- **Depth Reveal** (Motion › Depth): layers come forward from Z + Depth (native 3D, nothing downloaded), with fade and MOE Blur, in screen order; Restore makes them 2D again.
+### Fixed
+- Text animator keys now land on the comp's frame grid (they were written outside `keys.write`).
+### Tests
+- `tests/wave4.test.js` (4). **Mock / preview — the Self-Test in After Effects is the proof.**
+
 ## [0.63.0] — 2026-11-06 — Progress + Stop, Wipe Reveal, Carousel 3D
 ### Added
 - **Progress + Stop** for every tool (the study's defect S4): each After Effects call is a named step ("Measuring", "Writing keys"…); runs over half a second show a strip with the step, the time and **Stop** — honoured before the next step, what was made stays one Ctrl+Z and the panel says so.

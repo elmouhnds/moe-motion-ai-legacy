@@ -113,6 +113,28 @@
         }
     }
 
+    /* v0.64 (WAVE4.md): a Wiggly Selector's settings, each found by its English display name (never a guessed index);
+       returns which were set and which were not found, so the panel can say so. */
+    function setWiggly(w, o) {
+        var names = [['mode', 'Mode'], ['maxAmount', 'Max Amount'], ['minAmount', 'Min Amount'], ['wigglesPerSecond', 'Wiggles/Second'],
+            ['correlation', 'Correlation'], ['lockDimensions', 'Lock Dimensions'], ['seed', 'Random Seed']], set = [], missing = [], i;
+        function find(node, nm) {
+            var j, c, r;
+            for (j = 1; j <= node.numProperties; j++) {
+                c = node.property(j);
+                if (c.name === nm && c.propertyType === PropertyType.PROPERTY) { return c; }
+                if (c.propertyType !== PropertyType.PROPERTY) { r = find(c, nm); if (r) { return r; } }
+            }
+            return null;
+        }
+        for (i = 0; i < names.length; i++) {
+            if (o[names[i][0]] === undefined) { continue; }
+            var p = find(w, names[i][1]);
+            if (p) { p.setValue(o[names[i][0]]); set.push(names[i][1]); } else { missing.push(names[i][1]); }
+        }
+        return { set: set, missing: missing };
+    }
+
     function findAnimator(animators, name) {
         var i;
         for (i = 1; i <= animators.numProperties; i++) { if (animators.property(i).name === name) { return animators.property(i); } }
@@ -157,16 +179,24 @@
                     if (spec.selector.start !== undefined) { sel.property('ADBE Text Percent Start').setValue(spec.selector.start); }
                     if (spec.selector.end !== undefined) { sel.property('ADBE Text Percent End').setValue(spec.selector.end); }
                     setAdvanced(sel, spec.selector.advanced || {});
+                    var wig = null;
+                    if (spec.wiggly) {
+                        anim.property('ADBE Text Selectors').addProperty('ADBE Text Wiggly Selector');
+                        anim = layer.property('ADBE Text Properties').property('ADBE Text Animators').property(idx);
+                        sel = anim.property('ADBE Text Selectors').property(1);
+                        wig = setWiggly(anim.property('ADBE Text Selectors').property(2), spec.wiggly);
+                    }
                     keyProp = sel.property(spec.keys.matchName);
                     for (k = 0; k < spec.keys.list.length; k++) {
-                        keyProp.setValueAtTime(startTime + spec.keys.list[k].t, spec.keys.list[k].v);
+                        /* v0.64: on the comp's frame grid, like every MOE key (ENGINE2.md) */
+                        keyProp.setValueAtTime(Math.round((startTime + spec.keys.list[k].t) / comp.frameDuration) * comp.frameDuration, spec.keys.list[k].v);
                     }
                     for (k = 1; k <= keyProp.numKeys; k++) {
                         ke = spec.keys.list[k - 1];
                         keyProp.setInterpolationTypeAtKey(k, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
                         keyProp.setTemporalEaseAtKey(k, [new KeyframeEase(0, ke.inInfl || 33.33)], [new KeyframeEase(0, ke.outInfl || 33.33)]);
                     }
-                    out.push({ layerId: layer.id, name: layer.name, animator: args.name, index: idx, replaced: replaced, keys: keyProp.numKeys, firstKey: keyProp.keyTime(1), lastKey: keyProp.keyTime(keyProp.numKeys), props: props.numProperties });
+                    out.push({ layerId: layer.id, name: layer.name, animator: args.name, index: idx, replaced: replaced, keys: keyProp.numKeys, firstKey: keyProp.keyTime(1), lastKey: keyProp.keyTime(keyProp.numKeys), props: props.numProperties, wiggly: wig });
                 }
                 return { layers: out };
             });

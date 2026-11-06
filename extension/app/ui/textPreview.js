@@ -43,20 +43,30 @@ function draw(entry, now) {
     x += rtl ? -w : w;
     if (u.space) return;
     const a = u.amount;
-    const pos = p.position || [0, 0, 0];
+    // v0.64 (WAVE4.md): Wiggly Selector (Intersect, frozen) — each letter its own random −1…1 per dimension, like AE
+    const wig = preset.wiggly ? (k) => { const v = Math.sin((i + 1) * 127.1 + k * 311.7) * 43758.5453; return (v - Math.floor(v)) * 2 - 1; } : () => 1;
+    const pos0 = p.position || [0, 0, 0], pos = [pos0[0] * wig(1), pos0[1] * wig(2), 0];
     const sc = p.scale ? [lerp(100, p.scale[0], a) / 100, lerp(100, p.scale[1], a) / 100] : [1, 1];
     ctx.save();
     ctx.globalAlpha = Math.max(0, Math.min(1, lerp(1, (p.opacity === undefined ? 100 : p.opacity) / 100, a)));
-    const blur = p.blur ? Math.max(p.blur[0], p.blur[1]) * a * scaleK : 0;
+    const blur = p.blur ? Math.abs(Math.max(p.blur[0], p.blur[1]) * a * wig(4)) * scaleK : 0;
     if (blur > 0.2) ctx.filter = `blur(${blur.toFixed(1)}px)`;
     ctx.translate(cx + pos[0] * a * scaleK, H / 2 + pos[1] * a * scaleK);
-    if (p.rotation) ctx.rotate((p.rotation * a * Math.PI) / 180);
+    if (p.rotation) ctx.rotate((p.rotation * a * wig(3) * Math.PI) / 180);
     if (p.skew) ctx.transform(1, 0, -Math.tan((p.skew * a * Math.PI) / 180), 1, 0, 0);
     ctx.scale(Math.max(0.001, sc[0]), Math.max(0.001, sc[1]));
     ctx.fillStyle = color;
     ctx.textAlign = 'center';
-    ctx.fillText(u.text, 0, 0);
+    ctx.fillText(p.characterOffset && a > 0.01 ? offsetChars(u.text, Math.round(p.characterOffset * a)) : u.text, 0, 0);
     ctx.restore();
+  });
+}
+
+/** v0.64: After Effects' Character Offset (Preserve Case & Digits): a letter moves n places along its own alphabet. */
+function offsetChars(t, n) {
+  return t.replace(/[A-Za-z0-9]/g, (ch) => {
+    const c = ch.charCodeAt(0), [b, len] = c >= 97 ? [97, 26] : c >= 65 ? [65, 26] : [48, 10];
+    return String.fromCharCode(b + ((((c - b + n) % len) + len) % len));
   });
 }
 

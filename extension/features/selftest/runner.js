@@ -49,7 +49,9 @@ const CHECKS = [
   // v0.62 (LINKS.md): the study's defect S1 — rename the controller null, nothing may break
   { id: 'relink', label: 'Rename a Grid null: Relink keeps every item where it was', run: checkRelink },
   // v0.63 (WIPE_CAROUSEL.md): the wipe's direction measured from pixels, not assumed from the manual
-  { id: 'wipe', label: 'Wipe Reveal "from the left" reveals the left side first (pixels)', run: checkWipe }
+  { id: 'wipe', label: 'Wipe Reveal "from the left" reveals the left side first (pixels)', run: checkWipe },
+  // v0.64 (WAVE4.md): Exploder's Wiggly Selector settings are found by their English names in this After Effects
+  { id: 'exploder', label: 'Explode: the Wiggly Selector and its 7 settings, found by name', run: checkExploder }
 ];
 
 /* ---------- helpers ---------- */
@@ -428,6 +430,20 @@ async function checkWipe(T) {
   if (spread < 0.05) return { status: 'info', detail: `half-way through, the four columns read the same alpha (${a.map(r2).join(' / ')}) — nothing to compare here · undo ${u.back ? 'ok' : 'left layers'}` };
   const ok = a[0] > a[3] && u.back;
   return { status: ok ? 'pass' : 'fail', detail: `half-way through, alpha left → right ${a.map(r2).join(' / ')}${ok ? ' — revealed from the left' : ' — the wipe runs the other way'} · undo ${u.back ? 'ok' : 'left layers'}`, numbers: { alpha: a } };
+}
+
+async function checkExploder(T) {
+  const before = (await T.layerIds()).length;
+  const tl = await T.host.call('selftest.addText', { compId: T.compId, text: 'Explode', name: 'ST Explode', fontSize: 90, justification: 'center', position: [T.comp.width / 2, T.comp.height / 2] });
+  await T.select([tl.layerId]);
+  const tool = T.services.registry.get('text.animate');
+  const args = Object.assign(Object.fromEntries(Object.entries(tool.params || {}).filter(([, p]) => p.default !== undefined).map(([k, p]) => [k, p.default])), { presetId: 'explode', placement: 'cti' });
+  const r = await T.run('text.animate', args);
+  const w = r.result.layers[0].wiggly || { set: [], missing: ['(no Wiggly Selector)'] };
+  const u = await T.undo(r, before + 1);
+  await T.host.call('layers.remove', { compId: T.compId, layerIds: [tl.layerId], onlyNamed: 'ST ' });
+  const ok = !w.missing.length && w.set.length === 7 && u.back;
+  return { status: ok ? 'pass' : 'fail', detail: `Wiggly Selector: ${w.set.length} of 7 settings set by name${w.missing.length ? ` — not found: ${w.missing.join(', ')}` : ''} · undo ${u.back ? 'ok' : 'left layers'}`, numbers: { set: w.set.length } };
 }
 
 async function checkSpeed(T) {

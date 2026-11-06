@@ -37,8 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.69 — Wave 4: Decode, Exploder, Depth Reveal ✅ (v0.64.0)
+- Every wave of the reference plan is built except Figma import (needs a Figma token + network: the owner's decision).
+
 ## M1.68 — Progress + Stop, Wipe Reveal, Carousel 3D ✅ (v0.63.0)
-- Every study KPI met (on the mock); wave 3 of the reference plan complete. Next (wave 4): Depth Reveal, Scramble / Exploder text, Figma import.
+- Every study KPI met (on the mock); wave 3 of the reference plan complete. 
 
 ## M1.67 — Rename-safe links ✅ (v0.62.0)
 - Permanent layer ids in every MOE expression link; automatic Relink after a rename. Next: Progress + Stop for long runs, Grid clones in one call, Carousel 3D.

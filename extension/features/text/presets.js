@@ -52,14 +52,23 @@ const PRESETS = [
   P({ id: 'backspace', name: 'Backspace', group: 'Type', kind: 'out', basedOn: 1, shape: 1, smoothness: 0, easeHigh: 0, easeLow: 0, duration: 1.0, ease: { first: [0.1, 0.1], last: [0.1, 0.1] }, props: { opacity: 0 } }),
   P({ id: 'hero-out', name: 'Hero Out', group: 'Hero', kind: 'out', basedOn: 4, duration: 0.9, props: { scale: [92, 92, 100], opacity: 0, blur: [24, 24] } }),
   P({ id: 'stagger-out', name: 'Stagger Out', group: 'Hero', kind: 'out', basedOn: 3, duration: 0.9, props: { position: [0, -30, 0], opacity: 0, blur: [12, 12] } }),
-  P({ id: 'tracking-out', name: 'Tracking Out', group: 'Type', kind: 'out', basedOn: 4, duration: 1.0, props: { tracking: 80, opacity: 0, blur: [12, 0] } })
+  P({ id: 'tracking-out', name: 'Tracking Out', group: 'Type', kind: 'out', basedOn: 4, duration: 1.0, props: { tracking: 80, opacity: 0, blur: [12, 0] } }),
+  // ---- v0.64 (WAVE4.md): Decode / Scramble — Character Offset: the letters show as other letters and settle into the
+  //      real word (left to right, or in random order). By character, so not for Arabic (shaping) — flagged below.
+  P({ id: 'decode', name: 'Decode', group: 'Scramble', basedOn: 1, shape: 1, smoothness: 0, easeHigh: 0, easeLow: 0, duration: 1.4, ease: { first: [0.1, 0.1], last: [0.1, 0.1] }, props: { characterOffset: 30 } }),
+  P({ id: 'scramble', name: 'Scramble', group: 'Scramble', basedOn: 2, shape: 1, smoothness: 0, randomize: 1, duration: 1.6, props: { characterOffset: 22, opacity: 35 } }),
+  // ---- v0.64: Exploder — a Wiggly Selector (Intersect, frozen: 0 wiggles/s) gives every letter its own random amount
+  //      between −100 % and 100 %, so one Position / Rotation scatters the letters in different directions
+  P({ id: 'assemble', name: 'Assemble', group: 'Exploder', basedOn: 2, duration: 1.3, easeHigh: 60, wiggly: true, props: { position: [700, 480, 0], rotation: 220, blur: [18, 18] } }),
+  P({ id: 'explode', name: 'Explode', group: 'Exploder', kind: 'out', basedOn: 2, duration: 1.1, wiggly: true, props: { position: [900, 640, 0], rotation: 260, blur: [24, 24] } })
 ];
 
 PRESETS.forEach((p) => { p.arabicSafe = p.basedOn >= 3; });
 
 const PROP_MATCH = {
   position: 'ADBE Text Position 3D', scale: 'ADBE Text Scale 3D', rotation: 'ADBE Text Rotation',
-  opacity: 'ADBE Text Opacity', blur: 'ADBE Text Blur', tracking: 'ADBE Text Tracking Amount', skew: 'ADBE Text Skew'
+  opacity: 'ADBE Text Opacity', blur: 'ADBE Text Blur', tracking: 'ADBE Text Tracking Amount', skew: 'ADBE Text Skew',
+  characterOffset: 'ADBE Text Character Offset' // v0.64 Decode / Scramble
 };
 
 /** Direction override for slide presets: rotates the position vector. */
@@ -90,6 +99,8 @@ function buildSpec(preset, opts = {}) {
       advanced: { units: 1, basedOn, mode: 1, amount: 100, shape: preset.shape, smoothness: preset.smoothness, easeHigh: preset.easeHigh, easeLow: preset.easeLow, randomize: preset.randomize }
     },
     props,
+    // v0.64: a frozen Wiggly Selector (per-letter random amounts) — its settings are found by their English names
+    wiggly: preset.wiggly ? { mode: 3, minAmount: -100, maxAmount: 100, wigglesPerSecond: 0, correlation: 0, lockDimensions: 0, seed: 7 } : null,
     keys: {
       matchName: 'ADBE Text Percent Offset',
       list: [

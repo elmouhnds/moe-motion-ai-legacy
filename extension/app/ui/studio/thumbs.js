@@ -485,6 +485,25 @@ const DRAW = {
     c.globalAlpha = 1;
   },
   /**
+   * v0.64 (WAVE4.md): Depth Reveal — the tool's Z keys through a simple perspective (f / (f + z)), with the plan's fade
+   * and blur, three cards one Stagger apart.
+   */
+  depth(c, W, H, th, t) {
+    const DP = require('../../../features/quick/depth');
+    const a = Object.assign({ dir: th.dir || 'in', depth: th.far ? 2400 : 900, duration: 0.9, fade: true, blur: 14, stagger: 0.06, ease: 'smooth' }, th.args || {});
+    const z = DP.plan(a), lag = a.stagger || 0, lt0 = planOf(th, t).at(PLAN.endOf(z) + lag * 2);
+    c.fillStyle = '#2f3740'; c.fillRect(0, 0, W, H);
+    const f = 1100;
+    [0, 1, 2].forEach((i) => {
+      const lt = lt0 - i * lag, zz = PLAN.valueAt(z, lt), s = f / (f + Math.max(-f * 0.9, zz));
+      const cx = W * (0.25 + i * 0.25), cy = H * 0.5, w = W * 0.2 * s, h = H * 0.42 * s;
+      c.save();
+      c.globalAlpha = fadeAt(Object.assign({ kind: 'move' }, a), lt); c.filter = blurAt(a, lt, W);
+      c.fillStyle = i === 1 ? ACC : 'rgba(230,230,230,0.32)'; rrect(c, cx - w / 2, cy - h / 2, w, h, 4); c.fill();
+      c.restore();
+    });
+  },
+  /**
    * v0.63 (WIPE_CAROUSEL.md): Carousel 3D — the tool's own ring, steps and depth fade, projected with a simple
    * perspective (nearer = bigger, lower, drawn last).
    */

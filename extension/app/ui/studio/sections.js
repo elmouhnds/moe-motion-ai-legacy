@@ -38,6 +38,10 @@ const ANIMATE = [
   T('cascadeFade', 'Cascade Fade', 'quick.animate', { kind: 'fade', dir: 'in', stagger: 0.06, duration: 0.5 }, { k: 'fade', dir: 'in' }, ['In', 'Fade'], 'IN'),
   // v0.48 (COMBINED_MOVES.md): two properties on one timing — the entrances and exits designers build by hand
   T('riseFade', 'Rise + Fade', 'quick.animate', { kind: 'moveBT', dir: 'in', distance: 60, fade: true, ease: 'smooth', duration: 0.7 }, { k: 'move', dx: 0, dy: 0.3, dir: 'in' }, ['In', 'Slide', 'Fade'], 'IN'),
+  // v0.64 (WAVE4.md): from the depth of the scene — native 3D along Z, fade + blur, in screen order (no plugin, no download)
+  Object.assign(T('depthIn', 'Depth In', 'quick.depth', { dir: 'in', depth: 900, duration: 0.9, fade: true, blur: 14, stagger: 0.06, order: 'screen' }, { k: 'depth', dir: 'in' }, ['In', 'Depth'], 'NEW'), { hint: 'Comes forward from the depth of the scene, sharpening as it lands' }),
+  Object.assign(T('depthInFar', 'Depth In · Far', 'quick.depth', { dir: 'in', depth: 2400, duration: 1.2, fade: true, blur: 24, stagger: 0.08, order: 'screen', ease: 'expo' }, { k: 'depth', dir: 'in', far: true }, ['In', 'Depth'], 'NEW'), { hint: 'From far away, fast then soft (Expo)' }),
+  Object.assign(T('depthOut', 'Depth Out', 'quick.depth', { dir: 'out', depth: 900, duration: 0.7, fade: true, blur: 14, stagger: 0.04, order: 'screen' }, { k: 'depth', dir: 'out' }, ['Out', 'Depth'], 'NEW'), { hint: 'Falls back into the depth of the scene' }),
   // v0.63 (WIPE_CAROUSEL.md): After Effects' Linear Wipe with a soft edge, eased, staggered by screen order
   ...[['wipeInL', 'Wipe In →', { from: 'left', dir: 'in' }], ['wipeInR', 'Wipe In ←', { from: 'right', dir: 'in' }], ['wipeInB', 'Wipe In ↑', { from: 'bottom', dir: 'in' }], ['wipeInD', 'Wipe In ↘', { from: 'topLeft', dir: 'in' }],
     ['wipeOutL', 'Wipe Out →', { from: 'left', dir: 'out' }], ['wipeOutR', 'Wipe Out ←', { from: 'right', dir: 'out' }]]
@@ -245,7 +249,7 @@ const SECTIONS = [
   { id: 'kit', label: 'Toolbox', icon: 'kExcite', kind: 'view' },
   // v0.32 modes: In / Out / Draw On / Proximity are what the moves are for — one set at a time. The ease tiles
   // live in the Motion Control (graph + curve presets); they still resolve (Quick Bar, search) and show when searched.
-  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Blur', 'Wipe', 'Trim', 'Ease', 'Keys', 'Proximity'],
+  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Blur', 'Wipe', 'Depth', 'Trim', 'Ease', 'Keys', 'Proximity'],
     modes: [['In', 'In', 'The layer arrives'], ['Out', 'Out', 'The layer leaves'], ['Shake', 'Shake', 'An impact that settles back (real keys)'], ['Trim', 'Draw On', 'Trim paths for shape lines'], ['Proximity', 'Proximity', 'Layers react to a moving point']],
     elsewhere: [['kit', 'Ease', 'Ease presets and the speed graph are in Motion Control']], tools: (t) => t.category === 'motion' && !/^(zoom|interact)\./.test(t.id) && t.id !== 'motion.easeCurve' && t.id !== 'motion.pasteEase' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },
