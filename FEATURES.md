@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Workspaces** (v0.65.0): MOE tabs in the order of the work (Animate · Timing · Layer · Design · Look · Deliver) with icons; the full graph in Timing, a one-row Motion Bar elsewhere; the new tools placed where their job is (docs/features/WORKSPACES.md).
+
 **Wave 4** (v0.64.0): Decode / Scramble and Explode / Assemble text, and Depth Reveal from the depth of the scene (docs/features/WAVE4.md).
 
 **Progress + Stop, Wipe Reveal, Carousel 3D** (v0.63.0): long runs show their steps and can be stopped (one Ctrl+Z for what was made); a soft-edged wipe from any side; a 3D card carousel that turns one card at a time (docs/features/PROGRESS.md, WIPE_CAROUSEL.md).

@@ -38,7 +38,7 @@ test('stages: Animate · Arrange · Design · Finish · Deliver; every group of 
   assert.equal(W.stageOfView('tools').id, 'st-deliver', 'a page of a tab gets the stage where that tab is core');
   // every page has a stage for its crumb
   for (const t of AE.TABS) for (const page of t.owns) assert.ok(W.stageOfView(page), `stage of ${page}`);
-  assert.equal(W.stageOfView('looks').id, 'st-design');
+  assert.equal(W.stageOfView('looks').id, 'st-finish'); // v0.65: looks + styles are the Look tab (Finish)
   assert.equal(W.stageOfView('deliver').id, 'st-deliver');
   // a stage fits every kind of selection somewhere
   for (const k of ['keys', 'layer', 'layers', 'text', 'shapes', 'shapesMany', 'none']) assert.ok(W.STAGES.some((s) => s.fits.includes(k)), k);

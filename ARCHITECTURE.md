@@ -224,6 +224,7 @@ See `docs/features/STUDIO_v0.4.md`.
 
 ## 6v. No Repeats (v0.45.0)
 - `app/ui/actions.js`: `ON_SCREEN` (search, Assistant), `IN_CONTROL` (ref → [`rail` | `ease`, the Motion Control button's data-key]), `nowSet(kind, shown)`. `layoutAE.controlShows(app, kind)` → `{ rail, ease }` (ease = the control is open); `layoutAE.shownRefs(app, group, kind)` (an open group's one-click refs). Bento `now()` and Glass `nowCard()` use them; the pie keeps `SETS`.
+- v0.65 (docs/features/WORKSPACES.md): `layoutAE.tabControl(app, tab, kind)` — `tab.full` → `controlFull` (scope `__timing-<kind>`, graph open), `tab.bar` (`['bar']` Motion Bar / `['rail']` Place / `false` none) → `controlTop(app, kind, parts)` (scope `__bar-<kind>`); `kit.easeBlock` reads `K.scope.parts`; `openEase(app, sc)` gets the scope captured at draw time (MOE → `ae-keys`).
 - `app/ui/layouts.js`: `MENUS` = [Select]; `RETIRED_MENUS` (where each removed menu's buttons are). Motion Control's Easy / Linear / Hold have keys `ci-easy` / `ci-linear` / `ci-hold`; library tiles `t-<library>/<id>`.
 - `tools/audit-repeat.js` (on screen, 84 screens) and `tests/norepeat.test.js` (nothing lost, same job = same tool and values).
 

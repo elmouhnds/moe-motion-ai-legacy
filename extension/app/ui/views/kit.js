@@ -21,6 +21,17 @@ const quickbar = require('../quickbar');
 const library = require('../studio/library');
 
 const NUMERIC = /^(OneD|TwoD|ThreeD|TwoD_SPATIAL|ThreeD_SPATIAL)$/;
+// v0.65: the Motion Bar's one-click curves — the everyday shapes, ease-out first (what most entrances want)
+const BAR_CHIPS = ['easyEase', 'outExpo', 'outCubic', 'inOutCubic', 'outBack', 'settle'];
+/** v0.65: unfold the ease editor in the current scope (the Motion Bar's Graph button). */
+// sc = the Motion Control's scope captured when the bar was drawn (K.scope is restored before a click arrives)
+function openEase(app, sc) {
+  // v0.65: in MOE the full graph is the Timing tab — go there; Bento / Glass open it in place (remembered)
+  if ((app.services.settings.get().ui || {}).layout === 'moe' && sc && /^__bar-/.test(sc.ctx || '')) { app.state.set({ aeQ: '' }); app.go('ae-keys'); return; }
+  const pr = prefs(app);
+  if (sc) setPref(app, { ctxOpen: Object.assign({}, pr.ctxOpen || {}, { [sc.ctx]: Object.assign({}, (pr.ctxOpen || {})[sc.ctx] || {}, { ease: true }) }) });
+  else setPref(app, { fold: Object.assign({}, pr.fold || {}, { ease: false }) });
+}
 const CHIPS = ['easyEase', 'outCubic', 'outExpo', 'outBack', 'inOutCubic', 'inOutExpo', 'inOutBack', 'inCubic', 'inExpo', 'snap', 'punch', 'glide', 'settle', 'swoosh', 'linear'];
 const ALIGN_ROWS = [
   { axis: '↔', align: [['left', 'alignLeft', 'Align left edges'], ['hcenter', 'alignCenter', 'Align centres ↔'], ['right', 'alignRight', 'Align right edges']], spread: [['distH', 'distribute', 'Distribute centres ↔ (3+ layers)'], ['spaceH', 'spaceH', 'Space evenly ↔ — equal gaps between edges']] },
@@ -388,14 +399,30 @@ function easeBlock(app, opts = {}) {
   const mine = userCurves(app);
   const title = opts.rail ? 'Motion' : 'Ease';
   if (folded(app, 'ease')) {
-    // folded = the compact strip: the curve, what it was read from, and (Motion Control) anchor + align
-    return h('section', { class: `kit-block kit-ease folded ${opts.rail ? 'kit-control' : ''}`, 'aria-label': opts.rail ? 'Motion control' : 'Ease' },
+    // folded = the compact strip: the curve, what it was read from, and (Motion Control) anchor + align.
+    // v0.65 (docs/features/WORKSPACES.md): with keys selected it is the Motion Bar — Easy / Linear / Hold and the
+    // curves you use most, one click each, and a Graph button for the full editor. The full graph no longer takes the
+    // top of every page; it opens when you ask (remembered) and lives in MOE's Timing tab.
+    const parts = (K.scope && K.scope.parts) || ['bar', 'rail'];
+    const scNow = K.scope;
+    // v0.65: MOE's Layer tab shows only the placing tools (the ease lives in Animate's bar and the Timing tab)
+    const placeOnly = opts.rail && !parts.includes('bar');
+    const bar = opts.rail && nKeys > 0 && parts.includes('bar') ? h('div', { class: 'kit-mbar', role: 'toolbar', 'aria-label': 'Ease the selected keys' },
+      h('div', { class: 'kit-ibgroup' },
+        tool('easeCurve', 'Easy', 'Easy Ease (F9): speed 0, 33 % influence on both sides', () => run(app, 'motion.smartEase', { influenceIn: 33.33, influenceOut: 33.33 }, 'Easy Ease'), { 'data-key': 'mb-easy' }),
+        tool('kLinear', 'Linear', `Linear keys (${pr.side})`, () => run(app, 'kit.interp', { mode: 'linear', side: pr.side }, 'Linear'), { 'data-key': 'mb-linear' }),
+        tool('kHold', 'Hold', `Hold keys (${pr.side})`, () => run(app, 'kit.interp', { mode: 'hold', side: pr.side }, 'Hold'), { 'data-key': 'mb-hold' })),
+      h('div', { class: 'kit-mbar-chips' }, mine.slice(0, 2).map((p) => chip(app, p, match === p.id, true)).concat(BAR_CHIPS.map((id) => BZ.PRESETS.find((p) => p.id === id)).filter(Boolean).slice(0, 6 - Math.min(2, mine.length)).map((p) => chip(app, p, match === p.id)))),
+      h('button', { class: 'btn sm kit-mbar-graph', 'data-key': 'mb-graph', title: 'The full graph: value + speed curves, handles, every preset', onclick: () => openEase(app, scNow), 'aria-label': 'Graph' }, icon('easeCurve', 'sm'), h('span', { class: 'kit-mbar-gl' }, 'Graph'))) : null;
+    return h('section', { class: `kit-block kit-ease folded ${opts.rail ? 'kit-control' : ''} ${bar ? 'has-mbar' : ''}`, 'aria-label': opts.rail ? 'Motion control' : 'Ease' },
+      placeOnly ? h('div', { class: 'kit-h' }, h('span', { class: 'kit-t' }, 'Place'), h('span', { class: 'kit-src dim' }, 'anchor · align · distribute')) :
       h('div', { class: 'kit-h' }, foldTitle(app, 'ease', title),
         h('span', { class: 'kit-chip-g kit-fold-cv', html: curveSvg(K.curve), title: BZ.css(K.curve) }),
         h('span', { class: `kit-src ${K.src ? '' : 'dim'}` }, K.src || (nKeys ? 'select 2+ keys on one property' : 'no keys selected')),
         opts.rail ? h('span', { class: 'spacer' }) : null,
         opts.rail ? easeCopyBar(app, pr, true) : null),
-      opts.rail ? rail(app) : null);
+      bar,
+      opts.rail && parts.includes('rail') ? rail(app) : null);
   }
   return h('section', { class: `kit-block kit-ease ${opts.rail ? 'kit-control' : ''}`, 'aria-label': opts.rail ? 'Motion control' : 'Ease' },
     h('div', { class: 'kit-h' },

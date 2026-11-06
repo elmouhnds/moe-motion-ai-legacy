@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.70 — Workspaces: tabs in the order of the work ✅ (v0.65.0)
+- MOE tabs Animate · Timing · Layer · Design · Look · Deliver; the full graph only in Timing, the one-row Motion Bar elsewhere (docs/features/WORKSPACES.md).
+
 ## M1.69 — Wave 4: Decode, Exploder, Depth Reveal ✅ (v0.64.0)
 - Every wave of the reference plan is built except Figma import (needs a Figma token + network: the owner's decision).
 

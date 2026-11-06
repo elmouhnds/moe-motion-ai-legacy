@@ -92,7 +92,11 @@ test('Select is out front: first group of the Layer tab and of the Arrange stage
 
 test('Text animators are one click: In / Out rows of Arabic-safe presets (+ Remove), all real presets', () => {
   const g = AE.TABS.find((t) => t.id === 'ae-animate').groups.find((x) => x.id === 'text');
-  assert.deepEqual(g.rows.map((r) => r[0]), ['In', 'Out']);
+  // v0.65: + Fx (Decode / Assemble / Explode) — by character, so text.animate switches Arabic text to Words
+  assert.deepEqual(g.rows.map((r) => r[0]), ['In', 'Out', 'Fx']);
+  const fx = g.rows.pop();
+  assert.deepEqual(fx[1].map((r) => BAR.ACTIONS.find((x) => `quick:${x.id}` === r).args.presetId), ['decode', 'assemble', 'explode']);
+  assert.match(require('fs').readFileSync(require('path').join(__dirname, '../extension/features/text/tools.js'), 'utf8'), /Arabic text: switched to Words/);
   const lib = require('../extension/features/text/presets');
   const list = lib.PRESETS || Object.values(lib).find(Array.isArray);
   g.rows.forEach(([, refs]) => refs.forEach((r) => {

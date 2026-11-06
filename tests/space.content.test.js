@@ -22,12 +22,13 @@ function shown(g) {
 
 test('25 groups became 15 (+ Select in v0.44, + Templates in v0.49): each tab holds its jobs once', () => {
   const n = AE.TABS.reduce((k, t) => k + t.groups.length, 0);
-  assert.equal(n, 18); // v0.57: + Product UI on the Design tab
+  assert.equal(n, 19); // v0.57: + Product UI on the Design tab; v0.65: + Styles on the Look tab
   const ids = (tab) => AE.TABS.find((t) => t.id === tab).groups.map((g) => g.id);
   assert.deepEqual(ids('ae-keys'), ['assist']);
   assert.deepEqual(ids('ae-animate'), ['in', 'text', 'expr']);
   assert.deepEqual(ids('ae-layer'), ['select', 'transform', 'parent', 'arrange']);
-  assert.deepEqual(ids('ae-effect'), ['keycolor', 'zoom']);
+  assert.deepEqual(ids('ae-design'), ['productui', 'templates', 'shapes', 'bg', 'brand']);
+  assert.deepEqual(ids('ae-effect'), ['styles', 'looks', 'keycolor', 'zoom']);
   assert.deepEqual(ids('ae-comp'), ['guides', 'project']);
 });
 
@@ -68,7 +69,7 @@ test('tile grids: columns fit the count, so no tile sits alone on a row', () => 
 test('Animate In / Out / Draw On: one block; same count per direction; shapes open on Draw On; your choice is kept', () => {
   const g = AE.TABS.find((t) => t.id === 'ae-animate').groups.find((x) => x.id === 'in');
   assert.equal(g.kind, 'animate');
-  assert.deepEqual(g.modes.map(([m]) => m), ['in', 'out', 'draw']);
+  assert.deepEqual(g.modes.map(([m]) => m), ['in', 'out', 'draw', 'wipe', 'depth', 'shake']); // v0.65: + Wipe · Depth · Shake
   assert.equal(g.modes[0][2].length, g.modes[1][2].length, 'every In has its Out');
   assert.deepEqual([...g.ids].sort(), g.modes.flatMap(([, , ids]) => ids).sort(), 'the quick menu lists every mode');
   const store = new Map();
@@ -85,8 +86,9 @@ test('Animate In / Out / Draw On: one block; same count per direction; shapes op
 
 test('Motion Control follows the selection; empty Recent takes no space; small groups merged by job', () => {
   const src = fs.readFileSync(path.join(__dirname, '../extension/app/ui/layoutAE.js'), 'utf8');
-  assert.match(src, /focus: kind === 'keys' \? \['ease', 'pinned'\] : \['pinned'\]/, 'graph open for keys, compact strip for layers');
-  assert.match(src, /ctx: `__ctl-\$\{kind\}`/, 'your open / fold is remembered per kind of selection');
+  // v0.65 (WORKSPACES.md): the compact Motion Bar everywhere, the full graph in Timing; remembered per kind of selection
+  assert.match(src, /ctx: `__bar-\$\{kind\}`, focus: \['pinned'\], parts/);
+  assert.match(src, /ctx: `__timing-\$\{kind\}`, focus: \['ease', 'pinned'\]/);
   assert.match(src, /filter\(\(g\) => g\.kind !== 'recent' \|\| recentRefs\(app, tab\)\.length\)/);
   const comp = AE.TABS.find((t) => t.id === 'ae-comp').groups.find((g) => g.id === 'project');
   assert.deepEqual(comp.lead[0][0], 'deliver', 'Deliver leads the last stage');

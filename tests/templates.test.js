@@ -143,8 +143,9 @@ test('the tile previews draw the same plan; the library is on the Design tab and
   const W = require('../extension/app/ui/workflow');
   const sec = S.byId('templates');
   assert.ok(sec && sec.tiles.length >= 6 && sec.tiles.every((t) => t.tool === 'design.template' && TPL.byId(t.args.template)));
-  assert.equal(AE.TABS.find((t) => t.id === 'ae-design').groups[0].id, 'templates');
-  assert.deepEqual(W.STAGES.find((s) => s.id === 'st-design').groups[0], ['ae-design', 'templates', 'core']);
+  // v0.65: Product UI (Click on Layer first) leads the Design tab, Templates next
+  assert.deepEqual(AE.TABS.find((t) => t.id === 'ae-design').groups.slice(0, 2).map((g) => g.id), ['productui', 'templates']);
+  assert.deepEqual(W.STAGES.find((s) => s.id === 'st-design').groups[1], ['ae-design', 'templates', 'core']);
   // every template's plan keys are real Quick Animate keys (two or three, AE influence)
   for (const T of TPL.TEMPLATES.filter((t) => !t.kit)) {
     const p = TPL.layout(T.id, {}, { width: 1920, height: 1080 }, { title: [400, 60], subtitle: [300, 30] });

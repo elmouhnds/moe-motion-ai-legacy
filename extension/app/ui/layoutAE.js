@@ -30,28 +30,30 @@ const TABS = [
   // v0.31 (docs/features/SPACE_FOLLOWS_CONTENT.md): every group is sized by what it holds and merged with the
   // tools that do the same job; Easy / Linear / Hold, the anchor, align and the curve library live in the
   // Motion Control on top, so the tabs no longer repeat them.
-  { id: 'ae-keys', label: 'Keys', title: 'Keyframes: timing, loops, bake (Animation › Keyframe Assistant) — the ease is in Motion Control', fits: ['keys'], owns: [],
+  { id: 'ae-animate', label: 'Animate', icon: 'motion', bar: ['bar'], title: 'Animate in / out, draw on, text, expressions (Animation menu)', fits: ['layer', 'layers', 'text', 'shapes', 'shapesMany'], owns: ['animate', 'text', 'expressions', 'kit'],
+    groups: [
+      // one block, three modes: the In and Out presets are the same moves played the other way; Draw On is the shapes' in / out
+      { id: 'in', label: 'Animate In / Out', kind: 'animate', section: 'animate', more: 'animate', fits: ['layer', 'layers', 'shapes', 'shapesMany'], open: true,
+        modes: [['in', 'In', ['inRL', 'inBT', 'fadeIn', 'popIn', 'riseIn', 'cascadeIn']], ['out', 'Out', ['outRL', 'outTB', 'fadeOut', 'popOut', 'scaleOut', 'spinOut']], ['draw', 'Draw', ['trimDraw', 'trimErase', 'trimTravel', 'trimBoth']],
+          ['wipe', 'Wipe', ['wipeInL', 'wipeInR', 'wipeInB', 'wipeInD', 'wipeOutL', 'wipeOutR']], ['depth', 'Depth', ['depthIn', 'depthInFar', 'depthOut']],
+          ['shake', 'Shake', ['shake-bump', 'shake-zoomPunch', 'shake-whip', 'shake-slam', 'shake-jitter']]],
+        ids: ['inRL', 'inBT', 'fadeIn', 'popIn', 'riseIn', 'cascadeIn', 'outRL', 'outTB', 'fadeOut', 'popOut', 'scaleOut', 'spinOut', 'trimDraw', 'trimErase', 'trimTravel', 'trimBoth', 'wipeInL', 'wipeInR', 'wipeInB', 'wipeInD', 'wipeOutL', 'wipeOutR', 'depthIn', 'depthInFar', 'depthOut', 'shake-bump', 'shake-zoomPunch', 'shake-whip', 'shake-slam', 'shake-jitter'] },
+      // v0.44 (FIND_FAST): the everyday In / Out animators of the Text page, one click (Arabic-safe), like Loop
+      { id: 'text', label: 'Text Animators', kind: 'acts', fits: ['text'], refs: ['quick:typewriter', 'quick:counter', 'quick:t_inUp', 'quick:t_rise', 'quick:t_blurIn', 'quick:t_trackIn', 'quick:t_outDown', 'quick:t_sink', 'quick:t_blurOut', 'quick:t_trackOut', 'quick:t_decode', 'quick:t_assemble', 'quick:t_explode', 'quick:t_remove'],
+        minor: ['quick:t_remove'],
+        rows: [['In', ['quick:t_inUp', 'quick:t_rise', 'quick:t_blurIn', 'quick:t_trackIn'], ['Up', 'Soft Rise', 'Blur Focus', 'Tracking']], ['Out', ['quick:t_outDown', 'quick:t_sink', 'quick:t_blurOut', 'quick:t_trackOut'], ['Down', 'Soft Sink', 'Blur Away', 'Tracking']], ['Fx', ['quick:t_decode', 'quick:t_assemble', 'quick:t_explode'], ['Decode', 'Gather', 'Explode']]],
+        links: [['text', 'All 27 text animators · Arabic · .ffx']] },
+      // Motion Rigs merged in: Excite = Inertia and Jump = Bounce Land with the numbers on sliders (the "Sliders" switch)
+      { id: 'expr', label: 'Expressions', kind: 'tiles', section: 'expressions', live: true, ids: ['x-wiggle', 'x-float', 'x-pendulum', 'x-pulse', 'x-blink', 'x-timeRotate', 'x-inertia', 'x-bounceBack', 'x-orbit'], more: 'expressions', links: [['expressions', 'Expression editor']], fits: [] }
+    ] },
+  { id: 'ae-keys', label: 'Timing', icon: 'easeCurve', full: true, title: 'Timing: the full graph (ease, curves, Copy / Paste), keyframes, loops, bake (Animation › Keyframe Assistant)', fits: ['keys'], owns: [],
     groups: [
       { id: 'assist', label: 'Keyframes & Loops', kind: 'acts', fits: ['keys'], open: true, hero: ['quick:k_stagger'], minor: ['quick:k_trimKeys', 'quick:selectSame', 'quick:k_bake'],
         refs: ['quick:k_stagger', 'quick:reverse', 'quick:mirror', 'quick:clone', 'quick:k_trimKeys', 'quick:selectSame', 'quick:k_bake'],
         // v0.43: Reverse / Mirror / Clone are one family — one labelled row, like Loop
         rows: [['Keys', ['quick:reverse', 'quick:mirror', 'quick:clone'], ['Reverse', 'Mirror', 'Copy']], ['Loop', ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'], ['Cycle', 'Ping-Pong', 'Offset', 'In + Out']]] }
     ] },
-  { id: 'ae-animate', label: 'Animate', title: 'Animate in / out, draw on, text, expressions (Animation menu)', fits: ['layer', 'layers', 'text', 'shapes', 'shapesMany'], owns: ['animate', 'text', 'expressions', 'kit'],
-    groups: [
-      // one block, three modes: the In and Out presets are the same moves played the other way; Draw On is the shapes' in / out
-      { id: 'in', label: 'Animate In / Out', kind: 'animate', section: 'animate', more: 'animate', fits: ['layer', 'layers', 'shapes', 'shapesMany'], open: true,
-        modes: [['in', 'In', ['inRL', 'inBT', 'fadeIn', 'popIn', 'riseIn', 'cascadeIn']], ['out', 'Out', ['outRL', 'outTB', 'fadeOut', 'popOut', 'scaleOut', 'spinOut']], ['draw', 'Draw On', ['trimDraw', 'trimErase', 'trimTravel', 'trimBoth']]],
-        ids: ['inRL', 'inBT', 'fadeIn', 'popIn', 'riseIn', 'cascadeIn', 'outRL', 'outTB', 'fadeOut', 'popOut', 'scaleOut', 'spinOut', 'trimDraw', 'trimErase', 'trimTravel', 'trimBoth'] },
-      // v0.44 (FIND_FAST): the everyday In / Out animators of the Text page, one click (Arabic-safe), like Loop
-      { id: 'text', label: 'Text Animators', kind: 'acts', fits: ['text'], refs: ['quick:typewriter', 'quick:counter', 'quick:t_inUp', 'quick:t_rise', 'quick:t_blurIn', 'quick:t_trackIn', 'quick:t_outDown', 'quick:t_sink', 'quick:t_blurOut', 'quick:t_trackOut', 'quick:t_remove'],
-        minor: ['quick:t_remove'],
-        rows: [['In', ['quick:t_inUp', 'quick:t_rise', 'quick:t_blurIn', 'quick:t_trackIn'], ['Up', 'Soft Rise', 'Blur Focus', 'Tracking']], ['Out', ['quick:t_outDown', 'quick:t_sink', 'quick:t_blurOut', 'quick:t_trackOut'], ['Down', 'Soft Sink', 'Blur Away', 'Tracking']]],
-        links: [['text', 'All 27 text animators · Arabic · .ffx']] },
-      // Motion Rigs merged in: Excite = Inertia and Jump = Bounce Land with the numbers on sliders (the "Sliders" switch)
-      { id: 'expr', label: 'Expressions', kind: 'tiles', section: 'expressions', live: true, ids: ['x-wiggle', 'x-float', 'x-pendulum', 'x-pulse', 'x-blink', 'x-timeRotate', 'x-inertia', 'x-bounceBack', 'x-orbit'], more: 'expressions', links: [['expressions', 'Expression editor']], fits: [] }
-    ] },
-  { id: 'ae-layer', label: 'Layer', title: 'Select, transform, parent & link, arrange (Layer menu) — anchor and align are in Motion Control', fits: ['layer', 'layers', 'shapes', 'shapesMany', 'text'], owns: ['layout', 'select'],
+  { id: 'ae-layer', label: 'Layer', icon: 'layers', bar: ['rail'], title: 'Select, transform, parent & link, arrange (Layer menu) — anchor and align are in Motion Control', fits: ['layer', 'layers', 'shapes', 'shapesMany', 'text'], owns: ['layout', 'select'],
     groups: [
       // v0.44 (FIND_FAST): Select is out front — the Selector's everyday filters, one click each (Shift / Alt, search,
       // labels, other comps and the project stay on its page)
@@ -67,27 +69,29 @@ const TABS = [
       { id: 'parent', label: 'Parent & Link', kind: 'acts', fits: ['layers'], hero: ['quick:parentNull', 'quick:k_parent'], refs: ['quick:parentNull', 'quick:k_parent', 'quick:k_delay', 'quick:k_stare'] },
       // v0.33: Arrange · Clone · Effectors — the grid engine's three jobs (mCloner / MoGraph style), one switch
       { id: 'arrange', label: 'Arrange · Clone · Effectors', kind: 'animate', panel: 'grid', section: 'layout', more: 'layout', fits: ['layer', 'layers', 'shapes', 'shapesMany'],
-        modes: [['arrange', 'Arrange', ['grid', 'honey', 'wall', 'ring', 'fan', 'spiral', 'galaxy', 'path', 'globe']], ['clone', 'Clone', ['cloneGrid', 'cloneRow', 'cloneRing', 'cloneSpiral', 'cloneSun', 'cloneGlobe', 'colCycle', 'colGradient', 'colRandom', 'clonePoints', 'textWords', 'textLetters', 'trailEcho', 'trailGhost', 'trailSpin']], ['effect', 'Effectors', ['efPush', 'efShrink', 'efReveal', 'efScatter', 'efStep', 'efWave', 'efCascade', 'efTint', 'efSpring', 'efJelly', 'efInertia', 'efBounce', 'efAim', 'efLook', 'efBeat', 'efBeatWave', 'efField', 'efFlicker', 'efImage', 'efImageReveal']]],
+        modes: [['arrange', 'Arrange', ['grid', 'honey', 'wall', 'ring', 'fan', 'spiral', 'galaxy', 'path', 'globe', 'carousel', 'carouselTilt', 'carouselQuick']], ['clone', 'Clone', ['cloneGrid', 'cloneRow', 'cloneRing', 'cloneSpiral', 'cloneSun', 'cloneGlobe', 'colCycle', 'colGradient', 'colRandom', 'clonePoints', 'textWords', 'textLetters', 'trailEcho', 'trailGhost', 'trailSpin']], ['effect', 'Effectors', ['efPush', 'efShrink', 'efReveal', 'efScatter', 'efStep', 'efWave', 'efCascade', 'efTint', 'efSpring', 'efJelly', 'efInertia', 'efBounce', 'efAim', 'efLook', 'efBeat', 'efBeatWave', 'efField', 'efFlicker', 'efImage', 'efImageReveal']]],
         modeFor: { layer: 'clone', shapes: 'clone', text: 'clone', grid: 'effect' },
-        ids: ['grid', 'honey', 'wall', 'ring', 'fan', 'spiral', 'galaxy', 'path', 'globe', 'cloneGrid', 'cloneRow', 'cloneRing', 'cloneSpiral', 'cloneSun', 'cloneGlobe', 'colCycle', 'colGradient', 'colRandom', 'clonePoints', 'textWords', 'textLetters', 'trailEcho', 'trailGhost', 'trailSpin', 'efPush', 'efShrink', 'efReveal', 'efScatter', 'efStep', 'efWave', 'efCascade', 'efTint', 'efSpring', 'efJelly', 'efInertia', 'efBounce', 'efAim', 'efLook', 'efBeat', 'efBeatWave', 'efField', 'efFlicker', 'efImage', 'efImageReveal'] }
+        ids: ['grid', 'honey', 'wall', 'ring', 'fan', 'spiral', 'galaxy', 'path', 'globe', 'carousel', 'carouselTilt', 'carouselQuick', 'cloneGrid', 'cloneRow', 'cloneRing', 'cloneSpiral', 'cloneSun', 'cloneGlobe', 'colCycle', 'colGradient', 'colRandom', 'clonePoints', 'textWords', 'textLetters', 'trailEcho', 'trailGhost', 'trailSpin', 'efPush', 'efShrink', 'efReveal', 'efScatter', 'efStep', 'efWave', 'efCascade', 'efTint', 'efSpring', 'efJelly', 'efInertia', 'efBounce', 'efAim', 'efLook', 'efBeat', 'efBeatWave', 'efField', 'efFlicker', 'efImage', 'efImageReveal'] }
     ] },
-  { id: 'ae-design', label: 'Design', title: 'Templates, product UI, shapes & icons, backgrounds, looks, brand', fits: ['none'], owns: ['templates', 'productui', 'shapes', 'backgrounds', 'looks', 'brand'],
+  { id: 'ae-design', label: 'Design', icon: 'palette', bar: false, title: 'Build: product UI (Click on Layer first), templates, shapes & icons, backgrounds, brand', fits: ['none'], owns: ['productui', 'templates', 'shapes', 'backgrounds', 'brand'],
     groups: [
+      { id: 'productui', label: 'Product UI', kind: 'tiles', section: 'productui', ids: ['ui-click', 'ui-reveal', 'ui-button', 'ui-toggle', 'ui-search', 'ui-task', 'ui-notify', 'ui-progress', 'ui-chat', 'ui-stat'], more: 'productui', fits: ['none'], open: true },
       // v0.49 (TEMPLATES.md): lower thirds, titles, callouts, tags — built native in the comp, sized to the text
       { id: 'templates', label: 'Templates', kind: 'tiles', section: 'templates', ids: ['tpl-lowerThird', 'tpl-titleCard', 'tpl-handle', 'tpl-endCard', 'tpl-callout', 'tpl-quote', 'tpl-chapter', 'tpl-tag'], more: 'templates', fits: ['none'], open: true },
-      { id: 'productui', label: 'Product UI', kind: 'tiles', section: 'productui', ids: ['ui-click', 'ui-reveal', 'ui-button', 'ui-toggle', 'ui-search', 'ui-task', 'ui-notify', 'ui-progress', 'ui-chat', 'ui-stat'], more: 'productui', fits: ['none'], open: true },
       { id: 'shapes', label: 'Shapes & Icons', kind: 'links', fits: ['none'], open: true, links: [['shapes', '1,899 icons and 22 native shapes, editable in AE']] },
       { id: 'bg', label: 'Backgrounds', kind: 'tiles', section: 'backgrounds', ids: ['bg-tomato', 'bg-midnight', 'bg-ocean', 'bg-sunset', 'bg-aurora', 'bg-cyber'], more: 'backgrounds', fits: ['none'] },
-      { id: 'looks', label: 'Looks & Glass', kind: 'tiles', section: 'looks', ids: ['thick-glaze', 'thick-prism', 'thick-chrome', 'thick-gold', 'glass-frosted', 'glass-liquid'], more: 'looks', fits: [] },
       { id: 'brand', label: 'Brand', kind: 'acts', fits: ['layers', 'text'], hero: ['brand:apply'], refs: ['brand:apply', 'brand:applyComp', 'brand:ease'], links: [['brand', 'Brand Kit — clients, from website / PDF']] }
     ] },
-  { id: 'ae-effect', label: 'Effect', title: 'Key & colour, camera & zoom (Effect menu)', fits: [], owns: ['compositing', 'zoom'],
+  { id: 'ae-effect', label: 'Look', icon: 'glass', bar: false, title: 'Finish the look: styles, glass, key & colour, camera & zoom (Effect menu)', fits: ['layer', 'layers', 'shapes', 'text'], owns: ['looks', 'compositing', 'zoom'],
     groups: [
+      // v0.65: the finished look of a layer, one click — Styles (After Effects' own effects) then Glass
+      { id: 'styles', label: 'Styles', kind: 'tiles', section: 'looks', ids: ['style-softShadow', 'style-deepShadow', 'style-glow', 'style-lightSweep'], more: 'looks', fits: ['layer', 'layers', 'shapes', 'text'], open: true },
+      { id: 'looks', label: 'Glass', kind: 'tiles', section: 'looks', ids: ['thick-glaze', 'thick-prism', 'thick-chrome', 'thick-gold', 'glass-frosted', 'glass-liquid'], more: 'looks', fits: [] },
       // tool tiles with no picture are buttons, in the order of the job: read the shot, key it, match, grade, look
-      { id: 'keycolor', label: 'Key & Color', kind: 'tiles', compact: true, section: 'compositing', hero: ['c-compositing.keySetup'], ids: ['c-compositing.keySetup', 'c-compositing.analyze', 'c-compositing.matchColor', 'c-compositing.grade', 'c-compositing.lookAssist'], more: 'compositing', fits: [], open: true },
+      { id: 'keycolor', label: 'Key & Color', kind: 'tiles', compact: true, section: 'compositing', hero: ['c-compositing.keySetup'], ids: ['c-compositing.keySetup', 'c-compositing.analyze', 'c-compositing.matchColor', 'c-compositing.grade', 'c-compositing.lookAssist'], more: 'compositing', fits: [] },
       { id: 'zoom', label: 'Camera & Zoom', kind: 'tiles', section: 'zoom', ids: ['punch', 'smooth', 'detail', 'follow', 'spot', 'cursorArrow'], more: 'zoom', fits: [], minor: ['quick:k_vignette'] }
     ] },
-  { id: 'ae-comp', label: 'Comp', title: 'Guides, deliver, project (Composition menu)', fits: ['none'], owns: ['deliver', 'quick', 'tools'],
+  { id: 'ae-comp', label: 'Deliver', icon: 'resize', bar: false, title: 'Guides, every format at once, project (Composition menu)', fits: ['none'], owns: ['deliver', 'quick', 'tools'],
     groups: [
       { id: 'guides', label: 'Guides & Safe Areas', kind: 'tiles', section: 'layout', ids: ['g12', 'thirds', 'gpCenter', 'gpGolden', 'gpTv', 'safe', 'gpClear', 'gpTiktok', 'gpReels', 'gpShorts', 'gpStories', 'split2', 'quad', 'wall6'], more: 'layout', fits: ['none'], open: true },
       { id: 'project', label: 'Deliver & Project', kind: 'acts', fits: [], open: true, hero: ['quick:dupComp'], minor: ['quick:revealFolder', 'quick:purge', 'quick:k_trash'],
@@ -401,13 +405,29 @@ function animateBlock(app, g, t) {
 
 /* ---------- v0.30 Motion Control: one block at the top of every style (keys + anchor + align) ---------- */
 /** The Motion Control for the selection, or null when nothing is selected (then the page is about creating). */
-function controlTop(app, kind) {
+function controlTop(app, kind, parts) {
   const c = app.state.get().ctx;
   if (!c || !c.comp || kind === 'none') return null;
   const kit = require('./views/kit');
   // v0.31: the graph opens when keys are selected; with layers only, the compact strip (curve · Copy / Paste ·
   // anchor · align) keeps every placement tool in ~90 px. Open or fold it yourself: remembered per kind of selection.
-  const prev = kit.K.scope; kit.K.scope = { ctx: `__ctl-${kind}`, focus: kind === 'keys' ? ['ease', 'pinned'] : ['pinned'] };
+  // v0.65 (WORKSPACES.md): the compact Motion Bar by default for every selection — the full graph opens from its Graph
+  // button (remembered per kind of selection) and always lives in MOE's Timing tab, so it no longer tops every page
+  const prev = kit.K.scope; kit.K.scope = { ctx: `__bar-${kind}`, focus: ['pinned'], parts };
+  try { return kit.controlBlock(app); } finally { kit.K.scope = prev; }
+}
+/** v0.65: what tops a MOE tab — the part of the Motion Control that tab's work needs: Timing the full graph,
+    Animate the Motion Bar (ease), Layer the anchor + align, Design / Look / Deliver nothing (building, not moving). */
+function tabControl(app, tab, kind) {
+  if (tab.full) return controlFull(app, kind);
+  return tab.bar === false ? null : controlTop(app, kind, tab.bar);
+}
+/** v0.65: the full Motion Control (graph open) — MOE's Timing tab. */
+function controlFull(app, kind) {
+  const c = app.state.get().ctx;
+  if (!c || !c.comp) return null;
+  const kit = require('./views/kit');
+  const prev = kit.K.scope; kit.K.scope = { ctx: `__timing-${kind}`, focus: ['ease', 'pinned'] };
   try { return kit.controlBlock(app); } finally { kit.K.scope = prev; }
 }
 
@@ -424,8 +444,9 @@ function controlShows(app, kind) {
   const c = app.state.get().ctx;
   if (!c || !c.comp || kind === 'none') return null;
   const kit = require('./views/kit');
-  const sc = { ctx: `__ctl-${kind}`, focus: kind === 'keys' ? ['ease', 'pinned'] : ['pinned'] };
-  return { rail: true, ease: !kit.isFolded(kit.prefs(app), sc, 'ease') };
+  const sc = { ctx: `__bar-${kind}`, focus: ['pinned'] };
+  // v0.65: with keys selected the Motion Bar shows Easy / Linear / Hold and the common curves even when folded
+  return { rail: true, ease: kind === 'keys' || !kit.isFolded(kit.prefs(app), sc, 'ease') };
 }
 
 /** v0.30: the steps that usually follow the last run (MOE puts them under the Motion Control). */
@@ -534,7 +555,7 @@ function build(app, s, body) {
   const q = (s.aeQ || '').trim();
   let content;
   if (q) content = h('div', { class: 'view ae-page' }, searchResults(app, q));
-  else if (isTab) content = h('div', { class: 'view kit ae-page' }, h('div', { class: 'ae-control', 'data-key': 'ae-control' }, controlTop(app, kind), nextStrip(app, s)), groupsOf(app, tab).filter((g) => g.kind !== 'recent' || recentRefs(app, tab).length).map((g) => twirl(app, tab, g, kind, () => groupBody(app, g, tab),
+  else if (isTab) content = h('div', { class: 'view kit ae-page' }, h('div', { class: `ae-control${tab.full ? ' is-full' : ''}`, 'data-key': 'ae-control' }, tabControl(app, tab, kind), nextStrip(app, s)), groupsOf(app, tab).filter((g) => g.kind !== 'recent' || recentRefs(app, tab).length).map((g) => twirl(app, tab, g, kind, () => groupBody(app, g, tab),
     g.kind === 'recent' ? h('button', { class: 'ae-more', 'data-key': `clear-${tab.id}`, title: `Clear Recent in ${tab.label}`, onclick: () => clearRecent(app, tab) }, 'Clear') : groupExtra(app, g))));
   else {
     const sec = studio.byId(view);
@@ -551,7 +572,7 @@ function build(app, s, body) {
       h('button', { role: 'tab', 'data-key': `t-${t.id.slice(3)}`, 'aria-selected': String(!!on), title: `${t.title}${hint ? ' — fits what you selected' : ''} · Ctrl+${n} · right-click: quick menu`,
         onclick: () => { app.state.set({ aeQ: '', aeTabMenu: null }); app.go(t.id); },
         oncontextmenu: (e) => { e.preventDefault(); openTabMenu(app, t, e.currentTarget); } },
-      h('span', {}, t.label), hint ? h('span', { class: 'ae-dot', 'aria-hidden': 'true' }) : null),
+      t.icon ? icon(t.icon, 'xs') : null, h('span', { class: 'ae-tab-name' }, t.label), hint ? h('span', { class: 'ae-dot', 'aria-hidden': 'true' }) : null),
       h('button', { class: 'ae-tabmenu-btn', 'data-key': `tm-${t.id}`, 'aria-label': `${t.label} quick menu`, 'aria-haspopup': 'true', 'aria-expanded': String(!!(s.aeTabMenu && s.aeTabMenu.id === t.id)), title: `${t.label}: every action in two clicks (without leaving this tab)`, onclick: (e) => openTabMenu(app, t, e.currentTarget.parentNode) }, icon('chev', 'xs')));
   }));
   const menuBtn = h('button', { class: 'icon-btn ae-menubtn', title: 'Panel menu', 'aria-label': 'Panel menu', 'aria-haspopup': 'true', 'aria-expanded': String(!!s.aeMenu),
@@ -571,6 +592,6 @@ function menuButton(app, s) {
     onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(), box = require('./quickbar').fixedBox(e.currentTarget.closest('.app') || document.body); app.state.set({ aeMenu: !s.aeMenu, aeMenuAt: { top: Math.round(r.bottom - box.top + 2), right: Math.max(4, Math.round(box.left + box.width - r.right)) } }); } }, icon('menu', 'sm'));
 }
 
-module.exports = { runsOf, nextStrip, controlTop, controlShows, shownRefs, tileCols, animMode, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
+module.exports = { runsOf, nextStrip, controlTop, controlFull, tabControl, controlShows, shownRefs, tileCols, animMode, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
   // building blocks reused by the v0.24 style proposals (layoutGlass / layoutApple / layoutBento)
   twirl, actButton, keysHint, groupBody, tileStrip, moreLink, groupExtra, subRow, pairControl, linkRow, searchBox, searchResults, panelMenu, menuButton, openTile };

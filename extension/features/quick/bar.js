@@ -80,6 +80,10 @@ const ACTIONS = [
   A('t_sink', 'text.animate', { presetId: 'sink-out' }, 'moveTB', 'Text Out · Soft Sink', 'Text'),
   A('t_blurOut', 'text.animate', { presetId: 'blur-out' }, 'fadeOut', 'Text Out · Blur Away', 'Text'),
   A('t_trackOut', 'text.animate', { presetId: 'tracking-out' }, 'spaceH', 'Text Out · Tracking', 'Text'),
+  // v0.65 (WORKSPACES.md): the Scramble / Exploder presets of v0.64, one click from the Animate tab
+  A('t_decode', 'text.animate', { presetId: 'decode' }, 'type', 'Text In · Decode', 'Text'),
+  A('t_assemble', 'text.animate', { presetId: 'assemble' }, 'kExcite', 'Text In · Assemble', 'Text'),
+  A('t_explode', 'text.animate', { presetId: 'explode' }, 'wand', 'Text Out · Explode', 'Text'),
   A('t_remove', 'text.removeAnimation', { which: 'both' }, 'trash', 'Remove Text Animation', 'Text'),
   A('counter', 'quick.counter', {}, 'counter', 'Number Counter', 'Text'),
   // v0.44 (FIND_FAST): Select — the Selector's everyday filters, one click each (the page keeps search, labels, comps, project)

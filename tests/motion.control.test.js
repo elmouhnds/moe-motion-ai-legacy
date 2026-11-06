@@ -91,7 +91,7 @@ test('Motion Control: one block for keys + anchor + align, at the top of every s
   const src = (f) => fs.readFileSync(path.join(__dirname, '../extension/app/ui', f), 'utf8');
   assert.match(src('layoutBento.js'), /AE\.controlTop\(app, kind\)/);
   assert.match(src('layoutGlass.js'), /AE\.controlTop\(app, kind\)/);
-  assert.match(src('layoutAE.js'), /controlTop\(app, kind\), nextStrip\(app, s\)/);
+  assert.match(src('layoutAE.js'), /tabControl\(app, tab, kind\), nextStrip\(app, s\)/);
   const kit = src('views/kit.js');
   assert.match(kit, /h\('div', \{ class: 'kit-graph-row' \}, h\('div', \{ class: 'kit-graph-wrap' \}, graph\(app\)\), rail\(app\)\)/, 'anchor + align sit beside the graph');
   assert.match(kit, /function render\(app\) \{\n  return h\('div', \{ class: 'view kit' \},\n    easeBlock\(app, \{ rail: true \}\)/, 'the docked Motion Kit uses the same control');

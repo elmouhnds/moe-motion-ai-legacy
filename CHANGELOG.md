@@ -2,6 +2,19 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.65.0] — 2026-11-06 — Workspaces: tabs in the order of the work
+### Changed
+- **MOE tabs follow the work**: Animate · Timing · Layer · Design · Look · Deliver (were Keys · Animate · Layer · Design · Effect · Comp), each with an icon; ids unchanged, so saved order, Recent and pins keep working.
+- **The full graph is no longer on top of every tab.** It lives in **Timing**; Animate shows the one-row **Motion Bar** (Easy · Linear · Hold · your curves + the most used · Graph), Layer shows **Place** (anchor · align · distribute), Design / Look / Deliver show nothing above their tools.
+- Bento and Glass: the NOW card uses the Motion Bar too; *Graph* opens the full graph in place (remembered).
+- New tools placed where the job is: **Wipe · Depth · Shake** are modes of Animate In / Out; **Decode · Assemble · Explode** are one-click text rows; **Carousel 3D** is in Arrange; **Styles** lead the Look tab with Glass; **Product UI** (Click on Layer) leads Design.
+- Stages: Glass and Styles moved to Finish (with Key & Color, Camera & Zoom); Product UI leads Design.
+### Fixed
+- The folded Motion Control's *Graph* button opened the global graph instead of the one for that selection.
+- NOW (Bento / Glass) no longer repeats Easy / Linear / Hold, Out Expo and Out Back when the Motion Bar already shows them.
+### Tests
+- Updated tab, stage and Motion Control tests; 516 tests. **Mock / preview — not yet seen in After Effects.**
+
 ## [0.64.0] — 2026-11-06 — Wave 4: Decode, Exploder, Depth Reveal
 ### Added
 - **Decode / Scramble** text presets: Character Offset settles the letters into the word (left to right or random); not offered for Arabic.

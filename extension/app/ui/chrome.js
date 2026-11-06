@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['layers', 'Tabs in the order of your work', 'MOE\'s tabs now go Animate · Timing · Layer · Design · Look · Deliver. The big graph lives in Timing; the other tabs show a one-row Motion Bar (Easy, Linear, Hold, your curves, Graph) or nothing at all, so your tools start at the top. Wipe, Depth and Shake sit in Animate In / Out, Decode and Explode in Text, Carousel in Arrange, Styles at the top of Look.'],
   ['type', 'Decode, Explode, and Depth', 'Text has Decode and Scramble (the letters settle into the word) and Explode / Assemble (each letter flies its own way). Motion has Depth In / Out: your layers come forward from deep in the scene, sharpening as they land — no plugin, nothing to download.'],
   ['refresh', 'Carousel, Wipe, and a Stop button', 'Layout › Arrange has Carousel 3D: your cards on a ring that turns one at a time, the back ones fading. Motion has Wipe In / Out with a soft edge from any side. And any long run now shows what it is doing — with Stop, which leaves what was made as one Ctrl+Z.'],
   ['link', 'Rename anything — nothing breaks', 'Rename a Grid null, an Effector, a Glass or a layer you follow: MOE sees it and relinks its expressions to the new name at once (one Ctrl+Z if you want it back). It finds the layer by its permanent After Effects id, never by guessing.'],

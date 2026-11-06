@@ -27,7 +27,7 @@ test('styles (v0.29): only Bento (default), Glass and MOE; a retired style opens
 
 test('Classic (AE): six tabs named after AE menus; every section reachable; every button and preset exists', () => {
   const AE = require('../extension/app/ui/layoutAE');
-  assert.deepEqual(AE.TABS.map((t) => t.label), ['Keys', 'Animate', 'Layer', 'Design', 'Effect', 'Comp']);
+  assert.deepEqual(AE.TABS.map((t) => t.label), ['Animate', 'Timing', 'Layer', 'Design', 'Look', 'Deliver']); // v0.65: the order of the work
   const reach = new Set(['kit']);
   assert.ok(AE.TAB_IDS.every((id) => !studio.byId(id)), 'tab ids never collide with a page id');
   const groupIds = [];
@@ -128,7 +128,7 @@ test('Classic ▸ Recent (v0.22): newest first, no duplicates, at most 6, per ta
   assert.equal(list.length, 6);
   assert.equal(list[0], 'quick:k_linear');
   assert.equal(new Set(list).size, list.length);
-  assert.deepEqual(AE.recentRefs(app, AE.TABS[1]), [], 'per tab');
+  assert.deepEqual(AE.recentRefs(app, AE.TABS.find((x) => x.id !== 'ae-keys')), [], 'per tab');
   // the refs the panel records resolve: actions, Motion Kit tools, library tiles; a stale ref is skipped
   assert.ok(AE.recentItem(app, 'quick:k_easy'));
   assert.ok(AE.recentItem(app, 'tile:animate:inRL'));

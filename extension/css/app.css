@@ -1506,3 +1506,27 @@ input.scrubbable.scrubbing { color: var(--accent); }
 .moe-activity .act-time { font-variant-numeric: tabular-nums; color: var(--text-2); font-size: var(--fs-xs, 11px); }
 .moe-activity .act-stop { gap: 4px; }
 @media (prefers-reduced-motion: reduce) { .moe-activity .act-run { animation: none; left: 0; width: 100%; opacity: 0.5; } }
+
+/* ---------- v0.65 (docs/features/WORKSPACES.md): the Motion Bar + workflow tabs ---------- */
+/* the compact Motion Control: one row — Easy / Linear / Hold · the curves you use most · Graph; wraps, never cuts */
+.kit-mbar { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding: 6px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-raised); }
+.kit-mbar > .kit-ibgroup { flex: none; margin: 0; }
+.kit-mbar-chips { display: flex; flex: 1 1 0; min-width: 0; gap: 3px; flex-wrap: nowrap; padding-left: 6px; border-left: 1px solid var(--line); }
+.kit-mbar-chips > .kit-chip { flex: 1 1 0; min-width: 20px; max-width: 32px; width: auto; height: var(--h-m); }
+.kit-mbar-chips > .kit-chip .kit-chip-g, .kit-mbar-chips > .kit-chip .kit-chip-g svg { width: 100%; max-width: 24px; }
+.kit-mbar-graph { flex: none; gap: 4px; margin-left: auto; color: var(--accent); border-color: var(--accent); }
+.kit-mbar-graph:hover { background: var(--accent-soft); }
+.kit-control.folded.has-mbar .kit-rail { margin-top: 6px; }
+.app.kit-narrow .kit-mbar { flex-wrap: nowrap; gap: 4px; }
+.app.kit-narrow .kit-mbar-gl { display: none; }
+.app.kit-narrow .kit-mbar-graph { padding: 0 6px; }
+.app.kit-tiny .kit-mbar { flex-wrap: wrap; }
+.app.kit-tiny .kit-mbar-chips { border-left: 0; padding-left: 0; flex-basis: 100%; }
+/* tabs: icon over name, a clear active state, the order of the work */
+.ae-tab > [role=tab] { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; }
+.ae-tabs button[role=tab] { height: var(--h-l); padding-top: 1px; }
+.ae-tab > [role=tab] > .svg-i { flex: none; opacity: .62; }
+.ae-tab.on > [role=tab] > .svg-i { opacity: 1; color: var(--accent); }
+.ae-tab-name { max-width: 100%; font-size: 11px; line-height: 12px; letter-spacing: .01em; white-space: normal; text-align: center; overflow-wrap: anywhere; }
+.ae-tab > [role=tab] > .ae-dot { position: absolute; top: 5px; right: 6px; }
+.ae-control.is-full { padding-bottom: 4px; border-bottom: 1px solid var(--line); }
