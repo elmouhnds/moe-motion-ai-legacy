@@ -41,7 +41,9 @@ const CHECKS = [
   { id: 'bake', label: 'Bake: keyframes = the live grid', run: checkBake },
   { id: 'speed', label: 'Speed: 48 clones, Spring on vs off', run: checkSpeed },
   { id: 'template', label: 'Template: Lower Third = templates.js', run: (T) => checkTemplate(T, { template: 'lowerThird' }) },
-  { id: 'templateArabic', label: 'Template: Arabic Lower Third (right to left)', run: (T) => checkTemplate(T, { template: 'lowerThird', title: 'سارة أحمد', subtitle: 'مصممة موشن' }) }
+  { id: 'templateArabic', label: 'Template: Arabic Lower Third (right to left)', run: (T) => checkTemplate(T, { template: 'lowerThird', title: 'سارة أحمد', subtitle: 'مصممة موشن' }) },
+  // v0.60 (SAAS_INTERACTION.md): the press stays in place even on a text whose anchor is on its baseline corner
+  { id: 'click', label: 'Click on Layer: cursor on the centre, press in place', run: checkClick }
 ];
 
 /* ---------- helpers ---------- */
@@ -331,6 +333,33 @@ async function checkTemplate(T, args) {
   const worst = maxOf(errs);
   const ok = worst < 0.6 && widths.every((w) => w > 0) && u.back;
   return { status: ok ? 'pass' : 'fail', detail: `${res.made.length} layers · text measured by After Effects ${widths.join(' / ')} px · ${errs.length} parts, worst ${r2(worst)} px from templates.js after the entrance · undo ${u.back ? 'removed it' : 'left layers'}`, numbers: { layers: res.made.length, textWidths: widths, worstPx: r2(worst), undo: u.back } };
+}
+
+async function checkClick(T) {
+  const W = T.comp.width, H = T.comp.height;
+  const before = (await T.layerIds()).length;
+  // left- and right-justified texts: their anchors sit on a baseline corner, far from what the eye sees as the centre
+  const a = await T.host.call('selftest.addText', { compId: T.compId, text: 'Get started', name: 'ST Button', fontSize: 80, justification: 'left', position: [W * 0.25, H * 0.4] });
+  const b = await T.host.call('selftest.addText', { compId: T.compId, text: 'Upgrade', name: 'ST Upgrade', fontSize: 80, justification: 'right', position: [W * 0.75, H * 0.65] });
+  await T.select([a.layerId, b.layerId]);
+  const r = await T.run('interact.click', { kind: 'arrow', from: 'corner', gap: 1.1, travel: 0.55, depth: 90, ripple: true, size: 40, color: '#FFFFFF' });
+  const clicks = r.result.clicks;
+  const onTarget = clicks.map((c) => Math.hypot(c.got[0] - c.p[0], c.got[1] - c.p[1]));
+  // After Effects measures each text at rest (just before the press) and at the deepest key
+  const ids = [a.layerId, b.layerId], times = [];
+  clicks.forEach((c) => times.push(c.t - 0.06, c.t + 0.06)); // the clicks come in the selection's order
+  const m = await T.host.call('layers.bounds', { compId: T.compId, layerIds: ids, times });
+  const drift = [], ratio = [];
+  clicks.forEach((c, i) => {
+    const bx = m.layers.find((l) => l.layerId === c.layerId).boxes, rest = bx[2 * i], deep = bx[2 * i + 1];
+    const cr = [(rest[0] + rest[2]) / 2, (rest[1] + rest[3]) / 2], cd = [(deep[0] + deep[2]) / 2, (deep[1] + deep[3]) / 2];
+    drift.push(Math.hypot(cd[0] - cr[0], cd[1] - cr[1]));
+    ratio.push((deep[2] - deep[0]) / Math.max(1e-6, rest[2] - rest[0]));
+  });
+  const u = await T.undo(r, before + 2);
+  await T.host.call('layers.remove', { compId: T.compId, layerIds: ids, onlyNamed: 'ST ' });
+  const ok = maxOf(onTarget) < 0.6 && maxOf(drift) < 0.6 && ratio.every((q) => Math.abs(q - 0.9) < 0.01) && u.back;
+  return { status: ok ? 'pass' : 'fail', detail: `${clicks.length} clicks · cursor ${r2(maxOf(onTarget))} px from each measured centre · the centre moved ${r2(maxOf(drift))} px under the press (0.6 allowed) · width ${ratio.map((q) => Math.round(q * 100)).join(' / ')} % (90 wanted) · undo ${u.back ? 'ok' : 'left layers'}`, numbers: { onTarget, drift, ratio } };
 }
 
 async function checkSpeed(T) {

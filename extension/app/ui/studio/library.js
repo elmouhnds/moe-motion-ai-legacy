@@ -49,7 +49,8 @@ function fill(app, tile) {
   const tool = app.services.registry.get(tile.tool);
   // A built-in tile can keep some of your choices (Backgrounds: a palette tile changes the palette,
   // not your style or motion — tool.ui.keepOnTile). Your own presets (Mine) apply in full.
-  const keep = !tile.user && tool.ui && tool.ui.keepOnTile;
+  // v0.60: a tile with its own look (product backdrops) applies it in full — its style is the point
+  const keep = !tile.user && !tile.ownLook && tool.ui && tool.ui.keepOnTile;
   app.state.set((s) => {
     const cur = s.args[tool.id] || {};
     const kept = {};
@@ -61,7 +62,7 @@ function fill(app, tile) {
 function tileThumb(app, t) {
   // v0.51: template tiles show the active client's colours (the same rule as the tool: templateTool.withBrand)
   if (t.tool === 'design.template') return Object.assign({}, t, { args: brandedArgs(app, t.args) });
-  if (t.thumb.k !== 'bg') return t;
+  if (t.thumb.k !== 'bg' || t.ownLook) return t;
   const a = t.user ? t.args : Object.assign({}, app.state.get().args['design.background'] || {}, { palette: t.thumb.palette });
   const pick = {};
   // a saved preset (Mine) shows its own palette — custom brand colours too (v0.26)
@@ -114,7 +115,7 @@ function brandedArgs(app, args) {
   try { return require('../../../features/design/templateTool').withBrand(Object.assign({}, args || {}), app.services); } catch (e) { return args; }
 }
 /** v0.47: the tools whose previews play their real keys (features/quick/animatePlan.js). */
-const PLANNED = ['quick.animate', 'quick.trimPaths', 'design.template'];
+const PLANNED = ['quick.animate', 'quick.trimPaths', 'design.template', 'interact.click'];
 function thumbEl(tile, cls, liveArgs) {
   if (tile.thumb.k === 'icon') return h('div', { class: `st-thumb icon ${cls || ''}` }, icon(tile.thumb.icon));
   // the preview gets the tool's own args — the tile's preset, or the Inspector's current settings (live)

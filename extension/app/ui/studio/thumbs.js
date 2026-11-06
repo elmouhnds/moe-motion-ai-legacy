@@ -39,6 +39,13 @@ function rrect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x 
  * The tool's keys and the local time to play them at: wait 0.35 s, play the keys at their real speed, hold the end,
  * loop. A still frame (no animation) shows the rest pose of an In and the start of an Out.
  */
+/** v0.60: the MOE cursor glyph (the same outline shapes.cursor draws in AE), its tip at (x, y). */
+function pointer(c, x, y, s, hand) {
+  const pts = hand ? [[-2.5, 0], [2.5, 0], [3.2, 12], [9.5, 12.3], [17.6, 13.6], [18.6, 24], [15.6, 31], [3.5, 31], [-7.4, 15.6], [-3.2, 14.2]] : [[0, 0], [0, 26], [6.5, 20], [11, 30], [15, 28.2], [10.6, 18.6], [19, 18.6]];
+  c.save(); c.translate(x, y); c.scale(s, s);
+  c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.lineWidth = 1.4 / Math.max(s, 0.1); c.beginPath();
+  pts.forEach((q, i) => (i ? c.lineTo(q[0], q[1]) : c.moveTo(q[0], q[1]))); c.closePath(); c.fill(); c.stroke(); c.restore();
+}
 function planOf(th, t) {
   const args = Object.assign({}, th.args || {});
   return { args, at: (end) => (th.still ? (th.dir === 'out' || args.dir === 'out' ? 0 : end) : (t % (0.35 + end + 0.9)) - 0.35) };
@@ -446,6 +453,61 @@ const DRAW = {
     c.fillStyle = '#fff'; c.strokeStyle = '#000'; c.beginPath();
     const pts = th.hand ? [[-2.5, 0], [2.5, 0], [3.2, 12], [9.5, 12.3], [17.6, 13.6], [18.6, 24], [15.6, 31], [3.5, 31], [-7.4, 15.6], [-3.2, 14.2]] : [[0, 0], [0, 26], [6.5, 20], [11, 30], [15, 28.2], [10.6, 18.6], [19, 18.6]];
     pts.forEach((q, i) => (i ? c.lineTo(q[0] * 0.6, q[1] * 0.6) : c.moveTo(q[0] * 0.6, q[1] * 0.6))); c.closePath(); c.fill(); c.stroke(); c.restore();
+  },
+  /**
+   * v0.60 (SAAS_INTERACTION.md): Click on Layer — the tool's own plan on a small app: the cursor travels to each
+   * piece's centre, settles, presses (ripple), and the piece presses with it around its centre.
+   */
+  click(c, W, H, th, t) {
+    const CP = require('../../../features/interact/clickPlan');
+    c.fillStyle = '#2f3740'; c.fillRect(0, 0, W, H);
+    const boxes = [[0.1, 0.14, 0.62, 0.3], [0.1, 0.42, 0.9, 0.58], [0.56, 0.7, 0.9, 0.86]].map((b) => [b[0] * W, b[1] * H, b[2] * W, b[3] * H]);
+    const a = Object.assign({ travel: 0.55, gap: 1.1, depth: 94, from: 'corner', ripple: true }, th.args || {});
+    const T = CP.times(boxes.length, { time: 0, travel: a.travel, gap: a.gap });
+    const clicks = boxes.map((b, i) => ({ t: T[i], p: [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2] }));
+    const pl = CP.plan(clicks, { from: a.from, W, H, travel: a.travel, gap: a.gap, depth: a.depth, ripple: a.ripple });
+    const span = pl.end - pl.start + 0.5;
+    const lt = th.still ? clicks[clicks.length - 1].t - 0.1 : pl.start + (t % span);
+    const press = pl.press.map((k) => ({ t: k.t, v: k.f }));
+    boxes.forEach((b, i) => {
+      const f = CP.valueAt(press, lt - clicks[i].t), cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2, w = (b[2] - b[0]) * f, h = (b[3] - b[1]) * f;
+      c.fillStyle = i === boxes.length - 1 ? ACC : (i === 0 ? 'rgba(230,230,230,0.22)' : 'rgba(230,230,230,0.12)');
+      rrect(c, cx - w / 2, cy - h / 2, w, h, Math.min(h / 2, 5)); c.fill();
+      if (i === 1) { c.fillStyle = lt > clicks[1].t ? ACC : 'rgba(230,230,230,0.35)'; const r = h * 0.32, kx = lt > clicks[1].t ? cx + w / 2 - h / 2 : cx + w / 2 - h * 1.1; c.beginPath(); c.arc(kx, cy, r, 0, Math.PI * 2); c.fill(); }
+    });
+    if (pl.ringS.length) {
+      const rs = CP.valueAt(pl.ringS, lt)[0] / 100, ro = CP.valueAt(pl.ringO, lt) / 100, p = CP.valueAt(pl.pos, lt);
+      if (rs > 0.02 && ro > 0.02) { c.strokeStyle = `rgba(255,255,255,${ro})`; c.lineWidth = 1.5; c.beginPath(); c.arc(p[0], p[1], 9 * rs, 0, Math.PI * 2); c.stroke(); c.lineWidth = 1; }
+    }
+    const p = CP.valueAt(pl.pos, lt), s = CP.valueAt(pl.scale, lt)[0] / 100;
+    c.globalAlpha = clamp01(CP.valueAt(pl.opacity, lt) / 100);
+    pointer(c, p[0], p[1], 0.55 * s, th.hand);
+    c.globalAlpha = 1;
+  },
+  /**
+   * v0.60: UI Reveal — a small page measured into boxes, ranked by the tool's own screenOrder (reading order, right to
+   * left, or from the centre), each piece playing Quick Animate's keys (+ fade + blur) one Stagger after the other.
+   */
+  uiReveal(c, W, H, th, t) {
+    c.fillStyle = '#2f3740'; c.fillRect(0, 0, W, H);
+    const boxes = [[0.08, 0.1, 0.92, 0.22], [0.08, 0.3, 0.36, 0.62], [0.38, 0.3, 0.64, 0.62], [0.66, 0.3, 0.92, 0.62], [0.08, 0.72, 0.56, 0.8], [0.66, 0.7, 0.92, 0.86]].map((b) => [b[0] * W, b[1] * H, b[2] * W, b[3] * H]);
+    const a = Object.assign({ kind: 'moveBT', dir: 'in', stagger: 0.06, order: 'screen' }, th.args || {});
+    const rank = PLAN.screenOrder(boxes, a.order || th.order || 'screen');
+    const isScale = a.kind === 'scale';
+    const moveY = a.distance ? Math.min(H * 0.3, a.distance / 1080 * H * 2.5) : H * 0.4;
+    const pl = PLAN.animate(a, isScale ? { scale: [100, 100] } : { position: [0, 0], offset: [0, moveY], opacity: 100 });
+    const lag = a.stagger || 0, lt0 = planOf(th, t).at(PLAN.endOf(pl.keys) + lag * (boxes.length - 1));
+    boxes.forEach((b, i) => {
+      const lt = lt0 - rank[i] * lag, v = PLAN.valueAt(pl.keys, lt);
+      c.save();
+      c.globalAlpha = fadeAt(a, lt); c.filter = blurAt(a, lt, W);
+      const cx = (b[0] + b[2]) / 2, cy = (b[1] + b[3]) / 2;
+      c.translate(cx, cy + (isScale ? 0 : v[1]));
+      if (isScale) { const s = Math.max(0, v[0] / 100); c.scale(s, s); }
+      c.fillStyle = i === boxes.length - 1 ? ACC : (i === 0 ? 'rgba(230,230,230,0.3)' : 'rgba(230,230,230,0.16)');
+      rrect(c, b[0] - cx, b[1] - cy, b[2] - b[0], b[3] - b[1], 4); c.fill();
+      c.restore();
+    });
   },
   /**
    * Background tile (v0.18): the real background for that palette, moving on hover with the Motion

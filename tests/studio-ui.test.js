@@ -40,6 +40,6 @@ test('Studio: thumbnail recipes draw without throwing (canvas stub)', () => {
   const thumbs = require('../extension/app/ui/studio/thumbs');
   const noop = () => {};
   const grad = { addColorStop: noop };
-  const c = new Proxy({}, { get: (o, k) => (k in o ? o[k] : (k === 'createLinearGradient' ? () => grad : noop)), set: (o, k, v) => { o[k] = v; return true; } });
+  const c = new Proxy({}, { get: (o, k) => (k in o ? o[k] : (k === 'createLinearGradient' || k === 'createRadialGradient' ? () => grad : noop)), set: (o, k, v) => { o[k] = v; return true; } });
   for (const sec of S.SECTIONS.filter((x) => x.kind === 'library')) for (const t of sec.tiles) for (const time of [0, 0.7, 1.9]) thumbs.draw(c, 120, 74, t.thumb, time);
 });

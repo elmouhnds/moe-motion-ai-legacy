@@ -37,6 +37,7 @@ function bgFrame(c, W, H, a, comp, t, dots = true) {
   const css = (q) => `rgb(${Math.round(q[0] * 255)},${Math.round(q[1] * 255)},${Math.round(q[2] * 255)})`;
   c.save(); c.beginPath(); c.rect(ox, oy, comp.width * k, comp.height * k); c.clip();
   if (a.style === 'solid' || !cols.length) { c.fillStyle = plan.base; c.fillRect(ox, oy, comp.width * k, comp.height * k); }
+  else if (a.style === 'mesh' && typeof document === 'undefined') { c.fillStyle = plan.base; c.fillRect(ox, oy, comp.width * k, comp.height * k); } // no DOM (tests): flat
   else if (a.style === 'mesh') {
     const gw = 64, gh = Math.max(8, Math.round(64 * comp.height / comp.width));
     const off = bgFrame.off || (bgFrame.off = document.createElement('canvas'));

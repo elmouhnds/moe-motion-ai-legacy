@@ -112,4 +112,34 @@ function valueAt(keys, t) {
 /** When the keys end (for a preview loop). */
 const endOf = (...lists) => Math.max(0, ...lists.filter(Boolean).map((k) => (k.length ? k[k.length - 1].t : 0)));
 
-module.exports = { easePair, keysFor, animate, fade, blur, trim, valueAt, endOf };
+
+/**
+ * v0.60 (docs/features/SAAS_INTERACTION.md): the order a UI is read in, from the boxes After Effects measured
+ * ([l, t, r, b] in comp space). Returns the rank of each box (0 = first to move).
+ *   screen     rows top → bottom, left → right in a row (how a page is read)
+ *   screenRtl  rows top → bottom, right → left (Arabic / Hebrew UI)
+ *   center     from the middle of the group outwards
+ * Two boxes share a row when their centres are closer in y than half the smaller height, so a button that sits a few
+ * pixels lower than the field beside it still moves with it.
+ */
+function screenOrder(boxes, mode) {
+  const it = boxes.map((b, i) => ({ i, cx: (b[0] + b[2]) / 2, cy: (b[1] + b[3]) / 2, h: Math.max(1, b[3] - b[1]) }));
+  let order;
+  if (mode === 'center') {
+    const mx = it.reduce((s, q) => s + q.cx, 0) / (it.length || 1), my = it.reduce((s, q) => s + q.cy, 0) / (it.length || 1);
+    order = it.slice().sort((a, b) => Math.hypot(a.cx - mx, a.cy - my) - Math.hypot(b.cx - mx, b.cy - my) || a.i - b.i);
+  } else {
+    const rows = [];
+    it.slice().sort((a, b) => a.cy - b.cy || a.i - b.i).forEach((q) => {
+      const row = rows[rows.length - 1];
+      if (row && Math.abs(q.cy - row.cy) < Math.min(q.h, row.h) / 2) { row.items.push(q); row.cy = row.items.reduce((s, x) => s + x.cy, 0) / row.items.length; } else rows.push({ cy: q.cy, h: q.h, items: [q] });
+    });
+    const dir = mode === 'screenRtl' ? -1 : 1;
+    order = rows.flatMap((r) => r.items.sort((a, b) => dir * (a.cx - b.cx) || a.i - b.i));
+  }
+  const rank = new Array(boxes.length);
+  order.forEach((q, k) => { rank[q.i] = k; });
+  return rank;
+}
+
+module.exports = { easePair, keysFor, animate, fade, blur, trim, valueAt, endOf, screenOrder };

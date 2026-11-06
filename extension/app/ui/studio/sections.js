@@ -156,7 +156,9 @@ const ZOOM = [
   T('spot', 'Spotlight', 'zoom.focus', { level: 160, spotlight: 55 }, { k: 'zoom', z: 1.6, spot: true }, ['Focus']),
   T('follow', 'Follow Layer', 'zoom.follow', {}, { k: 'follow' }, ['Focus']),
   T('cursorArrow', 'Cursor · Arrow', 'zoom.cursor', { kind: 'arrow' }, { k: 'cursor', hand: false }, ['Cursor']),
-  T('cursorHand', 'Cursor · Hand', 'zoom.cursor', { kind: 'hand' }, { k: 'cursor', hand: true }, ['Cursor'])
+  T('cursorHand', 'Cursor · Hand', 'zoom.cursor', { kind: 'hand' }, { k: 'cursor', hand: true }, ['Cursor']),
+  // v0.60: the cursor that clicks the selected layers themselves (no click-point null to key)
+  T('clickLayers', 'Cursor · Clicks', 'interact.click', { kind: 'arrow' }, { k: 'click', hand: false }, ['Cursor'], 'NEW')
 ];
 
 // A tile carries its preset's own numbers (the form's generic defaults would override them otherwise).
@@ -170,7 +172,14 @@ const COMP_TAG = { Analyze: 'Analyze', Color: 'Color', Key: 'Key', 'Generate on 
 const COMPOSITING = COMP_TOOLS.map((t) => Object.assign(T(`c-${t.id}`, t.name, t.id, {}, { k: 'icon', icon: t.icon || 'layers' }, [COMP_TAG[t.group] || 'Color']),
   { hint: t.description, needsInput: Object.values(t.params || {}).some((p) => p.required && p.default === undefined) }));
 
-const BACKGROUNDS = PAL.PALETTES.map((p) => T(`bg-${p.id}`, p.name, 'design.background', { palette: p.id, style: 'linear', from: 0, to: 2 }, { k: 'bg', palette: p.id, style: 'linear' }, p.tags));
+// v0.60: product backdrops open on their own look — a glow behind the UI, a studio sweep, a slow aurora — with fine grain
+const PRODUCT_BG = {
+  productNight: { style: 'radial', from: 2, to: 0, spread: 130, grain: 3 },
+  studioLight: { style: 'radial', from: 4, to: 0, spread: 160, grain: 2 },
+  auroraProduct: { style: 'mesh', from: 0, grain: 3, motion: 'drift' },
+  graphite: { style: 'radial', from: 2, to: 0, spread: 120, grain: 4 }
+};
+const BACKGROUNDS = PAL.PALETTES.map((p) => { const x = PRODUCT_BG[p.id]; const a = Object.assign({ palette: p.id, style: 'linear', from: 0, to: 2 }, x); const t = T(`bg-${p.id}`, p.name, 'design.background', a, Object.assign({ k: 'bg' }, a), p.tags, x ? 'NEW' : undefined); if (x) t.ownLook = true; return t; });
 
 /**
  * kind: 'library' (tiles + inspector) | 'view' (custom view id) | 'category' (classic tool list)
@@ -213,6 +222,15 @@ const UI_TILES = [
   UI_T('taskDark', 'Task · Dark', { template: 'uiTask', theme: 'dark' }, ['Controls', 'Dark'])
 ];
 UI_TILES.forEach((t) => { t.hint = (require('../../../features/design/templates').byId(t.args.template) || {}).hint; });
+// v0.60 (docs/features/SAAS_INTERACTION.md): Interact — a cursor that clicks the real layers, and a UI that builds in reading order
+const REVEAL = { kind: 'moveBT', dir: 'in', distance: 40, fade: true, blur: 12, stagger: 0.06, ease: 'smooth', duration: 0.7 };
+const INTERACT_TILES = [
+  Object.assign(T('ui-click', 'Click on Layer', 'interact.click', { kind: 'arrow', from: 'corner' }, { k: 'click', hand: false }, ['Interact'], 'NEW'), { hint: 'Select the layers in click order: the cursor goes to each one\'s real centre and the layer presses with it' }),
+  Object.assign(T('ui-tap', 'Tap', 'interact.click', { kind: 'hand', from: 'side', depth: 92 }, { k: 'click', hand: true }, ['Interact'], 'NEW'), { hint: 'A hand cursor that taps each selected layer, for touch and mobile UI' }),
+  Object.assign(T('ui-reveal', 'UI Reveal', 'quick.animate', Object.assign({ order: 'screen' }, REVEAL), { k: 'uiReveal', order: 'screen' }, ['Interact'], 'NEW'), { hint: 'The selected UI rises in from a blur in reading order — rows top to bottom, left to right, measured on screen' }),
+  Object.assign(T('ui-revealRtl', 'UI Reveal · RTL', 'quick.animate', Object.assign({ order: 'screenRtl' }, REVEAL), { k: 'uiReveal', order: 'screenRtl' }, ['Interact'], 'NEW'), { hint: 'The same build, right to left — for Arabic and Hebrew interfaces' }),
+  Object.assign(T('ui-revealCenter', 'UI Pop · Centre Out', 'quick.animate', { kind: 'scale', dir: 'in', overshoot: true, fade: true, stagger: 0.05, order: 'center', ease: 'snappy', duration: 0.5 }, { k: 'uiReveal', order: 'center' }, ['Interact'], 'NEW'), { hint: 'The pieces pop in from the middle of the layout outwards' })
+];
 
 const SECTIONS = [
   { id: 'home', label: 'Home', icon: 'home', kind: 'view' },
@@ -221,10 +239,10 @@ const SECTIONS = [
   // live in the Motion Control (graph + curve presets); they still resolve (Quick Bar, search) and show when searched.
   { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Blur', 'Trim', 'Ease', 'Keys', 'Proximity'],
     modes: [['In', 'In', 'The layer arrives'], ['Out', 'Out', 'The layer leaves'], ['Shake', 'Shake', 'An impact that settles back (real keys)'], ['Trim', 'Draw On', 'Trim paths for shape lines'], ['Proximity', 'Proximity', 'Layers react to a moving point']],
-    elsewhere: [['kit', 'Ease', 'Ease presets and the speed graph are in Motion Control']], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) && t.id !== 'motion.easeCurve' && t.id !== 'motion.pasteEase' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
+    elsewhere: [['kit', 'Ease', 'Ease presets and the speed graph are in Motion Control']], tools: (t) => t.category === 'motion' && !/^(zoom|interact)\./.test(t.id) && t.id !== 'motion.easeCurve' && t.id !== 'motion.pasteEase' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },
   { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true },
-  { id: 'productui', label: 'Product UI', icon: 'uiKit', kind: 'library', tiles: UI_TILES, filters: ['All', 'Controls', 'Feedback', 'Data', 'Dark'], tools: (t) => t.id === 'design.template' },
+  { id: 'productui', label: 'Product UI', icon: 'uiKit', kind: 'library', tiles: INTERACT_TILES.concat(UI_TILES), filters: ['All', 'Interact', 'Controls', 'Feedback', 'Data', 'Dark'], tools: (t) => t.id === 'design.template' || t.id === 'interact.click' },
   { id: 'templates', label: 'Templates', icon: 'type', kind: 'library', tiles: TEMPLATE_TILES, filters: ['All', 'Titles', 'Callouts', 'Outro', 'Arabic'], tools: (t) => t.id === 'design.template' },
   { id: 'shapes', label: 'Shapes & Icons', icon: 'shapes', kind: 'view' },
   { id: 'backgrounds', label: 'Backgrounds', icon: 'background', kind: 'library', tiles: BACKGROUNDS, filters: PAL.TAGS, tools: (t) => /^design\.(background|colorize)$/.test(t.id), extras: 'palette' },
@@ -232,7 +250,7 @@ const SECTIONS = [
   { id: 'brand', label: 'Brand', icon: 'brand', kind: 'view' },
   { id: 'layout', label: 'Layout & Grid', icon: 'grid', kind: 'library', tiles: LAYOUT, filters: ['All', 'Grid', 'Radial', 'Path', '3D', 'Animated', 'Guides', 'Cells', 'Clone', 'Effectors'],
     modes: [['Arrange', 'Arrange', 'Lay the selected layers out (grid, ring, spiral, globe…)'], ['Clone', 'Clone', 'One layer → many live copies on a grid (v0.33 Cloner)'], ['Effectors', 'Effectors', 'Change a grid’s items near a moving null: grow, reveal, scatter, step, wave, cascade'], ['Guides', 'Guides', 'Guides and safe areas on the comp'], ['Cells', 'Cells', 'Fit layers into split-screen cells']], tools: (t) => /^grid\./.test(t.id) },
-  { id: 'zoom', label: 'Zoom & Focus', icon: 'zoom', kind: 'library', tiles: ZOOM, filters: ['All', 'Zoom', 'Focus', 'Cursor'], tools: (t) => /^zoom\./.test(t.id) },
+  { id: 'zoom', label: 'Zoom & Focus', icon: 'zoom', kind: 'library', tiles: ZOOM, filters: ['All', 'Zoom', 'Focus', 'Cursor'], tools: (t) => /^(zoom|interact)\./.test(t.id) },
   { id: 'deliver', label: 'Deliver', icon: 'resize', kind: 'view' },
   { id: 'compositing', label: 'Compositing', icon: 'layers', kind: 'library', tiles: COMPOSITING, filters: ['All', 'Analyze', 'Color', 'Key', 'Green screen'], tools: (t) => t.category === 'compositing' && !/^glass\./.test(t.id) },
   { id: 'quick', label: 'Quick Bar', icon: 'bolt', kind: 'view' },

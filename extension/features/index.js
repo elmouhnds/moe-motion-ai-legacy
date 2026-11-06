@@ -22,6 +22,7 @@ const gridColour = require('./grid/colourTool');
 const gridTrail = require('./grid/trailTool');
 const rigBake = require('./bake/bake');
 const zoom = require('./zoom/tools');
+const interact = require('./interact/tools'); // v0.60 Click on Layer
 const glass = require('./glass/tools');
 const thickGlass = require('./glass/thickTools');
 const quick = require('./quick/tools');
@@ -37,7 +38,7 @@ const { delay } = require('./kit/delay');
 
 const TOOLS = [
   smartEase, stagger, proximity.apply, proximity.centerAnchor, proximity.remove,
-  zoom.focus, zoom.follow, zoom.cursor,
+  zoom.focus, zoom.follow, zoom.cursor, interact.click,
   text.animate, text.removeAnimation,
   brand.applyColor, brand.applyFont, brand.extractPalette, brandSource.fromSource, brandAll.applyAll,
   select.selectLayers, select.selectStep,

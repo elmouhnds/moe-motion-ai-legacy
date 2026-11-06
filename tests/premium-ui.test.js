@@ -57,7 +57,7 @@ test('Artwork: logo + an illustration for every sidebar section; banners have co
   for (const k of Object.keys(art.EMPTY)) assert.match(art.empty(k), /<svg/);
   const fakeApp = { services: { registry: reg } };
   const n = chrome.counts(fakeApp);
-  assert.ok(n.icons >= 1800 && n.expressions === Object.keys(E.PRESETS).length && n.palettes === 32);
+  assert.ok(n.icons >= 1800 && n.expressions === Object.keys(E.PRESETS).length && n.palettes === 36);
   for (const [id, f] of Object.entries(chrome.COPY)) {
     const c = f(n);
     assert.ok(c.kicker && c.title && c.pitch, id);

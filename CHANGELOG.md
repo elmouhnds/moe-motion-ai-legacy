@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.60.0] — 2026-11-06 — SaaS Interaction
+### Added
+- **Click on Layer** (Product UI › Interact, Zoom & Focus › Cursor): a cursor clicks the selected layers in order — each click point is the layer's visual centre measured by After Effects at that moment; the layer presses with the cursor, keyed on top of its own Scale, **in place** (Position compensates the anchor offset); the cursor's arrival is read back. Restore removes the cursor and the keys.
+- **UI Reveal**: Quick Animate's Stagger has an **Order** — selection, Screen ↘, Screen ↙ (RTL) or centre out — from the boxes After Effects measures. Tiles: UI Reveal, UI Reveal · RTL, UI Pop · Centre Out.
+- **Product backdrops**: Product Night, Studio Light, Aurora Product, Graphite (radial / mesh with fine grain).
+- AE Self-Test: *Click on Layer: cursor on the centre, press in place*.
+### Tests
+- `tests/saasinteraction.test.js` (5). **Mock / preview, not After Effects.**
+
 ## [0.59.0] — 2026-11-06 — Styles + Shakes
 ### Added
 - **Shakes** (Motion › Shake): Bump, Zoom Punch, Whip, Slam, Jitter — real eased keyframes from a pure plan (`quick/shakePlan.js`), added on top of the layer's own animation, with Intensity / Rotation / Frequency / Settle; previews play the plan.

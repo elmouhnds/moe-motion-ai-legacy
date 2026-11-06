@@ -84,8 +84,11 @@ test('Light / Dark and the brand: card colours by look; an active client replace
 test('the Product UI page: 12 tiles (light + dark), on the Design tab and stage, settings only where they apply', () => {
   const S = require('../extension/app/ui/studio/sections');
   const sec = S.byId('productui');
-  assert.equal(sec.tiles.length, 12);
-  assert.ok(sec.tiles.every((t) => t.tool === 'design.template' && TPL.isUi(t.args.template)));
+  // v0.60: + 5 Interact tiles (Click on Layer, Tap, UI Reveal ×3) in front of the 12 pieces
+  const pieces = sec.tiles.filter((t) => !t.tags.includes('Interact'));
+  assert.equal(pieces.length, 12);
+  assert.equal(sec.tiles.length, 17);
+  assert.ok(pieces.every((t) => t.tool === 'design.template' && TPL.isUi(t.args.template)));
   const AE = require('../extension/app/ui/layoutAE');
   assert.ok(AE.TABS.find((t) => t.id === 'ae-design').groups.some((g) => g.id === 'productui'));
   const W = require('../extension/app/ui/workflow');

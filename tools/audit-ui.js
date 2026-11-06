@@ -22,7 +22,7 @@ const BASE = 'http://localhost:5173/';
 const VIEWS = ['home', 'kit', 'animate', 'text', 'layout', 'looks', 'zoom', 'expressions', 'shapes', 'backgrounds', 'compositing', 'deliver', 'quick', 'select', 'brand', 'tools', 'favorites', 'history', 'settings', 'diagnostics'];
 const FIXTURE = { layout: 'layout', deliver: 'layout', zoom: 'layout', looks: 'layout', quick: 'layout', text: 'studio', brand: 'studio', select: 'studio' };
 const WIDTH = 900;
-const WORKERS = 5;
+const WORKERS = Number(process.env.AUDIT_WORKERS) || 5; // fewer on a slow machine (each page connects in 5–6 s alone)
 // Controls revealed by one click that are queued for testing (a category chip can reveal ~100 icons).
 const MAX_NEW = Number(process.env.AUDIT_MAX_NEW || 1e9);
 const OUT = path.resolve(__dirname, '../dev/audit');
@@ -115,8 +115,8 @@ async function open(page, view) {
     const same = await page.evaluate(() => window.__audit.snap().dom === window.__audit.baseDom && window.__audit.snap().svc === window.__audit.baseSvc);
     if (same) return;
   }
-  await page.goto(url(view));
-  await page.waitForSelector('.ctx .dot.live', { timeout: 10000 });
+  await page.goto(url(view), { timeout: 30000 }); // a cold page load is slower than a click (5 workers share the CPU)
+  await page.waitForSelector('.ctx .dot.live', { timeout: 30000 });
   await page.waitForTimeout(250); // library tiles fill their Inspector on the next tick
   await setupVariant(page, view);
   await page.evaluate(PAGE_HELPERS);
@@ -248,8 +248,8 @@ async function layoutPass(browser, view) {
   const out = [];
   for (const w of [340, 420, 600, 900]) {
     const page = await browser.newPage({ viewport: { width: w + 40, height: 800 } });
-    await page.goto(url(view, w));
-    await page.waitForSelector('.ctx .dot.live', { timeout: 10000 });
+    await page.goto(url(view, w), { timeout: 30000 });
+    await page.waitForSelector('.ctx .dot.live', { timeout: 30000 });
     await setupVariant(page, view);
     await page.waitForTimeout(300);
     const r = await page.evaluate(() => {
@@ -280,7 +280,7 @@ async function layoutPass(browser, view) {
 async function keys(browser) {
   const page = await browser.newPage({ viewport: { width: 940, height: 800 } });
   const res = [];
-  const go = async () => { await page.goto(url('home')); await page.waitForSelector('.ctx .dot.live'); await page.waitForTimeout(200); };
+  const go = async () => { await page.goto(url('home'), { timeout: 30000 }); await page.waitForSelector('.ctx .dot.live'); await page.waitForTimeout(200); };
   const st = () => page.evaluate(() => { const s = window.__app.state.get(); return { view: s.view, modal: s.modal, pal: !!window.__app.paletteOpen, cp: s.copilot.open, bIx: s.bIx || null, toast: s.toast || '' }; });
   // v0.28 (Bento default): Ctrl+1…5 jump to a stage on Home; ` opens the assistant; Alt+1 runs Everyday slot 1
   const STAGE = ['st-animate', 'st-arrange', 'st-design', 'st-finish', 'st-deliver'];

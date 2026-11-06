@@ -8,6 +8,11 @@ const P = (id, name, tags, colors) => ({ id, name, tags, colors });
 
 const PALETTES = [
   P('tomato', 'MOE Tomato', ['Warm', 'Brand'], ['#1C1C1E', '#2F3A56', '#FF7A59', '#FFB38A', '#F4EDE4']),
+  // v0.60 (SAAS_INTERACTION.md): product backdrops — the quiet, lit fields product UI sits on (a glow, a studio sweep)
+  P('productNight', 'Product Night', ['Product', 'Dark'], ['#05070D', '#0B1226', '#2F6BFF', '#7AA2FF', '#E8EEFF']),
+  P('studioLight', 'Studio Light', ['Product', 'Clean'], ['#C9CED8', '#DDE1E8', '#EEF0F4', '#F7F8FA', '#FFFFFF']),
+  P('auroraProduct', 'Aurora Product', ['Product', 'Neon'], ['#070A14', '#1A1446', '#5B5BF7', '#22D3EE', '#F0ABFC']),
+  P('graphite', 'Graphite', ['Product', 'Neutral'], ['#0A0A0B', '#161618', '#2A2A2E', '#8E8E93', '#F2F2F7']),
   P('midnight', 'Midnight Neon', ['Dark', 'Neon'], ['#0B0F1A', '#1B2440', '#6C5CE7', '#00D1FF', '#FF4D9D']),
   P('sunset', 'Desert Sunset', ['Warm'], ['#2D1B33', '#8C2F39', '#E2711D', '#FFB627', '#FFE8C2']),
   P('ocean', 'Deep Ocean', ['Cool'], ['#03045E', '#0077B6', '#00B4D8', '#90E0EF', '#CAF0F8']),

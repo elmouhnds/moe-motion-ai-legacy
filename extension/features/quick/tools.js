@@ -226,7 +226,9 @@ const animate = {
     angle: { type: 'number', label: 'Angle', min: 5, max: 1080, step: 5, default: 180, unit: '°', showIf: (a) => a.kind === 'spin' },
     // v0.58 (APPLE_MOTION.md): comes in sharp from a blur — a `MOE Blur` (Gaussian Blur) keyed on the same timing
     blur: { type: 'number', label: 'Blur', min: 0, max: 200, step: 1, default: 0, unit: 'px', description: '0 = none. The layer comes in sharp from this blur (or leaves into it), on the same timing — a MOE Blur effect, removed by Restore' },
-    stagger: { type: 'number', label: 'Stagger', min: 0, max: 2, step: 0.01, default: 0, unit: 's', advanced: true, description: 'Delay between layers (selection order)' }
+    stagger: { type: 'number', label: 'Stagger', min: 0, max: 2, step: 0.01, default: 0, unit: 's', advanced: true, description: 'Delay between layers' },
+    // v0.60 (SAAS_INTERACTION.md): UI Reveal — the order comes from where each layer really is on screen (measured by AE)
+    order: { type: 'enum', label: 'Order', default: 'selection', advanced: true, options: [{ value: 'selection', label: 'Selection order' }, { value: 'screen', label: 'Screen ↘ (rows, left → right)' }, { value: 'screenRtl', label: 'Screen ↙ (rows, right → left)' }, { value: 'center', label: 'From the centre out' }], description: 'Who moves first when Stagger is on. Screen orders read the boxes After Effects measures at the playhead, so a UI builds the way it is read', showIf: (a) => a.stagger > 0 }
   },
   requires: { comp: true, minLayers: 1 }, permissions: ['modify.keyframes', 'modify.effects'], recovery: 'undo+checkpoint',
   ai: { callable: true, hint: 'Quick in/out animation at the playhead: slide from a side, fade, scale up/down, spin; blur (px) adds an Apple-style blur in / out.' },
@@ -244,14 +246,17 @@ const animate = {
     const desc = await host.call('layers.describe', { compId: comp.id });
     const ids = prepared.layers.map((l) => l.id);
     const isMove = /^move/.test(args.kind);
-    const boxes = isMove && !args.distance ? await host.call('layers.bounds', { compId: comp.id, layerIds: ids, times: [comp.time] }) : null;
+    const byScreen = args.stagger > 0 && args.order && args.order !== 'selection' && ids.length > 1;
+    const boxes = (isMove && !args.distance) || byScreen ? await host.call('layers.bounds', { compId: comp.id, layerIds: ids, times: [comp.time] }) : null;
+    // v0.60: the rank of each layer in the stagger — selection order, or the screen order of the measured boxes
+    const rank = byScreen ? PLAN.screenOrder(ids.map((id) => { const b = boxes.layers.find((x) => x.layerId === id); return b && b.boxes[0] ? b.boxes[0] : [0, 0, 0, 0]; }), args.order) : ids.map((_, i) => i);
     const e = easePair(args.ease);
     const items = [];
     const skipped = [];
     for (let i = 0; i < prepared.layers.length; i++) {
       const L = prepared.layers[i];
       const D = desc.layers.find((x) => x.id === L.id);
-      const t0 = comp.time + i * (args.stagger || 0), t1 = t0 + args.duration;
+      const t0 = comp.time + rank[i] * (args.stagger || 0), t1 = t0 + args.duration;
       const k = (a, b, mid) => PLAN.keysFor(e, t0, t1 - t0, a, b, mid);
       if (isMove) {
         if (D.parentId) { skipped.push(`${L.name} (parented)`); continue; }
@@ -295,16 +300,17 @@ const animate = {
       const animated = [...new Set(items.map((it) => it.address.layerId))];
       fx = await S.writeEffects(host, ctx, animated.map((id) => ({ layer: { layerId: id }, items: [{ key: 'MOE Blur', matchName: 'ADBE Gaussian Blur 2', before: [], params: [{ id: 'Repeat Edge Pixels', value: 1, names: ['Repeat Edge Pixels'] }] }] })), 'MOE: Blur');
       animated.forEach((id) => {
-        const i = prepared.layers.findIndex((l) => l.id === id), t0 = comp.time + i * (args.stagger || 0);
+        const i = prepared.layers.findIndex((l) => l.id === id), t0 = comp.time + rank[i] * (args.stagger || 0);
         items.push({ address: { layerId: id, matchNames: ['ADBE Effect Parade', 'name:MOE Blur', 'name:Blurriness'] }, keys: bl.keys.map((x) => Object.assign({}, x, { t: x.t + t0 })) });
       });
     }
     const keys = await host.call('keys.write', { compId: comp.id, label: 'MOE: Quick Animate', items });
-    return { keys, skipped, fx };
+    return { keys, skipped, fx, order: byScreen ? prepared.layers.map((l, i) => ({ name: l.name, rank: rank[i] })).sort((a, b) => a.rank - b.rank).map((x) => x.name) : null };
   },
   verify({ result }) {
     const c = result.keys.items.map((it) => ({ ok: it.written.length >= 2, label: `${it.layerName} › ${it.name}`, detail: `${it.written.length} keys ${it.written[0].t.toFixed(2)}–${it.written[it.written.length - 1].t.toFixed(2)}s` }));
     for (const s of result.skipped) c.push({ ok: true, label: 'Skipped', detail: s });
+    if (result.order) c.push({ ok: true, label: 'Screen order', detail: result.order.join(' → ') });
     return { ok: c.every((x) => x.ok), checks: c };
   },
   checkpoint({ result, ctx }) { return { compId: ctx.comp.id, items: keyRestore(result.keys.items), fx: result.fx ? S.effectsCheckpoint(result.fx, ctx) : null }; },

@@ -33,9 +33,12 @@
 - Next: Text section in the same library + Inspector pattern with previews on the selected text and client colours; hover-to-preview on the comp (temporary keys, auto-revert); "Apply In + matching Out"; context suggestions on the section home; drag-to-reorder Quick Bar
 
 ## M1.9 — Premium ✅ (v0.6.0)
-- [x] Shapes & Icons (1,899 icons + 22 native shapes), Backgrounds (32 palettes, gradient / mesh / grain / drift), Colorize, 33 expressions, ease library, Home, My Presets + packs, artwork & banners, appearance (Midnight, 8 accents, reduced motion, Sora), panel icons
+- [x] Shapes & Icons (1,899 icons + 22 native shapes), Backgrounds (36 palettes, gradient / mesh / grain / drift), Colorize, 33 expressions, ease library, Home, My Presets + packs, artwork & banners, appearance (Midnight, 8 accents, reduced motion, Sora), panel icons
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
+
+## M1.65 — SaaS Interaction ✅ (v0.60.0)
+- Click on Layer (measured centres, press in place), UI Reveal by screen order, product backdrops (wave 3 of the reference plan). Next: Carousel 3D, Wipe Reveal.
 
 ## M1.64 — Styles + Shakes ✅ (v0.59.0)
 - Shakes as real keys (wave 2 of the reference plan) and Styles from native effects.
