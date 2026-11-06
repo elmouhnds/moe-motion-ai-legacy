@@ -395,8 +395,11 @@ Section "MOE Motion AI" SecMain
   FileClose $9
 
   DetailPrint "$(StepRegister)"
-  ; Unsigned CEP extensions load only with PlayerDebugMode for CSXS 12 (After Effects 2025).
+  ; Unsigned CEP extensions load only with PlayerDebugMode, read per CSXS version: 11 (After Effects 2024),
+  ; 12 (2025, and 2026 as reported for 26.3), 13 (reported for newer builds). Writing all three is harmless.
+  WriteRegStr HKCU "Software\Adobe\CSXS.11" "PlayerDebugMode" "1"
   WriteRegStr HKCU "${CSXS}" "PlayerDebugMode" "1"
+  WriteRegStr HKCU "Software\Adobe\CSXS.13" "PlayerDebugMode" "1"
 
   ; Uninstaller + Apps entry (one entry; its version is updated on every install).
   CreateDirectory "${TOOLDIR}"

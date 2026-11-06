@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.65.2] — 2026-11-06 — After Effects 2026
+### Changed
+- The installer enables unsigned panels for CSXS 11, 12 and 13 (After Effects 2024, 2025, 2026 and newer builds), not only 12. The panel already accepts After Effects 25.0 and later (`Host AEFT [25.0,99.9]`, CSXS 12.0 minimum) and the installer finds After Effects 2026.
+### Not done
+- Signing the panel (one public report says After Effects 2026 26.3 refused an unsigned panel despite PlayerDebugMode): needs running Adobe's ZXPSignCmd at build time — waiting for the owner's decision.
+### Tests
+- Wine: the three registry keys are written; silent update keeps one folder. **Not run in After Effects 2026.**
+
 ## [0.65.1] — 2026-11-06 — A redesigned installer
 ### Changed
 - **The installer looks like the panel**: one dark surface (welcome, headers, finish), new artwork in the panel's own font (`tools/build-installer-art.js`), a header image on the install pages.
