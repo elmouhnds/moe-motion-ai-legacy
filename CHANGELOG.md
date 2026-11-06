@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.62.0] — 2026-11-06 — Rename-safe links
+### Added
+- **Rename-safe links** (the study's defect S1, "high"): every MOE expression that names a layer carries that layer's permanent After Effects id (`/*MOE-LINK:<id>*/`); renaming a Grid null, Effector, Glass, Trail source or followed layer is seen by the panel and **relinked at once** — one undo step, a toast. A deleted layer is reported, never guessed; user expressions are untouched.
+- Relink tool (Expressions) and host ops `links.scan` / `links.relink`.
+- AE Self-Test: *Rename a Grid null: Relink keeps every item where it was*.
+### Changed
+- audit-ui retries a page's connection once before calling it broken.
+### Tests
+- `tests/links.test.js` (7), including all 318 tiles and tools; 504 tests. **Mock / preview — the Self-Test in After Effects is the proof.**
+
 ## [0.61.0] — 2026-11-06 — Engine 2
 From the owner's After Effects study reports (AppleFX Lite, SaaS Kit): how every tool runs, not one tool.
 ### Changed

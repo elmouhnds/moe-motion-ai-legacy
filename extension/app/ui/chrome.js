@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['link', 'Rename anything — nothing breaks', 'Rename a Grid null, an Effector, a Glass or a layer you follow: MOE sees it and relinks its expressions to the new name at once (one Ctrl+Z if you want it back). It finds the layer by its permanent After Effects id, never by guessing.'],
   ['bolt', 'One Ctrl+Z, every time', 'Every MOE run is now ONE step in After Effects\' undo — however many layers, keys and effects it made. Keys always land on a frame, locked layers are never touched (the panel says which it skipped), and big selections are fast: 60 layers cost the same few calls as 3.'],
   ['cursor', 'A cursor that clicks your real layers', 'Product UI › Interact: select the layers in the order they are clicked and press Click — the cursor lands on each one\'s real centre (After Effects measures it at that moment) and the layer presses in place with it. UI Reveal builds a screen in reading order (or right to left for Arabic), and Backgrounds has four product backdrops.'],
   ['zoom', 'Shakes and Styles', 'Motion has a new Shake mode: Bump, Zoom Punch, Whip, Slam and Jitter — real keyframes that settle back and sit on top of your animation. Looks has Styles: Soft Shadow, Deep Shadow, Glow and a Light Sweep that crosses the layer every few seconds, all from After Effects\' own effects.'],

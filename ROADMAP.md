@@ -37,8 +37,11 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.67 — Rename-safe links ✅ (v0.62.0)
+- Permanent layer ids in every MOE expression link; automatic Relink after a rename. Next: Progress + Stop for long runs, Grid clones in one call, Carousel 3D.
+
 ## M1.66 — Engine 2 ✅ (v0.61.0)
-- One Ctrl+Z per run, keys on the frame grid, constant host round trips, locked layers never changed (from the owner's AE study). Next: rename-safe links (ids instead of names), Progress + Stop, Carousel 3D.
+- One Ctrl+Z per run, keys on the frame grid, constant host round trips, locked layers never changed (from the owner's AE study). Next: Progress + Stop, Carousel 3D.
 
 ## M1.65 — SaaS Interaction ✅ (v0.60.0)
 - Click on Layer (measured centres, press in place), UI Reveal by screen order, product backdrops (wave 3 of the reference plan). Next: Carousel 3D, Wipe Reveal.

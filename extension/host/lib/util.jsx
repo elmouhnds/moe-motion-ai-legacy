@@ -152,6 +152,21 @@
         return s.length > max ? s.substring(0, max) + '\u2026' : s;
     };
 
+    /* v0.62 (docs/features/LINKS.md): a MOE expression (tagged "// MOE") that names a layer gets that layer's permanent
+       After Effects id beside the name, as a MOE-LINK comment inside the layer() call. The expression still finds the
+       layer by name (fast); links.relink uses the id to write the new name after a rename. Nothing is added to layers. */
+    U.linkCode = function (comp, code) {
+        code = String(code || '');
+        if (!/\/\/ MOE/.test(code) || !/thisComp\.layer\("/.test(code)) { return code; }
+        return code.replace(/thisComp\.layer\("((?:[^"\\]|\\.)*)"\)/g, function (m, raw) {
+            var name = raw.replace(/\\(["\\])/g, '$1'), k;
+            for (k = 1; k <= comp.numLayers; k++) {
+                if (comp.layer(k).name === name) { return 'thisComp.layer(/*MOE-LINK:' + comp.layer(k).id + '*/"' + raw + '")'; }
+            }
+            return m;
+        });
+    };
+
     /* v0.61 (docs/features/ENGINE2.md): inside a run's transaction (tx.begin ... tx.end) every op joins the run's
        one undo group, so one Ctrl+Z undoes the whole run. Outside a transaction each op is its own group. */
     U.withUndo = function (label, fn) {

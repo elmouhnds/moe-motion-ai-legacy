@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Rename-safe links** (v0.62.0): rename a Grid null, an Effector, a Glass or a followed layer — MOE relinks its expressions by the layer's permanent id, in one undo step (docs/features/LINKS.md).
+
 **Engine 2** (v0.61.0): every tool is one Ctrl+Z, writes its keys on the comp's frames, costs a handful of round trips whatever the layer count, and never touches a locked layer (docs/features/ENGINE2.md).
 
 **SaaS Interaction** (v0.60.0): a cursor that clicks the real layers at their measured centres while each one presses in place, UI that builds in reading order (or right to left, or from the centre), and four product backdrops (docs/features/SAAS_INTERACTION.md).

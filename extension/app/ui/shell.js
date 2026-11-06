@@ -276,8 +276,10 @@ function createApp(root, services, env = {}) {
         const ctx = await services.executor.readContext();
         app.stats.ctxReads++; app.stats.ctxMs = Date.now() - t0;
         lastCtxAt = Date.now();
-        const prev = JSON.stringify(app.state.get().ctx);
+        const prevCtx = app.state.get().ctx, prev = JSON.stringify(prevCtx);
         if (JSON.stringify(ctx) !== prev || app.state.get().hostError) app.state.set({ ctx, hostError: null });
+        // v0.62 (LINKS.md): a renamed layer that MOE expressions read is relinked at once (one undo step, a toast)
+        require('./linkwatch').watch(app, prevCtx, ctx).catch((e) => services.logger.warn('ui', 'relink failed', { message: e.message }));
         // v0.28: each AE project remembers its client — switching projects switches the client too
         const sync = require('./workflow').syncProject(services.store, ctx, services.brands, lastProject);
         if (sync.switched) app.toast(`${sync.project} → client ${sync.switched.name}`, 3200, 'ok');

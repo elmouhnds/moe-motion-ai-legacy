@@ -70,6 +70,18 @@
         }
     };
 
+    /* v0.62 (LINKS.md): rename a layer of the self-test comp (to prove a renamed grid relinks). args: { layerId, name } */
+    ops['selftest.rename'] = {
+        mutates: true,
+        run: function (args) {
+            var comp = app.project.activeItem, k, L = null;
+            if (!(comp instanceof CompItem) || String(comp.name).substring(0, 13) !== 'MOE Self-Test') { U.fail('NOT_SELFTEST', 'Rename is only run on the self-test comp.'); }
+            for (k = 1; k <= comp.numLayers; k++) { if (String(comp.layer(k).id) === String(args.layerId)) { L = comp.layer(k); } }
+            if (!L) { U.fail('NOT_FOUND', 'Layer not found.'); }
+            return U.withUndo('MOE: Self-Test Rename', function () { var from = L.name; L.name = String(args.name); return { from: from, to: L.name }; });
+        }
+    };
+
     ops['selftest.commands'] = {
         mutates: false,
         run: function (args) {

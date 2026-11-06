@@ -1,4 +1,4 @@
-# MOE against the study's KPIs (v0.61)
+# MOE against the study's KPIs (v0.62)
 
 **Sources:** the owner's study reports, from AE 25.6.6 on Windows 11:
 
@@ -24,14 +24,14 @@ A real After Effects run by the owner is the final proof.
 | Native AE alerts | 0 | 0 | 4 kinds | **0**: no `alert` / `confirm` anywhere in the host or the panel | `grep` |
 | Disabled button with a written reason | 100 % | no reason | not disabled | **✅** The bar shows the reason as text; the button and the executor share one rule | `engine2.test.js` (locked case) |
 | Keys on the frame grid | 100 % | off at 24/30/60 | ✅ | **✅ 318 cases at 24/25/30/60 fps** | `fpsmatrix.test.js` |
-| Survives rename / move | 100 % | n/a (no links) | breaks | ❌ Expressions still find their null by name. **v0.62.** | — |
+| Survives rename / move | 100 % | n/a (no links) | breaks | **✅ v0.62:** permanent ids in every link; automatic Relink (one undo step); items back within 0.01 px | `links.test.js`; Self-Test *Rename a Grid null* in AE |
 | Clicks after selecting | ≤ 2 | ≈ 2 | 1–2 | **1** (▶ on a tile, or double-click; F4 repeats the last) | UI audit |
 
 ## The defects list, mapped to MOE
 
 | Defect | In MOE |
 |---|---|
-| S1 links by name | **Open:** the Grid, Glass, Trail and Proximity expressions use `thisComp.layer("name")`. Next release. |
+| S1 links by name | **Fixed in v0.62** (LINKS.md) |
 | S2 native alerts | None ✅ |
 | S3 Undo leaves imported files | MOE imports nothing ✅ |
 | S4 no progress for long runs | A spinner, no Stop. **Open.** |

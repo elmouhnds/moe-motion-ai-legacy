@@ -45,14 +45,16 @@ const CHECKS = [
   // v0.60 (SAAS_INTERACTION.md): the press stays in place even on a text whose anchor is on its baseline corner
   { id: 'click', label: 'Click on Layer: cursor on the centre, press in place', run: checkClick },
   // v0.61 (ENGINE2.md): the study's rule 4 — one apply = one Ctrl+Z, proven in After Effects itself
-  { id: 'oneUndo', label: 'One Ctrl+Z undoes a whole run (Click on Layer: measure, cursor, keys)', run: checkOneUndo }
+  { id: 'oneUndo', label: 'One Ctrl+Z undoes a whole run (Click on Layer: measure, cursor, keys)', run: checkOneUndo },
+  // v0.62 (LINKS.md): the study's defect S1 — rename the controller null, nothing may break
+  { id: 'relink', label: 'Rename a Grid null: Relink keeps every item where it was', run: checkRelink }
 ];
 
 /* ---------- helpers ---------- */
 function helper(services, comp, opts) {
   const host = services.host;
   const T = {
-    host, comp, compId: comp.compId, made: [],
+    host, services, comp, compId: comp.compId, made: [],
     async nulls(points, prefix = 'ST Item') {
       const ids = [];
       for (let i = 0; i < points.length; i++) {
@@ -389,6 +391,25 @@ async function checkOneUndo(T) {
   }
   await T.host.call('layers.remove', { compId: T.compId, layerIds: [a.layerId], onlyNamed: 'ST ' });
   return { status, detail, numbers: { keysAfter, made, found: u.found } };
+}
+
+async function checkRelink(T) {
+  const before = (await T.layerIds()).length;
+  const g = await grid9(T);
+  const at = T.comp.time + 0.5;
+  const p0 = await T.positions(g.ids, at);
+  await T.host.call('selftest.rename', { layerId: g.gridId, name: 'ST Renamed "Grid"' });
+  const broken = (await T.values(at, g.ids.map((id) => ({ layerId: id, matchNames: POS })))).filter((v) => v.error).length;
+  const r = await T.run('links.relink', {});
+  const p1 = await T.positions(g.ids, at);
+  const errs = p1.map((p, i) => Math.hypot(p[0] - p0[i][0], p[1] - p0[i][1]));
+  const left = (await T.host.call('links.scan', { compId: T.compId })).renamed.length;
+  await T.services.executor.restore(r.checkpointId);
+  await T.host.call('selftest.rename', { layerId: g.gridId, name: g.gridName });
+  const u = await dropGrid9(T, g, before);
+  const worst = maxOf(errs);
+  const ok = broken > 0 && worst < 0.01 && left === 0 && u.back;
+  return { status: ok ? 'pass' : 'fail', detail: `after the rename ${broken} of ${g.ids.length} items showed an expression error (as After Effects does); Relink: ${r.result.fixed.length} expression(s), items back within ${r2(worst)} px, ${left} renamed link(s) left · undo ${u.back ? 'ok' : 'left layers'}`, numbers: { broken, worst, fixed: r.result.fixed.length } };
 }
 
 async function checkSpeed(T) {

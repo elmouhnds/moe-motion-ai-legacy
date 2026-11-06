@@ -115,8 +115,9 @@ async function open(page, view) {
     const same = await page.evaluate(() => window.__audit.snap().dom === window.__audit.baseDom && window.__audit.snap().svc === window.__audit.baseSvc);
     if (same) return;
   }
-  await page.goto(url(view), { timeout: 30000 }); // a cold page load is slower than a click (5 workers share the CPU)
-  await page.waitForSelector('.ctx .dot.live', { timeout: 30000 });
+  // a cold page load is slower than a click (workers share the CPU); one reload before calling the page broken
+  await page.goto(url(view), { timeout: 30000 });
+  try { await page.waitForSelector('.ctx .dot.live', { timeout: 30000 }); } catch (e) { await page.goto(url(view), { timeout: 30000 }); await page.waitForSelector('.ctx .dot.live', { timeout: 30000 }); }
   await page.waitForTimeout(250); // library tiles fill their Inspector on the next tick
   await setupVariant(page, view);
   await page.evaluate(PAGE_HELPERS);

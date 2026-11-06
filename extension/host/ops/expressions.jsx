@@ -14,8 +14,8 @@
         };
     }
 
-    function setExpr(prop, code, enabled) {
-        prop.expression = code;
+    function setExpr(prop, code, enabled, comp) {
+        prop.expression = comp ? U.linkCode(comp, code) : code; /* v0.62: MOE-LINK ids (LINKS.md) */
         if (code !== '') { prop.expressionEnabled = enabled; }
     }
 
@@ -34,7 +34,7 @@
                         continue;
                     }
                     before = state(prop);
-                    setExpr(prop, args.targets[i].expression, args.targets[i].enabled !== false);
+                    setExpr(prop, args.targets[i].expression, args.targets[i].enabled !== false, comp);
                     after = state(prop);
                     reverted = false;
                     if (after.expressionError && args.revertOnError) {
