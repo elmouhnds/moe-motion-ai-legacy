@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.64 — Styles + Shakes ✅ (v0.59.0)
+- Shakes as real keys (wave 2 of the reference plan) and Styles from native effects.
+
 ## M1.63 — Apple Motion ✅ (v0.58.0)
 - Blur on entrances, Native curves, Hero text presets (wave 1 of the reference plan).
 

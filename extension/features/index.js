@@ -29,6 +29,7 @@ const exprQuick = require('./expressions/quick');
 const green = require('./generate/green');
 const design = require('./design/tools');
 const { template } = require('./design/templateTool');
+const { style } = require('./design/styles'); // v0.59 Styles
 const curves = require('./curves/tools');
 const transform = require('./transform/tools');
 const kit = require('./kit/tools');
@@ -44,11 +45,11 @@ const TOOLS = [
   adapt.resize, adapt.suggest,
   exprQuick.quick, expr.apply, expr.validate, expr.inspect, expr.remove, assist,
   quick.reveal, quick.purge, quick.duplicate, quick.flip, quick.parentNull, quick.precompose, quick.separate,
-  quick.selectSame, quick.reverseKeys, quick.mirrorKeys, quick.animate, quick.trim, quick.typewriter, quick.counter,
+  quick.selectSame, quick.reverseKeys, quick.mirrorKeys, quick.animate, quick.shake, quick.trim, quick.typewriter, quick.counter,
   ...compositing,
   glass.apply, glass.look, thickGlass.thick, thickGlass.thickLook,
   green.greenPrompt, green.importKey,
-  design.insertShape, design.background, design.colorize, template,
+  design.insertShape, design.background, design.colorize, template, style,
   curves.easeCurve, curves.pasteEase, transform.anchor, transform.align, transform.clone,
   kit.interp, kit.trimToKeys, kit.parent, kit.stare, kit.vignette, kit.trash, delay
 ];

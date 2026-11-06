@@ -48,7 +48,34 @@ const animArgs = (th, kind) => Object.assign({ kind, dir: th.dir || 'in', oversh
 const fadeAt = (a, lt) => { const f = PLAN.fade(a, { opacity: 100 }); return f ? clamp01(PLAN.valueAt(f.keys, lt) / 100) : 1; };
 /** v0.58: the plan's Blur at local time lt as a canvas filter (comp pixels → tile pixels; 'none' without blur). */
 const blurAt = (a, lt, W) => { const b = PLAN.blur(a); const px = b ? PLAN.valueAt(b.keys, lt) * (W / 1920) * 2.2 : 0; return px > 0.05 ? `blur(${px.toFixed(2)}px)` : 'none'; };
+const SHK = require('../../../features/quick/shakePlan');
 const DRAW = {
+  // v0.59: a shake plays the plan's own keys (offsets in comp px / %, eased like After Effects) on a card
+  shake(c, W, H, th, t) {
+    const p = SHK.plan(th.type, th.args || {});
+    const loop = p.end + 0.9, lt = th.still ? p.end * 0.1 : (t % loop) - 0.3;
+    const k = W / 640;
+    const d = p.position ? SHK.valueAt(p.position, lt) : [0, 0], ds = p.scale ? SHK.valueAt(p.scale, lt) : 0, dr = p.rotation ? SHK.valueAt(p.rotation, lt) : 0;
+    const bw = W * 0.38, bh = H * 0.34;
+    c.setLineDash([3, 3]); c.strokeStyle = DIM; rrect(c, W / 2 - bw / 2, H / 2 - bh / 2, bw, bh, 5); c.stroke(); c.setLineDash([]);
+    c.save(); c.translate(W / 2 + d[0] * k, H / 2 + d[1] * k); c.rotate(dr * Math.PI / 180); const sc = 1 + ds / 100; c.scale(sc, sc);
+    c.fillStyle = FG; rrect(c, -bw / 2, -bh / 2, bw, bh, 5); c.fill(); c.restore();
+  },
+  // v0.59: a style on a card — the shadow, glow or sweep the effect gives (drawn with the canvas' own shadow / gradient)
+  style(c, W, H, th, t) {
+    const bw = W * 0.46, bh = H * 0.44, x = W / 2 - bw / 2, y = H / 2 - bh / 2 - H * 0.04;
+    c.save();
+    if (th.style === 'softShadow' || th.style === 'deepShadow') { const deep = th.style === 'deepShadow'; c.shadowColor = 'rgba(0,0,0,0.55)'; c.shadowBlur = deep ? 26 : 12; c.shadowOffsetY = deep ? 14 : 6; }
+    if (th.style === 'glow') { c.shadowColor = ACC; c.shadowBlur = 18 + 6 * Math.sin(t * 2); }
+    c.fillStyle = th.style === 'glow' ? ACC : '#f4f4f6'; rrect(c, x, y, bw, bh, 7); c.fill(); c.restore();
+    if (th.style === 'lightSweep') {
+      const u = ((t % 2.4) / 1.2), sx = x - bw * 0.3 + bw * 1.6 * Math.min(1, Math.max(0, u * u * (3 - 2 * u)));
+      c.save(); rrect(c, x, y, bw, bh, 7); c.clip();
+      const g = c.createLinearGradient(sx - 18, 0, sx + 18, 0); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(255,255,255,0.95)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = '#c9c9d1'; c.fillRect(x, y, bw, bh); c.fillStyle = g; c.translate(sx, y + bh / 2); c.rotate(-0.4); c.fillRect(-18, -bh, 36, bh * 2); c.restore();
+    }
+    c.fillStyle = 'rgba(20,20,24,0.55)'; c.fillRect(x + bw * 0.14, y + bh * 0.3, bw * 0.5, Math.max(2, bh * 0.1)); c.fillRect(x + bw * 0.14, y + bh * 0.55, bw * 0.34, Math.max(2, bh * 0.08));
+  },
   move(c, W, H, th, t) {
     if (th.args) {
       // the plan in tile units: rest at the centre, "away" one box-and-a-half off in the move's direction

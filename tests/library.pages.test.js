@@ -15,7 +15,7 @@ const src = (f) => fs.readFileSync(path.join(__dirname, '../extension', f), 'utf
 
 test('Motion and Layout show one mode at a time; every mode has tiles; nothing is lost', () => {
   const motion = studio.byId('animate');
-  assert.deepEqual(motion.modes.map(([m]) => m), ['In', 'Out', 'Trim', 'Proximity']);
+  assert.deepEqual(motion.modes.map(([m]) => m), ['In', 'Out', 'Shake', 'Trim', 'Proximity']); // v0.59: + Shake
   const layout = studio.byId('layout');
   assert.deepEqual(layout.modes.map(([m]) => m), ['Arrange', 'Clone', 'Effectors', 'Guides', 'Cells'], 'v0.33 adds Clone and Effectors');
   for (const sec of [motion, layout]) {

@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.59.0] — 2026-11-06 — Styles + Shakes
+### Added
+- **Shakes** (Motion › Shake): Bump, Zoom Punch, Whip, Slam, Jitter — real eased keyframes from a pure plan (`quick/shakePlan.js`), added on top of the layer's own animation, with Intensity / Rotation / Frequency / Settle; previews play the plan.
+- **Styles** (Looks › Styles): Soft Shadow, Deep Shadow, Glow, Light Sweep — After Effects' own effects named `MOE Style • …`, parameters by name and read back, updated in place, restorable; Light Sweep's centre is a tagged expression reading the layer's box.
+### Tests
+- `tests/stylesshakes.test.js` (5); the mock models Drop Shadow, Glow and CC Light Sweep. **Mock / preview, not After Effects.**
+
 ## [0.58.0] — 2026-11-06 — Apple Motion
 ### Added
 - **Blur** on every Quick Animate move (px): a `MOE Blur` (Gaussian Blur) keyed on the move's timing and ease, reused, exactly restorable; tile previews draw the blur. Seven tiles: Blur In / Out, Focus In / Out, Whip In / Out, Rise + Blur.

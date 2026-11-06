@@ -179,6 +179,9 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6zj. Styles + Shakes (v0.59.0)
+- `quick/shakePlan.js` (pure: `TYPES`, `plan(type, o)` → offsets per property, `EASE`, `valueAt`); tool `quick.shake` reads each property at every key time (`props.values`) and writes value + offset (`keys.write`), restore = `keys.remove`. `design/styles.js` (`STYLES`, `sweepCode`) → `effects.ensure` (`MOE Style • …`) + `expressions.set` for the Light Sweep centre (`// MOE Style`). Tiles: Motion mode `Shake`, Looks filter `Styles`; `thumbs.shake` / `thumbs.style`.
+
 ## 6zi. Apple Motion (v0.58.0)
 - `animatePlan.blur(args)` → Blurriness keys on the move's timing; `quick.animate` param `blur` → `effects.ensure` (`MOE Blur`, Gaussian Blur 2) + keys at `['ADBE Effect Parade', 'name:MOE Blur', 'name:Blurriness']`; checkpoint adds `S.effectsCheckpoint`. `thumbs.blurAt` draws it. `bezier.PRESETS` tag `Native`; text presets group `Hero`.
 

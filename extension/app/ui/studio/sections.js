@@ -57,6 +57,8 @@ const ANIMATE = [
   T('whipIn', 'Whip In', 'quick.animate', { kind: 'moveRL', dir: 'in', distance: 420, fade: true, blur: 60, ease: 'expo', duration: 0.5 }, { k: 'move', dx: 0.6, dy: 0, dir: 'in' }, ['In', 'Slide', 'Blur'], 'IN'),
   T('whipOut', 'Whip Out', 'quick.animate', { kind: 'moveRL', dir: 'out', distance: 420, fade: true, blur: 60, ease: 'expo', duration: 0.45 }, { k: 'move', dx: -0.6, dy: 0, dir: 'out' }, ['Out', 'Slide', 'Blur'], 'OUT'),
   T('riseBlur', 'Rise + Blur', 'quick.animate', { kind: 'moveBT', dir: 'in', distance: 60, fade: true, blur: 24, ease: 'smooth', duration: 0.7 }, { k: 'move', dx: 0, dy: 0.3, dir: 'in' }, ['In', 'Slide', 'Blur'], 'IN'),
+  // v0.59 (docs/features/STYLES_SHAKES.md): impacts as real keys — Shake mode
+  ...Object.entries(require('../../../features/quick/shakePlan').TYPES).map(([id, sh]) => Object.assign(T(`shake-${id}`, sh.label, 'quick.shake', { type: id, intensity: sh.intensity, rotation: sh.rotation, frequency: sh.frequency, settle: sh.settle }, { k: 'shake', type: id }, ['Shake'], 'NEW'), { hint: sh.hint })),
   T('gentlePop', 'Soft Pop', 'quick.animate', { kind: 'scale', dir: 'in', ease: 'gentle', duration: 0.8 }, { k: 'scale', dir: 'in' }, ['In', 'Scale'], 'IN'),
   T('spinOut', 'Spin Out', 'quick.animate', { kind: 'spin', dir: 'out' }, { k: 'spin', dir: 'out' }, ['Out'], 'OUT'),
   T('popOut', 'Pop Out', 'quick.animate', { kind: 'scale', dir: 'out', overshoot: true, duration: 0.45 }, { k: 'scale', dir: 'out', over: true }, ['Out', 'Scale'], 'OUT'),
@@ -141,6 +143,8 @@ const LAYOUT = [
 
 const LOOK_FAMILY = { clear: 'Clear', crystal: 'Clear', frosted: 'Frosted', ice: 'Frosted', liquid: 'Liquid', tinted: 'Tinted', smoke: 'Tinted' };
 // Thick Glass (v0.27) first: the Glaze-class refractive looks, then the flat UI glass looks.
+// v0.59 (docs/features/STYLES_SHAKES.md): Styles — a finished look from After Effects' own effects
+const STYLE_TILES = Object.entries(require('../../../features/design/styles').STYLES).map(([id, st]) => Object.assign(T(`style-${id}`, st.label, 'design.style', { style: id, amount: 1 }, { k: 'style', style: id }, ['Styles'], 'NEW'), { hint: st.hint }));
 const THICK_TILES = Object.entries(THICK_LOOKS).map(([id, l]) => T(`thick-${id}`, l.label, 'glass.thick', { look: id }, { k: 'thick', look: id }, ['Thick']));
 const LOOK_TILES = THICK_TILES.concat(Object.entries(LOOKS).map(([id, l]) => T(`glass-${id}`, `${l.label} Glass`, 'glass.apply', { look: id }, { k: 'glass', look: id }, [LOOK_FAMILY[id] || 'Clear'])));
 
@@ -216,7 +220,7 @@ const SECTIONS = [
   // v0.32 modes: In / Out / Draw On / Proximity are what the moves are for — one set at a time. The ease tiles
   // live in the Motion Control (graph + curve presets); they still resolve (Quick Bar, search) and show when searched.
   { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Blur', 'Trim', 'Ease', 'Keys', 'Proximity'],
-    modes: [['In', 'In', 'The layer arrives'], ['Out', 'Out', 'The layer leaves'], ['Trim', 'Draw On', 'Trim paths for shape lines'], ['Proximity', 'Proximity', 'Layers react to a moving point']],
+    modes: [['In', 'In', 'The layer arrives'], ['Out', 'Out', 'The layer leaves'], ['Shake', 'Shake', 'An impact that settles back (real keys)'], ['Trim', 'Draw On', 'Trim paths for shape lines'], ['Proximity', 'Proximity', 'Layers react to a moving point']],
     elsewhere: [['kit', 'Ease', 'Ease presets and the speed graph are in Motion Control']], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) && t.id !== 'motion.easeCurve' && t.id !== 'motion.pasteEase' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },
   { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true },
@@ -224,7 +228,7 @@ const SECTIONS = [
   { id: 'templates', label: 'Templates', icon: 'type', kind: 'library', tiles: TEMPLATE_TILES, filters: ['All', 'Titles', 'Callouts', 'Outro', 'Arabic'], tools: (t) => t.id === 'design.template' },
   { id: 'shapes', label: 'Shapes & Icons', icon: 'shapes', kind: 'view' },
   { id: 'backgrounds', label: 'Backgrounds', icon: 'background', kind: 'library', tiles: BACKGROUNDS, filters: PAL.TAGS, tools: (t) => /^design\.(background|colorize)$/.test(t.id), extras: 'palette' },
-  { id: 'looks', label: 'Looks & Glass', icon: 'glass', kind: 'library', tiles: LOOK_TILES, filters: ['All', 'Thick', 'Clear', 'Frosted', 'Liquid', 'Tinted'], tools: (t) => /^glass\./.test(t.id) },
+  { id: 'looks', label: 'Looks & Glass', icon: 'glass', kind: 'library', tiles: LOOK_TILES.concat(STYLE_TILES), filters: ['All', 'Styles', 'Thick', 'Clear', 'Frosted', 'Liquid', 'Tinted'], tools: (t) => /^glass\./.test(t.id) || t.id === 'design.style' },
   { id: 'brand', label: 'Brand', icon: 'brand', kind: 'view' },
   { id: 'layout', label: 'Layout & Grid', icon: 'grid', kind: 'library', tiles: LAYOUT, filters: ['All', 'Grid', 'Radial', 'Path', '3D', 'Animated', 'Guides', 'Cells', 'Clone', 'Effectors'],
     modes: [['Arrange', 'Arrange', 'Lay the selected layers out (grid, ring, spiral, globe…)'], ['Clone', 'Clone', 'One layer → many live copies on a grid (v0.33 Cloner)'], ['Effectors', 'Effectors', 'Change a grid’s items near a moving null: grow, reveal, scatter, step, wave, cascade'], ['Guides', 'Guides', 'Guides and safe areas on the comp'], ['Cells', 'Cells', 'Fit layers into split-screen cells']], tools: (t) => /^grid\./.test(t.id) },

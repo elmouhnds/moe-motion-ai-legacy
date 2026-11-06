@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Styles + Shakes** (v0.59.0): five impact shakes as real keyframes on top of the animation, and four finished looks — soft / deep shadow, glow, light sweep — from After Effects' own effects (docs/features/STYLES_SHAKES.md).
+
 **Apple Motion** (v0.58.0): layers come in sharp from a blur (Blur on every move), seven calm Native curves with springs and anticipation, and Hero text presets by line or word (docs/features/APPLE_MOTION.md).
 
 **Product UI** (v0.57.0): eight interface pieces for SaaS / app videos — button click, toggle, search, task, notification, progress, chat, stat card — as real layers that animate the way they are used, light or dark, in the brand (docs/features/PRODUCT_UI.md).

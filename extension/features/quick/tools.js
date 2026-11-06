@@ -426,4 +426,67 @@ const counter = {
   summarize(result) { return `Counter on ${result.set.targets.length} layer(s)`; }
 };
 
-module.exports = { reveal, purge, duplicate, flip, parentNull, precompose, separate, selectSame, reverseKeys, mirrorKeys, animate, trim, typewriter, counter, counterExpression, offscreen };
+/* ---------- v0.59 Shake (docs/features/STYLES_SHAKES.md): an impact as real keys, from the pure plan ---------- */
+const SH = require('./shakePlan');
+const shake = {
+  id: 'quick.shake', version: '1.0.0', category: 'tools', group: 'Quick · Animate', name: 'Shake',
+  description: 'An impact at the playhead as real keyframes (not an expression): Bump, Zoom Punch, Whip, Slam or Jitter — a damped shake that settles back to the layer\'s own values, so it sits on top of its animation and stays editable.',
+  keywords: ['shake', 'impact', 'hit', 'bump', 'punch', 'whip', 'slam', 'jitter', 'rattle', 'camera shake', 'هزة', 'اهتزاز'], icon: 'zoom',
+  params: {
+    type: { type: 'enum', label: 'Shake', default: 'bump', options: Object.keys(SH.TYPES).map((k) => ({ value: k, label: SH.TYPES[k].label })) },
+    intensity: { type: 'number', label: 'Intensity', min: 0, max: 300, step: 1, default: 40, description: 'The first hit: pixels for a move (Bump, Whip, Slam, Jitter), percent for Zoom Punch' },
+    rotation: { type: 'number', label: 'Rotation', min: 0, max: 90, step: 0.5, default: 0, unit: '°' },
+    frequency: { type: 'number', label: 'Frequency', min: 1, max: 40, step: 0.5, default: 7, unit: 'Hz' },
+    settle: { type: 'number', label: 'Settle', min: 0.1, max: 4, step: 0.05, default: 0.6, unit: 's', description: 'How long until it is still again' },
+    stagger: { type: 'number', label: 'Stagger', min: 0, max: 2, step: 0.01, default: 0, unit: 's', advanced: true }
+  },
+  requires: { comp: true, minLayers: 1 }, permissions: ['modify.keyframes'], recovery: 'undo+checkpoint',
+  ai: { callable: true, hint: 'An impact shake at the playhead as keyframes: type bump / zoomPunch / whip / slam / jitter, intensity, rotation, frequency, settle.' },
+  uses: { hostOps: ['layers.describe', 'props.values', 'keys.write', 'keys.remove'], network: false }, compatibility: { minAE: '25.0' },
+  ui: { primaryLabel: 'Shake' },
+  prepare(args, ctx) {
+    const l = visual(ctx).filter((x) => !x.locked);
+    if (!l.length) return { ok: false, error: 'Select unlocked layers' };
+    const p = SH.plan(args.type, args);
+    return { ok: true, layers: l, plan: p, preview: { summary: `${SH.TYPES[args.type].label} · ${p.end.toFixed(2)} s · ${l.length} layer(s)`, items: [] } };
+  },
+  async execute({ args, ctx, prepared, host }) {
+    const comp = ctx.comp, p = prepared.plan;
+    const desc = await host.call('layers.describe', { compId: comp.id });
+    const items = [], skipped = [];
+    // the offsets are added to the layer's OWN value at each key time, so a shake sits on top of its animation
+    const at = async (address, t) => (await host.call('props.values', { compId: comp.id, time: t, items: [{ address }] })).items[0].value;
+    for (let i = 0; i < prepared.layers.length; i++) {
+      const L = prepared.layers[i], D = desc.layers.find((x) => x.id === L.id);
+      const t0 = comp.time + i * (args.stagger || 0);
+      const keyed = async (address, list, add) => {
+        const keys = [];
+        for (const k of list) { const v = await at(address, t0 + k.t); keys.push(Object.assign({ t: t0 + k.t, v: add(v, k.v) }, SH.EASE)); }
+        items.push({ address, keys });
+      };
+      if (p.position) {
+        if (D.posExpr) skipped.push(`${L.name} (Position has an expression)`);
+        else if (!D.transform || !D.transform.position) {
+          await keyed(ADDR(L.id, 'ADBE Position_0'), p.position.map((k) => ({ t: k.t, v: k.v[0] })), (v, d) => v + d);
+          await keyed(ADDR(L.id, 'ADBE Position_1'), p.position.map((k) => ({ t: k.t, v: k.v[1] })), (v, d) => v + d);
+        } else await keyed(ADDR(L.id, 'ADBE Position'), p.position, (v, d) => [v[0] + d[0], v[1] + d[1]].concat(v.length > 2 ? [v[2]] : []));
+      }
+      if (p.scale) await keyed(ADDR(L.id, 'ADBE Scale'), p.scale, (v, d) => v.map((x, j) => (j < 2 ? x + d : x)));
+      if (p.rotation) await keyed(ADDR(L.id, 'ADBE Rotate Z'), p.rotation, (v, d) => v + d);
+    }
+    if (!items.length) throw new Error(`Nothing to shake: ${skipped.join(', ')}`);
+    const keys = await host.call('keys.write', { compId: comp.id, label: 'MOE: Shake', items });
+    return { keys, skipped, type: args.type };
+  },
+  verify({ result, prepared }) {
+    const want = (prepared.plan.position || prepared.plan.scale || prepared.plan.rotation).length;
+    const c = result.keys.items.map((it) => ({ ok: it.written.length === want, label: `${it.layerName} › ${it.name}`, detail: `${it.written.length} keys, settles at ${it.written[it.written.length - 1].t.toFixed(2)} s` }));
+    for (const s of result.skipped) c.push({ ok: true, label: 'Skipped', detail: s });
+    return { ok: c.every((x) => x.ok), checks: c };
+  },
+  checkpoint({ result, ctx }) { return { compId: ctx.comp.id, items: keyRestore(result.keys.items) }; },
+  async restore({ data, host }) { return host.call('keys.remove', data); },
+  summarize(result) { return `${SH.TYPES[result.type].label} on ${new Set(result.keys.items.map((i) => i.layerName)).size} layer(s)`; }
+};
+
+module.exports = { reveal, purge, duplicate, flip, parentNull, precompose, separate, selectSame, reverseKeys, mirrorKeys, animate, trim, typewriter, counter, counterExpression, offscreen, shake };
