@@ -407,6 +407,27 @@
         }
     };
 
+    /* v0.63 (docs/features/PROGRESS.md): copies of several sources in ONE round trip and one undo group.
+       args: { compId, label, plain, sources: [{ layerId, count }] } -> { results: [layers.clone result per source] } */
+    ops['layers.cloneMany'] = {
+        mutates: true,
+        run: function (args) {
+            var label = args.label || 'MOE: Clone';
+            return U.withUndo(label, function () {
+                var out = [], i, saved = G.MOE.tx;
+                if (!saved) { G.MOE.tx = { label: label, opened: new Date().getTime(), inner: true }; } /* the clones join this one group */
+                try {
+                    for (i = 0; i < args.sources.length; i++) {
+                        out.push(ops['layers.clone'].run({ compId: args.compId, label: label, layerId: args.sources[i].layerId, plain: args.plain === true, items: new Array(Math.max(0, Math.floor(args.sources[i].count))) }));
+                    }
+                } finally {
+                    if (!saved) { G.MOE.tx = null; }
+                }
+                return { results: out };
+            });
+        }
+    };
+
     /* args: { compId, sourceId, before: { position, rotation }, layerIds: [id] } */
     ops['layers.unclone'] = {
         mutates: true,

@@ -1,4 +1,4 @@
-# MOE against the study's KPIs (v0.62)
+# MOE against the study's KPIs (v0.63)
 
 **Sources:** the owner's study reports, from AE 25.6.6 on Windows 11:
 
@@ -19,7 +19,7 @@ A real After Effects run by the owner is the final proof.
 
 | KPI (strategic §6) | Target | AppleFX Lite | SaaS Kit | MOE v0.61 | How it is measured |
 |---|---|---|---|---|---|
-| Apply on 60 layers | ≤ 10 s, with progress + stop | 7–10 s | 23–25 s | **8 host round trips, the same as for 3 layers** (was 127). Seconds in AE: not measured here. | `engine2.test.js`; Self-Test *Speed* in AE |
+| Apply on 60 layers | ≤ 10 s, with progress + stop | 7–10 s | 23–25 s | **8 host round trips, the same as for 3 layers** (was 127), **with progress + Stop** (v0.63). Seconds in AE: not measured here. | `engine2.test.js`, `progress.test.js`; Self-Test *Speed* in AE |
 | Residue after Undo | 0 | ✅ | 7 and ≈ 25 items | **0**: one undo group per run; Restore removes exactly what was made | `engine2.test.js`; Self-Test *One Ctrl+Z* in AE |
 | Native AE alerts | 0 | 0 | 4 kinds | **0**: no `alert` / `confirm` anywhere in the host or the panel | `grep` |
 | Disabled button with a written reason | 100 % | no reason | not disabled | **✅** The bar shows the reason as text; the button and the executor share one rule | `engine2.test.js` (locked case) |
@@ -34,7 +34,7 @@ A real After Effects run by the owner is the final proof.
 | S1 links by name | **Fixed in v0.62** (LINKS.md) |
 | S2 native alerts | None ✅ |
 | S3 Undo leaves imported files | MOE imports nothing ✅ |
-| S4 no progress for long runs | A spinner, no Stop. **Open.** |
+| S4 no progress for long runs | **Fixed in v0.63:** named steps, a strip over half a second, Stop before the next step (PROGRESS.md) |
 | S5 replaces user data silently | Templates make new layers; tools key on top of the layer's own values (Shake, Click). Expressions replace an existing one only with Restore kept ✅ |
 | S6 undeclared plugin dependency | Only After Effects' own effects, set by English name and read back ✅ |
 | S7 two timing mechanisms fighting | Stagger is keys only ✅ |

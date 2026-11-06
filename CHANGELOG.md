@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.63.0] — 2026-11-06 — Progress + Stop, Wipe Reveal, Carousel 3D
+### Added
+- **Progress + Stop** for every tool (the study's defect S4): each After Effects call is a named step ("Measuring", "Writing keys"…); runs over half a second show a strip with the step, the time and **Stop** — honoured before the next step, what was made stays one Ctrl+Z and the panel says so.
+- **Wipe Reveal** (Motion › Wipe): After Effects' Linear Wipe as one `MOE Wipe` per layer — any side or diagonal, soft edge, eased, staggered by screen order; Self-Test measures the direction from pixels.
+- **Carousel 3D** (Layout › Arrange): cards on a 3D ring just wide enough that neighbours never overlap (measured), turning one card at a time with native keys, back cards fading, optional tilt; Restore puts every card back.
+### Changed
+- Grid Builder copies every source in one call (`layers.cloneMany`): 30 sources cost what 3 do.
+### Tests
+- `progress.test.js` (3), `wipecarousel.test.js` (5); the frame-grid, locked and links matrices now include Wipe and Carousel; 512 tests. **Mock / preview — the Self-Test in After Effects is the proof.**
+
 ## [0.62.0] — 2026-11-06 — Rename-safe links
 ### Added
 - **Rename-safe links** (the study's defect S1, "high"): every MOE expression that names a layer carries that layer's permanent After Effects id (`/*MOE-LINK:<id>*/`); renaming a Grid null, Effector, Glass, Trail source or followed layer is seen by the panel and **relinked at once** — one undo step, a toast. A deleted layer is reported, never guessed; user expressions are untouched.

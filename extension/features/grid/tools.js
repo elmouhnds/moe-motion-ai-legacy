@@ -128,7 +128,7 @@ const build = {
   permissions: ['modify.layers', 'modify.effects', 'modify.expressions'],
   recovery: 'undo+checkpoint',
   ai: { callable: true, hint: 'Arrange selected layers in a grid / circle / spiral / sunflower / along a path / on a 3D sphere, optionally animating them in with a stagger, and optionally morphing into a second layout (morphTo, animateMorph). orient: 1 Forward, 2 Face Center, 3 Face Screen. Live controls on a MOE Grid null.' },
-  uses: { hostOps: ['paths.find', 'text.split', 'text.unsplit', 'layers.clone', 'layers.remove', 'layers.bounds', 'layers.centerAnchor', 'layers.createNull', 'effects.ensure', 'effects.setMenu', 'layers.setParent', 'expressions.set', 'keys.write', 'props.values', 'paths.find'], network: false },
+  uses: { hostOps: ['paths.find', 'text.split', 'text.unsplit', 'layers.clone', 'layers.cloneMany', 'layers.remove', 'layers.bounds', 'layers.centerAnchor', 'layers.createNull', 'effects.ensure', 'effects.setMenu', 'layers.setParent', 'expressions.set', 'keys.write', 'props.values', 'paths.find'], network: false },
   compatibility: { minAE: '25.0' },
   ui: {
     primaryLabel: 'Build Grid',
@@ -212,13 +212,15 @@ const build = {
     const clonesMade = [];
     if (copiesWanted) {
       const srcs = prepared.items, per = srcs.map((_, si) => Math.floor(copiesWanted / srcs.length) + (si < copiesWanted % srcs.length ? 1 : 0));
-      const made = [];
-      for (let si = 0; si < srcs.length; si++) {
-        if (!per[si]) { made.push([]); continue; }
-        const r = await host.call('layers.clone', { compId: comp.id, label: 'MOE: Clone', layerId: srcs[si].id, plain: true, items: Array.from({ length: per[si] }, () => ({})) });
-        made.push(r.created.map((c) => ({ id: c.layerId, name: c.name, threeD: srcs[si].threeD, locked: false })));
+      // v0.63: every source's copies in ONE host call (was one call per selected source)
+      const want = srcs.map((src, si) => ({ src, si, count: per[si] })).filter((x) => x.count > 0);
+      const many = want.length ? await host.call('layers.cloneMany', { compId: comp.id, label: 'MOE: Clone', plain: true, sources: want.map((x) => ({ layerId: x.src.id, count: x.count })) }) : { results: [] };
+      const made = srcs.map(() => []);
+      want.forEach((x, k) => {
+        const r = many.results[k];
+        made[x.si] = r.created.map((c) => ({ id: c.layerId, name: c.name, threeD: x.src.threeD, locked: false }));
         r.created.forEach((c) => clonesMade.push(c.layerId));
-      }
+      });
       items = srcs.slice();
       for (let j = 0; j < Math.max(...per); j++) for (let si = 0; si < srcs.length; si++) if (made[si][j]) items.push(made[si][j]);
     }

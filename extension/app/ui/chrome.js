@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['refresh', 'Carousel, Wipe, and a Stop button', 'Layout › Arrange has Carousel 3D: your cards on a ring that turns one at a time, the back ones fading. Motion has Wipe In / Out with a soft edge from any side. And any long run now shows what it is doing — with Stop, which leaves what was made as one Ctrl+Z.'],
   ['link', 'Rename anything — nothing breaks', 'Rename a Grid null, an Effector, a Glass or a layer you follow: MOE sees it and relinks its expressions to the new name at once (one Ctrl+Z if you want it back). It finds the layer by its permanent After Effects id, never by guessing.'],
   ['bolt', 'One Ctrl+Z, every time', 'Every MOE run is now ONE step in After Effects\' undo — however many layers, keys and effects it made. Keys always land on a frame, locked layers are never touched (the panel says which it skipped), and big selections are fast: 60 layers cost the same few calls as 3.'],
   ['cursor', 'A cursor that clicks your real layers', 'Product UI › Interact: select the layers in the order they are clicked and press Click — the cursor lands on each one\'s real centre (After Effects measures it at that moment) and the layer presses in place with it. UI Reveal builds a screen in reading order (or right to left for Arabic), and Backgrounds has four product backdrops.'],

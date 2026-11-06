@@ -24,6 +24,8 @@ const rigBake = require('./bake/bake');
 const zoom = require('./zoom/tools');
 const interact = require('./interact/tools'); // v0.60 Click on Layer
 const links = require('./links/tools'); // v0.62 rename-safe links
+const { wipe } = require('./quick/wipe'); // v0.63 Wipe Reveal
+const { carousel } = require('./carousel/tools'); // v0.63 Carousel 3D
 const glass = require('./glass/tools');
 const thickGlass = require('./glass/thickTools');
 const quick = require('./quick/tools');
@@ -47,7 +49,7 @@ const TOOLS = [
   adapt.resize, adapt.suggest,
   exprQuick.quick, expr.apply, expr.validate, expr.inspect, expr.remove, assist,
   quick.reveal, quick.purge, quick.duplicate, quick.flip, quick.parentNull, quick.precompose, quick.separate,
-  quick.selectSame, quick.reverseKeys, quick.mirrorKeys, quick.animate, quick.shake, quick.trim, quick.typewriter, quick.counter,
+  quick.selectSame, quick.reverseKeys, quick.mirrorKeys, quick.animate, quick.shake, wipe, carousel, quick.trim, quick.typewriter, quick.counter,
   ...compositing,
   glass.apply, glass.look, thickGlass.thick, thickGlass.thickLook,
   green.greenPrompt, green.importKey,

@@ -38,6 +38,10 @@ const ANIMATE = [
   T('cascadeFade', 'Cascade Fade', 'quick.animate', { kind: 'fade', dir: 'in', stagger: 0.06, duration: 0.5 }, { k: 'fade', dir: 'in' }, ['In', 'Fade'], 'IN'),
   // v0.48 (COMBINED_MOVES.md): two properties on one timing — the entrances and exits designers build by hand
   T('riseFade', 'Rise + Fade', 'quick.animate', { kind: 'moveBT', dir: 'in', distance: 60, fade: true, ease: 'smooth', duration: 0.7 }, { k: 'move', dx: 0, dy: 0.3, dir: 'in' }, ['In', 'Slide', 'Fade'], 'IN'),
+  // v0.63 (WIPE_CAROUSEL.md): After Effects' Linear Wipe with a soft edge, eased, staggered by screen order
+  ...[['wipeInL', 'Wipe In →', { from: 'left', dir: 'in' }], ['wipeInR', 'Wipe In ←', { from: 'right', dir: 'in' }], ['wipeInB', 'Wipe In ↑', { from: 'bottom', dir: 'in' }], ['wipeInD', 'Wipe In ↘', { from: 'topLeft', dir: 'in' }],
+    ['wipeOutL', 'Wipe Out →', { from: 'left', dir: 'out' }], ['wipeOutR', 'Wipe Out ←', { from: 'right', dir: 'out' }]]
+    .map(([id, label, a]) => Object.assign(T(id, label, 'quick.wipe', Object.assign({ duration: 0.8, feather: 60, ease: 'smooth' }, a), { k: 'wipe', from: a.from, dir: a.dir }, [a.dir === 'in' ? 'In' : 'Out', 'Wipe'], 'NEW'), { hint: `${a.dir === 'in' ? 'Reveals' : 'Hides'} the layer with a soft-edged wipe (After Effects' Linear Wipe)` })),
   T('slideFadeIn', 'Slide + Fade In', 'quick.animate', { kind: 'moveRL', dir: 'in', distance: 140, fade: true, ease: 'expo', duration: 0.7 }, { k: 'move', dx: 0.5, dy: 0, dir: 'in' }, ['In', 'Slide', 'Fade'], 'IN'),
   T('dropFade', 'Drop + Fade', 'quick.animate', { kind: 'moveTB', dir: 'in', distance: 80, fade: true, overshoot: true, duration: 0.7 }, { k: 'move', dx: 0, dy: -0.3, dir: 'in' }, ['In', 'Slide', 'Fade'], 'IN'),
   T('zoomFadeIn', 'Zoom Fade In', 'quick.animate', { kind: 'scale', dir: 'in', away: 130, fade: true, ease: 'expo', duration: 0.7 }, { k: 'scale', dir: 'in' }, ['In', 'Scale', 'Fade'], 'IN'),
@@ -137,6 +141,10 @@ const LAYOUT = [
   T('gpShorts', 'Shorts Safe', 'grid.guidePreset', { preset: 'shorts' }, { k: 'gpreset', id: 'shorts' }, ['Guides'], 'NEW'),
   T('gpStories', 'Stories Safe', 'grid.guidePreset', { preset: 'stories' }, { k: 'gpreset', id: 'stories' }, ['Guides'], 'NEW'),
   T('split2', 'Split 2', 'grid.placeInCells', { columns: 2, rows: 1, gutterX: 0, marginX: 0, marginY: 0, fit: 'fill', padding: 0 }, { k: 'cells', c: 2, r: 1 }, ['Cells']),
+  // v0.63 (WIPE_CAROUSEL.md): a 3D ring that steps one card at a time, back cards fading — native keys on one null
+  Object.assign(T('carousel', 'Carousel 3D', 'layout.carousel', { turn: 0.7, hold: 1.2, gap: 60, depth: 60 }, { k: 'carousel' }, ['Arrange', '3D', 'Animated'], 'NEW'), { hint: 'The selected cards on a 3D ring that turns one card at a time; the back ones fade' }),
+  Object.assign(T('carouselTilt', 'Carousel · Tilted', 'layout.carousel', { turn: 0.8, hold: 1, gap: 40, depth: 70, tilt: 12 }, { k: 'carousel', tilt: 12 }, ['Arrange', '3D', 'Animated'], 'NEW'), { hint: 'The same ring leaning toward the camera' }),
+  Object.assign(T('carouselQuick', 'Carousel · Quick', 'layout.carousel', { turn: 0.45, hold: 0.6, gap: 60, depth: 50 }, { k: 'carousel' }, ['Arrange', '3D', 'Animated'], 'NEW'), { hint: 'Short holds, fast turns — for a lively showcase' }),
   T('quad', '2 × 2', 'grid.placeInCells', { columns: 2, rows: 2, gutterX: 12, gutterY: 12, marginX: 0, marginY: 0, fit: 'fill', padding: 0 }, { k: 'cells', c: 2, r: 2 }, ['Cells']),
   T('wall6', '3 × 2 Tiles', 'grid.placeInCells', { columns: 3, rows: 2 }, { k: 'cells', c: 3, r: 2 }, ['Cells'])
 ];
@@ -237,7 +245,7 @@ const SECTIONS = [
   { id: 'kit', label: 'Toolbox', icon: 'kExcite', kind: 'view' },
   // v0.32 modes: In / Out / Draw On / Proximity are what the moves are for — one set at a time. The ease tiles
   // live in the Motion Control (graph + curve presets); they still resolve (Quick Bar, search) and show when searched.
-  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Blur', 'Trim', 'Ease', 'Keys', 'Proximity'],
+  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Blur', 'Wipe', 'Trim', 'Ease', 'Keys', 'Proximity'],
     modes: [['In', 'In', 'The layer arrives'], ['Out', 'Out', 'The layer leaves'], ['Shake', 'Shake', 'An impact that settles back (real keys)'], ['Trim', 'Draw On', 'Trim paths for shape lines'], ['Proximity', 'Proximity', 'Layers react to a moving point']],
     elsewhere: [['kit', 'Ease', 'Ease presets and the speed graph are in Motion Control']], tools: (t) => t.category === 'motion' && !/^(zoom|interact)\./.test(t.id) && t.id !== 'motion.easeCurve' && t.id !== 'motion.pasteEase' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },

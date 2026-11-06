@@ -47,7 +47,9 @@ const CHECKS = [
   // v0.61 (ENGINE2.md): the study's rule 4 — one apply = one Ctrl+Z, proven in After Effects itself
   { id: 'oneUndo', label: 'One Ctrl+Z undoes a whole run (Click on Layer: measure, cursor, keys)', run: checkOneUndo },
   // v0.62 (LINKS.md): the study's defect S1 — rename the controller null, nothing may break
-  { id: 'relink', label: 'Rename a Grid null: Relink keeps every item where it was', run: checkRelink }
+  { id: 'relink', label: 'Rename a Grid null: Relink keeps every item where it was', run: checkRelink },
+  // v0.63 (WIPE_CAROUSEL.md): the wipe's direction measured from pixels, not assumed from the manual
+  { id: 'wipe', label: 'Wipe Reveal "from the left" reveals the left side first (pixels)', run: checkWipe }
 ];
 
 /* ---------- helpers ---------- */
@@ -410,6 +412,22 @@ async function checkRelink(T) {
   const worst = maxOf(errs);
   const ok = broken > 0 && worst < 0.01 && left === 0 && u.back;
   return { status: ok ? 'pass' : 'fail', detail: `after the rename ${broken} of ${g.ids.length} items showed an expression error (as After Effects does); Relink: ${r.result.fixed.length} expression(s), items back within ${r2(worst)} px, ${left} renamed link(s) left · undo ${u.back ? 'ok' : 'left layers'}`, numbers: { broken, worst, fixed: r.result.fixed.length } };
+}
+
+async function checkWipe(T) {
+  const before = (await T.layerIds()).length;
+  const solid = await T.host.call('layers.createSolid', { compId: T.compId, name: 'ST Wipe', color: [1, 1, 1] });
+  await T.select([solid.layerId]);
+  const r = await T.run('quick.wipe', { dir: 'in', from: 'left', duration: 1, feather: 0, ease: 'linear', stagger: 0, order: 'selection' });
+  const mid = r.result.keys.items[0].written[0].t + 0.5;
+  const px = await T.host.call('pixels.sample', { compId: T.compId, layer: { layerId: solid.layerId }, cols: 4, rows: 1, times: [mid], postEffect: true });
+  const a = px.samples[0].cells.map((c) => (Array.isArray(c) ? c[3] : 0));
+  const u = await T.undo(r, before + 1);
+  await T.host.call('layers.remove', { compId: T.compId, layerIds: [solid.layerId], onlyNamed: 'ST ' });
+  const spread = Math.max(...a) - Math.min(...a);
+  if (spread < 0.05) return { status: 'info', detail: `half-way through, the four columns read the same alpha (${a.map(r2).join(' / ')}) — nothing to compare here · undo ${u.back ? 'ok' : 'left layers'}` };
+  const ok = a[0] > a[3] && u.back;
+  return { status: ok ? 'pass' : 'fail', detail: `half-way through, alpha left → right ${a.map(r2).join(' / ')}${ok ? ' — revealed from the left' : ' — the wipe runs the other way'} · undo ${u.back ? 'ok' : 'left layers'}`, numbers: { alpha: a } };
 }
 
 async function checkSpeed(T) {

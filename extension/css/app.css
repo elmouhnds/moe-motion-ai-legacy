@@ -1493,3 +1493,16 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 /* v0.56 Smart controls: every number is a hidden slider — sideways cursor until you click in to type */
 input.scrubbable:not(:focus) { cursor: ew-resize; }
 input.scrubbable.scrubbing { color: var(--accent); }
+
+/* v0.63 Progress + Stop (docs/features/PROGRESS.md): one quiet strip at the foot of the panel while a run is busy */
+.moe-activity { position: fixed; left: 50%; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: min(420px, calc(100% - 24px)); display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 4px 10px; padding: 8px 8px 8px 12px; border-radius: var(--r); background: var(--bg-raised); border: 1px solid var(--line-strong); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); z-index: 31; animation: reveal 140ms ease-out; overflow: hidden; }
+.moe-activity .act-track { position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--bg-active); overflow: hidden; }
+.moe-activity .act-run { position: absolute; top: 0; bottom: 0; width: 35%; background: var(--accent); border-radius: 2px; animation: act-run 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.moe-activity.stopping .act-run { background: var(--warn, #e2a640); animation-duration: 2.2s; }
+@keyframes act-run { from { left: -35%; } to { left: 100%; } }
+.moe-activity .act-text { display: grid; min-width: 0; line-height: 1.25; }
+.moe-activity .act-tool { font-weight: 600; font-size: var(--fs-sm); overflow-wrap: anywhere; }
+.moe-activity .act-step { color: var(--text-2); font-size: var(--fs-xs, 11px); overflow-wrap: anywhere; }
+.moe-activity .act-time { font-variant-numeric: tabular-nums; color: var(--text-2); font-size: var(--fs-xs, 11px); }
+.moe-activity .act-stop { gap: 4px; }
+@media (prefers-reduced-motion: reduce) { .moe-activity .act-run { animation: none; left: 0; width: 100%; opacity: 0.5; } }

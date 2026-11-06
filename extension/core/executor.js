@@ -34,6 +34,31 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
     emit({ type: 'history', entry });
   }
 
+  /* v0.63 (docs/features/PROGRESS.md): every host call of a run is a visible step — "Measuring", "Writing keys"… —
+     and Stop is honoured before the next one. What a stopped run already made stays as ONE undo step (the run's
+     transaction), so the panel can say exactly that: "Stopped after 3 steps — Ctrl+Z removes what was made". */
+  const STEP = [
+    [/^layers\.bounds|^text\.measure|measure/, 'Measuring'], [/^props\.values|^keys\.list|^layers\.describe|scan|read/, 'Reading'],
+    [/^keys\./, 'Writing keys'], [/^expressions\./, 'Writing expressions'], [/^effects\./, 'Setting effects'],
+    [/clone|duplicate/, 'Making copies'], [/^shapes\.|^design\.|^text\.create/, 'Drawing'], [/^layers\.create|^layers\.add/, 'Adding layers'],
+    [/^bake\./, 'Baking'], [/^layers\./, 'Arranging layers'], [/^comp/, 'Building comps']
+  ];
+  const stepLabel = (op) => (STEP.find(([re]) => re.test(op)) || [null, 'Working'])[1];
+  let stopRequested = false;
+  /** The host a tool sees: counts its steps, reports them, and stops before the next one when asked. */
+  function stepHost(toolId, started) {
+    let step = 0;
+    const h = Object.create(host);
+    h.stepsDone = () => step;
+    h.call = function call(op, args, opts) {
+        if (stopRequested && !/^tx\./.test(op)) { const e = new Error('Stopped'); e.code = 'STOPPED'; e.steps = step; throw e; }
+        step++;
+        emit({ type: 'step', toolId, step, op, label: stepLabel(op), ms: Date.now() - started });
+        return host.call(op, args, opts);
+    };
+    return h;
+  }
+
   /** A tool writes when any of its permissions changes the project (modify.*). */
   const writes = LOCK.writes;
   /** Open / close the run's undo group. A host without tx ops (older build) still runs, one group per op. */
@@ -80,6 +105,7 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
   async function run(toolId, args, { origin = 'user', approved = false, batchId } = {}) {
     if (running) return { ok: false, status: 'blocked', errors: ['Another operation is still running'] };
     running = true;
+    stopRequested = false; // a Stop belongs to the run it was pressed in
     const started = Date.now();
     emit({ type: 'start', toolId });
     try {
@@ -98,10 +124,18 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
       // v0.61 (docs/features/ENGINE2.md): a tool that writes runs inside ONE After Effects undo group — one Ctrl+Z
       // undoes the whole run, whatever number of host ops it took. Always closed, even when the tool throws.
       const tx = writes(tool) ? await openTx(`MOE: ${tool.name}`) : false;
+      const sh = stepHost(toolId, started);
       try {
-        result = await tool.execute({ args: c.args, ctx, prepared, host, services });
+        result = await tool.execute({ args: c.args, ctx, prepared, host: sh, services });
       } catch (e) {
         if (tx) await closeTx();
+        if (e.code === 'STOPPED') {
+          const n = sh.stepsDone(), made = n > 0 && writes(tool);
+          const summary = made ? `${tool.name} stopped after ${n} step(s) — Ctrl+Z removes what was made` : `${tool.name} stopped before it changed anything`;
+          logger.info('exec', `${toolId} stopped`, { steps: n });
+          record({ t: new Date().toISOString(), toolId, toolName: tool.name, origin, batchId, status: 'stopped', summary, ms: Date.now() - started });
+          return { ok: false, status: 'stopped', summary, steps: n, errors: [summary] };
+        }
         logger.error('exec', `${toolId} failed`, { code: e.code, message: e.message });
         record({ t: new Date().toISOString(), toolId, toolName: tool.name, origin, batchId, status: 'failed', error: e.message, ms: Date.now() - started });
         return { ok: false, status: 'failed', errors: [e.message], code: e.code };
@@ -151,8 +185,11 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
     }
   }
 
+  /** Stop the running tool before its next host step (v0.63). */
+  function stop() { if (running) { stopRequested = true; emit({ type: 'stopping' }); } return running; }
+
   return {
-    check, run, restore, readContext,
+    check, run, restore, readContext, stop,
     history: (limit = 200) => store.tail('history', limit).reverse(),
     checkpoint: (id) => checkpoints.find((x) => x.id === id) || null,
     on: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },

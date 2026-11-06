@@ -485,6 +485,57 @@ const DRAW = {
     c.globalAlpha = 1;
   },
   /**
+   * v0.63 (WIPE_CAROUSEL.md): Carousel 3D — the tool's own ring, steps and depth fade, projected with a simple
+   * perspective (nearer = bigger, lower, drawn last).
+   */
+  carousel(c, W, H, th, t) {
+    const CP = require('../../../features/carousel/plan');
+    const a = Object.assign({ turn: 0.7, hold: 1.2, depth: 60, tilt: th.tilt || 0 }, th.args || {}), n = 6;
+    const keys = CP.steps(n, { time: 0, turn: a.turn, hold: a.hold, steps: n, reverse: a.reverse });
+    const end = keys[keys.length - 1].t, lt = th.still ? 0 : t % (end + 0.4);
+    const rot = PLAN.valueAt(keys.map((k) => ({ t: k.t, v: k.v, easeIn: k.easeIn, easeOut: k.easeOut })), lt);
+    c.fillStyle = '#2f3740'; c.fillRect(0, 0, W, H);
+    const R = W * 0.3, tilt = Math.sin((a.tilt || 0) * Math.PI / 180);
+    const cards = CP.ring(n, 1).map((r, i) => {
+      const ang = (r.theta + rot) * Math.PI / 180, x = Math.sin(ang), z = -Math.cos(ang); // z −1 = front
+      const sc = 0.7 + 0.3 * (-z + 1) / 2, o = CP.depth(r.theta, rot, a.depth) / 100;
+      return { i, x: W / 2 + x * R, y: H * 0.52 + (-z) * H * (0.06 + tilt * 0.4), z, sc, o, face: Math.cos(ang) };
+    }).sort((p, q) => q.z - p.z);
+    for (const k of cards) {
+      const w = W * 0.2 * k.sc * Math.max(0.12, Math.abs(k.face)), h = H * 0.36 * k.sc;
+      c.globalAlpha = clamp01(k.o);
+      c.fillStyle = k.i === 0 ? ACC : (k.face < 0 ? 'rgba(230,230,230,0.18)' : 'rgba(230,230,230,0.38)');
+      rrect(c, k.x - w / 2, k.y - h / 2, w, h, 3); c.fill();
+    }
+    c.globalAlpha = 1;
+  },
+  /**
+   * v0.63 (WIPE_CAROUSEL.md): Wipe Reveal — the tool's own Transition Completion keys, drawn as a soft-edged wipe
+   * along the same angle After Effects uses (90° travels left → right).
+   */
+  wipe(c, W, H, th, t) {
+    const WP = require('../../../features/quick/wipe');
+    const a = Object.assign({ dir: th.dir || 'in', from: th.from || 'left', duration: 0.8, feather: 60, ease: 'smooth' }, th.args || {});
+    const keys = WP.plan(a), lt = planOf(th, t).at(PLAN.endOf(keys));
+    const done = clamp01(PLAN.valueAt(keys, lt) / 100); // 0 = all shown, 1 = all hidden
+    c.fillStyle = '#2f3740'; c.fillRect(0, 0, W, H);
+    // the "layer": a card with a title bar and lines, so the wipe edge reads
+    const card = () => { c.fillStyle = 'rgba(230,230,230,0.16)'; rrect(c, W * 0.12, H * 0.18, W * 0.76, H * 0.64, 6); c.fill(); c.fillStyle = ACC; rrect(c, W * 0.18, H * 0.28, W * 0.34, H * 0.1, 3); c.fill(); c.fillStyle = 'rgba(230,230,230,0.35)'; [0.48, 0.6].forEach((y, i) => { rrect(c, W * 0.18, H * y, W * (0.6 - i * 0.18), H * 0.06, 2); c.fill(); }); };
+    const ang = ((WP.FROM[a.from] || WP.FROM.left).angle - 90) * Math.PI / 180; // 0 = travels left → right
+    const dx = Math.cos(ang), dy = Math.sin(ang), span = Math.abs(dx) * W + Math.abs(dy) * H, soft = Math.max(1, (a.feather / 1920) * W * 2.2);
+    const cx = W / 2, cy = H / 2, edge = -span / 2 + done * (span + soft);
+    // the card's outline stays, faint, so the tile is never empty while the card is still hidden
+    c.strokeStyle = 'rgba(230,230,230,0.18)'; c.setLineDash && c.setLineDash([3, 3]); rrect(c, W * 0.12, H * 0.18, W * 0.76, H * 0.64, 6); c.stroke(); c.setLineDash && c.setLineDash([]);
+    c.save();
+    const g = c.createLinearGradient(cx + dx * (edge - soft), cy + dy * (edge - soft), cx + dx * edge, cy + dy * edge);
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,1)');
+    // draw the card, then keep only the part the wipe has not taken
+    card();
+    c.globalCompositeOperation = 'destination-in';
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.restore();
+  },
+  /**
    * v0.60: UI Reveal — a small page measured into boxes, ranked by the tool's own screenOrder (reading order, right to
    * left, or from the centre), each piece playing Quick Animate's keys (+ fade + blur) one Stagger after the other.
    */

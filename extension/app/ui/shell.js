@@ -58,7 +58,7 @@ function createApp(root, services, env = {}) {
       expr: { code: '', assist: { mode: 'generate', request: '', result: null } },
       factory: { description: '', draft: null, busy: false, error: null },
       copilot: { open: false, request: '', phase: 'idle', validated: null, progress: {}, run: null, error: null, thread: [], planEntry: null },
-      keyStatus: null, toast: null, toastKind: null, modal: null, update: { phase: 'idle' }, compact: false, wide: false
+      keyStatus: null, toast: null, toastKind: null, activity: null, modal: null, update: { phase: 'idle' }, compact: false, wide: false
     })
   };
 
@@ -138,6 +138,32 @@ function createApp(root, services, env = {}) {
   document.addEventListener('pointerup', release, true);
   document.addEventListener('pointercancel', release, true);
   window.addEventListener('blur', release);
+
+  /* v0.63 (docs/features/PROGRESS.md): a run that takes longer than half a second shows what it is doing — the step's
+     name, the step count, the time — and a Stop button (honoured before the next step). Fast runs never flash it. */
+  let actTimer = null, actStart = 0, act = null;
+  services.executor.on((e) => {
+    if (e.type === 'start') {
+      actStart = Date.now();
+      const t = services.registry.get(e.toolId);
+      act = { tool: t ? t.name : e.toolId, label: 'Starting', step: 0, stopping: false };
+      clearInterval(actTimer);
+      actTimer = setInterval(() => { const ms = Date.now() - actStart; if (act && ms > 500) app.state.set({ activity: Object.assign({}, act, { ms }) }); }, 250);
+    } else if (e.type === 'step' && act) { act.label = e.label; act.step = e.step; }
+    else if (e.type === 'stopping' && act) { act.stopping = true; app.state.set({ activity: Object.assign({}, act, { ms: Date.now() - actStart }) }); }
+    else if (e.type === 'end') { clearInterval(actTimer); act = null; if (app.state.get().activity) app.state.set({ activity: null }); }
+  });
+  app.activityBar = (s) => {
+    const a = s.activity;
+    if (!a) return null;
+    return h('div', { class: `moe-activity ${a.stopping ? 'stopping' : ''}`, role: 'status', 'aria-live': 'polite', 'data-key': 'activity' },
+      h('div', { class: 'act-track', 'aria-hidden': 'true' }, h('div', { class: 'act-run' })),
+      h('div', { class: 'act-text' },
+        h('span', { class: 'act-tool' }, a.tool),
+        h('span', { class: 'act-step' }, a.stopping ? 'Stopping before the next step…' : `${a.label}${a.step ? ` · step ${a.step}` : ''}`)),
+      h('span', { class: 'act-time' }, `${(a.ms / 1000).toFixed(1)} s`),
+      h('button', { class: 'btn sm act-stop', 'data-key': 'act-stop', disabled: a.stopping, title: 'Stop before the next step — anything already made stays as one Ctrl+Z', onclick: () => services.executor.stop() }, icon('x', 'sm'), a.stopping ? 'Stopping' : 'Stop'));
+  };
 
   /** kind: 'ok' | 'err' | 'warn' | 'info' (optional; adds an icon and colour). */
   app.toast = (msg, ms = 2600, kind = null) => {
@@ -223,7 +249,7 @@ function createApp(root, services, env = {}) {
       p.overlay || null,
       quickbar.popover(app),
       quickbar.restPopover(app),
-      s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, s.toastKind ? h('span', { class: 'toast-ic' }, icon(TOAST_ICON[s.toastKind] || 'info', 'sm')) : null, h('span', {}, s.toast)) : null,
+      app.activityBar(s), s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, s.toastKind ? h('span', { class: 'toast-ic' }, icon(TOAST_ICON[s.toastKind] || 'info', 'sm')) : null, h('span', {}, s.toast)) : null,
       s.modal ? chrome.sheet(app, s.modal) : null);
     const content = root.querySelector('.content');
     const top = content ? content.scrollTop : 0;
@@ -252,7 +278,7 @@ function createApp(root, services, env = {}) {
         h('div', { class: 'content' }, require('./views/kit').render(app))),
       quickbar.popover(app),
       quickbar.restPopover(app),
-      s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, s.toastKind ? h('span', { class: 'toast-ic' }, icon(TOAST_ICON[s.toastKind] || 'info', 'sm')) : null, h('span', {}, s.toast)) : null);
+      app.activityBar(s), s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, s.toastKind ? h('span', { class: 'toast-ic' }, icon(TOAST_ICON[s.toastKind] || 'info', 'sm')) : null, h('span', {}, s.toast)) : null);
     const content = root.querySelector('.content');
     const top = content ? content.scrollTop : 0;
     if (root.firstChild && root.firstChild.classList && root.firstChild.classList.contains('app')) morph(root.firstChild, appEl);
@@ -349,6 +375,7 @@ function createApp(root, services, env = {}) {
         app.state.set({ last: { toolId, args: JSON.parse(JSON.stringify(args || {})), label: label || services.registry.get(toolId).name, at: Date.now() } });
       }
       if (r.status === 'success' && r.summary && r.checkpointId) app.toast(r.summary, 2600, 'ok');
+      if (r.status === 'stopped') app.toast(r.summary, 5200, 'warn'); // v0.63: says what is left and how to remove it
       return r;
     } finally {
       app.state.set({ running: null });

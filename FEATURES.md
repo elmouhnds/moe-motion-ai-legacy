@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Progress + Stop, Wipe Reveal, Carousel 3D** (v0.63.0): long runs show their steps and can be stopped (one Ctrl+Z for what was made); a soft-edged wipe from any side; a 3D card carousel that turns one card at a time (docs/features/PROGRESS.md, WIPE_CAROUSEL.md).
+
 **Rename-safe links** (v0.62.0): rename a Grid null, an Effector, a Glass or a followed layer — MOE relinks its expressions by the layer's permanent id, in one undo step (docs/features/LINKS.md).
 
 **Engine 2** (v0.61.0): every tool is one Ctrl+Z, writes its keys on the comp's frames, costs a handful of round trips whatever the layer count, and never touches a locked layer (docs/features/ENGINE2.md).
