@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Product UI** (v0.57.0): eight interface pieces for SaaS / app videos — button click, toggle, search, task, notification, progress, chat, stat card — as real layers that animate the way they are used, light or dark, in the brand (docs/features/PRODUCT_UI.md).
+
 **Smart controls** (v0.56.0): every number is a hidden slider (drag, ↑ ↓, wheel while focused, Esc cancels) and a slider's double-click restores its default (docs/features/SMART_CONTROLS.md).
 
 **Hidden sliders** (v0.55.0): drag sideways on any Keyframe Velocity number to change it, like After Effects' scrubby values; the graph follows live (docs/features/MOTION_CONTROL.md).

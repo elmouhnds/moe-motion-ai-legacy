@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['uiKit', 'Product UI for app and SaaS videos', 'Design › Product UI: a button that gets clicked, a toggle that switches, a search bar that types, a task that ticks itself off, a notification, a progress bar, a chat with typing dots and a stat card whose chart draws — real layers in your comp, light or dark, in your client\'s colours. Also fixed: a template\'s text could sit under its own pill in After Effects.'],
   ['wand', 'Every number is a hidden slider', 'Drag sideways on any number in the panel to change it, like After Effects — Shift for big steps, Ctrl for fine, Esc to cancel. ↑ ↓ step it, the wheel works while you are in the field, and a double-click on a slider puts its default back. Clicking still lets you type.'],
   ['easeCurve', 'Drag the velocity numbers', 'The Keyframe Velocity numbers (Out / In speed and influence) are now hidden sliders: drag sideways on a number and the curve follows live, like After Effects\' scrubby values — Shift for big steps, Ctrl for fine. Release applies it; a click still lets you type.'],
   ['type', 'Every name shows whole', 'No more “Duplicate Comp (d…”: long names now wrap to two lines everywhere — the sidebar, tiles, the Quick Bar, the action bar. On a narrow dock the MOE sidebar keeps its icons so your page is not squeezed, and shows names again when the panel is wider. Choices that do not fit take a second row instead of losing letters.'],

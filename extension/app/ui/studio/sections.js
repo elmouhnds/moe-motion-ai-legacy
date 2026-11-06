@@ -182,6 +182,25 @@ const TEMPLATE_TILES = [
   TPL_T('titleCardAr', 'عنوان كبير', { template: 'titleCard', title: 'الإطلاق الكبير', subtitle: 'قريباً هذا الصيف' }, ['Titles', 'Arabic'])
 ];
 TEMPLATE_TILES.forEach((t) => { t.hint = (require('../../../features/design/templates').byId(t.args.template) || {}).hint; });
+// v0.57 (docs/features/PRODUCT_UI.md): Product UI — interface pieces that animate the way they are used (click, switch,
+// type, fill), for SaaS / app / product videos; the same engine as Templates, in the brand when a client is active
+const UI_T = (id, label, args, tags) => T(`ui-${id}`, label, 'design.template', Object.assign({ accent: '#0A84FF' }, args), { k: 'template', id: args.template }, tags, 'NEW');
+const UI_TILES = [
+  UI_T('button', 'Button Click', { template: 'uiButton' }, ['Controls']),
+  UI_T('toggle', 'Toggle Switch', { template: 'uiToggle' }, ['Controls']),
+  UI_T('search', 'Search Bar', { template: 'uiSearch' }, ['Controls']),
+  UI_T('task', 'Task Done', { template: 'uiTask' }, ['Controls']),
+  UI_T('notify', 'Notification', { template: 'uiNotify', hold: 2 }, ['Feedback']),
+  UI_T('progress', 'Progress Bar', { template: 'uiProgress' }, ['Feedback']),
+  UI_T('chat', 'Chat Message', { template: 'uiChat' }, ['Feedback']),
+  UI_T('stat', 'Stat Card', { template: 'uiStat' }, ['Data']),
+  // the dark look of the pieces a dark product page uses most
+  UI_T('notifyDark', 'Notification · Dark', { template: 'uiNotify', theme: 'dark', hold: 2 }, ['Feedback', 'Dark']),
+  UI_T('statDark', 'Stat Card · Dark', { template: 'uiStat', theme: 'dark' }, ['Data', 'Dark']),
+  UI_T('toggleDark', 'Toggle · Dark', { template: 'uiToggle', theme: 'dark' }, ['Controls', 'Dark']),
+  UI_T('taskDark', 'Task · Dark', { template: 'uiTask', theme: 'dark' }, ['Controls', 'Dark'])
+];
+UI_TILES.forEach((t) => { t.hint = (require('../../../features/design/templates').byId(t.args.template) || {}).hint; });
 
 const SECTIONS = [
   { id: 'home', label: 'Home', icon: 'home', kind: 'view' },
@@ -193,6 +212,7 @@ const SECTIONS = [
     elsewhere: [['kit', 'Ease', 'Ease presets and the speed graph are in Motion Control']], tools: (t) => t.category === 'motion' && !/^zoom\./.test(t.id) && t.id !== 'motion.easeCurve' && t.id !== 'motion.pasteEase' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },
   { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true },
+  { id: 'productui', label: 'Product UI', icon: 'uiKit', kind: 'library', tiles: UI_TILES, filters: ['All', 'Controls', 'Feedback', 'Data', 'Dark'], tools: (t) => t.id === 'design.template' },
   { id: 'templates', label: 'Templates', icon: 'type', kind: 'library', tiles: TEMPLATE_TILES, filters: ['All', 'Titles', 'Callouts', 'Outro', 'Arabic'], tools: (t) => t.id === 'design.template' },
   { id: 'shapes', label: 'Shapes & Icons', icon: 'shapes', kind: 'view' },
   { id: 'backgrounds', label: 'Backgrounds', icon: 'background', kind: 'library', tiles: BACKGROUNDS, filters: PAL.TAGS, tools: (t) => /^design\.(background|colorize)$/.test(t.id), extras: 'palette' },
@@ -215,7 +235,7 @@ const SECTIONS = [
 const WORKSPACES = [
   { id: 'ws-kit', label: 'Toolbox', icon: 'kExcite', items: ['kit'] },
   { id: 'ws-animate', label: 'Animate', icon: 'motion', items: ['animate', 'text', 'expressions'] },
-  { id: 'ws-design', label: 'Design', icon: 'palette', items: ['templates', 'shapes', 'backgrounds', 'looks', 'brand'] },
+  { id: 'ws-design', label: 'Design', icon: 'palette', items: ['templates', 'productui', 'shapes', 'backgrounds', 'looks', 'brand'] },
   { id: 'ws-layout', label: 'Layout', icon: 'grid', items: ['layout', 'zoom', 'deliver'] },
   { id: 'ws-finish', label: 'Finish', icon: 'layers', items: ['compositing'] },
   { id: 'ws-tools', label: 'Utilities', icon: 'tools', items: ['quick', 'select', 'tools'] } // v0.14: was "Tools" (too close to Toolbox)

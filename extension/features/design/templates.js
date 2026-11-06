@@ -28,7 +28,11 @@ const TEMPLATES = [
   { id: 'handle', label: 'Social Handle', short: 'Handle', hint: 'Your @name in a pill with a dot, bottom corner — grows in, the name fades up', title: '@moe.motion', subtitle: '' },
   { id: 'chapter', label: 'Chapter', hint: 'A big number, a line that grows and the chapter\'s title — for sections of a longer video', title: 'Getting started', subtitle: 'Your first animation', number: '01' }
 ];
+// v0.57 (docs/features/PRODUCT_UI.md): the Product UI kit — interface pieces on the same engine (kit: 'ui')
+const UI = require('./uiKit');
+UI.COMPONENTS.forEach((c) => TEMPLATES.push(Object.assign({ kit: 'ui' }, c)));
 const byId = (id) => TEMPLATES.find((t) => t.id === id) || null;
+const isUi = (id) => !!(byId(id) && byId(id).kit === 'ui');
 
 /** Scale of the design: everything is drawn for 1080 px tall and scaled to the comp. */
 const unit = (comp) => (comp && comp.height > 0 ? comp.height / 1080 : 1);
@@ -38,6 +42,7 @@ function textSpecs(id, opts, comp) {
   const s = unit(comp), rtl = isRtl(opts);
   const T = byId(id);
   if (!T) throw new Error(`Unknown template ${id}`);
+  if (T.kit === 'ui') return UI.textSpecs(id, opts, comp, helpers());
   const title = opts.title === undefined ? T.title : String(opts.title);
   const sub = opts.subtitle === undefined ? T.subtitle : String(opts.subtitle);
   const textColor = hexRgb(opts.textColor || '#ffffff');
@@ -93,11 +98,14 @@ function enter(key, prop, a, b, delay, dur, ease) {
   return { key, prop, keys: PLAN.keysFor(e, delay, dur, a, b) };
 }
 const fadeIn = (key, delay, dur) => enter(key, 'opacity', 0, 100, delay, dur, 'smooth');
+/** The shared makers the UI kit uses (one ease / key maker for both modules). */
+const helpers = () => ({ unit, hexRgb, enter, fadeIn, PLAN });
 
 /** The full plan once the texts are measured ([w, h] per text key). */
 function layout(id, opts, comp, measured) {
   const s = unit(comp), W = comp.width, H = comp.height, rtl = isRtl(opts);
   const m = (k) => (measured && measured[k]) || [0, 0];
+  if (isUi(id)) return finish(opts, UI.layout(id, opts, comp, m, helpers()));
   const accent = hexRgb(opts.accent || '#ff5a3c');
   const els = [], keys = [];
   const dur = opts.duration > 0 ? opts.duration : 0.7;
@@ -269,4 +277,4 @@ function brandOpts(brand, opts) {
   return { accent, tagText: scored[0].hex, font: font && font.ps ? font.ps : null, contrast: +scored[0].ratio.toFixed(2), brand: brand.name };
 }
 
-module.exports = { TEMPLATES, FIT, byId, textSpecs, layout, finish, fitSize, nameOf, brandOpts, isRtl, unit, hexRgb };
+module.exports = { TEMPLATES, isUi, FIT, byId, textSpecs, layout, finish, fitSize, nameOf, brandOpts, isRtl, unit, hexRgb };

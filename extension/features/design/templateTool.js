@@ -18,7 +18,8 @@ function withBrand(args, services) {
   const b = brand && TPL.brandOpts(brand, { title: args.title, subtitle: args.subtitle, side: args.side });
   if (!b) return args;
   const out = Object.assign({}, args, { brandName: b.brand, tagText: args.tagText || b.tagText });
-  if (!args.accent || String(args.accent).toLowerCase() === DEFAULT_ACCENT) out.accent = b.accent;
+  // the templates' own accents (MOE tomato, the UI kit's blue) are defaults the brand replaces; a colour you chose is kept
+  if (!args.accent || [DEFAULT_ACCENT, '#0a84ff'].includes(String(args.accent).toLowerCase())) out.accent = b.accent;
   if (!args.font && b.font) out.font = b.font;
   return out;
 }
@@ -34,10 +35,12 @@ const template = {
   params: {
     template: { type: 'enum', label: 'Template', default: 'lowerThird', options: TPL.TEMPLATES.map((t) => ({ value: t.id, label: t.short || t.label })) },
     title: { type: 'string', label: 'Title', default: '', placeholder: 'The template\'s own example if empty', maxLength: 120 },
-    subtitle: { type: 'string', label: 'Second line', default: '', maxLength: 160, showIf: (a) => !['tag', 'handle'].includes(a.template) },
+    subtitle: { type: 'string', label: 'Second line', default: '', maxLength: 160, showIf: (a) => !['tag', 'handle'].includes(a.template) && (!TPL.isUi(a.template) || ['uiNotify', 'uiProgress', 'uiStat'].includes(a.template)) },
+    // v0.57 Product UI: the card's look (light card + dark text, or graphite + white)
+    theme: { type: 'enum', label: 'Look', default: 'light', options: [{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }], showIf: (a) => TPL.isUi(a.template) },
     accent: { type: 'string', label: 'Accent', default: '#ff5a3c', placeholder: '#RRGGBB', maxLength: 7 },
-    textColor: { type: 'string', label: 'Text colour', default: '#ffffff', placeholder: '#RRGGBB', maxLength: 7, showIf: (a) => a.template !== 'tag' },
-    side: { type: 'enum', label: 'Direction', default: 'auto', options: [{ value: 'auto', label: 'Auto' }, { value: 'ltr', label: 'LTR' }, { value: 'rtl', label: 'RTL' }], description: 'Auto: Arabic text is laid out right to left (the bar on the right)' },
+    textColor: { type: 'string', label: 'Text colour', default: '#ffffff', placeholder: '#RRGGBB', maxLength: 7, showIf: (a) => a.template !== 'tag' && !TPL.isUi(a.template) },
+    side: { type: 'enum', label: 'Direction', default: 'auto', options: [{ value: 'auto', label: 'Auto' }, { value: 'ltr', label: 'LTR' }, { value: 'rtl', label: 'RTL' }], showIf: (a) => !TPL.isUi(a.template), description: 'Auto: Arabic text is laid out right to left (the bar on the right)' },
     number: { type: 'string', label: 'Number', default: '', placeholder: '01', maxLength: 4, showIf: (a) => a.template === 'chapter' },
     duration: { type: 'number', label: 'Duration', min: 0.2, max: 4, step: 0.05, default: 0.7, unit: 's' },
     // v0.50: how long it stays before it leaves by itself (0 = it stays)
@@ -50,7 +53,7 @@ const template = {
   permissions: ['modify.layers', 'modify.keyframes'],
   recovery: 'undo+checkpoint',
   ai: { callable: true, hint: 'Build a native template (lowerThird, titleCard, callout, tag, quote, endCard, handle, chapter) with the given title / subtitle / accent; hold > 0 adds the exit.' },
-  uses: { hostOps: ['layers.describe', 'text.create', 'shapes.insert', 'shapes.trim', 'layers.createNull', 'layers.setParent', 'props.setValues', 'keys.write', 'layers.remove'], network: false },
+  uses: { hostOps: ['layers.describe', 'text.create', 'shapes.insert', 'shapes.trim', 'layers.move', 'layers.createNull', 'layers.setParent', 'props.setValues', 'keys.write', 'layers.remove'], network: false },
   compatibility: { minAE: '25.0' },
   ui: { primaryLabel: 'Build' },
   prepare(args, ctx) {
@@ -64,7 +67,7 @@ const template = {
     const comp = ctx.comp;
     const T = TPL.byId(args.template);
     args = withBrand(args, services);
-    const opts = { title: args.title || T.title, subtitle: args.subtitle === undefined || args.subtitle === '' ? (['tag', 'handle'].includes(args.template) ? '' : T.subtitle) : args.subtitle, accent: args.accent, textColor: args.textColor, tagText: args.tagText, side: args.side, duration: args.duration, hold: args.hold, number: args.number };
+    const opts = { title: args.title || T.title, subtitle: args.subtitle === undefined || args.subtitle === '' ? (['tag', 'handle'].includes(args.template) ? '' : T.subtitle) : args.subtitle, accent: args.accent, textColor: args.textColor, tagText: args.tagText, side: args.side, duration: args.duration, hold: args.hold, number: args.number, theme: args.theme };
     // the next free number (never reuse a name: Trash and Restore find the parts by it)
     const desc = await host.call('layers.describe', { compId: comp.id });
     const used = (desc.layers || []).map((l) => (/^MOE Template (\d+)$/.exec(l.name) || [])[1]).filter(Boolean).map(Number);
@@ -74,10 +77,10 @@ const template = {
     const ids = {};
     try {
       // 1. the texts, measured by After Effects
-      const measured = {}, fitted = [];
+      const measured = {}, fitted = [], textIds = [], shapeIds = [];
       for (const sp of TPL.textSpecs(args.template, opts, comp)) {
         const r = await host.call('text.create', { compId: comp.id, text: sp.text, name: `${base} · ${TPL.nameOf(sp)}`, fontSize: sp.fontSize, color: sp.color, bold: !!sp.bold, justify: sp.justify, rtl: sp.rtl, font: args.font || undefined, position: [comp.width / 2, comp.height / 2], maxWidth: sp.maxWidth });
-        made.push(r.layerId); ids[sp.key] = r.layerId; measured[sp.key] = [r.size[0], r.size[1], r.fontSize];
+        made.push(r.layerId); ids[sp.key] = r.layerId; textIds.push(r.layerId); measured[sp.key] = [r.size[0], r.size[1], r.fontSize];
         if (r.fitted) fitted.push(`${TPL.nameOf(sp)} ${sp.fontSize} → ${r.fontSize} px`);
       }
       // 2. the plan with the real sizes, then the shapes
@@ -87,8 +90,11 @@ const template = {
         if (el.kind === 'path') Object.assign(spec, { position: el.points[0], paths: [{ v: el.points.map((p) => [p[0] - el.points[0][0], p[1] - el.points[0][1]]), c: false }], stroke: { color: el.stroke.color, width: el.stroke.width, cap: 2, join: 2 } });
         else Object.assign(spec, { position: el.position, primitive: el.kind === 'rect' ? { type: 'rect', size: el.size, roundness: el.roundness || 0 } : { type: 'ellipse', size: el.size }, fill: { color: el.color } });
         const r = await host.call('shapes.insert', spec);
-        made.push(r.layerId); ids[el.key] = r.layerId;
+        made.push(r.layerId); ids[el.key] = r.layerId; shapeIds.push(r.layerId);
       }
+      // v0.57: After Effects puts every new layer on top, and the shapes are made after the texts (which must be
+      // measured first) — so the texts go back above the topmost shape (a pill never covers its own word)
+      if (shapeIds.length && textIds.length) await host.call('layers.move', { compId: comp.id, items: textIds.map((id) => ({ layerId: id, before: shapeIds[shapeIds.length - 1] })) });
       // 3. one null holds the template (at the block's centre): move or scale the whole thing from it
       const box = L.box, centre = [box[0] + box[2] / 2, box[1] + box[3] / 2];
       const nul = await host.call('layers.createNull', { compId: comp.id, name: base, position: centre, anchor: [0, 0], label: 9 });

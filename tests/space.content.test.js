@@ -22,7 +22,7 @@ function shown(g) {
 
 test('25 groups became 15 (+ Select in v0.44, + Templates in v0.49): each tab holds its jobs once', () => {
   const n = AE.TABS.reduce((k, t) => k + t.groups.length, 0);
-  assert.equal(n, 17);
+  assert.equal(n, 18); // v0.57: + Product UI on the Design tab
   const ids = (tab) => AE.TABS.find((t) => t.id === tab).groups.map((g) => g.id);
   assert.deepEqual(ids('ae-keys'), ['assist']);
   assert.deepEqual(ids('ae-animate'), ['in', 'text', 'expr']);

@@ -179,6 +179,9 @@ See `docs/features/STUDIO_v0.4.md`.
 - `features/selftest/runner.js`: `runSelfTest(services, { onProgress, only })` — `selftest.begin` → `CHECKS` (each runs real tools through `executor.run(..., { approved: true, batchId })`, reads `props.values` / `layers.bounds`, compares with `layouts.placeMorph` / `effectors.applyAt`, restores the tool's checkpoint and checks the layer count) → `selftest.end` in finally. Report = plain JSON.
 - `host/ops/selftest.jsx` (begin / addText / commands / end, name + id guarded). `app/ui/views/diagnostics.js` `selfTestCard` (confirm step, progress, results, Copy report; last report in the store).
 
+## 6zh. Product UI (v0.57.0)
+- `design/uiKit.js` (pure): `COMPONENTS` registered into `templates.TEMPLATES` with `kit: 'ui'`; `templates.textSpecs` / `layout` delegate to it with shared helpers (`unit`, `hexRgb`, `enter`, `fadeIn`, `PLAN`). One key list per (part, property) (`dedupe`). Tool param `theme` (Light / Dark). `templateTool` moves the texts above the topmost shape (`layers.move`). Section `productui` (Design workspace), `ae-design` group `productui`, stage `st-design`.
+
 ## 6zg. Smart controls (v0.56.0)
 - `app/ui/scrub.js attach(input, { step, min, max, round, live, commit, fill })`: pointer scrub with capture (Shift ×10 / Ctrl ×0.1, Esc restores), ↑ ↓ with a 400 ms debounced commit, wheel only while focused. Used by `form.control` (every Inspector number; ranged ones also move the range), `kit.velocity` and the Align gap. Range `dblclick` → `p.default`.
 

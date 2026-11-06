@@ -33,7 +33,7 @@ async function build(args, layers) {
 }
 
 test('each template: real layers named MOE Template 1 · …, all parented to one null, placed where the plan says', async () => {
-  for (const id of TPL.TEMPLATES.map((t) => t.id)) { // v0.50: all eight
+  for (const id of TPL.TEMPLATES.filter((t) => !t.kit).map((t) => t.id)) { // v0.50: all eight (v0.57 Product UI: tests/productui.test.js)
     const { comp, r } = await build({ template: id });
     assert.equal(r.status, 'success', `${id}: ${JSON.stringify(r.errors || r.verification)}`);
     const nul = byName(comp, 'MOE Template 1');
@@ -145,7 +145,7 @@ test('the tile previews draw the same plan; the library is on the Design tab and
   assert.equal(AE.TABS.find((t) => t.id === 'ae-design').groups[0].id, 'templates');
   assert.deepEqual(W.STAGES.find((s) => s.id === 'st-design').groups[0], ['ae-design', 'templates', 'core']);
   // every template's plan keys are real Quick Animate keys (two or three, AE influence)
-  for (const T of TPL.TEMPLATES) {
+  for (const T of TPL.TEMPLATES.filter((t) => !t.kit)) {
     const p = TPL.layout(T.id, {}, { width: 1920, height: 1080 }, { title: [400, 60], subtitle: [300, 30] });
     p.keys.forEach((k) => assert.ok(k.keys.length >= 2 && k.keys.length <= 3, `${T.id} ${k.key}`));
     assert.ok(p.elements.every((e) => e.position || e.points));
@@ -209,7 +209,7 @@ test('v0.50 Quote, End Card, Social Handle, Chapter: their own parts, Arabic mir
   const c = await build({ template: 'chapter', number: '07' });
   assert.equal(textDoc(byName(c.comp, 'MOE Template 1 · Number')).text, '07');
   assert.ok(byName(c.comp, 'MOE Template 1 · Divider'));
-  assert.ok(TPL.TEMPLATES.length === 8);
+  assert.ok(TPL.TEMPLATES.filter((t) => !t.kit).length === 8);
 });
 
 const NILE = { name: 'Nile & Co.', colors: [{ name: 'Nile Green', hex: '#0E7C66', role: 'primary' }, { name: 'Sunset', hex: '#F2A541', role: 'accent' }, { name: 'Sand', hex: '#F4E9D8', role: 'background' }, { name: 'Ink', hex: '#1F2421', role: 'text' }],

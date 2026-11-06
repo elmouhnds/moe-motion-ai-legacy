@@ -35,7 +35,7 @@ const STAGES = [
     groups: [['ae-layer', 'select', 'core'], ['ae-layer', 'transform', 'core'], ['ae-layer', 'parent', 'core'], ['ae-layer', 'arrange', 'core'], ['ae-comp', 'guides', 'more']] },
   { id: 'st-design', label: 'Design', icon: 'palette', fits: ['none'],
     title: 'Templates, shapes and icons, backgrounds, looks and glass, the client brand',
-    groups: [['ae-design', 'templates', 'core'], ['ae-design', 'shapes', 'core'], ['ae-design', 'bg', 'core'], ['ae-design', 'looks', 'core'], ['ae-design', 'brand', 'core']] },
+    groups: [['ae-design', 'templates', 'core'], ['ae-design', 'productui', 'core'], ['ae-design', 'shapes', 'core'], ['ae-design', 'bg', 'core'], ['ae-design', 'looks', 'core'], ['ae-design', 'brand', 'core']] },
   { id: 'st-finish', label: 'Finish', icon: 'sparkles', fits: [],
     title: 'Key and colour, camera and zoom — the polish pass',
     groups: [['ae-effect', 'keycolor', 'core'], ['ae-effect', 'zoom', 'core']] },

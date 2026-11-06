@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.57.0] — 2026-11-06 — Product UI
+### Added
+- Design › Product UI: eight interface pieces built as real layers on the Templates engine, each animated the way it is used — Button Click (press + ripple), Toggle Switch, Search Bar (cursor blinks), Task Done (check + strike), Notification, Progress Bar (fills), Chat Message (typing dots), Stat Card (trend line draws). Light / Dark look, the brand's colour, Auto-fit, Hold → exit. 12 tiles; a Design tab group; the Design stage.
+### Fixed
+- Templates' text layers could sit under their own shapes in After Effects (new layers go on top; shapes were made after the texts) — the texts are now moved above the topmost shape (`layers.move`). Affects Tag, End Card, Social Handle.
+### Tests
+- `tests/productui.test.js` (5). **Mock / preview, not After Effects.**
+
 ## [0.56.0] — 2026-11-05 — Smart Controls
 ### Added
 - Every number in the panel is a hidden slider (`app/ui/scrub.js`): drag sideways (Shift ×10, Ctrl fine), live while dragging, one commit on release; a click types; Esc cancels a drag; ↑ ↓ step with one commit after the burst; the wheel steps only while the field is focused.
