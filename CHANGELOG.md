@@ -2,6 +2,23 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.61.0] — 2026-11-06 — Engine 2
+From the owner's After Effects study reports (AppleFX Lite, SaaS Kit): how every tool runs, not one tool.
+### Changed
+- **One Ctrl+Z per run**: every tool that writes runs inside ONE After Effects undo group named after it (`tx.begin` / `tx.end`, closed even on failure); Restore is one step; read-only tools add nothing to the undo history. Before, 51 of 80 tools could take several Ctrl+Z.
+- **Keys on the frame grid**: `keys.write` puts every key on a frame of the comp, merging keys that meet on one frame (ends always kept). Shake and Click on Layer snap first, then read the layer's own value on that frame.
+- **Few round trips**: `props.values` reads many values at their own times in one call — 60 layers: Quick Animate 127 → 8 host calls, Shake 65 → 6, the same as for 3 layers.
+- **Locked layers**: one rule for the executor and the button (`core/lockpolicy.js`) — a tool that writes never receives a locked layer (or a property on one); they are named; all locked → refused with the reason.
+### Fixed
+- Trim Paths, the Expression presets, Parent to Null, Precompose and Separate X/Y changed locked layers.
+- Zoom (Punch-in, Detail) read back between frames and could report "partial"; Shake's verify counted plan keys (a fast Jitter merges peaks inside one frame).
+### Added
+- AE Self-Test: *One Ctrl+Z undoes a whole run* (one Edit › Undo by its menu name, read back).
+- Test matrix: every tile and tool at 24/25/30/60 fps (`fpsmatrix`) and on locked layers (`lockedmatrix`), 318 cases each; `tools/scan-roundtrips.js`.
+- Docs: ENGINE2.md, research/STUDY_RESPONSE.md (MOE against the study's KPIs and defects).
+### Tests
+- 496 tests. **Mock / preview — the Self-Test in After Effects is the proof.**
+
 ## [0.60.0] — 2026-11-06 — SaaS Interaction
 ### Added
 - **Click on Layer** (Product UI › Interact, Zoom & Focus › Cursor): a cursor clicks the selected layers in order — each click point is the layer's visual centre measured by After Effects at that moment; the layer presses with the cursor, keyed on top of its own Scale, **in place** (Position compensates the anchor offset); the cursor's arrival is read back. Restore removes the cursor and the keys.

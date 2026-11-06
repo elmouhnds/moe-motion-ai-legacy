@@ -74,6 +74,7 @@ const focus = {
   uses: { hostOps: ['layers.createAdjustment', 'effects.ensure', 'layers.bounds', 'props.values', 'keys.write', 'layers.createSolid', 'masks.ellipse'], network: false },
   compatibility: { minAE: '25.0' },
   ui: {
+    lockedOk: true, // v0.61: the selected layer is only the target to look at — a locked one is fine
     primaryLabel: 'Zoom',
     presets: [
       { id: 'punch', label: 'Punch-in', args: { level: 150, inDur: 0.25, ease: 'snappy', zoomOut: true, hold: 2, outDur: 0.3 } },
@@ -143,7 +144,9 @@ const focus = {
       if (args.zoomOut) ok.push({ t: p.keys[2].t, v: o }, { t: p.keys[3].t, v: 0 });
       spot.keys = await host.call('keys.write', { compId: ctx.comp.id, label: 'MOE: Spotlight', items: [{ address: { layerId: spot.layerId, matchNames: ['ADBE Transform Group', 'ADBE Opacity'] }, keys: ok.map((k) => Object.assign(k, { easeIn: { speed: 0, influence: 60 }, easeOut: { speed: 0, influence: 60 } })) }] });
     }
-    const check = await host.call('props.values', { compId: ctx.comp.id, time: p.keys[1].t, items: [{ address: A.anchor }, { address: A.position }, { address: A.scale }] });
+    // v0.61: read back at the zoomed key as After Effects wrote it (on the comp's frame grid), not at the plan's time
+    const zoomedAt = keys.items[0] && keys.items[0].written[1] ? keys.items[0].written[1].t : p.keys[1].t;
+    const check = await host.call('props.values', { compId: ctx.comp.id, time: zoomedAt, items: [{ address: A.anchor }, { address: A.position }, { address: A.scale }] });
     return { rig: rigInfo.rig, created: rigInfo.created, fx: rigInfo.fx, plan: p, keys, spot, check, focus: f, level: z, comp: { W, H } };
   },
 
@@ -218,7 +221,7 @@ const follow = {
   ai: { callable: true, hint: 'Zoom that follows a moving layer (cursor/tracked point).' },
   uses: { hostOps: ['layers.createAdjustment', 'effects.ensure', 'expressions.set', 'props.setValues'], network: false },
   compatibility: { minAE: '25.0' },
-  ui: { primaryLabel: 'Follow' },
+  ui: { primaryLabel: 'Follow', lockedOk: true }, // follows the layer, never changes it
   prepare(args, ctx) {
     const L = (ctx.compLayers || []).find((l) => l.index === args.layer);
     if (!L) return { ok: false, error: 'Choose the layer to follow' };
@@ -273,7 +276,7 @@ const cursor = {
   ai: { callable: true, hint: 'Create an animated mouse cursor following the click points (Position keys) of the selected layer.' },
   uses: { hostOps: ['keys.list', 'shapes.cursor', 'keys.write'], network: false },
   compatibility: { minAE: '25.0' },
-  ui: { primaryLabel: 'Create Cursor' },
+  ui: { primaryLabel: 'Create Cursor', lockedOk: true }, // reads the click points' keys only
   prepare(args, ctx) {
     if (!/^#[0-9a-fA-F]{6}$/.test(args.color || '')) return { ok: false, error: 'Colour must be #RRGGBB' };
     const L = (ctx.layers || []).find((l) => !/^MOE Cursor/.test(l.name));

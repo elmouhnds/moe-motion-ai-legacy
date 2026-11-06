@@ -47,16 +47,17 @@ test('Click on Layer on the mock: the cursor sits on each measured centre, the l
   assert.equal(r.status, 'success', JSON.stringify(r.verification || r.error));
   const cursor = comp._layers.find((l) => /^MOE Cursor/.test(l.name));
   assert.ok(cursor, 'cursor layer made');
-  const T = CP.times(2, { time: comp.time, travel: 0.55, gap: 1.1 });
+  const fd = comp.frameDuration, deep = CP.pressKeys(94, fd)[1].t; // v0.61: the plan in whole frames
+  const T = CP.times(2, { time: comp.time, travel: 0.55, gap: 1.1, fd });
   // Logo is first in the selection: its centre is its anchor + (80, 80)
   assert.ok(near(tr(cursor, 'ADBE Position').valueAtTime(T[0], false).slice(0, 2), [1780, 220]), 'cursor on the Logo centre');
   assert.ok(near(tr(cursor, 'ADBE Position').valueAtTime(T[1], false).slice(0, 2), [960, 540]), 'cursor on the Title centre');
   // the Logo presses around its centre: Position + Scale × (80, 80) stays on [1780, 220] at the deepest key
-  const t = T[0] + 0.06, s = tr(logo, 'ADBE Scale').valueAtTime(t, false), p = tr(logo, 'ADBE Position').valueAtTime(t, false);
+  const t = T[0] + deep, s = tr(logo, 'ADBE Scale').valueAtTime(t, false), p = tr(logo, 'ADBE Position').valueAtTime(t, false);
   assert.ok(Math.abs(s[0] - 94) < 0.01, 'pressed to 94 %');
   assert.ok(near([p[0] + s[0] / 100 * 80, p[1] + s[1] / 100 * 80], [1780, 220]), 'pressed in place, not toward its corner');
   // the Title presses on top of its own Scale animation (100 after 0.6 s)
-  assert.ok(Math.abs(tr(title, 'ADBE Scale').valueAtTime(T[1] + 0.06, false)[0] - 94) < 0.01);
+  assert.ok(Math.abs(tr(title, 'ADBE Scale').valueAtTime(T[1] + deep, false)[0] - 94) < 0.01);
   assert.ok(r.verification.checks.some((c) => /^Click Logo/.test(c.label) && c.ok), 'the arrival is read back');
   assert.ok((await services.executor.restore(r.checkpointId)).ok);
   assert.equal(comp._layers.length, n0, 'cursor removed');
@@ -105,7 +106,7 @@ test('Click on Layer never touches a locked layer: it is skipped and named; all 
   const r = await services.executor.run('interact.click', args);
   assert.equal(r.status, 'success');
   assert.equal(r.result.clicks.length, 1, 'only the Title is clicked');
-  assert.ok(r.result.skipped.some((s) => /Logo \(locked/.test(s)));
+  assert.ok(r.verification.checks.some((c) => c.label === 'Locked' && /Logo/.test(c.detail)), 'named: Logo is locked, not changed');
   assert.equal(tr(logo, 'ADBE Scale').numKeys, 0, 'the locked Logo is untouched');
   const g = fixture(); g.comp.layers.forEach((l) => { if (l.selected) l.locked = true; });
   const s2 = await createTestServices(g);

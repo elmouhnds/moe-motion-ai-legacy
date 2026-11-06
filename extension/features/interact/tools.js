@@ -58,7 +58,7 @@ const click = {
     let targets = prepared.targets, T, boxes;
     const skipped = (prepared.locked || []).map((n) => `${n} (locked — not changed)`);
     for (let pass = 0; pass < 2; pass++) {
-      T = P.times(targets.length, { time: comp.time, travel: args.travel, gap: args.gap });
+      T = P.times(targets.length, { time: comp.time, travel: args.travel, gap: args.gap, fd: comp.frameDuration });
       const m = await host.call('layers.bounds', { compId: comp.id, layerIds: targets.map((l) => l.id), times: T });
       boxes = targets.map((l, i) => { const r = m.layers.find((x) => x.layerId === l.id); return r && r.boxes[i]; });
       const bad = targets.filter((_, i) => !usable(boxes[i]));
@@ -68,24 +68,37 @@ const click = {
       if (!targets.length) throw new Error(`Nothing to click: ${skipped.join(', ')}`);
     }
     const clicks = targets.map((l, i) => ({ t: T[i], p: centre(boxes[i]), layerId: l.id, name: l.name }));
-    const pl = P.plan(clicks, { from: args.from, W: comp.width, H: comp.height, travel: args.travel, gap: args.gap, depth: args.depth, ripple: args.ripple });
+    const pl = P.plan(clicks, { from: args.from, W: comp.width, H: comp.height, travel: args.travel, gap: args.gap, depth: args.depth, ripple: args.ripple, fd: comp.frameDuration });
 
-    // the targets press around their measured centre, on top of their own Scale / Position
+    // the targets press around their measured centre, on top of their own Scale / Position.
+    // v0.61: every own value (all targets, all press keys) is read in ONE host call, at the frame of each key.
     const items = [], notes = [];
+    const pressing = [];
     for (const c of clicks) {
       const d = D(c.layerId);
       if (d.scaleExpr) { notes.push(`${c.name}: Scale has an expression — clicked, not pressed`); continue; }
       if (args.depth >= 100) continue;
-      const comp2d = !d.parentId && !d.threeD && !d.posExpr && d.transform && d.transform.position;
-      const read = async (t, mn) => (await host.call('props.values', { compId: comp.id, time: t, items: [{ address: ADDR(c.layerId, mn) }] })).items[0].value;
+      const comp2d = !!(!d.parentId && !d.threeD && !d.posExpr && d.transform && d.transform.position);
+      if (!comp2d) { const why = d.parentId ? 'parented' : d.threeD ? '3D' : d.posExpr ? 'Position has an expression' : 'Position is separated'; notes.push(`${c.name}: ${why} — presses around its anchor point`); }
+      pressing.push({ c, comp2d });
+    }
+    const reads = [];
+    pressing.forEach((x) => {
+      if (x.comp2d) reads.push({ address: ADDR(x.c.layerId, 'ADBE Position'), time: x.c.t });
+      pl.press.forEach((k) => { reads.push({ address: ADDR(x.c.layerId, 'ADBE Scale'), time: x.c.t + k.t }); if (x.comp2d) reads.push({ address: ADDR(x.c.layerId, 'ADBE Position'), time: x.c.t + k.t }); });
+    });
+    const vals = reads.length ? (await host.call('props.values', { compId: comp.id, items: reads })).items.map((r) => r.value) : [];
+    let q = 0;
+    const EASE = { easeIn: { speed: 0, influence: 60 }, easeOut: { speed: 0, influence: 60 } };
+    for (const x of pressing) {
+      const c = x.c;
       let lever = null;
-      if (comp2d) { const p0 = await read(c.t, 'ADBE Position'); lever = [c.p[0] - p0[0], c.p[1] - p0[1]]; if (Math.hypot(lever[0], lever[1]) < 0.5) lever = null; }
-      else { const why = d.parentId ? 'parented' : d.threeD ? '3D' : d.posExpr ? 'Position has an expression' : 'Position is separated'; notes.push(`${c.name}: ${why} — presses around its anchor point`); }
+      if (x.comp2d) { const p0 = vals[q++]; lever = [c.p[0] - p0[0], c.p[1] - p0[1]]; if (Math.hypot(lever[0], lever[1]) < 0.5) lever = null; }
       const sk = [], pk = [];
       for (const k of pl.press) {
-        const t = c.t + k.t, s = await read(t, 'ADBE Scale');
-        sk.push({ t, v: s.map((x, j) => (j < 2 ? x * k.f : x)), easeIn: { speed: 0, influence: 60 }, easeOut: { speed: 0, influence: 60 } });
-        if (lever) { const p = await read(t, 'ADBE Position'); pk.push({ t, v: [p[0] + (1 - k.f) * lever[0], p[1] + (1 - k.f) * lever[1]].concat(p.slice(2)), easeIn: { speed: 0, influence: 60 }, easeOut: { speed: 0, influence: 60 } }); }
+        const t = c.t + k.t, sv = vals[q++], pv = x.comp2d ? vals[q++] : null;
+        sk.push(Object.assign({ t, v: sv.map((v, j) => (j < 2 ? v * k.f : v)) }, EASE));
+        if (lever) pk.push(Object.assign({ t, v: [pv[0] + (1 - k.f) * lever[0], pv[1] + (1 - k.f) * lever[1]].concat(pv.slice(2)) }, EASE));
       }
       items.push({ address: ADDR(c.layerId, 'ADBE Scale'), keys: sk });
       if (pk.length) items.push({ address: ADDR(c.layerId, 'ADBE Position'), keys: pk, spatialLinear: true });
@@ -107,9 +120,8 @@ const click = {
       throw e;
     }
     // read back: where After Effects puts the cursor at each click
-    const back = [];
-    for (const c of clicks) back.push((await host.call('props.values', { compId: comp.id, time: c.t, items: [{ address: made.addresses.position }] })).items[0].value);
-    return { made, keys, clicks: clicks.map((c, i) => ({ layerId: c.layerId, name: c.name, t: c.t, p: c.p, got: back[i] })), targetItems: keys.items.slice(cur.length), skipped, notes };
+    const back = (await host.call('props.values', { compId: comp.id, items: clicks.map((c) => ({ address: made.addresses.position, time: c.t })) })).items.map((r) => r.value);
+    return { made, keys, press: pl.press, clicks: clicks.map((c, i) => ({ layerId: c.layerId, name: c.name, t: c.t, p: c.p, got: back[i] })), targetItems: keys.items.slice(cur.length), skipped, notes };
   },
   verify({ result }) {
     const checks = [{ ok: true, label: result.made.name, detail: 'cursor shape layer created' }];

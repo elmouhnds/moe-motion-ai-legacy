@@ -1,4 +1,5 @@
 'use strict';
+const FG = require('../extension/core/framegrid'); // v0.61: keys are written on the comp's frame grid
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createTestServices } = require('./helpers/harness');
@@ -76,7 +77,7 @@ test('Cursor Animator: cursor layer with travel/hold, pulse and ripple from a ke
   assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors, null, 1));
   const cur = comp._layers.find((l) => /^MOE Cursor/.test(l.name));
   const pos = cur.property('ADBE Transform Group').property('ADBE Position');
-  assert.deepEqual(pos._keys.map((k) => +k.t.toFixed(2)), [1, 2.55, 3]);
+  assert.deepEqual(pos._keys.map((k) => +k.t.toFixed(2)), [1, FG.snap(2.55, 1 / 25), 3]);
   assert.deepEqual(Array.from(pos.valueAtTime(2, false)), [200, 200], 'holds at the first click');
   const ring = cur.property('ADBE Root Vectors Group').property(1);
   assert.equal(ring.name, 'Click Ring');

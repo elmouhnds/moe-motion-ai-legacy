@@ -96,7 +96,8 @@ test('Stagger: random order is reproducible with a seed', async () => {
 test('Stagger: locked layers are skipped and reported', async () => {
   const { services, comp } = await createTestServices(fx.staggerComp(25, 1));
   const c = await services.executor.check('motion.stagger', { frames: 2 });
-  assert.ok(c.prepared.preview.items.some((i) => /locked/.test(i)));
+  // v0.61: the executor takes locked layers out before the tool sees them, and names them in the summary
+  assert.ok(/locked/.test(c.prepared.preview.summary) || c.prepared.preview.items.some((i) => /locked/.test(i)));
   const r = await services.executor.run('motion.stagger', { frames: 2 });
   assert.equal(r.status, 'success');
   assert.equal(comp._layers[1].startTime, 0);

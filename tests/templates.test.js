@@ -1,4 +1,5 @@
 'use strict';
+const FG = require('../extension/core/framegrid'); // v0.61: keys are written on the comp's frame grid
 /**
  * v0.49 — Native Templates (docs/features/TEMPLATES.md): real text + shape layers, sized to the text After Effects
  * measures, parented to one null, the entrance keyed from the same plan the tile preview draws. Everything is read
@@ -187,7 +188,7 @@ test('v0.50 Hold: after the entrance and the hold, every part leaves the way it 
     assert.ok(prop._keys[n0].t >= 1 + inEnd + 3 - 1e-9, `${el.name} ${k.prop}: exit after the hold`);
     const first = prop._keys[0].value, last = prop._keys[prop._keys.length - 1].value;
     assert.deepEqual(Array.isArray(first) ? Array.from(first).slice(0, 2) : first, Array.isArray(last) ? Array.from(last).slice(0, 2) : last, `${el.name} ${k.prop}: leaves the way it came`);
-    k.keys.forEach((x, i) => assert.ok(near(prop._keys[i].t, x.t + 1, 1e-6), `${el.name} ${k.prop} key ${i}`));
+    FG.snapKeys(k.keys.map((x) => Object.assign({}, x, { t: x.t + 1 })), 1 / 25).keys.forEach((x, i) => assert.ok(near(prop._keys[i].t, x.t, 1e-6), `${el.name} ${k.prop} key ${i} (on the frame grid)`));
   }
   // hold 0 = it stays (no exit keys)
   const stay = await build({ template: 'lowerThird' });

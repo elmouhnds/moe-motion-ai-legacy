@@ -222,15 +222,45 @@
     function easeList(dims, e) { var a = [], i; for (i = 0; i < dims; i++) { a.push(new KeyframeEase(num(e.speed), Math.max(0.1, Math.min(100, num(e.influence) || 33.33)))); } return a; }
     function keyIndexAt(p, t) { var k; for (k = 1; k <= p.numKeys; k++) { if (Math.abs(p.keyTime(k) - t) < 0.0005) { return k; } } return 0; }
 
-    /* args: { compId, any, label, items: [{ address, keys: [{ t, v, interp, easeIn, easeOut }], spatialLinear }] } */
+    /* v0.61 (docs/features/ENGINE2.md): every generated key lands on the comp's frame grid. Keys that meet on one
+       frame merge: the first and last keys of a list win (they hold the rest values), otherwise the one nearest
+       to that frame. Returns the snapped list and how many keys moved. */
+    function snapKeys(keys, fd) {
+        var out = [], moved = 0, i, f, c, last, t, n;
+        for (i = 0; i < keys.length; i++) {
+            t = num(keys[i].t);
+            n = Math.round(Math.round(t / fd) * fd * 1000000) / 1000000;
+            if (Math.abs(n - t) > 0.000001) { moved++; }
+            c = {};
+            for (f in keys[i]) { if (keys[i].hasOwnProperty(f)) { c[f] = keys[i][f]; } }
+            c.t = n;
+            c.__d = Math.abs(t - n);
+            c.__end = (i === 0 || i === keys.length - 1);
+            last = out.length ? out[out.length - 1] : null;
+            if (last && Math.abs(last.t - n) < fd / 2) {
+                if ((c.__end && !last.__end) || (!last.__end && c.__d < last.__d)) { out[out.length - 1] = c; }
+            } else {
+                out.push(c);
+            }
+        }
+        return { keys: out, moved: moved, merged: keys.length - out.length };
+    }
+
+    /* args: { compId, any, label, subframe, items: [{ address, keys: [{ t, v, interp, easeIn, easeOut }], spatialLinear, subframe }] } */
     ops['keys.write'] = {
         mutates: true,
         run: function (args) {
             var comp = compOf(args);
             return U.withUndo(args.label || 'MOE: Keyframes', function () {
-                var out = [], i, j, r, p, it, key, k, dims, zero, written;
+                var out = [], i, j, r, p, it, key, k, dims, zero, written, sn, grid = { moved: 0, merged: 0 };
                 for (i = 0; i < args.items.length; i++) {
                     it = args.items[i];
+                    if (!args.subframe && !it.subframe) {
+                        sn = snapKeys(it.keys, comp.frameDuration);
+                        grid.moved += sn.moved;
+                        grid.merged += sn.merged;
+                        it = { address: it.address, keys: sn.keys, spatialLinear: it.spatialLinear };
+                    }
                     r = U.resolveProperty(comp, it.address);
                     p = r.prop;
                     if (r.layer.locked) { U.fail('LAYER_LOCKED', 'Layer "' + r.layer.name + '" is locked.'); }
@@ -259,7 +289,7 @@
                     }
                     out.push({ address: it.address, name: p.name, layerName: r.layer.name, numKeys: p.numKeys, written: written, replaced: replaced });
                 }
-                return { items: out };
+                return { items: out, grid: grid, frameDuration: comp.frameDuration };
             });
         }
     };

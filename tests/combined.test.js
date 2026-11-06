@@ -15,7 +15,10 @@ const near = (a, b, t = 1e-6) => (Array.isArray(a) ? a.every((x, i) => Math.abs(
 const fx = () => studioComp([{ name: 'Box', selected: true, transform: TA({ pos: [960, 540] }), rect: { left: -50, top: -50, width: 100, height: 100 } }], { comp: { time: 3 } });
 const tp = (L, mn) => L.property('ADBE Transform Group').property(mn);
 const rel = (prop) => prop._keys.map((k) => ({ t: +(k.t - prop._keys[0].t).toFixed(6), v: Array.isArray(k.value) ? Array.from(k.value).slice(0, 2) : k.value, inf: [k.easeIn[0].influence, k.easeOut[0].influence] }));
-function same(prop, keys, label) {
+// v0.61: the plan as After Effects writes it — on the 25 fps frame grid
+const FG = require('../extension/core/framegrid');
+function same(prop, keys0, label) {
+  const keys = FG.snapKeys(keys0, 1 / 25).keys;
   const w = rel(prop);
   assert.equal(w.length, keys.length, `${label}: keys`);
   keys.forEach((k, i) => {
@@ -46,7 +49,7 @@ test('every combined preset writes its move AND its fade on one timing — exact
       const pos = tp(box, 'ADBE Position');
       const k = rel(pos);
       assert.equal(k.length, a.overshoot && a.dir === 'in' ? 3 : 2, `${id}: position keys`);
-      assert.deepEqual([k[0].t, k[k.length - 1].t], [0, +a.duration.toFixed(6)], `${id}: the move and the fade share the timing`);
+      assert.deepEqual([k[0].t, k[k.length - 1].t], [0, FG.snap(a.duration, 1 / 25)], `${id}: the move and the fade share the timing`);
       const rest = a.dir === 'in' ? k[k.length - 1].v : k[0].v;
       assert.deepEqual(rest, [960, 540], `${id}: rest pose kept`);
       const far = a.dir === 'in' ? k[0].v : k[k.length - 1].v;

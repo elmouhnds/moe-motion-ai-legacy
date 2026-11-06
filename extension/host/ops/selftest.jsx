@@ -54,6 +54,22 @@
     };
 
     /* args: { names: [...] } -> { commands: [{ name, id }] } */
+    /* v0.61 (ENGINE2.md): one Edit > Undo of a MOE run, by its menu name "Undo <label>". Refused unless the label is
+       MOE's own ("MOE: ...") and the active comp is the self-test's own comp, so it can never undo the user's work.
+       args: { label } -> { found, id } */
+    ops['selftest.undoOnce'] = {
+        mutates: true,
+        run: function (args) {
+            var label = String(args.label || ''), comp = app.project.activeItem, id = 0;
+            if (label.substring(0, 5) !== 'MOE: ') { U.fail('BAD_ARGS', 'Only a MOE undo step can be undone here.'); }
+            if (!(comp instanceof CompItem) || String(comp.name).substring(0, 13) !== 'MOE Self-Test') { U.fail('NOT_SELFTEST', 'Undo is only run on the self-test comp.'); }
+            try { id = app.findMenuCommandId('Undo ' + label); } catch (eF) { id = 0; }
+            if (!id) { return { found: false, id: 0 }; }
+            app.executeCommand(id);
+            return { found: true, id: num(id) };
+        }
+    };
+
     ops['selftest.commands'] = {
         mutates: false,
         run: function (args) {

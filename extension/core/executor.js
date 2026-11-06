@@ -12,6 +12,7 @@
 const { validateArgs } = require('./schema');
 const contextReq = require('./context');
 const { decide } = require('./permissions');
+const LOCK = require('./lockpolicy');
 
 const MAX_CHECKPOINTS = 50;
 
@@ -33,6 +34,17 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
     emit({ type: 'history', entry });
   }
 
+  /** A tool writes when any of its permissions changes the project (modify.*). */
+  const writes = LOCK.writes;
+  /** Open / close the run's undo group. A host without tx ops (older build) still runs, one group per op. */
+  async function openTx(label) {
+    if (getSettings().engine && getSettings().engine.oneUndo === false) return false;
+    try { await host.call('tx.begin', { label }); return true; } catch (e) { logger.warn('exec', 'tx.begin unavailable', { message: e.message }); return false; }
+  }
+  async function closeTx() {
+    try { await host.call('tx.end', {}); } catch (e) { logger.error('exec', 'tx.end failed', { message: e.message }); }
+  }
+
   function saveCheckpoint(tool, data, label) {
     const cp = { id: `cp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`, toolId: tool.id, label, t: new Date().toISOString(), data, restored: false };
     checkpoints.push(cp);
@@ -47,14 +59,18 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
     if (!tool) return { ok: false, stage: 'lookup', errors: [`Unknown tool "${toolId}"`] };
     const v = validateArgs(tool.params || {}, args);
     if (!v.ok) return { ok: false, stage: 'validate', errors: v.errors, tool };
-    const context = ctx || (await readContext());
+    // v0.61 (ENGINE2.md): locked layers never reach a tool that writes — the same rule the panel shows (lockpolicy.js)
+    const lp = LOCK.apply(tool, ctx || (await readContext()));
+    const context = lp.ctx, lockedSkipped = lp.skipped;
+    if (lp.error) return { ok: false, stage: 'context', errors: [lp.error], tool, ctx: context, lockedSkipped };
     const req = contextReq.evaluate(tool.requires, context);
-    if (!req.ok) return { ok: false, stage: 'context', errors: req.reasons, tool, ctx: context };
+    if (!req.ok) return { ok: false, stage: 'context', errors: req.reasons.map((e, i) => (i ? e : LOCK.explain(e, lockedSkipped))), tool, ctx: context };
     const perm = decide(tool, origin, getSettings().permissions);
     if (perm.decision === 'deny') return { ok: false, stage: 'permission', errors: perm.reasons, tool };
     const prepared = tool.prepare ? tool.prepare(v.value, context, services) : { ok: true, preview: { summary: tool.name, items: [] } };
-    if (!prepared.ok) return { ok: false, stage: 'prepare', errors: [prepared.error], tool, ctx: context };
-    return { ok: true, tool, args: v.value, ctx: context, prepared, permission: perm };
+    if (!prepared.ok) return { ok: false, stage: 'prepare', errors: [LOCK.explain(prepared.error, lockedSkipped)], tool, ctx: context };
+    if (lockedSkipped.length && prepared.preview) prepared.preview = Object.assign({}, prepared.preview, { summary: `${prepared.preview.summary} · skips locked ${lockedSkipped.join(', ')}` });
+    return { ok: true, tool, args: v.value, ctx: context, prepared, permission: perm, lockedSkipped };
   }
 
   /**
@@ -79,15 +95,21 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
       emit({ type: 'progress', toolId, message: prepared.preview.summary });
 
       let result;
+      // v0.61 (docs/features/ENGINE2.md): a tool that writes runs inside ONE After Effects undo group — one Ctrl+Z
+      // undoes the whole run, whatever number of host ops it took. Always closed, even when the tool throws.
+      const tx = writes(tool) ? await openTx(`MOE: ${tool.name}`) : false;
       try {
         result = await tool.execute({ args: c.args, ctx, prepared, host, services });
       } catch (e) {
+        if (tx) await closeTx();
         logger.error('exec', `${toolId} failed`, { code: e.code, message: e.message });
         record({ t: new Date().toISOString(), toolId, toolName: tool.name, origin, batchId, status: 'failed', error: e.message, ms: Date.now() - started });
         return { ok: false, status: 'failed', errors: [e.message], code: e.code };
       }
+      if (tx) await closeTx();
 
       const verification = tool.verify ? tool.verify({ args: c.args, ctx, prepared, result }) : { ok: true, checks: [], unverified: true };
+      if (c.lockedSkipped && c.lockedSkipped.length) verification.checks.push({ ok: true, label: 'Locked', detail: `${c.lockedSkipped.join(', ')} — not changed` });
       let checkpointId = null;
       if (tool.checkpoint) {
         const data = tool.checkpoint({ result, ctx, args: c.args });
@@ -114,13 +136,16 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
     if (cp.restored) return { ok: false, errors: ['Checkpoint already restored'] };
     const tool = registry.get(cp.toolId);
     if (!tool || !tool.restore) return { ok: false, errors: ['This tool cannot restore checkpoints'] };
+    const tx = await openTx(`MOE: Restore ${tool.name}`);
     try {
       const res = await tool.restore({ data: cp.data, host });
+      if (tx) await closeTx();
       cp.restored = true;
       store.set('checkpoints', checkpoints);
       record({ t: new Date().toISOString(), toolId: cp.toolId, toolName: `Restore: ${tool.name}`, origin: 'user', status: 'success', summary: `Restored “${cp.label}”`, restoredCheckpoint: cp.id });
       return { ok: true, result: res };
     } catch (e) {
+      if (tx) await closeTx();
       logger.error('exec', 'restore failed', { message: e.message });
       return { ok: false, errors: [e.message] };
     }

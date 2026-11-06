@@ -34,15 +34,17 @@ test('Bump on the mock: Position keys = the layer\'s own value + the plan, at th
   const pos = tr(L, 'ADBE Position');
   const t0 = comp.time;
   const plan = SH.plan('bump', SH.TYPES.bump);
-  const before = plan.position.map((k) => pos.valueAtTime(t0 + k.t, false));
+  // v0.61: the keys land on the comp's frames — the expected key is the plan snapped, on top of the value on THAT frame
+  const grid = require('../extension/core/framegrid').snapKeys(plan.position.map((k) => ({ t: t0 + k.t, v: k.v })), comp.frameDuration).keys;
+  const before = grid.map((k) => pos.valueAtTime(k.t, false));
   const r = await services.executor.run('quick.shake', { type: 'bump', intensity: 40, rotation: 0, frequency: 7, settle: 0.6 });
   assert.equal(r.status, 'success');
-  plan.position.forEach((k, i) => {
-    const v = pos.valueAtTime(t0 + k.t, false);
+  grid.forEach((k, i) => {
+    const v = pos.valueAtTime(k.t, false);
     assert.ok(Math.abs(v[0] - (before[i][0] + k.v[0])) < 0.01 && Math.abs(v[1] - (before[i][1] + k.v[1])) < 0.01, `key ${i}: on top of the layer's own animation`);
   });
   assert.ok((await services.executor.restore(r.checkpointId)).ok);
-  plan.position.forEach((k, i) => { const v = pos.valueAtTime(t0 + k.t, false); assert.ok(Math.abs(v[1] - before[i][1]) < 0.01, 'back as it was'); });
+  grid.forEach((k, i) => { const v = pos.valueAtTime(k.t, false); assert.ok(Math.abs(v[1] - before[i][1]) < 0.01, 'back as it was'); });
 });
 
 test('Zoom Punch keys Scale + Rotation; Whip keys Position + Rotation (every shake writes what its plan holds)', async () => {

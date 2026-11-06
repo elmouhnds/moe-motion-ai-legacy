@@ -43,7 +43,9 @@ const CHECKS = [
   { id: 'template', label: 'Template: Lower Third = templates.js', run: (T) => checkTemplate(T, { template: 'lowerThird' }) },
   { id: 'templateArabic', label: 'Template: Arabic Lower Third (right to left)', run: (T) => checkTemplate(T, { template: 'lowerThird', title: 'سارة أحمد', subtitle: 'مصممة موشن' }) },
   // v0.60 (SAAS_INTERACTION.md): the press stays in place even on a text whose anchor is on its baseline corner
-  { id: 'click', label: 'Click on Layer: cursor on the centre, press in place', run: checkClick }
+  { id: 'click', label: 'Click on Layer: cursor on the centre, press in place', run: checkClick },
+  // v0.61 (ENGINE2.md): the study's rule 4 — one apply = one Ctrl+Z, proven in After Effects itself
+  { id: 'oneUndo', label: 'One Ctrl+Z undoes a whole run (Click on Layer: measure, cursor, keys)', run: checkOneUndo }
 ];
 
 /* ---------- helpers ---------- */
@@ -347,7 +349,7 @@ async function checkClick(T) {
   const onTarget = clicks.map((c) => Math.hypot(c.got[0] - c.p[0], c.got[1] - c.p[1]));
   // After Effects measures each text at rest (just before the press) and at the deepest key
   const ids = [a.layerId, b.layerId], times = [];
-  clicks.forEach((c) => times.push(c.t - 0.06, c.t + 0.06)); // the clicks come in the selection's order
+  clicks.forEach((c) => times.push(c.t + r.result.press[0].t, c.t + r.result.press[1].t)); // rest / deepest key (whole frames); selection order
   const m = await T.host.call('layers.bounds', { compId: T.compId, layerIds: ids, times });
   const drift = [], ratio = [];
   clicks.forEach((c, i) => {
@@ -360,6 +362,33 @@ async function checkClick(T) {
   await T.host.call('layers.remove', { compId: T.compId, layerIds: ids, onlyNamed: 'ST ' });
   const ok = maxOf(onTarget) < 0.6 && maxOf(drift) < 0.6 && ratio.every((q) => Math.abs(q - 0.9) < 0.01) && u.back;
   return { status: ok ? 'pass' : 'fail', detail: `${clicks.length} clicks · cursor ${r2(maxOf(onTarget))} px from each measured centre · the centre moved ${r2(maxOf(drift))} px under the press (0.6 allowed) · width ${ratio.map((q) => Math.round(q * 100)).join(' / ')} % (90 wanted) · undo ${u.back ? 'ok' : 'left layers'}`, numbers: { onTarget, drift, ratio } };
+}
+
+async function checkOneUndo(T) {
+  const W = T.comp.width, H = T.comp.height;
+  const before = (await T.layerIds()).length;
+  const a = await T.host.call('selftest.addText', { compId: T.compId, text: 'Buy now', name: 'ST Undo', fontSize: 80, justification: 'center', position: [W / 2, H / 2] });
+  await T.select([a.layerId]);
+  const r = await T.run('interact.click', { kind: 'arrow', from: 'corner', gap: 1.1, travel: 0.55, depth: 90, ripple: true, size: 40, color: '#FFFFFF' });
+  const scale = { layerId: a.layerId, matchNames: ['ADBE Transform Group', 'ADBE Scale'] };
+  const keysAfter = (await T.host.call('keys.list', { compId: T.compId, address: scale })).keys.length;
+  const made = (await T.layerIds()).length - (before + 1);
+  const u = await T.host.call('selftest.undoOnce', { label: 'MOE: Click on Layer' });
+  let detail, status;
+  if (!u.found) {
+    // the menu item is looked up by its exact name; if this AE names it differently, say so instead of guessing
+    await T.undo(r, before + 1);
+    status = 'info';
+    detail = `Edit › "Undo MOE: Click on Layer" not found by name in this After Effects — press Ctrl+Z once after any MOE run to check by hand (cleaned up with Restore)`;
+  } else {
+    const keysNow = (await T.host.call('keys.list', { compId: T.compId, address: scale })).keys.length;
+    const layersNow = (await T.layerIds()).length;
+    const ok = keysAfter > 0 && made === 1 && keysNow === 0 && layersNow === before + 1;
+    status = ok ? 'pass' : 'fail';
+    detail = `the run made ${made} layer(s) and ${keysAfter} Scale keys; ONE Edit › Undo left ${layersNow - (before + 1)} layer(s) and ${keysNow} keys${ok ? '' : ' — the run took more than one undo step'}`;
+  }
+  await T.host.call('layers.remove', { compId: T.compId, layerIds: [a.layerId], onlyNamed: 'ST ' });
+  return { status, detail, numbers: { keysAfter, made, found: u.found } };
 }
 
 async function checkSpeed(T) {

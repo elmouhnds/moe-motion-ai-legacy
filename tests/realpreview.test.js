@@ -28,7 +28,10 @@ function written(prop) {
   const t0 = prop._keys[0].t;
   return prop._keys.map((k) => ({ t: k.t - t0, v: Array.isArray(k.value) ? Array.from(k.value) : k.value, inf: [k.easeIn[0].influence, k.easeOut[0].influence] }));
 }
-function same(prop, plan, label) {
+// v0.61: After Effects writes the plan on the comp's frame grid (25 fps here; the playhead is on a frame)
+const FG = require('../extension/core/framegrid');
+function same(prop, plan0, label) {
+  const plan = FG.snapKeys(plan0, 1 / 25).keys;
   const w = written(prop);
   assert.equal(w.length, plan.length, `${label}: number of keys`);
   plan.forEach((k, i) => {
@@ -68,7 +71,7 @@ test('Trim Paths writes the plan the preview plays (draw, erase, travel lag, dra
     const t0 = 2;
     for (const [prop, keys, name] of [[start, plan.start, 'start'], [end, plan.end, 'end']]) {
       if (!keys) { assert.equal(prop._keys.length, 0, `${args.mode} ${name}: not keyed`); continue; }
-      assert.deepEqual(prop._keys.map((k) => +(k.t - t0).toFixed(6)), keys.map((k) => +k.t.toFixed(6)), `${args.mode} ${name} times`);
+      assert.deepEqual(prop._keys.map((k) => +(k.t - t0).toFixed(6)), FG.snapKeys(keys, 1 / 25).keys.map((k) => +k.t.toFixed(6)), `${args.mode} ${name} times (on the frame grid)`);
       assert.deepEqual(prop._keys.map((k) => k.value), keys.map((k) => k.v), `${args.mode} ${name} values`);
     }
   }

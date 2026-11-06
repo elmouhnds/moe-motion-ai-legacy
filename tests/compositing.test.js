@@ -20,7 +20,7 @@ test('AT1 Analyze: known mean colour, probe removed, project unchanged', async (
   assert.equal(comp.numLayers, 1);
   assert.deepEqual(fxNames(comp.layer(1)), []);
   assert.equal(env.undo.depth, 0);
-  assert.deepEqual(env.undo.groups, ['MOE: Analyze (temporary)']);
+  assert.deepEqual(env.undo.groups, ['MOE: Analyze Shot']); // v0.61: one undo group per run, named after the tool
 });
 
 // AT2
@@ -183,7 +183,7 @@ test('AT14 Look from Words: sends measured stats, validates/clamps values, never
   assert.equal(r.result.suggestion.args.contrast, 100, 'clamped to range');
   assert.deepEqual(r.result.suggestion.clamped, ['contrast']);
   assert.deepEqual(fxNames(comp.layer(1)), [], 'nothing written');
-  assert.deepEqual(env.undo.groups, ['MOE: Analyze (temporary)']);
+  assert.deepEqual(env.undo.groups, ['MOE: Grade from Words']); // v0.61: one undo group per run (its temporary probe included)
   const off = await createTestServices(shots.shotComp({ layers: [{ name: 'W', selected: true }] }), { apiKey: 'k' });
   const r2 = await off.services.executor.run('compositing.lookAssist', { description: 'warm' });
   assert.equal(r2.status, 'failed');

@@ -152,7 +152,10 @@
         return s.length > max ? s.substring(0, max) + '\u2026' : s;
     };
 
+    /* v0.61 (docs/features/ENGINE2.md): inside a run's transaction (tx.begin ... tx.end) every op joins the run's
+       one undo group, so one Ctrl+Z undoes the whole run. Outside a transaction each op is its own group. */
     U.withUndo = function (label, fn) {
+        if (MOE.tx) { return fn(); }
         app.beginUndoGroup(label);
         try { return fn(); } finally { app.endUndoGroup(); }
     };

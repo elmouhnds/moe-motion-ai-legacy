@@ -1,4 +1,5 @@
 'use strict';
+const FG = require('../extension/core/framegrid'); // v0.61: keys are written on the comp's frame grid
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { createTestServices } = require('./helpers/harness');
@@ -82,7 +83,7 @@ test('Trim Paths travel: MOE Trim added, End and Start keyed with lag; restore r
   const root = named(comp, 'Line').property('ADBE Root Vectors Group');
   const trim = root._children.find((c) => c.name === 'MOE Trim');
   assert.deepEqual(trim._children[1]._keys.map((k) => k.t), [4, 5]);
-  assert.deepEqual(trim._children[0]._keys.map((k) => k.t), [4.5, 5.5]);
+  assert.deepEqual(trim._children[0]._keys.map((k) => k.t), [FG.snap(4.5, 1 / 25), FG.snap(5.5, 1 / 25)]);
   assert.ok((await services.executor.restore(r.checkpointId)).ok);
   assert.equal(root._children.some((c) => c.name === 'MOE Trim'), false);
 });

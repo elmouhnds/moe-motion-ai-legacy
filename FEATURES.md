@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Engine 2** (v0.61.0): every tool is one Ctrl+Z, writes its keys on the comp's frames, costs a handful of round trips whatever the layer count, and never touches a locked layer (docs/features/ENGINE2.md).
+
 **SaaS Interaction** (v0.60.0): a cursor that clicks the real layers at their measured centres while each one presses in place, UI that builds in reading order (or right to left, or from the centre), and four product backdrops (docs/features/SAAS_INTERACTION.md).
 
 **Styles + Shakes** (v0.59.0): five impact shakes as real keyframes on top of the animation, and four finished looks — soft / deep shadow, glow, light sweep — from After Effects' own effects (docs/features/STYLES_SHAKES.md).

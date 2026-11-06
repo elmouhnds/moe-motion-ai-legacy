@@ -8,6 +8,7 @@ const S = require('../compositing/shared'); // v0.58: MOE Blur (effects.ensure /
 const { EASES } = require('../zoom/math');
 // v0.47 (REAL_PREVIEWS.md): the keys Quick Animate and Trim Paths write come from one pure plan — the tile previews draw the same keys
 const PLAN = require('./animatePlan');
+const FG = require('../../core/framegrid'); // v0.61: keys on the comp's frame grid
 
 const ADDR = (id, mn) => ({ layerId: id, matchNames: ['ADBE Transform Group', mn] });
 const visual = (ctx) => (ctx.layers || []).filter((l) => !['camera', 'light'].includes(l.type));
@@ -253,20 +254,38 @@ const animate = {
     const e = easePair(args.ease);
     const items = [];
     const skipped = [];
+    // v0.61 (ENGINE2.md): every value the run needs is read in ONE host call (each at its own layer's start time),
+    // instead of one call per layer and property — 60 layers went from 120 reads to 1.
+    const fd = comp.frameDuration || 1 / 25;
+    const jobs = [], reads = [];
+    const need = (address, time) => { reads.push({ address, time }); return reads.length - 1; };
     for (let i = 0; i < prepared.layers.length; i++) {
       const L = prepared.layers[i];
       const D = desc.layers.find((x) => x.id === L.id);
-      const t0 = comp.time + rank[i] * (args.stagger || 0), t1 = t0 + args.duration;
-      const k = (a, b, mid) => PLAN.keysFor(e, t0, t1 - t0, a, b, mid);
+      const t0 = FG.snap(comp.time + rank[i] * (args.stagger || 0), fd);
+      const job = { L, D, t0 };
       if (isMove) {
         if (D.parentId) { skipped.push(`${L.name} (parented)`); continue; }
         if (D.posExpr) { skipped.push(`${L.name} (Position has an expression)`); continue; }
         const box = boxes ? boxes.layers.find((b) => b.layerId === L.id).boxes[0] : null;
         if (!args.distance && !box) { skipped.push(`${L.name} (no visible bounds)`); continue; }
+        job.box = box;
+        job.separated = !D.transform || !D.transform.position;
+        job.pos = job.separated ? [need(ADDR(L.id, 'ADBE Position_0'), t0), need(ADDR(L.id, 'ADBE Position_1'), t0)] : [need(ADDR(L.id, 'ADBE Position'), t0)];
+      } else if (args.kind === 'scale' || args.kind === 'spin') {
+        job.mn = args.kind === 'scale' ? 'ADBE Scale' : 'ADBE Rotate Z';
+        job.own = need(ADDR(L.id, job.mn), t0);
+      }
+      if (args.kind === 'fade' || args.fade) job.op = need(ADDR(L.id, 'ADBE Opacity'), t0);
+      jobs.push(job);
+    }
+    const vals = reads.length ? (await host.call('props.values', { compId: comp.id, items: reads })).items.map((r) => r.value) : [];
+    for (const { L, t0, box, separated, pos, mn, own, op } of jobs) {
+      const t1 = t0 + args.duration;
+      const k = (a, b, mid) => PLAN.keysFor(e, t0, t1 - t0, a, b, mid);
+      if (isMove) {
         const off = args.distance ? fixedOffset(args.kind, args.dir, args.distance) : offscreen(args.kind, args.dir, box, W, H);
-        const separated = !D.transform || !D.transform.position;
-        const cur = (await host.call('props.values', { compId: comp.id, time: t0, items: separated ? [{ address: ADDR(L.id, 'ADBE Position_0') }, { address: ADDR(L.id, 'ADBE Position_1') }] : [{ address: ADDR(L.id, 'ADBE Position') }] })).items.map((x) => x.value);
-        const p = separated ? [cur[0], cur[1]] : cur[0];
+        const p = separated ? [vals[pos[0]], vals[pos[1]]] : vals[pos[0]];
         const away = [p[0] + off[0], p[1] + off[1]].concat(p.length > 2 ? [p[2]] : []);
         const over = args.overshoot && args.dir === 'in' ? [p[0] - off[0] * 0.04, p[1] - off[1] * 0.04].concat(p.length > 2 ? [p[2]] : []) : undefined;
         const [a, b] = args.dir === 'in' ? [away, p] : [p, away];
@@ -275,20 +294,18 @@ const animate = {
           items.push({ address: ADDR(L.id, 'ADBE Position_1'), keys: k(a[1], b[1], over && over[1]) });
         } else items.push({ address: ADDR(L.id, 'ADBE Position'), keys: k(a, b, over), spatialLinear: true });
       } else if (args.kind === 'fade') {
-        const o = (await host.call('props.values', { compId: comp.id, time: t0, items: [{ address: ADDR(L.id, 'ADBE Opacity') }] })).items[0].value;
+        const o = vals[op];
         const rest = args.dir === 'in' && o === 0 ? 100 : o;
         items.push({ address: ADDR(L.id, 'ADBE Opacity'), keys: args.dir === 'in' ? k(0, rest) : k(rest, 0) });
-      } else if (args.kind === 'scale' || args.kind === 'spin') {
+      } else if (mn) {
         // the plan's keys from the layer's own rest value, at the playhead (same keys as the tile preview)
-        const mn = args.kind === 'scale' ? 'ADBE Scale' : 'ADBE Rotate Z';
-        const v = (await host.call('props.values', { compId: comp.id, time: t0, items: [{ address: ADDR(L.id, mn) }] })).items[0].value;
+        const v = vals[own];
         const pl = PLAN.animate(args, args.kind === 'scale' ? { scale: v } : { rotation: v });
         items.push({ address: ADDR(L.id, mn), keys: pl.keys.map((x) => Object.assign({}, x, { t: x.t + t0 })) });
       }
       // v0.48: Also fade — Opacity on the same timing as the move
       if (args.fade && args.kind !== 'fade') {
-        const o = (await host.call('props.values', { compId: comp.id, time: t0, items: [{ address: ADDR(L.id, 'ADBE Opacity') }] })).items[0].value;
-        const f = PLAN.fade(args, { opacity: o });
+        const f = PLAN.fade(args, { opacity: vals[op] });
         items.push({ address: ADDR(L.id, 'ADBE Opacity'), keys: f.keys.map((x) => Object.assign({}, x, { t: x.t + t0 })) });
       }
     }
@@ -300,7 +317,7 @@ const animate = {
       const animated = [...new Set(items.map((it) => it.address.layerId))];
       fx = await S.writeEffects(host, ctx, animated.map((id) => ({ layer: { layerId: id }, items: [{ key: 'MOE Blur', matchName: 'ADBE Gaussian Blur 2', before: [], params: [{ id: 'Repeat Edge Pixels', value: 1, names: ['Repeat Edge Pixels'] }] }] })), 'MOE: Blur');
       animated.forEach((id) => {
-        const i = prepared.layers.findIndex((l) => l.id === id), t0 = comp.time + rank[i] * (args.stagger || 0);
+        const i = prepared.layers.findIndex((l) => l.id === id), t0 = FG.snap(comp.time + rank[i] * (args.stagger || 0), comp.frameDuration || 1 / 25);
         items.push({ address: { layerId: id, matchNames: ['ADBE Effect Parade', 'name:MOE Blur', 'name:Blurriness'] }, keys: bl.keys.map((x) => Object.assign({}, x, { t: x.t + t0 })) });
       });
     }
@@ -461,15 +478,15 @@ const shake = {
     const desc = await host.call('layers.describe', { compId: comp.id });
     const items = [], skipped = [];
     // the offsets are added to the layer's OWN value at each key time, so a shake sits on top of its animation
-    const at = async (address, t) => (await host.call('props.values', { compId: comp.id, time: t, items: [{ address }] })).items[0].value;
+    // v0.61 (ENGINE2.md): the key times are snapped to the comp's frames FIRST, then every own value is read at the
+    // snapped time in ONE host call — the value under each key is exactly the layer's value on that frame
+    const fd = comp.frameDuration || 1 / 25;
+    const jobs = [];
     for (let i = 0; i < prepared.layers.length; i++) {
       const L = prepared.layers[i], D = desc.layers.find((x) => x.id === L.id);
       const t0 = comp.time + i * (args.stagger || 0);
-      const keyed = async (address, list, add) => {
-        const keys = [];
-        for (const k of list) { const v = await at(address, t0 + k.t); keys.push(Object.assign({ t: t0 + k.t, v: add(v, k.v) }, SH.EASE)); }
-        items.push({ address, keys });
-      };
+      // queued now, read for ALL layers in one host call below
+      const keyed = async (address, list, add) => { jobs.push({ address, add, grid: FG.snapKeys(list.map((k) => ({ t: t0 + k.t, v: k.v })), fd).keys }); };
       if (p.position) {
         if (D.posExpr) skipped.push(`${L.name} (Position has an expression)`);
         else if (!D.transform || !D.transform.position) {
@@ -480,13 +497,20 @@ const shake = {
       if (p.scale) await keyed(ADDR(L.id, 'ADBE Scale'), p.scale, (v, d) => v.map((x, j) => (j < 2 ? x + d : x)));
       if (p.rotation) await keyed(ADDR(L.id, 'ADBE Rotate Z'), p.rotation, (v, d) => v + d);
     }
+    if (jobs.length) {
+      const reads = []; jobs.forEach((jb) => jb.grid.forEach((k) => reads.push({ address: jb.address, time: k.t })));
+      const own = (await host.call('props.values', { compId: comp.id, items: reads })).items;
+      let q = 0;
+      jobs.forEach((jb) => items.push({ address: jb.address, keys: jb.grid.map((k) => Object.assign({ t: k.t, v: jb.add(own[q++].value, k.v) }, SH.EASE)) }));
+    }
     if (!items.length) throw new Error(`Nothing to shake: ${skipped.join(', ')}`);
     const keys = await host.call('keys.write', { compId: comp.id, label: 'MOE: Shake', items });
-    return { keys, skipped, type: args.type };
+    return { asked: items.map((it) => it.keys.length), keys, skipped, type: args.type };
   },
   verify({ result, prepared }) {
-    const want = (prepared.plan.position || prepared.plan.scale || prepared.plan.rotation).length;
-    const c = result.keys.items.map((it) => ({ ok: it.written.length === want, label: `${it.layerName} › ${it.name}`, detail: `${it.written.length} keys, settles at ${it.written[it.written.length - 1].t.toFixed(2)} s` }));
+    // v0.61: compare with the keys asked for after the frame grid (a fast shake can have two peaks inside one frame)
+    const asked = result.asked || result.keys.items.map(() => (prepared.plan.position || prepared.plan.scale || prepared.plan.rotation).length);
+    const c = result.keys.items.map((it, j) => ({ ok: it.written.length === asked[j], label: `${it.layerName} › ${it.name}`, detail: `${it.written.length} keys, settles at ${it.written[it.written.length - 1].t.toFixed(2)} s` }));
     for (const s of result.skipped) c.push({ ok: true, label: 'Skipped', detail: s });
     return { ok: c.every((x) => x.ok), checks: c };
   },

@@ -15,14 +15,19 @@
  * dwell, then leave with a soft start (70 %). The target goes down with the cursor and springs back past its rest.
  */
 const SETTLE = 0.14, DWELL = 0.22;
+/* v0.61 (ENGINE2.md): with o.fd (the comp's frame duration) every time is a whole number of frames — at least one
+   frame per step — so the plan IS what After Effects keeps (keys.write would otherwise move them to the grid). */
+const frames = (sec, fd, min = 1) => (fd ? Math.max(min, Math.round(sec / fd)) * fd : sec);
+const grid = (t, fd) => (fd ? Math.round(Math.round(t / fd) * fd * 1e6) / 1e6 : t);
 const LIMITS = { targets: 12, travel: [0.15, 3], gap: [0.4, 10], depth: [70, 100] };
 const clamp = (v, a, b) => Math.min(b, Math.max(a, Number(v)));
 const ARRIVE = { easeIn: { speed: 0, influence: 85 } }, LEAVE = { easeOut: { speed: 0, influence: 70 } };
 
 function times(n, o) {
-  const travel = clamp(o.travel, ...LIMITS.travel), gap = Math.max(clamp(o.gap, ...LIMITS.gap), travel + SETTLE + DWELL);
-  const t0 = (o.time || 0) + travel + SETTLE;
-  return Array.from({ length: n }, (_, i) => t0 + i * gap);
+  const fd = o.fd, travel = clamp(o.travel, ...LIMITS.travel);
+  const gap = frames(Math.max(clamp(o.gap, ...LIMITS.gap), travel + SETTLE + DWELL), fd);
+  const t0 = grid((o.time || 0) + frames(travel, fd) + frames(SETTLE, fd), fd);
+  return Array.from({ length: n }, (_, i) => grid(t0 + i * gap, fd));
 }
 
 /** Off frame at the bottom right (corner), off the right edge level with the first target (side), or the comp centre. */
@@ -33,28 +38,31 @@ function entry(from, W, H, p0) {
 }
 
 /** The press on the target, as factors of its own Scale (its rest = 1): down with the cursor, a small spring back. */
-function pressKeys(depth) {
+function pressKeys(depth, fd) {
   const d = clamp(depth, ...LIMITS.depth) / 100;
-  return [{ t: -0.06, f: 1 }, { t: 0.06, f: d }, { t: 0.22, f: 1 + (1 - d) * 0.3 }, { t: 0.38, f: 1 }];
+  const a = frames(0.06, fd), b = Math.max(a + (fd || 0.01), frames(0.22, fd)), c = Math.max(b + (fd || 0.01), frames(0.38, fd));
+  return [{ t: -a, f: 1 }, { t: a, f: d }, { t: b, f: 1 + (1 - d) * 0.3 }, { t: c, f: 1 }];
 }
 
 function plan(clicks, o) {
   if (!clicks.length) throw new Error('No clicks');
-  const travel = clamp(o.travel, ...LIMITS.travel), start = clicks[0].t - travel - SETTLE;
+  const fd = o.fd, F = (sec) => frames(sec, fd);
+  const travel = clamp(o.travel, ...LIMITS.travel), settle = F(SETTLE), dwell = F(DWELL);
+  const start = grid(clicks[0].t - F(travel) - settle, fd);
   const from = entry(o.from, o.W, o.H, clicks[0].p);
   const pos = [Object.assign({ t: start, v: from }, LEAVE)];
   clicks.forEach((c, i) => {
-    if (i > 0) pos.push(Object.assign({ t: clicks[i - 1].t + DWELL, v: clicks[i - 1].p }, LEAVE));
-    pos.push(Object.assign({ t: c.t - SETTLE, v: c.p }, ARRIVE));
+    if (i > 0) pos.push(Object.assign({ t: grid(clicks[i - 1].t + dwell, fd), v: clicks[i - 1].p }, LEAVE));
+    pos.push(Object.assign({ t: grid(c.t - settle, fd), v: c.p }, ARRIVE));
   });
   const scale = [], ringS = [], ringO = [];
   clicks.forEach((c) => {
-    scale.push({ t: c.t - 0.06, v: [100, 100] }, { t: c.t + 0.04, v: [84, 84] }, { t: c.t + 0.2, v: [100, 100] });
-    if (o.ripple !== false) { ringS.push({ t: c.t, v: [0, 0] }, Object.assign({ t: c.t + 0.45, v: [170, 170] }, ARRIVE)); ringO.push({ t: c.t, v: 90 }, { t: c.t + 0.45, v: 0 }); }
+    scale.push({ t: grid(c.t - F(0.06), fd), v: [100, 100] }, { t: grid(c.t + F(0.04), fd), v: [84, 84] }, { t: grid(c.t + Math.max(F(0.2), F(0.04) + 2 * (fd || 0.01)), fd), v: [100, 100] });
+    if (o.ripple !== false) { const r = grid(c.t + F(0.45), fd); ringS.push({ t: c.t, v: [0, 0] }, Object.assign({ t: r, v: [170, 170] }, ARRIVE)); ringO.push({ t: c.t, v: 90 }, { t: r, v: 0 }); }
   });
-  const last = clicks[clicks.length - 1].t, end = last + 0.7 + 0.4;
-  const opacity = (o.from === 'center' ? [{ t: start, v: 0 }, { t: start + 0.2, v: 100 }] : [{ t: start, v: 100 }]).concat([{ t: last + 0.7, v: 100 }, { t: end, v: 0 }]);
-  return { start, pos, opacity, scale, ringS, ringO, press: pressKeys(o.depth), end };
+  const last = clicks[clicks.length - 1].t, hold = grid(last + F(0.7), fd), end = grid(hold + F(0.4), fd);
+  const opacity = (o.from === 'center' ? [{ t: start, v: 0 }, { t: grid(start + F(0.2), fd), v: 100 }] : [{ t: start, v: 100 }]).concat([{ t: hold, v: 100 }, { t: end, v: 0 }]);
+  return { start, pos, opacity, scale, ringS, ringO, press: pressKeys(o.depth, fd), end };
 }
 
 /** Linear-in-time value of a key list (the previews ease between keys with the plan's own smoothstep). */
@@ -69,4 +77,4 @@ function valueAt(keys, t) {
   return keys[keys.length - 1].v;
 }
 
-module.exports = { SETTLE, DWELL, LIMITS, times, entry, pressKeys, plan, valueAt };
+module.exports = { SETTLE, DWELL, LIMITS, frames, grid, times, entry, pressKeys, plan, valueAt };

@@ -1,4 +1,5 @@
 'use strict';
+const FG = require('../extension/core/framegrid'); // v0.61: keys are written on the comp's frame grid
 /**
  * v0.58 Apple Motion (docs/features/APPLE_MOTION.md): Blur on entrances (a MOE Blur keyed on the move's timing, exact
  * Restore), the Native curve set, Apple-style text presets (by line / word, Arabic-safe), the Blur tiles.
@@ -28,7 +29,7 @@ test('Blur In: one MOE Blur per layer, Blurriness keyed 40 → 0 on the fade\'s 
     assert.ok(fx && fx.matchName === 'ADBE Gaussian Blur 2', `${L.name}: MOE Blur`);
     assert.equal(param(fx, 'Repeat Edge Pixels').value, 1);
     const k = param(fx, 'Blurriness')._keys;
-    assert.deepEqual(k.map((x) => +(x.t + L.startTime).toFixed(3)), plan.keys.map((x) => +(x.t + t0).toFixed(3)));
+    assert.deepEqual(k.map((x) => +(x.t + L.startTime).toFixed(3)), FG.snapKeys(plan.keys.map((x) => Object.assign({}, x, { t: x.t + t0 })), 1 / 25).keys.map((x) => +x.t.toFixed(3)), 'the plan, on the frame grid');
     assert.deepEqual(k.map((x) => x.value), [40, 0]);
   }
   // a second run reuses the effect (never two)

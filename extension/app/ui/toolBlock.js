@@ -15,14 +15,19 @@ function swatchesFor(app) {
   return [...new Set([...(b ? b.colors.map((c) => c.hex.toUpperCase()) : []), ...own])].slice(0, 12);
 }
 
-function availability(tool, ctx, args, services) {
+function availability(tool, ctx0, args, services) {
+  // v0.61: the same locked-layer rule as the executor, so the button is never enabled for a run it would refuse
+  const lp = require('../../core/lockpolicy').apply(tool, ctx0);
+  if (lp.error) return { ok: false, hint: lp.error };
+  const ctx = lp.ctx;
   const r = contextReq.evaluate(tool.requires, ctx);
-  if (!r.ok) return { ok: false, hint: r.reasons[0] };
+  const LP = require('../../core/lockpolicy');
+  if (!r.ok) return { ok: false, hint: LP.explain(r.reasons[0], lp.skipped) };
   if (!tool.prepare) return { ok: true, hint: '' };
   try {
     // services too, exactly like the executor (v0.26 fix: brand tools read the client from services.brands)
     const p = tool.prepare(args, ctx, services);
-    return p.ok ? { ok: true, hint: p.preview.summary, preview: p.preview } : { ok: false, hint: p.error };
+    return p.ok ? { ok: true, hint: lp.skipped.length ? `${p.preview.summary} · skips locked ${lp.skipped.join(', ')}` : p.preview.summary, preview: p.preview } : { ok: false, hint: LP.explain(p.error, lp.skipped) };
   } catch (e) {
     return { ok: false, hint: 'Check the parameters' };
   }
