@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.67: cards on every button, On this layer (edit or remove what MOE did), Beat Markers from your music."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.67: كارت على كل زرار، وقارئ اللاير، وماركرز على إيقاع المزيكا"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.68: Backgrounds as one composer with a live stage, and frosted Glass."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.68: الباكجراوندز بقت أداة واحدة بمعاينة حية، والجلاس بقى فروست"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

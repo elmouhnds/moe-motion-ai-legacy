@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.68.0] — 2026-11-07 — Look & Feel
+### Changed
+- **Backgrounds is one instrument** (Background Composer): a live stage of the real background at your comp's size; Style · Motion · Colours always visible under it; palettes as light colour strips — a plain palette swaps only the colours and keeps your style and motion, a designed look (✦) takes all of it; Colorize, Save as client and Fine-tune beside it; one Apply.
+- **Faster Backgrounds**: only the stage animates (the 36 palettes are CSS strips, not canvases).
+- **Frosted Glass**: soft coloured light behind the panel, every surface blurs and lifts it with a bright rim and a faint frost grain; tiles, menus, hover cards and the Apply bar are glass too. Appearance › frost off removes it all; reduced motion stops the drifting light.
+- MOE (Classic) shows no section banners; filter rows scroll and fade instead of cutting a chip.
+### Fixed
+- The background preview could keep drawing the previous look after a change (a reused canvas).
+### Tests
+- `tests/lookfeel.test.js` (3): composer rules, no banners in MOE, frost rules, nothing newer than Chromium 99. 533 tests. **Preview on the mock — not yet seen in After Effects.**
+
 ## [0.67.0] — 2026-11-07 — Smart Layer
 ### Added
 - **Hover Cards**: rest the pointer on a one-click button (NOW, the Quick Bar, the tabs) and its Tool Card appears: what it acts on, what it writes, what could surprise you, how to undo it — or what it needs.
