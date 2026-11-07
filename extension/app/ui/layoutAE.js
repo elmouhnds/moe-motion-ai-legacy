@@ -448,7 +448,7 @@ function readerBody(app) {
       rd.layers.length > 1 ? h('div', { class: 'rd-lname' }, L.name) : null,
       rows.length ? rows.map((row) => h('div', { class: `rd-row ${row.off ? 'off' : ''}`, 'data-key': `rd-${L.layerId}-${row.key}` },
         icon(row.kind === 'effect' ? 'sliders' : 'expr', 'sm'),
-        h('div', { class: 'rd-text' }, h('div', { class: 'rd-label' }, h('b', {}, row.label), h('span', { class: 'rd-on' }, row.on)), h('div', { class: 'rd-detail' }, row.detail)),
+        h('div', { class: 'rd-text' }, h('div', { class: 'rd-label' }, h('b', {}, row.label), h('span', { class: 'rd-on' }, row.on)), row.detail ? h('div', { class: 'rd-detail' }, row.detail) : null),
         row.edit ? h('button', { class: 'btn ghost sm', 'data-key': `rd-edit-${L.layerId}-${row.key}`, title: `Open ${row.label} with these numbers — Apply replaces it in place`, onclick: () => editRow(app, row) }, 'Edit') : null,
         h('button', { class: 'icon-btn', 'data-key': `rd-rm-${L.layerId}-${row.key}`, 'aria-label': `Remove ${row.label} from ${L.name}`, title: `Remove only ${row.label} (one Ctrl+Z brings it back)`, disabled: !!s.running, onclick: () => removeRow(app, L, row) }, icon('trash', 'sm'))))
         : h('div', { class: 'rd-none' }, `Nothing from MOE on ${L.name}.`));

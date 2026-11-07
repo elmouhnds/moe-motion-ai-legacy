@@ -51,8 +51,24 @@ const CHECKS = [
   // v0.63 (WIPE_CAROUSEL.md): the wipe's direction measured from pixels, not assumed from the manual
   { id: 'wipe', label: 'Wipe Reveal "from the left" reveals the left side first (pixels)', run: checkWipe },
   // v0.64 (WAVE4.md): Exploder's Wiggly Selector settings are found by their English names in this After Effects
-  { id: 'exploder', label: 'Explode: the Wiggly Selector and its 7 settings, found by name', run: checkExploder }
+  { id: 'exploder', label: 'Explode: the Wiggly Selector and its 7 settings, found by name', run: checkExploder },
+  // v0.67 (SMART_LAYER.md): layer markers are written and read by After Effects, and marker expressions follow them
+  { id: 'markers', label: 'Markers: written and counted by After Effects; Marker In / Out follows them', run: checkMarkers }
 ];
+
+/** v0.67: markers.add / markers.remove counted by After Effects itself, and the Marker In / Out expression read back. */
+async function checkMarkers(T) {
+  const [id] = await T.nulls([[300, 300]], 'ST Marker');
+  const add = await T.host.call('markers.add', { compId: T.compId, label: 'MOE: Self-Test Markers', layers: [id], times: [0.5, 1.5], comment: 'MOE Beat' });
+  const total = add.layers[0].total;
+  await T.select([id]);
+  await T.run('expressions.quick', { preset: 'markerInOut', secs: 0.2 });
+  const op = { layerId: id, matchNames: ['ADBE Transform Group', 'ADBE Opacity'] };
+  const before = (await T.values(0.2, [op]))[0].value, mid = (await T.values(1.0, [op]))[0].value, after = (await T.values(1.8, [op]))[0].value;
+  const rm = await T.host.call('markers.remove', { compId: T.compId, label: 'MOE: Self-Test Markers', layers: [id], times: [0.5, 1.5], comment: 'MOE Beat' });
+  const ok = total === 2 && Math.abs(before) < 0.01 && Math.abs(mid - 100) < 0.01 && Math.abs(after) < 0.01 && rm.layers[0].total === 0;
+  return { ok, detail: `markers written 2 → After Effects counts ${total}; opacity before ${+before.toFixed(2)} · between ${+mid.toFixed(2)} · after ${+after.toFixed(2)} (want 0 · 100 · 0); removed ${rm.layers[0].removed}, left ${rm.layers[0].total}` };
+}
 
 /* ---------- helpers ---------- */
 function helper(services, comp, opts) {

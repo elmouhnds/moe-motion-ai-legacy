@@ -23,7 +23,7 @@ function describe(scan) {
       only: { expressions: [(x.address.matchNames || []).join('>')], effects: [] } });
   }
   for (const name of scan.effects || []) {
-    rows.push({ kind: 'effect', key: `e:${name}`, label: name.replace(/^MOE\s*[•·:]?\s*/, '') || name, on: 'Effect', detail: name, edit: null, only: { expressions: [], effects: [name] } });
+    rows.push({ kind: 'effect', key: `e:${name}`, label: name.replace(/^MOE\s*[•·:]?\s*/, '') || name, on: 'Effect', detail: '', edit: null, only: { expressions: [], effects: [name] } });
   }
   return rows;
 }

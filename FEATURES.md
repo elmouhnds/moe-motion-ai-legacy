@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Smart Layer** (v0.67.0): Hover Cards on every one-click button; *On this layer* reads what MOE did and edits or removes one item; Beat Markers from the music; Marker Trigger and Marker In / Out; conflicts said before Apply (docs/features/SMART_LAYER.md).
+
 **Tool Cards** (v0.66.0): every tile says what it will do before Apply (what it acts on, what it writes, how to undo it) and shows its code; Expressions grouped by what they move, the fitting group first; Live Stagger and Marker Pulse (docs/features/TOOL_CARDS.md).
 
 **Installer** (v0.65.1): a dark installer that matches the panel, says whether it installs or updates (from which version), finds After Effects, checks the installed files and can open After Effects at the end.

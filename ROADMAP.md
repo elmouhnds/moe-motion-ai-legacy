@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.73 — Smart Layer ✅ (v0.67.0)
+- Foresight in cards, Hover Cards, Layer Reader (Edit / Remove one), Marker Trigger, Marker In / Out, Beat Markers (docs/features/SMART_LAYER.md).
+
 ## M1.72 — Tool Cards ✅ (v0.66.0)
 - Every tool explains itself before it runs (card contract); expressions as a grouped list that follows the selection; Live Stagger, Marker Pulse. Next ideas: docs/research/SMART_TOOLS_STUDY.md §4.
 

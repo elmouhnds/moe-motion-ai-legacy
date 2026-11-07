@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.66: every tile says what it will do before Apply, expressions show their code, and Live Stagger + Marker Pulse."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.66: كل أداة بتقولك هتعمل إيه قبل ما تطبّقها، والتعبيرات بتوريك الكود"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.67: cards on every button, On this layer (edit or remove what MOE did), Beat Markers from your music."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.67: كارت على كل زرار، وقارئ اللاير، وماركرز على إيقاع المزيكا"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

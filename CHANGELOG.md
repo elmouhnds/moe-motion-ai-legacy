@@ -2,6 +2,19 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.67.0] — 2026-11-07 — Smart Layer
+### Added
+- **Hover Cards**: rest the pointer on a one-click button (NOW, the Quick Bar, the tabs) and its Tool Card appears: what it acts on, what it writes, what could surprise you, how to undo it — or what it needs.
+- **On this layer** (Layer tab): read what MOE did to the selected layers — every MOE expression with its property and its numbers, every MOE effect — then **Edit** an expression with its own numbers or **Remove** one item, nothing else.
+- **Beat Markers** (Timing tab): the beats of the music as markers on the selected layers (After Effects' own Convert Audio to Keyframes, a deterministic beat finder); Restore removes exactly those markers.
+- **Marker Trigger**: animate once, it replays at every marker. **Marker In / Out**: fades in after the first marker and out into the last.
+- Self-Test check `markers`: After Effects counts the markers it was given and Marker In / Out reads 0 · 100 · 0.
+### Changed
+- **Foresight**: a selected property with your own expression stops the expression tool before anything is written (it used to fail halfway); with Replace on, the card warns first. Keyframe tools say when a property's expression would hide the new keys.
+- `rigs.find` returns whole expressions (was cut at 200 characters) so numbers can be read back; `rigs.remove` can remove one item.
+### Tests
+- `tests/smartlayer.test.js` (6); mock: MarkerValue + layer markers, `thisProperty.key()`. 529 tests. **Mock / preview — the Self-Test in After Effects is the proof.**
+
 ## [0.66.0] — 2026-11-07 — Tool Cards
 ### Added
 - **Tool Cards** (`core/toolcard.js`, docs/features/TOOL_CARDS.md): every library tile says what it will do before Apply: what it acts on, what it will write, how to undo it, or the one thing it needs first. Built from each tool's own plan, never a second rule list, never an After Effects call. Every registered tool gets a card.
