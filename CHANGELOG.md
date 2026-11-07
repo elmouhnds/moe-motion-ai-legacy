@@ -2,6 +2,10 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.68.1] — 2026-11-07 — Glass restored
+### Fixed
+- **Glass looks as it did in v0.67 again**: the v0.68.0 frost (drifting light behind the panel, blur and grain on every surface, frosted tiles and Apply bar) looked wrong and is removed — `css/styles.css` is the v0.67 file. The Background Composer and the rest of v0.68 stay.
+
 ## [0.68.0] — 2026-11-07 — Look & Feel
 ### Changed
 - **Backgrounds is one instrument** (Background Composer): a live stage of the real background at your comp's size; Style · Motion · Colours always visible under it; palettes as light colour strips — a plain palette swaps only the colours and keeps your style and motion, a designed look (✦) takes all of it; Colorize, Save as client and Fine-tune beside it; one Apply.

@@ -37,13 +37,9 @@ test('MOE (Classic) has no banners; composer pages explain themselves with their
   assert.equal(chrome.banner(mk('bento'), 'backgrounds'), null);
 });
 
-test('Frosted Glass: blur + rim + grain on the cards, light behind them, honours "frost off" and reduced motion; nothing newer than Chromium 99', () => {
+test('Glass is back to its v0.67 look (the v0.68 frost was removed at the owner\'s request); nothing newer than Chromium 99', () => {
   const st = css('styles.css');
-  assert.match(st, /\.app\.layout-glass::before \{[\s\S]*filter: blur\(46px\)/);
-  assert.match(st, /--g-blur: blur\(22px\) saturate\(165%\)/);
-  assert.match(st, /backdrop-filter: var\(--g-blur\)/);
-  assert.match(st, /@media \(prefers-reduced-motion: no-preference\) \{\s*\.app\.layout-glass::before \{ animation: gl-drift/);
-  assert.match(st, /:root\[data-glass-blur="off"\] \.app\.layout-glass::before \{ animation: none/);
+  assert.ok(!/gl-drift|--g-frost|--g-blur/.test(st), 'no frost layer in Glass');
   // CEP 12 runs Chromium 99: color-mix(), :has(), container queries and nesting do not exist there
   for (const f of ['app.css', 'styles.css', 'tokens.css']) {
     const c = css(f);

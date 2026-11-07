@@ -17,15 +17,10 @@ One instrument instead of a wall of 36 animated tiles and a hidden Inspector:
   `hide` + `noBody`, so nothing is shown twice). The library's sticky bar is the one Apply.
 - Filters stay one line: they scroll sideways and fade at the edge instead of cutting a chip.
 
-## Frosted Glass (`css/styles.css`, Glass only)
-1. Light behind the glass: soft accent / violet / blue orbs (`.app.layout-glass::before`, blurred, drifting over 32 s;
-   still when the system asks for reduced motion).
-2. Frosted surfaces — groups, NOW, the dock, the Motion Control, cards, the Layer Reader rows, the composer controls:
-   `backdrop-filter: blur(22px) saturate(165%)`, a bright rim on top, a faint fractal grain like real frost.
-3. Tiles inside the cards are glass too; menus, toasts and hover cards are frosted; the sticky Apply bar is frosted so
-   the page under it never reads as clutter.
-4. Appearance › frost off (`data-glass-blur="off"`) removes every blur and stops the drifting light.
-`backdrop-filter` stays out of `app.css` (costly in CEP — tested); Glass is the only place it is used.
+## Glass (v0.68.1)
+The v0.68.0 "frosted" layer (drifting light behind the panel, blur + grain on every surface) looked wrong to the
+owner and was removed in v0.68.1: `css/styles.css` is exactly the v0.67 file again. `backdrop-filter` stays out of
+`app.css` (costly in CEP — tested).
 
 ## Everywhere
 - MOE (Classic) shows no section banners (the rule was already "no banners in Classic"); composer pages explain
