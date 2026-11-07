@@ -617,6 +617,24 @@ const VECTOR_ITEMS = {
   }
 };
 
+/** v0.67: AE's MarkerValue (comment) and a layer's Marker property — keys are { t, value }; layer._markers mirrors
+ *  the times so expressions (ae-expr.markerOf) see exactly what the property holds. */
+class MarkerValue { constructor(comment) { this.comment = String(comment || ''); } }
+class MockMarkerProperty {
+  constructor(layer) { this._layer = layer; this._keys = []; this.name = 'Marker'; this.matchName = 'ADBE Marker'; }
+  get numKeys() { return this._keys.length; }
+  _sync() { this._keys.sort((a, b) => a.t - b.t); this._layer._markers = this._keys.map((k) => k.t); }
+  setValueAtTime(t, mv) {
+    if (!(mv instanceof MarkerValue)) throw new Error('After Effects error: a marker needs a MarkerValue');
+    const at = this._keys.findIndex((k) => Math.abs(k.t - t) < 1e-9);
+    if (at >= 0) this._keys[at].value = mv; else this._keys.push({ t, value: mv });
+    this._sync();
+  }
+  keyTime(i) { if (i < 1 || i > this._keys.length) throw new Error('After Effects error: key index out of range'); return this._keys[i - 1].t; }
+  keyValue(i) { if (i < 1 || i > this._keys.length) throw new Error('After Effects error: key index out of range'); return this._keys[i - 1].value; }
+  removeKey(i) { if (i < 1 || i > this._keys.length) throw new Error('After Effects error: key index out of range'); this._keys.splice(i - 1, 1); this._sync(); }
+}
+
 class MockLayer {
   constructor(spec, comp) {
     this._comp = comp;
@@ -678,6 +696,7 @@ class MockLayer {
   get index() { return this._comp._layers.indexOf(this) + 1; }
   get numProperties() { return this._group._children.length + (this._parade ? 1 : 0); }
   property(key) {
+    if (key === 'ADBE Marker' || key === 'Marker') { if (!this._markerProp) { this._markerProp = new MockMarkerProperty(this); for (const t of this._markers || []) this._markerProp.setValueAtTime(t, new MarkerValue('')); } return this._markerProp; }
     if (key === 'ADBE Effect Parade' || key === 'Effects') return this._parade;
     if (key === 'ADBE Mask Parade' || key === 'Masks') { if (!this._masks) this._masks = makeMaskParade(this); return this._masks; }
     if (typeof key === 'number' && key === this._group._children.length + 1) return this._parade;
@@ -927,7 +946,7 @@ function installAE(target, fixture, { readFile, evalCode }) {
   Object.assign(target, {
     ImportOptions, ImportAsType: { FOOTAGE: 1, COMP: 2, PROJECT: 3 },
     Folder, PurgeTarget: { ALL_CACHES: 1, UNDO_CACHES: 2, SNAPSHOT_CACHES: 3, IMAGE_CACHES: 4 },
-    PropertyValueType, KeyframeInterpolationType, PropertyType, KeyframeEase, CompItem, File,
+    PropertyValueType, KeyframeInterpolationType, PropertyType, KeyframeEase, CompItem, File, MarkerValue,
     TextLayer: MockTextLayer, ShapeLayer: MockShapeLayer, AVLayer: MockLayer, FileSource,
     ParagraphDirection, ParagraphJustification, ComposerEngine, CTScript, PREFType: { PREF_Type_MACHINE_INDEPENDENT: 0 },
     CameraLayer: MockCameraLayer, LightLayer: function LightLayer() {},

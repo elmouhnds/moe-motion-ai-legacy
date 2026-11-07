@@ -570,4 +570,65 @@
             });
         }
     };
+
+    /* v0.67 (docs/features/SMART_LAYER.md): the Audio Amplitude layer's "Both Channels" keys as plain numbers, for the
+       beat finder (read-only). args: { compId, layerId } */
+    ops['audio.envelope'] = {
+        mutates: false,
+        run: function (args) {
+            var comp = U.compById(args.compId), A = U.findLayer(comp, { layerId: args.layerId }), fx = null, sl, i, n, times = [], values = [];
+            try { fx = A.property('ADBE Effect Parade').property('Both Channels'); } catch (eF) { fx = null; }
+            if (!fx) { U.fail('NO_ENVELOPE', A.name + ' has no Both Channels slider.'); }
+            sl = fx.property(1);
+            n = Math.min(sl.numKeys, 36000);
+            for (i = 1; i <= n; i++) { times.push(sl.keyTime(i)); values.push(num(sl.keyValue(i))); }
+            return { times: times, values: values, truncated: sl.numKeys > n };
+        }
+    };
+
+    /* v0.67: layer markers (MarkerValue, the layer's Marker property - Scripting Guide). Locked layers are skipped.
+       args: { compId, label, layers: [id], times: [s], comment } */
+    ops['markers.add'] = {
+        mutates: true,
+        run: function (args) {
+            var comp = U.compById(args.compId);
+            return U.withUndo(args.label || 'MOE: Markers', function () {
+                var out = [], i, j, L, M;
+                for (i = 0; i < args.layers.length; i++) {
+                    L = U.findLayer(comp, { layerId: args.layers[i] });
+                    if (L.locked) { out.push({ layerId: L.id, name: L.name, skipped: 'LOCKED' }); continue; }
+                    M = L.property('ADBE Marker');
+                    for (j = 0; j < args.times.length; j++) { M.setValueAtTime(args.times[j], new MarkerValue(args.comment || '')); }
+                    out.push({ layerId: L.id, name: L.name, added: args.times.length, total: M.numKeys });
+                }
+                return { layers: out };
+            });
+        }
+    };
+
+    /* v0.67: remove only markers at these times whose comment is exactly `comment` (what markers.add wrote).
+       args: { compId, label, layers: [id], times: [s], comment } */
+    ops['markers.remove'] = {
+        mutates: true,
+        run: function (args) {
+            var comp = U.compById(args.compId), half = comp.frameDuration / 2;
+            return U.withUndo(args.label || 'MOE: Remove Markers', function () {
+                var out = [], i, j, k, L, M, t, removed;
+                for (i = 0; i < args.layers.length; i++) {
+                    L = U.findLayer(comp, { layerId: args.layers[i] });
+                    M = L.property('ADBE Marker');
+                    removed = 0;
+                    for (k = M.numKeys; k >= 1; k--) {
+                        t = M.keyTime(k);
+                        if (M.keyValue(k).comment !== args.comment) { continue; }
+                        for (j = 0; j < args.times.length; j++) {
+                            if (Math.abs(args.times[j] - t) <= half) { M.removeKey(k); removed++; break; }
+                        }
+                    }
+                    out.push({ layerId: L.id, name: L.name, removed: removed, total: M.numKeys });
+                }
+                return { layers: out };
+            });
+        }
+    };
 }($.global));

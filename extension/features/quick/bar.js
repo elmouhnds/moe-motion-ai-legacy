@@ -68,6 +68,8 @@ const ACTIONS = [
   A('k_repeat', 'transform.clone', { mode: 'radial', count: 8, radius: 300, arc: 360, faceOut: true }, 'clone', 'Ring Copies (static, Alt: options)', 'Kit'),
   A('k_vignette', 'kit.vignette', {}, 'kVignette', 'Vignette', 'Kit'),
   A('k_bake', 'rig.bake', {}, 'bake', 'Bake to keyframes (Alt: one per frame)', 'Kit'),
+  // v0.67 (SMART_LAYER.md): the music's beats as layer markers (Marker Pulse / Trigger / In-Out follow them)
+  A('k_beats', 'markers.beats', {}, 'xPulse', 'Beat Markers', 'Kit'),
   A('k_trash', 'kit.trash', {}, 'trash', 'Trash MOE rigs', 'Kit'),
 
   A('typewriter', 'quick.typewriter', {}, 'typewriter', 'Typewriter', 'Text'),

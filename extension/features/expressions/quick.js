@@ -70,14 +70,29 @@ const PRESETS = {
     'if (marker.numKeys > 0) { k = marker.nearestKey(time).index; if (marker.key(k).time > time) { k--; } }',
     `if (k > 0) { var t = time - marker.key(k).time; mul(value, 1 + ${n('amp')} / 100 * Math.sin(t * ${n('freq')} * 2 * Math.PI) / Math.exp(${n('decay')} * t)); } else { value; }`
   ].join('\n') },
+  // ---- v0.67 (docs/features/SMART_LAYER.md): the marker family ----
+  // Marker Trigger: animate ONCE (your keys), and it replays from the start at every layer marker; it holds the first
+  // key before the first marker and the last key once a run is over.
+  markerTrigger: { label: 'Marker Trigger', icon: 'xLoop', target: 'keyed', nums: {}, code: () => [
+    'var k = 0, n = thisProperty.numKeys;',
+    'if (marker.numKeys > 0) { k = marker.nearestKey(time).index; if (marker.key(k).time > time) { k--; } }',
+    'if (n < 1) { value; } else { var t0 = thisProperty.key(1).time, t1 = thisProperty.key(n).time;',
+    '  (k > 0) ? thisProperty.valueAtTime(t0 + Math.min(time - marker.key(k).time, t1 - t0)) : thisProperty.valueAtTime(t0); }'
+  ].join('\n') },
+  // Marker In / Out: fades in after the first marker and out into the last one; nothing before or after
+  markerInOut: { label: 'Marker In / Out', icon: 'xFade', target: 'opacity', nums: { secs: 0.4 }, code: (n) => [
+    `var d = Math.max(${n('secs')}, 0.01), m = marker.numKeys;`,
+    'if (m < 1) { value; } else { var a = marker.key(1).time, b = marker.key(m).time, v = ease(time, a, a + d, 0, 1);',
+    '  if (m > 1) { v = Math.min(v, ease(time, b - d, b, 1, 0)); } value * v; }'
+  ].join('\n') },
 };
 
 /* Library filter tags (Studio). */
 const TAGS = {
   Random: ['wiggle', 'wiggleX', 'wiggleY', 'jitter', 'flicker', 'wiggleRot', 'wiggleScale', 'organic', 'loopWiggle', 'scatter'],
   Periodic: ['blink', 'timeRotate', 'pendulum', 'pulse', 'float', 'swing', 'heartbeat', 'breathe', 'orbit', 'clock', 'squash'],
-  Keys: ['loopCycle', 'loopPingPong', 'loopOffset', 'loopInOut', 'inertia', 'posterize', 'bounceBack', 'cascade'],
-  Auto: ['autoFade', 'popIn', 'slideIn', 'drift', 'faceMotion', 'markerPulse']
+  Keys: ['loopCycle', 'loopPingPong', 'loopOffset', 'loopInOut', 'inertia', 'posterize', 'bounceBack', 'cascade', 'markerTrigger'],
+  Auto: ['autoFade', 'popIn', 'slideIn', 'drift', 'faceMotion', 'markerPulse', 'markerInOut']
 };
 for (const [tag, ids] of Object.entries(TAGS)) for (const id of ids) PRESETS[id].tag = tag;
 
@@ -117,7 +132,9 @@ const HINTS = {
   popIn: 'Scales up from 0 with a little overshoot when the layer starts — no keys.',
   slideIn: 'Slides in from the left with an ease when the layer starts — no keys.',
   cascade: 'Each layer plays its own keys a little later, in timeline order — a live stagger that moves no keyframe.',
-  markerPulse: 'A pop on every marker of the layer — put markers on the beats and it answers.'
+  markerPulse: 'A pop on every marker of the layer — put markers on the beats and it answers.',
+  markerTrigger: 'Animate once; your keys replay from the start at every marker of the layer.',
+  markerInOut: 'Fades in after the first marker and out into the last — move the markers to retime it.'
 };
 for (const [id, hint] of Object.entries(HINTS)) PRESETS[id].hint = hint;
 
@@ -202,7 +219,7 @@ const quick = {
   category: 'expressions',
   group: 'Quick Expressions',
   name: 'Quick Expression',
-  description: 'One-click expressions (35): live stagger (each layer plays its own keys later, by timeline order), marker pulse, wiggle (all / X / Y / stepped / rotation / scale / organic / seamless loop), blinker, flicker, breathe, auto-fade, auto pop-in, auto slide-in, loops (cycle, ping-pong, offset, in+out), time rotation, clock ticks, swing, pendulum, orbit, pulse, heartbeat, squash & stretch, float, drift, face motion, random scatter, inertia bounce, bounce landing, stop motion. Works on selected properties, or on the natural property of selected layers.',
+  description: 'One-click expressions (37): marker trigger (your keys replay at every marker), marker in / out, live stagger (each layer plays its own keys later, by timeline order), marker pulse, wiggle (all / X / Y / stepped / rotation / scale / organic / seamless loop), blinker, flicker, breathe, auto-fade, auto pop-in, auto slide-in, loops (cycle, ping-pong, offset, in+out), time rotation, clock ticks, swing, pendulum, orbit, pulse, heartbeat, squash & stretch, float, drift, face motion, random scatter, inertia bounce, bounce landing, stop motion. Works on selected properties, or on the natural property of selected layers.',
   keywords: ['marker', 'beat', 'orbit', 'swing', 'heartbeat', 'breathe', 'squash', 'stretch', 'scatter', 'drift', 'bounce', 'clock', 'auto orient', 'pop', 'slide', 'wiggle', 'loop', 'loopout', 'pingpong', 'cycle', 'blink', 'blinker', 'flicker', 'time', 'rotation', 'bounce', 'inertia', 'pulse', 'float', 'pendulum', 'fade', 'posterize', 'expression'],
   icon: 'expr',
   params,
