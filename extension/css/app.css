@@ -1595,3 +1595,44 @@ input.scrubbable.scrubbing { color: var(--accent); }
 .rd-on { padding: 0 6px; border-radius: 999px; background: var(--bg-sunken); color: var(--text-2); font-size: var(--fs-xs); }
 .rd-detail { color: var(--text-3); font-family: var(--mono); font-size: var(--fs-xs); overflow-wrap: anywhere; }
 .rd-none, .rd-empty { color: var(--text-3); font-size: var(--fs-sm); }
+
+/* ---------- v0.68 (docs/features/LOOK_AND_FEEL.md): Background Composer ---------- */
+.bgc { display: grid; gap: 10px; }
+.bgc-stage { position: relative; border-radius: var(--r-lg); overflow: hidden; background: var(--bg-sunken); box-shadow: 0 10px 30px rgba(0, 0, 0, .28), inset 0 0 0 1px rgba(255, 255, 255, .06); }
+.bgc-canvas { display: block; width: 100%; max-height: 300px; }
+.bgc-badge { position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: baseline; gap: 8px; padding: 4px 10px; border-radius: 999px; background: rgba(10, 10, 14, .62); color: #fff; font-size: var(--fs-xs); }
+.bgc-badge b { font-size: var(--fs-sm); }
+.bgc-badge span { opacity: .75; }
+.bgc-swatches { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; gap: 4px; }
+.bgc-sw { flex: 1 1 0; height: 10px; padding: 0; border: 1px solid rgba(255, 255, 255, .35); border-radius: 999px; cursor: copy; }
+.bgc-sw:hover { border-color: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .35); }
+.bgc-controls { display: grid; gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-raised); }
+.bgc-row { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 8px; }
+.bgc-k { color: var(--text-3); font-size: var(--fs-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.bgc-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.bgc-chip { height: var(--h-s); padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--text-2); font-size: var(--fs-xs); cursor: pointer; }
+.bgc-chip:hover:not(:disabled) { color: var(--text); border-color: var(--line-strong); }
+.bgc-chip[aria-checked="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.bgc-chip:disabled { opacity: .4; cursor: default; }
+.bgc-hint { color: var(--text-3); font-size: var(--fs-xs); }
+.bgc-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.bgc-actions .btn.on { color: var(--accent); }
+.bgc-fine { padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-raised); }
+.bgc-lib-h { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.bgc-n { color: var(--text-3); font-size: var(--fs-xs); }
+.bgc-search { width: 140px; height: var(--h-s); }
+.bgc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; }
+.bgc-pal { position: relative; display: flex; flex-direction: column; gap: 5px; padding: 5px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-raised); color: var(--text-2); text-align: left; cursor: pointer; }
+.bgc-pal:hover { border-color: var(--line-strong); color: var(--text); }
+.bgc-pal.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); color: var(--text); }
+.bgc-bars { display: flex; height: 22px; border-radius: 5px; overflow: hidden; }
+.bgc-bars i { flex: 1 1 0; }
+.bgc-name { font-size: var(--fs-xs); font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.bgc-look { position: absolute; top: 8px; right: 8px; color: #fff; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6)); }
+.bgc { padding: 8px 12px 0; }
+.bgc > .st-chips { padding: 0; }
+/* one-line chip rows scroll sideways and fade at the edge instead of cutting a chip in half */
+.st-chips.one-line { scrollbar-width: none; padding-right: 28px; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent); }
+.st-chips.one-line::-webkit-scrollbar { display: none; }
+.bgc-row { grid-template-columns: 58px 1fr; }
+.bgc-chip { padding: 0 9px; }

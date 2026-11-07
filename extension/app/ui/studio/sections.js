@@ -259,7 +259,7 @@ const SECTIONS = [
   { id: 'productui', label: 'Product UI', icon: 'uiKit', kind: 'library', tiles: INTERACT_TILES.concat(UI_TILES), filters: ['All', 'Interact', 'Controls', 'Feedback', 'Data', 'Dark'], tools: (t) => t.id === 'design.template' || t.id === 'interact.click' },
   { id: 'templates', label: 'Templates', icon: 'type', kind: 'library', tiles: TEMPLATE_TILES, filters: ['All', 'Titles', 'Callouts', 'Outro', 'Arabic'], tools: (t) => t.id === 'design.template' },
   { id: 'shapes', label: 'Shapes & Icons', icon: 'shapes', kind: 'view' },
-  { id: 'backgrounds', label: 'Backgrounds', icon: 'background', kind: 'library', tiles: BACKGROUNDS, filters: PAL.TAGS, tools: (t) => /^design\.(background|colorize)$/.test(t.id), extras: 'palette' },
+  { id: 'backgrounds', label: 'Backgrounds', icon: 'background', kind: 'library', composer: 'background', tiles: BACKGROUNDS, filters: PAL.TAGS, tools: (t) => /^design\.(background|colorize)$/.test(t.id), extras: 'palette' },
   { id: 'looks', label: 'Looks & Glass', icon: 'glass', kind: 'library', tiles: LOOK_TILES.concat(STYLE_TILES), filters: ['All', 'Styles', 'Thick', 'Clear', 'Frosted', 'Liquid', 'Tinted'], tools: (t) => /^glass\./.test(t.id) || t.id === 'design.style' },
   { id: 'brand', label: 'Brand', icon: 'brand', kind: 'view' },
   { id: 'layout', label: 'Layout & Grid', icon: 'grid', kind: 'library', tiles: LAYOUT, filters: ['All', 'Grid', 'Radial', 'Path', '3D', 'Animated', 'Guides', 'Cells', 'Clone', 'Effectors'],

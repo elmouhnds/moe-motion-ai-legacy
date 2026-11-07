@@ -210,6 +210,8 @@ function groupTiles(section, tiles, ctx) {
 }
 
 function render(app, section) {
+  // v0.68 (LOOK_AND_FEEL.md): a section can be one instrument instead of tiles + Inspector
+  if (section.composer === 'background') return require('./bgComposer').render(app, section);
   const s = app.state.get();
   const st = stateOf(app, section);
   const tools = app.services.registry.list().filter((t) => !(t.ui && t.ui.hidden) && (section.tools ? section.tools(t) : section.tiles.some((x) => x.tool === t.id)));
@@ -367,4 +369,4 @@ function actionBar(app, section, tile, tool) {
       running ? h('span', { class: 'spin' }) : icon('play', 'sm'), (tool.ui && tool.ui.primaryLabel) || 'Apply'));
 }
 
-module.exports = { fitCols, filterRow, HINT_KEY, render, stateOf, setSt, fill, applyNow, readiness, userTiles, actionBar, thumbEl, tileThumb };
+module.exports = { saveAsClient, fitCols, filterRow, HINT_KEY, render, stateOf, setSt, fill, applyNow, readiness, userTiles, actionBar, thumbEl, tileThumb };

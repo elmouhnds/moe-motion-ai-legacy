@@ -37,7 +37,7 @@ function availability(tool, ctx0, args, services) {
  * bare (v0.66, Tool Cards): the tool's settings only — presets, form, report. The card above says what it will do and
  * the library's sticky bar is the ONE Apply, so no header, no second Run button and no second preview list.
  */
-function renderTool(app, tool, { openByDefault = false, bare = false, fixed = [] } = {}) {
+function renderTool(app, tool, { openByDefault = false, bare = false, fixed = [], hide = [], noBody = false } = {}) {
   const s = app.state.get();
   const args = s.args[tool.id] || defaults(tool.params || {});
   const open = s.open[tool.id] !== undefined ? s.open[tool.id] : openByDefault;
@@ -54,7 +54,8 @@ function renderTool(app, tool, { openByDefault = false, bare = false, fixed = []
   if (bare) {
     // the tile already chose what its `tileFixed` params hold (which expression, which style…): no second picker for
     // them — only when the tile really sets that param, so nothing a tile leaves open is ever hidden
-    const params = Object.fromEntries(Object.entries(tool.params || {}).filter(([k, d]) => !(d.tileFixed && fixed.includes(k))));
+    // hide / noBody (v0.68): a page that already shows some settings its own way (Background Composer) lists the rest
+    const params = Object.fromEntries(Object.entries(tool.params || {}).filter(([k, d]) => !(d.tileFixed && fixed.includes(k)) && !hide.includes(k)));
     return h('div', { class: 'tool open bare', 'data-tool': tool.id },
       h('div', { class: 'tool-b' },
         allPresets.length ? h('div', { class: 'presets' }, allPresets.map((p) => h('button', {
@@ -62,7 +63,7 @@ function renderTool(app, tool, { openByDefault = false, bare = false, fixed = []
           onclick: () => setArgs(Object.assign({}, args, p.args)),
           oncontextmenu: p.user ? (e) => { e.preventDefault(); app.services.presets.remove(p.id); app.render(); } : undefined
         }, p.label))) : null,
-        (tool.ui && tool.ui.renderBody) || widgets.body[tool.id] ? ((tool.ui && tool.ui.renderBody) || widgets.body[tool.id])(args, setArgs, { h, app, ctx: s.ctx }) : null,
+        !noBody && ((tool.ui && tool.ui.renderBody) || widgets.body[tool.id]) ? ((tool.ui && tool.ui.renderBody) || widgets.body[tool.id])(args, setArgs, { h, app, ctx: s.ctx }) : null,
         renderForm(params, args, setArgs, { ctx: s.ctx, swatches: swatchesFor(app), advancedOpen: s.advanced[tool.id], onToggleAdvanced: () => app.state.set((st) => ({ advanced: Object.assign({}, st.advanced, { [tool.id]: !st.advanced[tool.id] }) })) }),
         renderReport(result, { onRestore: () => app.restore(result.checkpointId, tool.id), onDismiss: () => app.clearResult(tool.id) }),
         result && tool.ui && tool.ui.renderResult ? tool.ui.renderResult(result, { h, app }) : null,

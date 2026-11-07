@@ -47,6 +47,10 @@ const COPY = {
 function banner(app, sectionId) {
   const ui = app.services.settings.get().ui;
   if (ui.banners === false || !COPY[sectionId]) return null;
+  // v0.68: MOE is the Classic style — no banners or marketing copy there (CLAUDE.md), the tools start at the top
+  if (ui.layout === 'moe') return null;
+  // a composer page explains itself with its live stage (Backgrounds)
+  if ((require('./studio/sections').byId(sectionId) || {}).composer) return null;
   const hidden = app.services.store.get('banners-hidden', []);
   if (hidden.includes(sectionId)) return null;
   const c = COPY[sectionId](counts(app));
