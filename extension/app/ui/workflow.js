@@ -32,7 +32,7 @@ const STAGES = [
     groups: [['ae-animate', 'in', 'core'], ['ae-keys', 'assist', 'core'], ['ae-animate', 'text', 'core'], ['ae-animate', 'expr', 'more']] },
   { id: 'st-arrange', label: 'Arrange', icon: 'alignCenter', fits: ['layers', 'shapesMany'],
     title: 'Select, transform, parent and link, grids — putting layers where they belong (anchor and align: Motion Control)',
-    groups: [['ae-layer', 'select', 'core'], ['ae-layer', 'transform', 'core'], ['ae-layer', 'parent', 'core'], ['ae-layer', 'arrange', 'core'], ['ae-comp', 'guides', 'more']] },
+    groups: [['ae-layer', 'select', 'core'], ['ae-layer', 'reader', 'core'], ['ae-layer', 'transform', 'core'], ['ae-layer', 'parent', 'core'], ['ae-layer', 'arrange', 'core'], ['ae-comp', 'guides', 'more']] },
   { id: 'st-design', label: 'Design', icon: 'palette', fits: ['none'],
     title: 'Product UI, templates, shapes and icons, backgrounds, the client brand',
     groups: [['ae-design', 'productui', 'core'], ['ae-design', 'templates', 'core'], ['ae-design', 'shapes', 'core'], ['ae-design', 'bg', 'core'], ['ae-design', 'brand', 'core']] },

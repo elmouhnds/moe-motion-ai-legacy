@@ -64,6 +64,8 @@ const TABS = [
           ['Same', ['quick:selSameType', 'quick:selSameSource', 'quick:selSameLabel', 'quick:selSameName'], ['Type', 'Source', 'Label', 'Name']],
           ['Comp', ['quick:selAll', 'quick:selInvert', 'quick:selNone', 'quick:selBack'], ['All', 'Invert', 'None', 'Back']]],
         links: [['select', 'Search · labels · other comps · project']] },
+      // v0.67 (SMART_LAYER.md): what MOE already did to the selected layer — edit its numbers or remove one item
+      { id: 'reader', label: 'On this layer', kind: 'reader', fits: ['layer', 'layers', 'text', 'shapes', 'shapesMany'], open: true },
       { id: 'transform', label: 'Transform', kind: 'acts', fits: [], hero: ['quick:precompose'], refs: ['quick:precompose', 'quick:separate', 'quick:flipH', 'quick:flipV'],
         pairs: [['Flip', 'quick:flipH', 'quick:flipV']] },
       { id: 'parent', label: 'Parent & Link', kind: 'acts', fits: ['layers'], hero: ['quick:parentNull', 'quick:k_parent'], refs: ['quick:parentNull', 'quick:k_parent', 'quick:k_delay', 'quick:k_stare'] },
@@ -312,6 +314,7 @@ function moreLink(app, g) {
 
 function groupBody(app, g, t) {
   if (g.kind === 'recent') return recentBody(app, t);
+  if (g.kind === 'reader') return readerBody(app);
   const kit = require('./views/kit');
   if (g.kind === 'kit') {
     // the group's twirl is the fold here: the block renders open (a scope nobody folds)
@@ -401,6 +404,55 @@ function animateBlock(app, g, t) {
     'aria-pressed': String(m === mode), 'data-key': `mode-${m}`, title: { in: 'Animate in: the layer arrives', out: 'Animate out: the layer leaves', draw: 'Draw On: trim paths for shape lines', arrange: 'Arrange the selected layers on a live grid', clone: 'One layer → many live copies (select one layer)', effect: 'Effectors: change a grid’s items near a moving null (select the grid)' }[m] || label,
     onclick: () => { app.services.store.set(modeKey(g), m); app.render(); } }, label))),
   g.panel === 'grid' ? require('./gridPanel').render(app) : null, tileStrip(app, g, t, cur[2])];
+}
+
+/* ---------- v0.67 Layer Reader (docs/features/SMART_LAYER.md) ---------- */
+const selKey = (ctx) => ((ctx && ctx.layers) || []).map((l) => l.id).join(',');
+/** One host call, on the user's click (or right after an edit / removal made here) — never a background poll. */
+async function readLayers(app) {
+  const ctx = app.state.get().ctx;
+  if (!ctx || !ctx.comp || !(ctx.layers || []).length) return;
+  const key = selKey(ctx);
+  app.state.set({ reader: { key, busy: true } });
+  try {
+    const r = await app.services.host.call('rigs.find', { compId: ctx.comp.id, layers: ctx.layers.map((l) => l.id) });
+    app.state.set({ reader: { key, layers: r.layers } });
+  } catch (e) {
+    app.state.set({ reader: { key, error: e.message || String(e) } });
+  }
+}
+function editRow(app, row) {
+  const lib = require('./studio/library'), sec = studio.byId('expressions'), tid = `x-${row.edit.preset}`;
+  app.state.set((st) => ({ args: Object.assign({}, st.args, { 'expressions.quick': Object.assign({ preset: row.edit.preset }, row.edit.values) }) }));
+  lib.setSt(app, sec, { tile: tid, filled: tid, open: true, filter: 'All', q: '' });
+  app.go('expressions');
+}
+async function removeRow(app, layer, row) {
+  await app.runTool('kit.removeRig', { layerId: layer.layerId, only: JSON.stringify(row.only) }, { label: `Remove ${row.label}` });
+  await readLayers(app);
+}
+function readerBody(app) {
+  const RD = require('../../features/kit/reader');
+  const s = app.state.get(), ctx = s.ctx;
+  if (!ctx || !(ctx.layers || []).length) return h('div', { class: 'why rd-empty' }, 'Select a layer to see what MOE did to it.');
+  const rd = s.reader && s.reader.key === selKey(ctx) ? s.reader : null;
+  const head = h('div', { class: 'rd-head' },
+    h('button', { class: 'btn sm', 'data-key': 'rd-read', disabled: !!(rd && rd.busy), title: 'Read the MOE expressions and effects on the selected layers (one quick read)', onclick: () => readLayers(app) },
+      rd && rd.busy ? h('span', { class: 'spin' }) : icon('eye', 'sm'), rd && rd.layers ? 'Read again' : 'Read this layer'),
+    rd && rd.layers ? h('span', { class: 'rd-sum' }, (() => { const n = rd.layers.reduce((k, l) => k + RD.describe(l).length, 0); return n ? `${n} MOE item${n === 1 ? '' : 's'}` : 'nothing from MOE'; })()) : h('span', { class: 'rd-sum dim' }, `${ctx.layers.length} layer${ctx.layers.length === 1 ? '' : 's'} selected`));
+  if (!rd || rd.busy) return [head];
+  if (rd.error) return [head, h('div', { class: 'tc-needs' }, icon('info', 'xs'), h('span', {}, rd.error))];
+  return [head, rd.layers.map((L) => {
+    const rows = RD.describe(L);
+    return h('div', { class: 'rd-layer', 'data-key': `rd-l-${L.layerId}` },
+      rd.layers.length > 1 ? h('div', { class: 'rd-lname' }, L.name) : null,
+      rows.length ? rows.map((row) => h('div', { class: `rd-row ${row.off ? 'off' : ''}`, 'data-key': `rd-${L.layerId}-${row.key}` },
+        icon(row.kind === 'effect' ? 'sliders' : 'expr', 'sm'),
+        h('div', { class: 'rd-text' }, h('div', { class: 'rd-label' }, h('b', {}, row.label), h('span', { class: 'rd-on' }, row.on)), h('div', { class: 'rd-detail' }, row.detail)),
+        row.edit ? h('button', { class: 'btn ghost sm', 'data-key': `rd-edit-${L.layerId}-${row.key}`, title: `Open ${row.label} with these numbers — Apply replaces it in place`, onclick: () => editRow(app, row) }, 'Edit') : null,
+        h('button', { class: 'icon-btn', 'data-key': `rd-rm-${L.layerId}-${row.key}`, 'aria-label': `Remove ${row.label} from ${L.name}`, title: `Remove only ${row.label} (one Ctrl+Z brings it back)`, disabled: !!s.running, onclick: () => removeRow(app, L, row) }, icon('trash', 'sm'))))
+        : h('div', { class: 'rd-none' }, `Nothing from MOE on ${L.name}.`));
+  })];
 }
 
 /* ---------- v0.30 Motion Control: one block at the top of every style (keys + anchor + align) ---------- */
@@ -592,6 +644,6 @@ function menuButton(app, s) {
     onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(), box = require('./quickbar').fixedBox(e.currentTarget.closest('.app') || document.body); app.state.set({ aeMenu: !s.aeMenu, aeMenuAt: { top: Math.round(r.bottom - box.top + 2), right: Math.max(4, Math.round(box.left + box.width - r.right)) } }); } }, icon('menu', 'sm'));
 }
 
-module.exports = { runsOf, nextStrip, controlTop, controlFull, tabControl, controlShows, shownRefs, tileCols, animMode, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
+module.exports = { readLayers, readerBody, runsOf, nextStrip, controlTop, controlFull, tabControl, controlShows, shownRefs, tileCols, animMode, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
   // building blocks reused by the v0.24 style proposals (layoutGlass / layoutApple / layoutBento)
   twirl, actButton, keysHint, groupBody, tileStrip, moreLink, groupExtra, subRow, pairControl, linkRow, searchBox, searchResults, panelMenu, menuButton, openTile };

@@ -637,6 +637,9 @@ function createApp(root, services, env = {}) {
     if (compact !== st.compact || wide !== st.wide || navWide !== st.navWide || studioWide !== st.studioWide || tilesCompact !== st.tilesCompact || kitBand !== st.kitBand || (qbarW && qbarW !== st.qbarW)) app.state.set({ compact, wide, navWide, studioWide, tilesCompact, kitBand, qbarW: qbarW || st.qbarW });
   };
 
+  /* v0.67 (SMART_LAYER.md): the Tool Card on a resting pointer, for every one-click button */
+  require('./hovercard').install(app, root);
+
   /* ---------- global keys & context polling ---------- */
   document.addEventListener('keydown', (e) => {
     const typing = /INPUT|TEXTAREA|SELECT/.test((e.target && e.target.tagName) || '');

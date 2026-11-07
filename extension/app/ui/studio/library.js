@@ -311,7 +311,8 @@ function cardBlock(app, c, tile) {
   const will = c.ready
     ? h('div', { class: 'tc-will', 'data-key': 'tc-will' },
       h('div', { class: 'tc-will-h' }, h('span', { class: 'tc-k' }, 'Will do'), c.target ? h('span', { class: 'tc-on', title: 'What it acts on' }, icon('target', 'xs'), c.target) : null),
-      h('ul', { class: 'tc-list' }, c.writes.slice(0, 5).map((w) => h('li', {}, icon('check', 'xs'), h('span', {}, w)))),
+      h('ul', { class: 'tc-list' }, c.writes.slice(0, 5).map((w) => h('li', {}, icon('check', 'xs'), h('span', {}, w))),
+        (c.warnings || []).map((w) => h('li', { class: 'tc-warn' }, icon('info', 'xs'), h('span', {}, w)))),
       h('div', { class: 'tc-undo' }, c.undo))
     : h('div', { class: 'tc-needs', 'data-key': 'tc-needs' }, icon('info', 'xs'), h('span', {}, c.needs));
   const code = c.code ? h('div', { class: 'tc-code', 'data-key': 'tc-code' },

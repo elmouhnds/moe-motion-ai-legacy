@@ -113,6 +113,7 @@ function resolve(ref) {
     // v0.29: expression presets show their own icon (they replaced the Quick Bar copies)
     const xp = tile.tool === 'expressions.quick' && tile.args ? require('../../features/expressions/quick').PRESETS[tile.args.preset] : null;
     return { id: ref, label: tile.label, icon: (xp && xp.icon) || TILE_ICON[tile.id] || (/^(ease|curve-)/.test(tile.id) ? 'easeCurve' : /^anchor-/.test(tile.id) ? 'anchor' : /^align-dist/.test(tile.id) ? 'distribute' : /^align/.test(tile.id) ? 'alignCenter' : /^clone/.test(tile.id) ? 'clone' : tile.thumb && tile.thumb.k === 'icon' ? tile.thumb.icon : sec.icon), where: sec.label,
+      tool: tile.tool, args: tile.args, // v0.67: the hover card reads the same tool + numbers the button runs
       run: (app) => lib().applyNow(app, tile, sec), ready: (app) => lib().readiness(app, tile) };
   }
   if (kind === 'quick') {
@@ -123,7 +124,7 @@ function resolve(ref) {
     if (!a) return null;
     const short = SHORT[a.id] || a.label.replace(/\s*\(.*\)\s*$/, '');
     const BARM = require('../../features/quick/bar');
-    return { id: ref, label: short, icon: a.icon || 'bolt', where: 'Quick Bar', mods: a.mods || null, hint: BARM.modsHint(a),
+    return { id: ref, label: short, icon: a.icon || 'bolt', where: 'Quick Bar', mods: a.mods || null, hint: BARM.modsHint(a), tool: a.tool, args: a.args,
       run: (app, e) => q.run(app, a, e), ready: (app) => require('./studio/library').readiness(app, { id: a.id, label: short, tool: a.tool, args: a.args }) };
   }
   if (kind === 'nav') {

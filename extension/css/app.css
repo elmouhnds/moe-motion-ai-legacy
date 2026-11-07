@@ -1567,3 +1567,31 @@ input.scrubbable.scrubbing { color: var(--accent); }
 .tc-will-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .tc-on { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; color: var(--text-2); font-size: var(--fs-xs); font-weight: 600; }
 .tc-on .svg-i { color: var(--accent); }
+/* v0.67 foresight: a line that could surprise you after Apply, in the card before it */
+.tc-list li.tc-warn .svg-i { color: var(--warn); }
+.tc-list li.tc-warn { color: var(--text); }
+/* ---------- v0.67 (docs/features/SMART_LAYER.md): Hover Cards ---------- */
+.hovercard { position: fixed; z-index: 9000; width: max-content; max-width: 260px; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: var(--r-lg); background: var(--bg-elev); color: var(--text); box-shadow: 0 8px 28px rgba(0, 0, 0, .35); font-size: var(--fs-sm); line-height: 1.35; pointer-events: none; }
+.hc-title { font-weight: 700; }
+.hc-purpose { margin-top: 2px; color: var(--text-2); font-size: var(--fs-xs); }
+.hc-on { margin-top: 6px; color: var(--accent); font-size: var(--fs-xs); font-weight: 600; }
+.hc-list { margin: 4px 0 2px; padding-left: 14px; }
+.hc-list li { margin: 1px 0; }
+.hc-list li.warn { color: var(--warn); }
+.hc-undo { color: var(--text-3); font-size: var(--fs-xs); }
+.hc-needs { margin-top: 6px; padding: 4px 6px; border-radius: var(--r); background: var(--warn-soft); font-size: var(--fs-xs); }
+@media (prefers-reduced-motion: no-preference) { .hovercard { animation: hc-in .12s ease-out; } @keyframes hc-in { from { opacity: 0; } to { opacity: 1; } } }
+/* v0.67 Layer Reader: what MOE did to the layer, one row per item */
+.rd-head { display: flex; align-items: center; gap: 8px; }
+.rd-sum { color: var(--text-2); font-size: var(--fs-xs); }
+.rd-sum.dim { color: var(--text-3); }
+.rd-layer { display: grid; gap: 4px; margin-top: 8px; }
+.rd-lname { color: var(--text-2); font-size: var(--fs-xs); font-weight: 700; }
+.rd-row { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 8px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-raised); }
+.rd-row > .svg-i { flex: none; color: var(--accent); }
+.rd-row.off { opacity: .6; }
+.rd-text { flex: 1 1 auto; min-width: 0; }
+.rd-label { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.rd-on { padding: 0 6px; border-radius: 999px; background: var(--bg-sunken); color: var(--text-2); font-size: var(--fs-xs); }
+.rd-detail { color: var(--text-3); font-family: var(--mono); font-size: var(--fs-xs); overflow-wrap: anywhere; }
+.rd-none, .rd-empty { color: var(--text-3); font-size: var(--fs-sm); }

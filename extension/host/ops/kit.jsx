@@ -122,7 +122,7 @@
             }
         }
         walk(L, 0, function (p) {
-            if (isMoeExpr(p)) { res.expressions.push({ address: U.addressOf(p, L), name: p.name, expression: U.truncate(String(p.expression), 200) }); }
+            if (isMoeExpr(p)) { res.expressions.push({ address: U.addressOf(p, L), name: p.name, expression: U.truncate(String(p.expression), 4000), enabled: p.expressionEnabled }); }
         }, { n: 0 });
         return res;
     }
@@ -137,7 +137,15 @@
         }
     };
 
-    /* args: { compId, label, layers: [id] } - rescans, then removes only MOE-tagged expressions and MOE-named effects. */
+    /* v0.67: only = { expressions: [matchNames joined by '>'], effects: [name] } removes just those (Layer Reader). */
+    function wanted(list, v) {
+        var k;
+        if (!list) { return true; }
+        for (k = 0; k < list.length; k++) { if (list[k] === v) { return true; } }
+        return false;
+    }
+
+    /* args: { compId, label, layers: [id], only? } - rescans, then removes only MOE-tagged expressions and MOE-named effects. */
     ops['rigs.remove'] = {
         mutates: true,
         run: function (args) {
@@ -150,13 +158,14 @@
                     scan = scanLayer(L);
                     removedExpr = 0; removedFx = [];
                     for (j = 0; j < scan.expressions.length; j++) {
+                        if (args.only && !wanted(args.only.expressions || [], scan.expressions[j].address.matchNames.join('>'))) { continue; }
                         p = U.resolveProperty(comp, scan.expressions[j].address).prop;
                         if (isMoeExpr(p)) { p.expression = ''; removedExpr++; }
                     }
                     parade = L.property('ADBE Effect Parade');
                     for (j = parade ? parade.numProperties : 0; j >= 1; j--) {
                         fx = parade.property(j);
-                        if (fx.name.substring(0, 4) === 'MOE ') { removedFx.push(fx.name); fx.remove(); }
+                        if (fx.name.substring(0, 4) === 'MOE ' && (!args.only || wanted(args.only.effects || [], fx.name))) { removedFx.push(fx.name); fx.remove(); }
                     }
                     out.push({ layerId: L.id, name: L.name, expressions: removedExpr, effects: removedFx, left: scanLayer(L) });
                 }

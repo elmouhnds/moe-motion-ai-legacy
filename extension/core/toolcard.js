@@ -60,6 +60,15 @@ function card(tool, args, ctx, services, extra) {
   const items = p.ok && p.preview ? p.preview.items || [] : [];
   const writes = ex.writes || (p.ok && p.preview ? [p.preview.summary].concat(items.slice(0, 5), items.length > 5 ? [`+${items.length - 5} more`] : []) : []);
   if (p.ok && p.skipped && p.skipped.length) writes.push(`skips locked ${p.skipped.join(', ')}`);
+  // v0.67 foresight: what could surprise you after Apply, said before it (the tool's own words + one generic rule:
+  // keys written under an enabled expression stay invisible while the expression is on)
+  const warnings = [].concat(ex.warnings || []);
+  if (p.ok && (tool.permissions || []).includes('modify.keyframes')) {
+    const ctxUsed = p.ctx || ctx || {};
+    const layerName = (id) => ((ctxUsed.layers || []).find((l) => l.id === id) || {}).name || 'Layer';
+    const hidden = (ctxUsed.properties || []).filter((x) => x.expression && x.expressionEnabled && !/^\s*\/\/ MOE/.test(x.expression));
+    if (hidden.length) warnings.push(`${hidden.slice(0, 2).map((x) => `${layerName(x.address && x.address.layerId)} › ${x.name}`).join(', ')}${hidden.length > 2 ? ` +${hidden.length - 2}` : ''} ${hidden.length === 1 ? 'has' : 'have'} an expression on — new keys stay hidden until it is off`);
+  }
   return {
     name: tool.name,
     purpose: String(purpose || '').split(/(?<=[.!?])\s/)[0],
@@ -70,7 +79,8 @@ function card(tool, args, ctx, services, extra) {
     writes: p.ok ? writes.map(tidy) : [],
     undo: undoLine(tool),
     code: ex.code || null,
-    numbers: ex.numbers || []
+    numbers: ex.numbers || [],
+    warnings: p.ok ? warnings : []
   };
 }
 

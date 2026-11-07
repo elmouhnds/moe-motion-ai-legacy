@@ -155,7 +155,7 @@ function targetsFor(p, ctx) {
   const props = (ctx.properties || []).filter((x) => x.canSetExpression);
   if (props.length) {
     const usable = p.target === 'keyed' ? props.filter((x) => x.numKeys > 0) : props;
-    return { list: usable.map((x) => ({ address: x.address, name: x.name, layerId: x.address.layerId })), from: 'selected properties' };
+    return { list: usable.map((x) => ({ address: x.address, name: x.name, layerId: x.address.layerId, expression: x.expression || '' })), from: 'selected properties' };
   }
   if (p.target === 'keyed') return { list: [], from: 'keyframed properties' };
   const layers = (ctx.layers || []).filter((l) => !['camera', 'light'].includes(l.type) || p.target === 'position');
@@ -171,6 +171,30 @@ function ranks(targets, ctx) {
 
 const TARGET_LABEL = { position: 'Position', scale: 'Scale', rotation: 'Rotation', opacity: 'Opacity', keyed: 'keyframed properties' };
 const valuesOf = (p, args) => { const v = {}; for (const k of Object.keys(p.nums)) v[k] = args[k] !== undefined ? args[k] : p.nums[k]; return v; };
+
+/**
+ * v0.67 Layer Reader: read a MOE Expr back into { preset, values } — the preset's own code is generated with
+ * placeholders and matched exactly, so an expression is only read when it is really that preset (edited by hand →
+ * null). Live expressions (numbers on Slider Controls) come back as { preset, live: true }.
+ */
+function parse(text) {
+  const src = String(text || '');
+  const m = /^\/\/ MOE Expr: (.+)\n/.exec(src);
+  if (!m) return null;
+  const id = Object.keys(PRESETS).find((k) => PRESETS[k].label === m[1].trim());
+  if (!id) return null;
+  const p = PRESETS[id], keys = Object.keys(p.nums), body = src.slice(m[0].length);
+  if (/effect\("MOE /.test(body)) return { preset: id, live: true, values: {} };
+  const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const tpl = p.code((k) => `\u0000${keys.indexOf(k)}\u0000`, '\u0001');
+  const order = [];
+  const re = new RegExp(`^${esc(tpl).replace(/\u0000(\d+)\u0000|\u0001/g, (w, i) => { order.push(i === undefined ? 'rank' : keys[+i]); return '(-?\\d+(?:\\.\\d+)?(?:e[-+]?\\d+)?)'; })}$`);
+  const r = re.exec(body);
+  if (!r) return null;
+  const values = {};
+  order.forEach((k, i) => { if (k !== 'rank') values[k] = Number(r[i + 1]); });
+  return { preset: id, live: false, values };
+}
 
 const quick = {
   id: 'expressions.quick',
@@ -195,6 +219,10 @@ const quick = {
     const p = PRESETS[args.preset];
     const t = targetsFor(p, ctx);
     if (!t.list.length) return { ok: false, error: p.target === 'keyed' ? 'Select keyframed properties to loop' : 'Select layers or properties' };
+    // v0.67 (SMART_LAYER.md): foresight — a selected property that already holds YOUR expression stops here, before
+    // anything is written, instead of halfway through the run (the context already carries each property's expression)
+    const own = t.list.filter((x) => x.expression && x.expression.indexOf(TAG) !== 0);
+    if (own.length && !args.replace) return { ok: false, error: `${own.map((x) => x.name).join(', ')} already ${own.length === 1 ? 'has' : 'have'} your own expression — turn on Replace existing (restorable)` };
     return { ok: true, targets: t.list, from: t.from, preview: { summary: `${p.label} on ${t.list.length} ${t.list.length === 1 ? 'property' : 'properties'} (${t.from})`, items: t.list.slice(0, 6).map((x) => x.name) } };
   },
 
@@ -208,6 +236,8 @@ const quick = {
     if (prepared && prepared.ok) {
       const n = prepared.targets.length, layers = new Set(prepared.targets.map((t) => t.layerId)).size;
       out.target = `${prepared.from === 'selected properties' ? 'Selected properties' : TARGET_LABEL[p.target]} · ${layers} layer${layers === 1 ? '' : 's'}`;
+      const own = prepared.targets.filter((x) => x.expression && x.expression.indexOf(TAG) !== 0);
+      if (own.length) out.warnings = [`replaces your own expression on ${own.map((x) => x.name).join(', ')} — Restore brings it back`];
       out.writes = [`${n} expression${n === 1 ? '' : 's'} tagged // MOE Expr`].concat(p.perLayer && layers > 1 ? [`delays 0 … ${+((layers - 1) * values.delay).toFixed(3)} s by timeline order`] : [], live ? [`${Object.keys(p.nums).length} Slider Control${Object.keys(p.nums).length === 1 ? '' : 's'} per layer (live, keyframeable)`] : []);
     }
     return out;
@@ -250,4 +280,4 @@ const quick = {
   summarize(result) { return `${result.preset} on ${result.set.targets.length} propert(ies)`; }
 };
 
-module.exports = { quick, PRESETS, TAGS, code, TAG, ranks, TARGET_LABEL };
+module.exports = { quick, PRESETS, TAGS, code, TAG, ranks, TARGET_LABEL, parse };

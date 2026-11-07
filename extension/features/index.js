@@ -38,6 +38,7 @@ const { style } = require('./design/styles'); // v0.59 Styles
 const curves = require('./curves/tools');
 const transform = require('./transform/tools');
 const kit = require('./kit/tools');
+const reader = require('./kit/reader');
 const { delay } = require('./kit/delay');
 
 const TOOLS = [
@@ -56,7 +57,7 @@ const TOOLS = [
   green.greenPrompt, green.importKey,
   design.insertShape, design.background, design.colorize, template, style,
   curves.easeCurve, curves.pasteEase, transform.anchor, transform.align, transform.clone,
-  kit.interp, kit.trimToKeys, kit.parent, kit.stare, kit.vignette, kit.trash, delay
+  kit.interp, kit.trimToKeys, kit.parent, kit.stare, kit.vignette, kit.trash, reader.removeRig, delay
 ];
 
 function registerAll(registry) {
