@@ -14,7 +14,7 @@ All notable changes. Versioning: semver, independent of other MOE products.
 - Settings the tile already chose (which expression, style, motion, look, mode, template) are no longer repeated as a picker in the Inspector (*All tools* still has them).
 - Card lines read like sentences ("4 layers", "1 property").
 ### Tests
-- `tests/toolcards.test.js` (6); mock expressions get After Effects' marker API. 527 tests. **Mock / preview — not yet seen in After Effects.**
+- `tests/toolcards.test.js` (6); mock expressions get After Effects' marker API. 522 tests. **Mock / preview — not yet seen in After Effects.**
 
 ## [0.65.2] — 2026-11-06 — After Effects 2026
 ### Changed
