@@ -210,7 +210,9 @@ function evaluate(prop, t, extra = {}) {
     thisProperty: { numKeys: prop.numKeys, value: prop.valueAtTime(t, true), valueAtTime: (tt) => prop.valueAtTime(tt, true) },
     effect: thisLayer.effect, transform: thisLayer.transform, toComp: thisLayer.toComp, fromComp: thisLayer.fromComp,
     hasParent: thisLayer.hasParent, mask: thisLayer.mask, content: thisLayer.content, sourceRectAtTime: thisLayer.sourceRectAtTime,
-    width: layer.width, height: layer.height, inPoint: layer.inPoint, outPoint: layer.outPoint
+    width: layer.width, height: layer.height, inPoint: layer.inPoint, outPoint: layer.outPoint,
+    // v0.66: the layer's markers as After Effects exposes them to expressions (test layers carry _markers: [times])
+    marker: markerOf(layer)
   });
   Object.defineProperty(scope, 'parent', { get() { return thisLayer.parent; } });
   for (const k of ['anchorPoint', 'position', 'scale', 'rotation', 'opacity']) Object.defineProperty(scope, k, { get() { return thisLayer.transform[k]; } });
@@ -223,4 +225,19 @@ function evaluate(prop, t, extra = {}) {
   return unwrap(fn(scope, prop._expression));
 }
 
-module.exports = { evaluate, vec, pathPoint, toCompPt, fromCompPt };
+/** AE's marker property in expressions: numKeys, key(i).time (1-based), nearestKey(t).index. */
+function markerOf(layer) {
+  const ts = (layer._markers || []).slice().sort((a, b) => a - b);
+  return {
+    numKeys: ts.length,
+    key(i) { if (i < 1 || i > ts.length) throw new Error('Expression error: marker key index out of range'); return { time: ts[i - 1], index: i }; },
+    nearestKey(t) {
+      if (!ts.length) throw new Error('Expression error: no markers');
+      let best = 0;
+      for (let i = 1; i < ts.length; i++) if (Math.abs(ts[i] - t) < Math.abs(ts[best] - t)) best = i;
+      return { time: ts[best], index: best + 1 };
+    }
+  };
+}
+
+module.exports = { markerOf, evaluate, vec, pathPoint, toCompPt, fromCompPt };

@@ -33,7 +33,11 @@ function availability(tool, ctx0, args, services) {
   }
 }
 
-function renderTool(app, tool, { openByDefault = false } = {}) {
+/**
+ * bare (v0.66, Tool Cards): the tool's settings only — presets, form, report. The card above says what it will do and
+ * the library's sticky bar is the ONE Apply, so no header, no second Run button and no second preview list.
+ */
+function renderTool(app, tool, { openByDefault = false, bare = false } = {}) {
   const s = app.state.get();
   const args = s.args[tool.id] || defaults(tool.params || {});
   const open = s.open[tool.id] !== undefined ? s.open[tool.id] : openByDefault;
@@ -46,6 +50,23 @@ function renderTool(app, tool, { openByDefault = false } = {}) {
   const isActive = (p) => Object.entries(p.args).every(([k, v]) => args[k] === v);
 
   const setArgs = (next) => app.state.set((st) => ({ args: Object.assign({}, st.args, { [tool.id]: next }) }));
+
+  if (bare) {
+    // the tile already chose what `tileFixed` params hold (e.g. which expression): no second picker for it
+    const params = Object.fromEntries(Object.entries(tool.params || {}).filter(([, d]) => !d.tileFixed));
+    return h('div', { class: 'tool open bare', 'data-tool': tool.id },
+      h('div', { class: 'tool-b' },
+        allPresets.length ? h('div', { class: 'presets' }, allPresets.map((p) => h('button', {
+          class: 'chip-btn', 'aria-pressed': String(isActive(p)), title: p.user ? 'Your preset — right-click to delete' : '',
+          onclick: () => setArgs(Object.assign({}, args, p.args)),
+          oncontextmenu: p.user ? (e) => { e.preventDefault(); app.services.presets.remove(p.id); app.render(); } : undefined
+        }, p.label))) : null,
+        (tool.ui && tool.ui.renderBody) || widgets.body[tool.id] ? ((tool.ui && tool.ui.renderBody) || widgets.body[tool.id])(args, setArgs, { h, app, ctx: s.ctx }) : null,
+        renderForm(params, args, setArgs, { ctx: s.ctx, swatches: swatchesFor(app), advancedOpen: s.advanced[tool.id], onToggleAdvanced: () => app.state.set((st) => ({ advanced: Object.assign({}, st.advanced, { [tool.id]: !st.advanced[tool.id] }) })) }),
+        renderReport(result, { onRestore: () => app.restore(result.checkpointId, tool.id), onDismiss: () => app.clearResult(tool.id) }),
+        result && tool.ui && tool.ui.renderResult ? tool.ui.renderResult(result, { h, app }) : null,
+        result && widgets.result[tool.id] ? widgets.result[tool.id](result, { h, app }) : null));
+  }
 
   return h('div', { class: `tool ${open ? 'open' : ''} ${av.ok ? '' : 'unavailable'}`, 'data-tool': tool.id },
     h('div', { class: 'tool-h', role: 'button', tabindex: '0', 'aria-expanded': String(open),

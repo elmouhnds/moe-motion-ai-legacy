@@ -1530,3 +1530,40 @@ input.scrubbable.scrubbing { color: var(--accent); }
 .ae-tab-name { max-width: 100%; font-size: 11px; line-height: 12px; letter-spacing: .01em; white-space: normal; text-align: center; overflow-wrap: anywhere; }
 .ae-tab > [role=tab] > .ae-dot { position: absolute; top: 5px; right: 6px; }
 .ae-control.is-full { padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+
+/* ---------- v0.66 (docs/features/TOOL_CARDS.md): Tool Cards ---------- */
+/* the preview carries what it acts on; the card says what it will do, how to undo it, and shows the code */
+.tc-stage { position: relative; }
+.tc-target { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center; gap: 4px; max-width: calc(100% - 16px); padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .55); color: #fff; font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tc-title { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 8px; }
+.tc-sig { padding: 1px 6px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-sunken); color: var(--text-2); font-family: var(--mono); font-size: var(--fs-xs); font-weight: 400; }
+.tc { display: grid; gap: 8px; margin: 8px 0 4px; }
+.tc-k { color: var(--text-3); font-size: var(--fs-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.tc-will { padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-raised); }
+.tc-list { margin: 6px 0 4px; padding: 0; list-style: none; display: grid; gap: 3px; }
+.tc-list li { display: flex; align-items: flex-start; gap: 6px; font-size: var(--fs-sm); line-height: 1.35; }
+.tc-list li .svg-i { flex: none; margin-top: 2px; color: var(--ok); }
+.tc-undo { color: var(--text-3); font-size: var(--fs-xs); }
+.tc-needs { display: flex; align-items: flex-start; gap: 6px; padding: 8px 10px; border-radius: var(--r-lg); background: var(--warn-soft); color: var(--text); font-size: var(--fs-sm); line-height: 1.35; }
+.tc-needs .svg-i { flex: none; margin-top: 2px; color: var(--warn); }
+.tc-code { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-sunken); overflow: hidden; }
+.tc-code-h { display: flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border-bottom: 1px solid var(--line); }
+.tc-pre { margin: 0; padding: 8px 10px; font-family: var(--mono); font-size: var(--fs-xs); line-height: 1.5; color: var(--text-2); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 180px; overflow: auto; }
+.tc-num { color: var(--accent); font-weight: 600; }
+.tool.bare { border: 0; background: none; }
+.tool.bare > .tool-b { padding: 0; }
+/* grouped lists: a quiet header per group; the group that fits the selection is marked */
+.st-group-h { display: flex; align-items: center; gap: 6px; margin: 10px 2px 2px; color: var(--text-2); font-size: var(--fs-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.st-group-h:first-child { margin-top: 0; }
+.st-group-n { color: var(--text-3); font-weight: 400; }
+.st-fits { margin-left: auto; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0; text-transform: none; }
+.st-group-h.fits { color: var(--text); }
+/* grouped list rows (Expressions): a small moving picture, the name, and the purpose on up to two lines */
+.st-grid.list .st-cell.row .st-thumb:not(.icon) { flex: 0 0 64px; width: 64px; height: 36px; border-radius: var(--r); overflow: hidden; }
+.st-grid.list .st-cell.row .st-thumb:not(.icon) svg, .st-grid.list .st-cell.row .st-thumb:not(.icon) canvas { width: 100%; height: 100%; }
+.st-grid.list .st-cell.row .st-tile { gap: 10px; padding: 4px 6px; }
+.st-grid.list .st-cell.row .st-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding-right: 36px; }
+.st-grid.list .st-cell.row .st-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; text-align: left; color: var(--text-3); font-size: var(--fs-xs); line-height: 1.35; }
+.tc-will-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tc-on { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; color: var(--text-2); font-size: var(--fs-xs); font-weight: 600; }
+.tc-on .svg-i { color: var(--accent); }

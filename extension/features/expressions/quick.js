@@ -59,15 +59,25 @@ const PRESETS = {
   faceMotion: { label: 'Face Motion', icon: 'xFace', target: 'rotation', nums: {}, code: () => 'var p = transform.position, f = thisComp.frameDuration;\nvar d = sub(p.valueAtTime(time + f), p.valueAtTime(time - f));\n(length(d) > 0.01) ? value + radiansToDegrees(Math.atan2(d[1], d[0])) : value;' },
   scatter: { label: 'Random Scatter', icon: 'xScatter', target: 'position', nums: { amp: 120, seed: 1 }, code: (n) => `seedRandom(${n('seed')} + index, true);\nvar r = ${n('amp')};\nvalue.length > 2 ? add(value, [random(-r, r), random(-r, r), 0]) : add(value, [random(-r, r), random(-r, r)]);` },
   popIn: { label: 'Auto Pop-In', icon: 'xPopIn', target: 'scale', nums: { secs: 0.5 }, code: (n) => `var d = Math.max(${n('secs')}, 0.01), u = (time - inPoint) / d;\nvar s = (u >= 1) ? 1 : ((u <= 0) ? 0 : 1 + 0.15 * Math.sin(Math.PI * u) - Math.pow(1 - u, 3));\nmul(value, Math.max(0, s));` },
-  slideIn: { label: 'Auto Slide-In', icon: 'xSlideIn', target: 'position', nums: { secs: 0.6, amp: 300 }, code: (n) => `var u = Math.min(Math.max((time - inPoint) / Math.max(${n('secs')}, 0.01), 0), 1);\nvar o = -${n('amp')} * Math.pow(1 - u, 3);\nvalue.length > 2 ? add(value, [o, 0, 0]) : add(value, [o, 0]);` }
+  slideIn: { label: 'Auto Slide-In', icon: 'xSlideIn', target: 'position', nums: { secs: 0.6, amp: 300 }, code: (n) => `var u = Math.min(Math.max((time - inPoint) / Math.max(${n('secs')}, 0.01), 0), 1);\nvar o = -${n('amp')} * Math.pow(1 - u, 3);\nvalue.length > 2 ? add(value, [o, 0, 0]) : add(value, [o, 0]);` },
+  // ---- v0.66 (docs/features/TOOL_CARDS.md): smart expressions that read the layer itself ----
+  // Live Stagger (id cascade): each layer plays ITS OWN keys later by its order in the timeline (r = rank, written per layer) — a stagger
+  // that moves no keyframe and stays live. thisProperty.valueAtTime() inside its own expression is the pre-expression value.
+  cascade: { label: 'Live Stagger', icon: 'stagger', target: 'keyed', perLayer: true, nums: { delay: 0.08 }, code: (n, r) => `var i = ${r || 0};\nthisProperty.valueAtTime(time - i * ${n('delay')});` },
+  // Marker Pulse: a pop on every layer marker (drop markers on the beats, the layer answers)
+  markerPulse: { label: 'Marker Pulse', icon: 'xPulse', target: 'scale', nums: { amp: 15, freq: 2, decay: 5 }, code: (n) => [
+    'var k = 0;',
+    'if (marker.numKeys > 0) { k = marker.nearestKey(time).index; if (marker.key(k).time > time) { k--; } }',
+    `if (k > 0) { var t = time - marker.key(k).time; mul(value, 1 + ${n('amp')} / 100 * Math.sin(t * ${n('freq')} * 2 * Math.PI) / Math.exp(${n('decay')} * t)); } else { value; }`
+  ].join('\n') },
 };
 
 /* Library filter tags (Studio). */
 const TAGS = {
   Random: ['wiggle', 'wiggleX', 'wiggleY', 'jitter', 'flicker', 'wiggleRot', 'wiggleScale', 'organic', 'loopWiggle', 'scatter'],
   Periodic: ['blink', 'timeRotate', 'pendulum', 'pulse', 'float', 'swing', 'heartbeat', 'breathe', 'orbit', 'clock', 'squash'],
-  Keys: ['loopCycle', 'loopPingPong', 'loopOffset', 'loopInOut', 'inertia', 'posterize', 'bounceBack'],
-  Auto: ['autoFade', 'popIn', 'slideIn', 'drift', 'faceMotion']
+  Keys: ['loopCycle', 'loopPingPong', 'loopOffset', 'loopInOut', 'inertia', 'posterize', 'bounceBack', 'cascade'],
+  Auto: ['autoFade', 'popIn', 'slideIn', 'drift', 'faceMotion', 'markerPulse']
 };
 for (const [tag, ids] of Object.entries(TAGS)) for (const id of ids) PRESETS[id].tag = tag;
 
@@ -105,20 +115,22 @@ const HINTS = {
   faceMotion: 'Rotates the layer to point where it is moving (auto-orient by expression).',
   scatter: 'Places each layer at a random offset (seeded, so it stays put).',
   popIn: 'Scales up from 0 with a little overshoot when the layer starts — no keys.',
-  slideIn: 'Slides in from the left with an ease when the layer starts — no keys.'
+  slideIn: 'Slides in from the left with an ease when the layer starts — no keys.',
+  cascade: 'Each layer plays its own keys a little later, in timeline order — a live stagger that moves no keyframe.',
+  markerPulse: 'A pop on every marker of the layer — put markers on the beats and it answers.'
 };
 for (const [id, hint] of Object.entries(HINTS)) PRESETS[id].hint = hint;
 
-const NUM_LABEL = { freq: 'Frequency', amp: 'Amount', fps: 'Frames/sec', rate: 'Rate', min: 'Min %', secs: 'Duration', speed: 'Degrees/sec', decay: 'Decay', elastic: 'Elasticity', gravity: 'Gravity', radius: 'Radius', loop: 'Loop length', pxs: 'Pixels/sec', seed: 'Seed' };
+const NUM_LABEL = { delay: 'Delay', freq: 'Frequency', amp: 'Amount', fps: 'Frames/sec', rate: 'Rate', min: 'Min %', secs: 'Duration', speed: 'Degrees/sec', decay: 'Decay', elastic: 'Elasticity', gravity: 'Gravity', radius: 'Radius', loop: 'Loop length', pxs: 'Pixels/sec', seed: 'Seed' };
 
-function code(presetId, values, live) {
+function code(presetId, values, live, rank) {
   const p = PRESETS[presetId];
   const n = (k) => (live ? `effect("MOE ${p.label} ${NUM_LABEL[k]}")(1).value` : String(values[k] !== undefined ? values[k] : p.nums[k]));
-  return `${TAG}: ${p.label}\n${p.code(n)}`;
+  return `${TAG}: ${p.label}\n${p.code(n, rank)}`;
 }
 
 const params = {
-  preset: { type: 'enum', label: 'Expression', default: 'wiggle', options: Object.entries(PRESETS).map(([value, p]) => ({ value, label: p.label })) },
+  preset: { type: 'enum', label: 'Expression', tileFixed: true, default: 'wiggle', options: Object.entries(PRESETS).map(([value, p]) => ({ value, label: p.label })) },
   freq: { type: 'number', label: 'Frequency', min: 0, max: 60, step: 0.1, default: 2, showIf: (a) => 'freq' in PRESETS[a.preset].nums },
   amp: { type: 'number', label: 'Amount', min: 0, max: 5000, step: 0.5, default: 30, showIf: (a) => 'amp' in PRESETS[a.preset].nums },
   rate: { type: 'number', label: 'Rate', min: 0.1, max: 60, step: 0.1, default: 2, unit: 'Hz', showIf: (a) => 'rate' in PRESETS[a.preset].nums },
@@ -132,6 +144,7 @@ const params = {
   radius: { type: 'number', label: 'Radius', min: 0, max: 4000, step: 1, default: 80, unit: 'px', showIf: (a) => 'radius' in PRESETS[a.preset].nums },
   loop: { type: 'number', label: 'Loop length', min: 0.1, max: 60, step: 0.1, default: 4, unit: 's', showIf: (a) => 'loop' in PRESETS[a.preset].nums },
   pxs: { type: 'number', label: 'Pixels/sec', min: -5000, max: 5000, step: 1, default: 40, showIf: (a) => 'pxs' in PRESETS[a.preset].nums },
+  delay: { type: 'number', label: 'Delay per layer', min: 0, max: 5, step: 0.01, default: 0.08, unit: 's', showIf: (a) => 'delay' in PRESETS[a.preset].nums },
   seed: { type: 'integer', label: 'Seed', min: 0, max: 9999, default: 1, showIf: (a) => 'seed' in PRESETS[a.preset].nums },
   live: { type: 'boolean', label: 'Live controls', default: false, description: 'Put the numbers on Slider Controls (editable / keyframeable)' },
   replace: { type: 'boolean', label: 'Replace existing', default: false, advanced: true }
@@ -149,14 +162,24 @@ function targetsFor(p, ctx) {
   return { list: layers.map((l) => ({ address: { layerId: l.id, matchNames: T[p.target] }, name: `${l.name} › ${p.target}`, layerId: l.id })), from: p.target };
 }
 
+/** v0.66: each target's rank = its layer's order in the timeline among the targeted layers (Cascade). */
+function ranks(targets, ctx) {
+  const idx = (id) => { const l = (ctx.layers || []).find((x) => x.id === id); return l && l.index !== undefined ? l.index : Infinity; };
+  const order = [...new Set(targets.map((t) => t.layerId))].sort((a, b) => idx(a) - idx(b));
+  return targets.map((t) => order.indexOf(t.layerId));
+}
+
+const TARGET_LABEL = { position: 'Position', scale: 'Scale', rotation: 'Rotation', opacity: 'Opacity', keyed: 'keyframed properties' };
+const valuesOf = (p, args) => { const v = {}; for (const k of Object.keys(p.nums)) v[k] = args[k] !== undefined ? args[k] : p.nums[k]; return v; };
+
 const quick = {
   id: 'expressions.quick',
   version: '1.0.0',
   category: 'expressions',
   group: 'Quick Expressions',
   name: 'Quick Expression',
-  description: 'One-click expressions (33): wiggle (all / X / Y / stepped / rotation / scale / organic / seamless loop), blinker, flicker, breathe, auto-fade, auto pop-in, auto slide-in, loops (cycle, ping-pong, offset, in+out), time rotation, clock ticks, swing, pendulum, orbit, pulse, heartbeat, squash & stretch, float, drift, face motion, random scatter, inertia bounce, bounce landing, stop motion. Works on selected properties, or on the natural property of selected layers.',
-  keywords: ['orbit', 'swing', 'heartbeat', 'breathe', 'squash', 'stretch', 'scatter', 'drift', 'bounce', 'clock', 'auto orient', 'pop', 'slide', 'wiggle', 'loop', 'loopout', 'pingpong', 'cycle', 'blink', 'blinker', 'flicker', 'time', 'rotation', 'bounce', 'inertia', 'pulse', 'float', 'pendulum', 'fade', 'posterize', 'expression'],
+  description: 'One-click expressions (35): live stagger (each layer plays its own keys later, by timeline order), marker pulse, wiggle (all / X / Y / stepped / rotation / scale / organic / seamless loop), blinker, flicker, breathe, auto-fade, auto pop-in, auto slide-in, loops (cycle, ping-pong, offset, in+out), time rotation, clock ticks, swing, pendulum, orbit, pulse, heartbeat, squash & stretch, float, drift, face motion, random scatter, inertia bounce, bounce landing, stop motion. Works on selected properties, or on the natural property of selected layers.',
+  keywords: ['marker', 'beat', 'orbit', 'swing', 'heartbeat', 'breathe', 'squash', 'stretch', 'scatter', 'drift', 'bounce', 'clock', 'auto orient', 'pop', 'slide', 'wiggle', 'loop', 'loopout', 'pingpong', 'cycle', 'blink', 'blinker', 'flicker', 'time', 'rotation', 'bounce', 'inertia', 'pulse', 'float', 'pendulum', 'fade', 'posterize', 'expression'],
   icon: 'expr',
   params,
   requires: { comp: true },
@@ -172,7 +195,22 @@ const quick = {
     const p = PRESETS[args.preset];
     const t = targetsFor(p, ctx);
     if (!t.list.length) return { ok: false, error: p.target === 'keyed' ? 'Select keyframed properties to loop' : 'Select layers or properties' };
-    return { ok: true, targets: t.list, preview: { summary: `${p.label} on ${t.list.length} ${t.list.length === 1 ? 'property' : 'properties'} (${t.from})`, items: t.list.slice(0, 6).map((x) => x.name) } };
+    return { ok: true, targets: t.list, from: t.from, preview: { summary: `${p.label} on ${t.list.length} ${t.list.length === 1 ? 'property' : 'properties'} (${t.from})`, items: t.list.slice(0, 6).map((x) => x.name) } };
+  },
+
+  /** v0.66 Tool Card: what it acts on, what it will write and the exact code — pure, from prepare()'s plan. */
+  explain(args, ctx, prepared) {
+    const p = PRESETS[args.preset];
+    const values = valuesOf(p, args);
+    const live = !!args.live && Object.keys(p.nums).length > 0;
+    const sig = `${p.label.replace(/[^A-Za-z0-9]+(.)?/g, (m, c) => (c ? c.toUpperCase() : '')).replace(/^./, (c) => c.toLowerCase())}(${Object.entries(values).map(([k, v]) => `${k} ${v}`).join(', ')})`;
+    const out = { signature: sig, target: TARGET_LABEL[p.target] || p.target, code: code(args.preset, values, live, p.perLayer ? 0 : undefined), numbers: live ? [] : Object.values(values).map(String) };
+    if (prepared && prepared.ok) {
+      const n = prepared.targets.length, layers = new Set(prepared.targets.map((t) => t.layerId)).size;
+      out.target = `${prepared.from === 'selected properties' ? 'Selected properties' : TARGET_LABEL[p.target]} · ${layers} layer${layers === 1 ? '' : 's'}`;
+      out.writes = [`${n} expression${n === 1 ? '' : 's'} tagged // MOE Expr`].concat(p.perLayer && layers > 1 ? [`delays 0 … ${+((layers - 1) * values.delay).toFixed(3)} s by timeline order`] : [], live ? [`${Object.keys(p.nums).length} Slider Control${Object.keys(p.nums).length === 1 ? '' : 's'} per layer (live, keyframeable)`] : []);
+    }
+    return out;
   },
 
   async execute({ args, ctx, prepared, host }) {
@@ -184,14 +222,16 @@ const quick = {
       const layers = [...new Set(prepared.targets.map((t) => t.layerId))];
       fx = await host.call('effects.ensure', { compId: ctx.comp.id, label: 'MOE: Expression Controls', layers: layers.map((id) => ({ layer: { layerId: id }, items: Object.keys(p.nums).map((k) => ({ key: `MOE ${p.label} ${NUM_LABEL[k]}`, matchName: 'ADBE Slider Control', before: [], params: [{ id: k, value: values[k], names: ['Slider'], suffix: 1 }] })) })) });
     }
-    const expr = code(args.preset, values, !!args.live && Object.keys(p.nums).length > 0);
+    const live = !!args.live && Object.keys(p.nums).length > 0;
+    const expr = code(args.preset, values, live);
+    const rk = p.perLayer ? ranks(prepared.targets, ctx) : null;
     const peek = await host.call('expressions.peek', { compId: ctx.comp.id, items: prepared.targets.map((t) => ({ address: t.address })) });
     const conflicts = prepared.targets.filter((t, i) => peek.items[i].expression && !peek.items[i].expression.startsWith(TAG));
     if (conflicts.length && !args.replace) {
       if (fx) await S.restoreEffects({ data: S.effectsCheckpoint(fx, ctx), host });
       throw Object.assign(new Error(`Already has your own expression: ${conflicts.map((c) => c.name).join(', ')}. Turn on "Replace existing" (restorable).`), { code: 'EXPRESSION_CONFLICT' });
     }
-    const set = await host.call('expressions.set', { compId: ctx.comp.id, label: `MOE: ${p.label}`, revertOnError: true, targets: prepared.targets.map((t) => ({ address: t.address, expression: expr, enabled: true })) });
+    const set = await host.call('expressions.set', { compId: ctx.comp.id, label: `MOE: ${p.label}`, revertOnError: true, targets: prepared.targets.map((t, i) => ({ address: t.address, expression: rk ? code(args.preset, values, live, rk[i]) : expr, enabled: true })) });
     return { set, fx, preset: p.label, expr };
   },
 
@@ -210,4 +250,4 @@ const quick = {
   summarize(result) { return `${result.preset} on ${result.set.targets.length} propert(ies)`; }
 };
 
-module.exports = { quick, PRESETS, TAGS, code, TAG };
+module.exports = { quick, PRESETS, TAGS, code, TAG, ranks, TARGET_LABEL };

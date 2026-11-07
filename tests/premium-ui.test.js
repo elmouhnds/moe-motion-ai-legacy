@@ -77,8 +77,8 @@ test('Shapes library: every primitive and a sample of icons are valid insertShap
   }
 });
 
-test('Expressions: 33 presets, all tagged, tiles carry their own numbers, every number has a param', () => {
-  assert.equal(Object.keys(E.PRESETS).length, 33);
+test('Expressions: 35 presets, all tagged, tiles carry their own numbers, every number has a param', () => {
+  assert.equal(Object.keys(E.PRESETS).length, 35); // v0.66: + Live Stagger, Marker Pulse
   const tool = reg.get('expressions.quick');
   for (const [id, p] of Object.entries(E.PRESETS)) {
     assert.ok(p.tag, `${id} has no library tag`);

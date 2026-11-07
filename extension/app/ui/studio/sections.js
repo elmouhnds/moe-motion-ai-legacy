@@ -253,7 +253,9 @@ const SECTIONS = [
     modes: [['In', 'In', 'The layer arrives'], ['Out', 'Out', 'The layer leaves'], ['Shake', 'Shake', 'An impact that settles back (real keys)'], ['Trim', 'Draw On', 'Trim paths for shape lines'], ['Proximity', 'Proximity', 'Layers react to a moving point']],
     elsewhere: [['kit', 'Ease', 'Ease presets and the speed graph are in Motion Control']], tools: (t) => t.category === 'motion' && !/^(zoom|interact)\./.test(t.id) && t.id !== 'motion.easeCurve' && t.id !== 'motion.pasteEase' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },
-  { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true },
+  { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true,
+    // v0.66 (TOOL_CARDS.md): a list grouped by what each expression moves; the group that fits the selection comes first
+    groupBy: (t) => (EXPR[t.args.preset] || {}).target, groups: [['position', 'Position'], ['rotation', 'Rotation'], ['scale', 'Scale'], ['opacity', 'Opacity'], ['keyed', 'Your keyframes']] },
   { id: 'productui', label: 'Product UI', icon: 'uiKit', kind: 'library', tiles: INTERACT_TILES.concat(UI_TILES), filters: ['All', 'Interact', 'Controls', 'Feedback', 'Data', 'Dark'], tools: (t) => t.id === 'design.template' || t.id === 'interact.click' },
   { id: 'templates', label: 'Templates', icon: 'type', kind: 'library', tiles: TEMPLATE_TILES, filters: ['All', 'Titles', 'Callouts', 'Outro', 'Arabic'], tools: (t) => t.id === 'design.template' },
   { id: 'shapes', label: 'Shapes & Icons', icon: 'shapes', kind: 'view' },

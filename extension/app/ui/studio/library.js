@@ -1,4 +1,5 @@
 'use strict';
+const TC = require('../../../core/toolcard');
 /**
  * Studio library section: filter chips + search + visual tiles, and an Inspector that
  * hosts the selected tile's tool (its own form, preview widget, Apply and report).
@@ -185,6 +186,29 @@ function pickFilter(app, section, all, f) {
   setSt(app, section, keep || !visible.length ? { filter: f } : { filter: f, tile: visible[0].id, filled: null });
 }
 
+/** v0.66: which groups fit the selection — the selected properties' kinds (keyed ones also fit "Your keyframes"). */
+function fittingGroups(ctx) {
+  const props = (ctx && ctx.properties) || [];
+  const out = new Set();
+  for (const p of props) {
+    const n = `${p.name || ''} ${(p.address && p.address.matchNames || []).join(' ')}`;
+    if (/Position/.test(n)) out.add('position');
+    else if (/Scale/.test(n)) out.add('scale');
+    else if (/Rotat/.test(n)) out.add('rotation');
+    else if (/Opacity/.test(n)) out.add('opacity');
+    if (p.numKeys > 0) out.add('keyed');
+  }
+  return out;
+}
+
+/** v0.66: tiles in their section's groups, the groups that fit the selection first (empty groups are dropped). */
+function groupTiles(section, tiles, ctx) {
+  const fits = fittingGroups(ctx);
+  const gs = section.groups.map(([id, label], i) => ({ id, label, fits: fits.has(id), i, tiles: tiles.filter((t) => section.groupBy(t) === id) }))
+    .filter((g) => g.tiles.length);
+  return gs.sort((a, b) => (b.fits - a.fits) || (a.i - b.i));
+}
+
 function render(app, section) {
   const s = app.state.get();
   const st = stateOf(app, section);
@@ -213,7 +237,8 @@ function render(app, section) {
   // right under the row of the tile you click (click it again to close) instead of under the whole library.
   const wideIns = !!s.studioWide;
   const inline = !wideIns && st.open;
-  const listLike = tiles.length > 0 && tiles.every((t) => t.thumb && t.thumb.k === 'icon');
+  const grouped = section.groupBy ? groupTiles(section, tiles, s.ctx) : null;
+  const listLike = !!grouped || (tiles.length > 0 && tiles.every((t) => t.thumb && t.thumb.k === 'icon'));
   const band = s.kitBand || '';
   const cols = listLike ? 1 : fitCols(tiles.length, /kit-slim|kit-tiny/.test(band) ? 2 : /kit-narrow/.test(band) ? 3 : 4);
   const cell = (t) => {
@@ -230,20 +255,37 @@ function render(app, section) {
       h('button', { class: 'st-play', title: rd.ok ? `Apply ${t.label} now` : rd.hint, 'aria-label': `Apply ${t.label} now`, onclick: () => applyNow(app, t, section) }, icon('play', 'sm')));
   };
 
+  const cardArgs = Object.assign(defaults(tool.params || {}), s.args[tool.id] || tile.args);
+  const cardInfo = TC.card(tool, cardArgs, s.ctx, app.services);
   const inspector = h('aside', { class: `st-inspector ${inline ? 'inline' : ''}`, 'aria-label': 'Inspector', 'data-key': 'st-ins' },
     h('div', { class: 'st-ins-h' }, inline ? h('span', { class: 'st-ins-name' }, tile.user ? `My preset · ${tile.label}` : tile.label) : h('span', { class: 'st-kicker' }, tile.user ? 'MY PRESET' : 'INSPECTOR'), h('span', { class: 'spacer' }),
       h('button', { class: 'icon-btn', title: 'Save these settings as my preset', 'aria-label': 'Save as preset', onclick: () => saveAsPreset(app, section, tile) }, icon('presets', 'sm')),
       tile.user ? h('button', { class: 'icon-btn', title: 'Delete this preset', 'aria-label': 'Delete preset', onclick: () => removePreset(app, section, tile) }, icon('trash', 'sm')) : null,
       h('button', { class: 'icon-btn pin', 'aria-pressed': String(pinned), title: pinned ? 'Unpin from Favorites' : 'Pin to Favorites', onclick: () => { app.services.favorites.toggle(tool.id); app.render(); } }, icon('star', 'sm')),
       inline ? h('button', { class: 'icon-btn', 'data-key': 'st-ins-close', title: 'Close the settings', 'aria-label': 'Close settings', onclick: () => setSt(app, section, { open: false }) }, icon('x', 'sm')) : null),
-    // inline, the tile itself is right above: no second big picture and no repeated title
-    inline || widgets.body[tool.id] || (tool.ui && tool.ui.renderBody) ? null : thumbEl(tile, 'big', PLANNED.includes(tool.id) ? (tool.id === 'design.template' ? brandedArgs(app, Object.assign({}, tile.args, app.state.get().args[tool.id] || {})) : app.state.get().args[tool.id]) : null),
+    // v0.66 (docs/features/TOOL_CARDS.md): the card says what this tile will do before Apply — what it acts on, what
+    // it writes, how to undo it, and the exact code for expressions; the sticky bar below is the one Apply.
+    (() => {
+      const thumb = inline || widgets.body[tool.id] || (tool.ui && tool.ui.renderBody) ? null : thumbEl(tile, 'big', PLANNED.includes(tool.id) ? (tool.id === 'design.template' ? brandedArgs(app, Object.assign({}, tile.args, app.state.get().args[tool.id] || {})) : app.state.get().args[tool.id]) : null);
+      return thumb || null;
+    })(),
     inline ? null : h('div', { class: 'st-ins-title' }, tile.label),
     section.extras === 'palette' ? paletteExtras(app, tile) : h('div', { class: 'why st-ins-desc', title: tool.description }, tile.hint || tool.description),
-    h('div', { class: 'st-ins-tool' }, renderTool(app, tool, { openByDefault: true })));
+    cardBlock(app, cardInfo, tile),
+    h('div', { class: 'st-ins-tool' }, renderTool(app, tool, { openByDefault: true, bare: true })));
 
-  let cells = tiles.map(cell);
-  if (inline) {
+  let cells;
+  if (grouped) {
+    // a header per group; inline, the settings open right under the clicked row
+    cells = [];
+    for (const g of grouped) {
+      cells.push(h('div', { class: `st-group-h ${g.fits ? 'fits' : ''}`, 'data-key': `gh-${g.id}`, role: 'heading', 'aria-level': '3' },
+        h('span', {}, g.label), h('span', { class: 'st-group-n' }, String(g.tiles.length)), g.fits ? h('span', { class: 'st-fits', title: 'Fits the properties you selected in After Effects' }, 'fits your selection') : null));
+      for (const t of g.tiles) { cells.push(cell(t)); if (inline && t.id === tile.id) cells.push(inspector); }
+    }
+    if (inline && !tiles.some((t) => t.id === tile.id)) cells.push(inspector);
+  } else cells = tiles.map(cell);
+  if (inline && !grouped) {
     const i = tiles.findIndex((t) => t.id === tile.id);
     if (i >= 0) { const end = Math.min(tiles.length, (Math.floor(i / cols) + 1) * cols); cells.splice(end, 0, inspector); } else cells.push(inspector);
   }
@@ -264,6 +306,21 @@ function render(app, section) {
  * v0.32: the filter row. A section with modes (Motion, Layout) shows one switch — the modes are what the
  * tiles are for (In / Out / Draw On…), so only that set shows; the rest keep chips on one line, Mine first.
  */
+/** v0.66 Tool Card body: what it will do (or what it needs), how to undo it, and the code with its numbers lit. */
+function cardBlock(app, c, tile) {
+  const will = c.ready
+    ? h('div', { class: 'tc-will', 'data-key': 'tc-will' },
+      h('div', { class: 'tc-will-h' }, h('span', { class: 'tc-k' }, 'Will do'), c.target ? h('span', { class: 'tc-on', title: 'What it acts on' }, icon('target', 'xs'), c.target) : null),
+      h('ul', { class: 'tc-list' }, c.writes.slice(0, 5).map((w) => h('li', {}, icon('check', 'xs'), h('span', {}, w)))),
+      h('div', { class: 'tc-undo' }, c.undo))
+    : h('div', { class: 'tc-needs', 'data-key': 'tc-needs' }, icon('info', 'xs'), h('span', {}, c.needs));
+  const code = c.code ? h('div', { class: 'tc-code', 'data-key': 'tc-code' },
+    h('div', { class: 'tc-code-h' }, c.signature ? h('code', { class: 'tc-sig', title: 'The expression and its numbers' }, c.signature) : h('span', { class: 'tc-k' }, 'Expression'), h('span', { class: 'spacer' }),
+      h('button', { class: 'btn ghost sm', 'data-key': 'tc-copy', title: 'Copy the expression', onclick: () => { try { navigator.clipboard.writeText(c.code).then(() => app.toast('Expression copied', 1600, 'ok'), () => app.toast('Could not copy', 2000)); } catch (e) { app.toast('Could not copy', 2000); } } }, icon('copy', 'xs'), 'Copy')),
+    h('pre', { class: 'tc-pre' }, TC.codeRuns(c.code, c.numbers).map((r) => (r.num ? h('b', { class: 'tc-num' }, r.text) : r.text)))) : null;
+  return h('div', { class: 'tc', 'data-key': `tc-${tile.id}` }, will, code);
+}
+
 function filterRow(app, section, all, st, mine) {
   const mineChip = h('button', { class: 'chip-btn mine', 'data-key': 'f-Mine', 'aria-pressed': String(st.filter === 'Mine'), onclick: () => pickFilter(app, section, all, 'Mine') }, icon('presets', 'xs'), ` Mine${mine.length ? ` ${mine.length}` : ''}`);
   if (section.modes) {
