@@ -37,7 +37,7 @@ const wipe = {
   keywords: ['wipe', 'reveal', 'linear wipe', 'wipe in', 'wipe out', 'transition', 'mask reveal', 'مسح', 'كشف'],
   icon: 'moveLR',
   params: {
-    dir: { type: 'enum', label: 'Direction', default: 'in', options: [{ value: 'in', label: 'Reveal (in)' }, { value: 'out', label: 'Hide (out)' }] },
+    dir: { type: 'enum', label: 'Direction', tileFixed: true, default: 'in', options: [{ value: 'in', label: 'Reveal (in)' }, { value: 'out', label: 'Hide (out)' }] },
     from: { type: 'enum', label: 'From', default: 'left', options: Object.entries(FROM).map(([value, f]) => ({ value, label: f.label })) },
     duration: { type: 'number', label: 'Duration', min: 0.05, max: 10, step: 0.05, default: 0.8, unit: 's' },
     feather: { type: 'number', label: 'Soft edge', min: 0, max: 500, step: 1, default: 60, unit: 'px' },

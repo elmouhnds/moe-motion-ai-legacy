@@ -19,6 +19,13 @@
 const contextReq = require('./context');
 const LP = require('./lockpolicy');
 
+/** "4 layer(s)" → "4 layers", "1 propert(ies)" → "1 property": tool summaries read like sentences in the card. */
+function tidy(line) {
+  return String(line)
+    .replace(/(\d+)(\s+)(\w+?)\(ies\)/g, (m, n, sp, w) => `${n}${sp}${w}${+n === 1 ? 'y' : 'ies'}`)
+    .replace(/(\d+)(\s+)(\w+)\(s\)/g, (m, n, sp, w) => `${n}${sp}${w}${+n === 1 ? '' : 's'}`);
+}
+
 const mutates = (tool) => (tool.permissions || []).some((p) => p.startsWith('modify.'));
 
 function undoLine(tool) {
@@ -60,7 +67,7 @@ function card(tool, args, ctx, services, extra) {
     target: ex.target || null,
     ready: !!p.ok,
     needs: p.ok ? null : p.error || 'Not ready',
-    writes: p.ok ? writes : [],
+    writes: p.ok ? writes.map(tidy) : [],
     undo: undoLine(tool),
     code: ex.code || null,
     numbers: ex.numbers || []
@@ -85,4 +92,4 @@ function codeRuns(code, numbers) {
   return out;
 }
 
-module.exports = { card, plan, codeRuns, undoLine };
+module.exports = { card, plan, codeRuns, undoLine, tidy };

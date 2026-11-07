@@ -89,7 +89,7 @@ const apply = {
   keywords: ['glass', 'liquid glass', 'frosted', 'glassmorphism', 'refraction', 'blur', 'ui', 'ios', 'glasser', 'acrylic'],
   icon: 'glass',
   params: {
-    look: { type: 'enum', label: 'Look', default: 'liquid', options: Object.entries(LOOKS).map(([value, l]) => ({ value, label: l.label })) },
+    look: { type: 'enum', label: 'Look', tileFixed: true, default: 'liquid', options: Object.entries(LOOKS).map(([value, l]) => ({ value, label: l.label })) },
     tint: { type: 'string', label: 'Tint', default: '', maxLength: 7, format: 'color', description: 'Optional #RRGGBB (empty = look colour)' },
     rim: { type: 'boolean', label: 'Rim light', default: true },
     tintLayer: { type: 'boolean', label: 'Tint layer', default: true },

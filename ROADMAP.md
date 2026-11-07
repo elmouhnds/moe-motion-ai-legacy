@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.72 — Tool Cards ✅ (v0.66.0)
+- Every tool explains itself before it runs (card contract); expressions as a grouped list that follows the selection; Live Stagger, Marker Pulse. Next ideas: docs/research/SMART_TOOLS_STUDY.md §4.
+
 ## M1.71 — Installer redesign ✅ (v0.65.1)
 - Dark installer matching the panel; status + After Effects detection on the welcome page; read-back check after copying; Open After Effects on finish.
 

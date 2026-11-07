@@ -2,6 +2,20 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.66.0] — 2026-11-07 — Tool Cards
+### Added
+- **Tool Cards** (`core/toolcard.js`, docs/features/TOOL_CARDS.md): every library tile says what it will do before Apply: what it acts on, what it will write, how to undo it, or the one thing it needs first. Built from each tool's own plan, never a second rule list, never an After Effects call. Every registered tool gets a card.
+- Expressions show their **exact code** before Apply, with the numbers the sliders set lit, a signature (`autoFade(secs 0.5)`) and Copy.
+- **Live Stagger**: each layer plays its own keys later, by timeline order; a stagger that moves no key and stays editable.
+- **Marker Pulse**: a pop after every layer marker; put markers on the beats.
+### Changed
+- **Expressions page** is a list grouped by what each one moves (Position · Rotation · Scale · Opacity · Your keyframes). The groups that fit the properties you selected come first, marked *fits your selection*; each row shows what it is for on up to two lines.
+- **One Apply**: the Inspector no longer has its own Run button or preview list; the sticky bar is the one action.
+- Settings the tile already chose (which expression, style, motion, look, mode, template) are no longer repeated as a picker in the Inspector (*All tools* still has them).
+- Card lines read like sentences ("4 layers", "1 property").
+### Tests
+- `tests/toolcards.test.js` (6); mock expressions get After Effects' marker API. 527 tests. **Mock / preview — not yet seen in After Effects.**
+
 ## [0.65.2] — 2026-11-06 — After Effects 2026
 ### Changed
 - The installer enables unsigned panels for CSXS 11, 12 and 13 (After Effects 2024, 2025, 2026 and newer builds), not only 12. The panel already accepts After Effects 25.0 and later (`Host AEFT [25.0,99.9]`, CSXS 12.0 minimum) and the installer finds After Effects 2026.

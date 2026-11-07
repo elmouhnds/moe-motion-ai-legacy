@@ -121,7 +121,14 @@ test('Expressions list: grouped by what it moves, the groups that fit the select
   assert.deepEqual(groupTiles(sec, sec.tiles, keyedRot).slice(0, 2).map((x) => x.id), ['rotation', 'keyed']);
   // the library inspector's settings never repeat the tile's own choice, nor its Apply
   const tb = require('fs').readFileSync(require('path').join(__dirname, '../extension/app/ui/toolBlock.js'), 'utf8');
-  assert.match(tb, /filter\(\(\[, d\]\) => !d\.tileFixed\)/);
-  assert.match(src, /renderTool\(app, tool, \{ openByDefault: true, bare: true \}\)/);
+  assert.match(tb, /!\(d\.tileFixed && fixed\.includes\(k\)\)/);
+  assert.match(src, /renderTool\(app, tool, \{ openByDefault: true, bare: true, fixed: Object\.keys\(tile\.args \|\| \{\}\) \}\)/);
   assert.equal(E.quick.params.preset.tileFixed, true);
+});
+
+test('Tool Card lines read like sentences: plurals follow the count', () => {
+  assert.equal(TC.tidy('Glow on 4 layer(s)'), 'Glow on 4 layers');
+  assert.equal(TC.tidy('Glow on 1 layer(s)'), 'Glow on 1 layer');
+  assert.equal(TC.tidy('Wiggle on 1 propert(ies)'), 'Wiggle on 1 property');
+  assert.equal(TC.tidy('on 3 propert(ies)'), 'on 3 properties');
 });

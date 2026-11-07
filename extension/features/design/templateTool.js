@@ -33,7 +33,7 @@ const template = {
   keywords: ['template', 'lower third', 'title', 'callout', 'tag', 'badge', 'name', 'caption', 'label', 'quote', 'end card', 'outro', 'subscribe', 'handle', 'social', 'chapter', 'section', 'قالب', 'عنوان', 'اقتباس', 'نهاية', 'فصل'],
   icon: 'type',
   params: {
-    template: { type: 'enum', label: 'Template', default: 'lowerThird', options: TPL.TEMPLATES.map((t) => ({ value: t.id, label: t.short || t.label })) },
+    template: { type: 'enum', label: 'Template', tileFixed: true, default: 'lowerThird', options: TPL.TEMPLATES.map((t) => ({ value: t.id, label: t.short || t.label })) },
     title: { type: 'string', label: 'Title', default: '', placeholder: 'The template\'s own example if empty', maxLength: 120 },
     subtitle: { type: 'string', label: 'Second line', default: '', maxLength: 160, showIf: (a) => !['tag', 'handle'].includes(a.template) && (!TPL.isUi(a.template) || ['uiNotify', 'uiProgress', 'uiStat'].includes(a.template)) },
     // v0.57 Product UI: the card's look (light card + dark text, or graphite + white)

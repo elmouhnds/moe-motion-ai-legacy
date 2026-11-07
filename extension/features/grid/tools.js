@@ -97,7 +97,7 @@ const build = {
   keywords: ['grid', 'layout', 'arrange', 'distribute', 'radial', 'circle', 'spiral', 'sunflower', 'phyllotaxis', 'path', 'sphere', 'array', 'clone', 'matrix', 'wall', 'mosaic', 'build', 'object', 'vertices', 'points', 'text cloner', 'split text', 'words', 'letters', 'motext'],
   icon: 'grid',
   params: {
-    mode: { type: 'enum', label: 'Mode', default: 'rect', options: MODE_OPTIONS },
+    mode: { type: 'enum', label: 'Mode', tileFixed: true, default: 'rect', options: MODE_OPTIONS },
     // v0.33 Cloner: one selected layer (or a few) becomes N copies on the grid — copies cycle through the sources
     clones: { type: 'integer', label: 'Clones', min: 0, max: 200, default: 0, description: 'Make this many items by copying the selected layer(s) — 0 arranges the selection as it is' },
     columns: { type: 'integer', label: 'Columns', min: 0, max: 100, default: 0, description: '0 = auto from the comp shape', showIf: (a) => a.mode === 'rect' },

@@ -80,6 +80,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['info', 'Every tile says what it will do', 'Click a tile: before Apply you see what it acts on, what it will write, how to undo it — or the one thing it needs first. Expressions show their code with your numbers lit, and the list is grouped by what each one moves, the group that fits your selection first. New: Live Stagger (each layer plays its own keys later, no key moves) and Marker Pulse (a pop on every marker).'],
   ['layers', 'Tabs in the order of your work', 'MOE\'s tabs now go Animate · Timing · Layer · Design · Look · Deliver. The big graph lives in Timing; the other tabs show a one-row Motion Bar (Easy, Linear, Hold, your curves, Graph) or nothing at all, so your tools start at the top. Wipe, Depth and Shake sit in Animate In / Out, Decode and Explode in Text, Carousel in Arrange, Styles at the top of Look.'],
   ['type', 'Decode, Explode, and Depth', 'Text has Decode and Scramble (the letters settle into the word) and Explode / Assemble (each letter flies its own way). Motion has Depth In / Out: your layers come forward from deep in the scene, sharpening as they land — no plugin, nothing to download.'],
   ['refresh', 'Carousel, Wipe, and a Stop button', 'Layout › Arrange has Carousel 3D: your cards on a ring that turns one at a time, the back ones fading. Motion has Wipe In / Out with a soft edge from any side. And any long run now shows what it is doing — with Stop, which leaves what was made as one Ctrl+Z.'],

@@ -270,9 +270,9 @@ function render(app, section) {
       return thumb || null;
     })(),
     inline ? null : h('div', { class: 'st-ins-title' }, tile.label),
-    section.extras === 'palette' ? paletteExtras(app, tile) : h('div', { class: 'why st-ins-desc', title: tool.description }, tile.hint || tool.description),
+    section.extras === 'palette' ? paletteExtras(app, tile) : h('div', { class: 'why st-ins-desc', title: tool.description }, tile.hint || cardInfo.purpose),
     cardBlock(app, cardInfo, tile),
-    h('div', { class: 'st-ins-tool' }, renderTool(app, tool, { openByDefault: true, bare: true })));
+    h('div', { class: 'st-ins-tool' }, renderTool(app, tool, { openByDefault: true, bare: true, fixed: Object.keys(tile.args || {}) })));
 
   let cells;
   if (grouped) {

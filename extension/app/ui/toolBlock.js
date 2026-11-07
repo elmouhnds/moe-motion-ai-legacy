@@ -37,7 +37,7 @@ function availability(tool, ctx0, args, services) {
  * bare (v0.66, Tool Cards): the tool's settings only — presets, form, report. The card above says what it will do and
  * the library's sticky bar is the ONE Apply, so no header, no second Run button and no second preview list.
  */
-function renderTool(app, tool, { openByDefault = false, bare = false } = {}) {
+function renderTool(app, tool, { openByDefault = false, bare = false, fixed = [] } = {}) {
   const s = app.state.get();
   const args = s.args[tool.id] || defaults(tool.params || {});
   const open = s.open[tool.id] !== undefined ? s.open[tool.id] : openByDefault;
@@ -52,8 +52,9 @@ function renderTool(app, tool, { openByDefault = false, bare = false } = {}) {
   const setArgs = (next) => app.state.set((st) => ({ args: Object.assign({}, st.args, { [tool.id]: next }) }));
 
   if (bare) {
-    // the tile already chose what `tileFixed` params hold (e.g. which expression): no second picker for it
-    const params = Object.fromEntries(Object.entries(tool.params || {}).filter(([, d]) => !d.tileFixed));
+    // the tile already chose what its `tileFixed` params hold (which expression, which style…): no second picker for
+    // them — only when the tile really sets that param, so nothing a tile leaves open is ever hidden
+    const params = Object.fromEntries(Object.entries(tool.params || {}).filter(([k, d]) => !(d.tileFixed && fixed.includes(k))));
     return h('div', { class: 'tool open bare', 'data-tool': tool.id },
       h('div', { class: 'tool-b' },
         allPresets.length ? h('div', { class: 'presets' }, allPresets.map((p) => h('button', {

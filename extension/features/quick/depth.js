@@ -24,7 +24,7 @@ const depth = {
   keywords: ['depth', 'reveal', '3d', 'z', 'fly in', 'from behind', 'push in', 'parallax', 'عمق', 'كشف'],
   icon: 'layers',
   params: {
-    dir: { type: 'enum', label: 'Direction', default: 'in', options: [{ value: 'in', label: 'Come forward (in)' }, { value: 'out', label: 'Fall back (out)' }] },
+    dir: { type: 'enum', label: 'Direction', tileFixed: true, default: 'in', options: [{ value: 'in', label: 'Come forward (in)' }, { value: 'out', label: 'Fall back (out)' }] },
     depth: { type: 'number', label: 'Depth', min: 50, max: 10000, step: 10, default: 900, unit: 'px', description: 'How far back the layer starts (Z)' },
     duration: { type: 'number', label: 'Duration', min: 0.05, max: 10, step: 0.05, default: 0.9, unit: 's' },
     ease: { type: 'enum', label: 'Ease', default: 'smooth', options: EASES },

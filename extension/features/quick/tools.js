@@ -215,8 +215,8 @@ const animate = {
   description: 'One-click animation at the playhead: slide in/out (right→left, left→right, top→bottom, bottom→top, off-screen or by distance), fade, scale up/down, spin — with easing and optional overshoot. Keeps the current pose as the rest state.',
   keywords: ['animate', 'slide', 'move', 'in', 'out', 'fade', 'scale up', 'scale down', 'pop', 'spin', 'enter', 'exit'], icon: 'moveRL',
   params: {
-    kind: { type: 'enum', label: 'Motion', default: 'moveRL', options: KINDS },
-    dir: { type: 'enum', label: 'Direction', default: 'in', options: [{ value: 'in', label: 'In' }, { value: 'out', label: 'Out' }] },
+    kind: { type: 'enum', label: 'Motion', tileFixed: true, default: 'moveRL', options: KINDS },
+    dir: { type: 'enum', label: 'Direction', tileFixed: true, default: 'in', options: [{ value: 'in', label: 'In' }, { value: 'out', label: 'Out' }] },
     duration: { type: 'number', label: 'Duration', min: 0.05, max: 10, step: 0.05, default: 0.6, unit: 's' },
     ease: { type: 'enum', label: 'Ease', default: 'snappy', options: EASE_OPTIONS },
     distance: { type: 'number', label: 'Distance', min: 0, max: 10000, step: 10, default: 0, unit: 'px', description: '0 = fully off-screen', showIf: (a) => /^move/.test(a.kind) },
@@ -456,7 +456,7 @@ const shake = {
   description: 'An impact at the playhead as real keyframes (not an expression): Bump, Zoom Punch, Whip, Slam or Jitter — a damped shake that settles back to the layer\'s own values, so it sits on top of its animation and stays editable.',
   keywords: ['shake', 'impact', 'hit', 'bump', 'punch', 'whip', 'slam', 'jitter', 'rattle', 'camera shake', 'هزة', 'اهتزاز'], icon: 'zoom',
   params: {
-    type: { type: 'enum', label: 'Shake', default: 'bump', options: Object.keys(SH.TYPES).map((k) => ({ value: k, label: SH.TYPES[k].label })) },
+    type: { type: 'enum', label: 'Shake', tileFixed: true, default: 'bump', options: Object.keys(SH.TYPES).map((k) => ({ value: k, label: SH.TYPES[k].label })) },
     intensity: { type: 'number', label: 'Intensity', min: 0, max: 300, step: 1, default: 40, description: 'The first hit: pixels for a move (Bump, Whip, Slam, Jitter), percent for Zoom Punch' },
     rotation: { type: 'number', label: 'Rotation', min: 0, max: 90, step: 0.5, default: 0, unit: '°' },
     frequency: { type: 'number', label: 'Frequency', min: 1, max: 40, step: 0.5, default: 7, unit: 'Hz' },

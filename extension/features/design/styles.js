@@ -31,7 +31,7 @@ const style = {
   keywords: ['style', 'shadow', 'drop shadow', 'soft shadow', 'glow', 'light sweep', 'shine', 'highlight', 'ظل', 'توهج', 'لمعة'],
   icon: 'sparkles',
   params: {
-    style: { type: 'enum', label: 'Style', default: 'softShadow', options: Object.keys(STYLES).map((k) => ({ value: k, label: STYLES[k].label })) },
+    style: { type: 'enum', label: 'Style', tileFixed: true, default: 'softShadow', options: Object.keys(STYLES).map((k) => ({ value: k, label: STYLES[k].label })) },
     amount: { type: 'number', label: 'Amount', min: 0.2, max: 3, step: 0.05, default: 1, unit: '×', description: 'Bigger and softer above 1, tighter below' },
     every: { type: 'number', label: 'Every', min: 1, max: 20, step: 0.5, default: 3, unit: 's', showIf: (a) => a.style === 'lightSweep', description: 'The sweep crosses once every … seconds' }
   },

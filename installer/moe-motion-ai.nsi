@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.65: tabs in the order of your work (Animate · Timing · Layer · Design · Look · Deliver) and a one-row Motion Bar."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.65: التابات بقت بترتيب الشغل، وشريط الحركة بقى سطر واحد"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.66: every tile says what it will do before Apply, expressions show their code, and Live Stagger + Marker Pulse."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.66: كل أداة بتقولك هتعمل إيه قبل ما تطبّقها، والتعبيرات بتوريك الكود"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"
