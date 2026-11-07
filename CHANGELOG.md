@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.69.0] — 2026-11-07 — Glass with the sidebar
+### Changed
+- **Glass uses MOE's sidebar** (owner): every shortcut — Select, Parent & Link, In / Out, Loop, Guides and the whole Quick Bar — sits on the left (names on ⇔ from 600 px, over the page when narrower); the icon row on top is gone, so the page starts higher. Glass keeps its look, its NOW card and its bottom dock.
+### Fixed
+- NOW (Glass): Smooth / Snappy Ease no longer sit stuck to the Motion Control — 12 px of room between them (owner comment: "متاخدلين ف بعض").
+- Narrow panels: the Anchor header ("Anchor" + "Masks") wraps instead of running into the Align title beside it — checked at 340 / 380 / 440 / 520 / 760 px in Bento, Glass and MOE: no label overlaps another.
+### Tests
+- `tests/lookfeel.test.js` +1. 534 tests.
+
 ## [0.68.1] — 2026-11-07 — Glass restored
 ### Fixed
 - **Glass looks as it did in v0.67 again**: the v0.68.0 frost (drifting light behind the panel, blur and grain on every surface, frosted tiles and Apply bar) looked wrong and is removed — `css/styles.css` is the v0.67 file. The Background Composer and the rest of v0.68 stay.

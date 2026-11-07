@@ -84,6 +84,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['layers', 'Glass has the sidebar', 'Every shortcut is on the left now, like MOE — the icon row on top is gone, so your tools start higher. Hover a shortcut for its card; ⇔ shows the names.'],
   ['background', 'Backgrounds you compose', 'Backgrounds is now one instrument: the real background plays on top, Style · Motion · Colours sit under it, and picking a palette keeps your style and motion.'],
   ['eye', 'See what MOE did — and what it will do', 'Rest the pointer on any button for its card: what it acts on, what it writes, what could surprise you. On this layer (Layer tab) reads what MOE already did to the selection — edit an expression with its own numbers or remove one item. Beat Markers put the music on your layers; Marker Trigger replays your animation at every marker.'],
   ['info', 'Every tile says what it will do', 'Click a tile: before Apply you see what it acts on, what it will write, how to undo it — or the one thing it needs first. Expressions show their code with your numbers lit, and the list is grouped by what each one moves, the group that fits your selection first. New: Live Stagger (each layer plays its own keys later, no key moves) and Marker Pulse (a pop on every marker).'],

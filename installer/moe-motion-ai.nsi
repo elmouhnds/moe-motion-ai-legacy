@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.68: Backgrounds as one composer with a live stage; Glass as it was."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.68: الباكجراوندز بقت أداة واحدة بمعاينة حية، والجلاس رجع زي ما كان"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.69: Glass gets the sidebar — every shortcut on the left, no icon row on top."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.69: الجلاس بقى فيه الشريط الجانبي، ومفيش أيقونات فوق"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

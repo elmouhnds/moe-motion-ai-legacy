@@ -263,3 +263,8 @@
 /* v0.54 (owner comment): on a narrow panel "Show names" opens the sidebar OVER the page — it keeps its 44 px slot,
    so the page does not move, and the rest of the panel is shaded until a click outside closes it */
 .moe-rail.float { position: relative; z-index: 40; width: 172px; margin-right: -128px; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.32), 8px 0 24px rgba(0, 0, 0, 0.35); }
+
+/* v0.69 (owner): Glass — the NOW actions get room under the Motion Control (they read as stuck to it), and the
+   sidebar shared with MOE sits on the glass like the cards */
+.gl-now-acts { margin-top: 12px; }
+.app.layout-glass .moe-rail { border-right: 1px solid var(--g-rim); background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)); }

@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Glass with the sidebar** (v0.69.0): every shortcut on the left like MOE, no icon row on top.
+
 **Look & Feel** (v0.68.0): Backgrounds as one composer (live stage, Style · Motion · Colours, palettes that keep your look) (docs/features/LOOK_AND_FEEL.md).
 
 **Smart Layer** (v0.67.0): Hover Cards on every one-click button; *On this layer* reads what MOE did and edits or removes one item; Beat Markers from the music; Marker Trigger and Marker In / Out; conflicts said before Apply (docs/features/SMART_LAYER.md).

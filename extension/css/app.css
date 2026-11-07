@@ -1636,3 +1636,8 @@ input.scrubbable.scrubbing { color: var(--accent); }
 .st-chips.one-line::-webkit-scrollbar { display: none; }
 .bgc-row { grid-template-columns: 58px 1fr; }
 .bgc-chip { padding: 0 9px; }
+/* v0.69: in a narrow rail the Anchor header wraps (Masks under the title) instead of running into Align beside it */
+.kit-anchor.mini { min-width: 0; }
+.kit-anchor.mini .kit-cap-row { flex-wrap: wrap; row-gap: 2px; min-width: 0; }
+.kit-anchor.mini .kit-cap-row > .spacer { flex-basis: 0; }
+.kit-anchor.mini .kit-check.mini { white-space: nowrap; }

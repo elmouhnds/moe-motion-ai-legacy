@@ -181,6 +181,12 @@ function moeRail(app, s) {
 /** Build a style's parts: { top[], title, titleExtra, content, bottom, side, overlay, header }. */
 function build(app, s, layout, body) {
   const parts = layout === 'moe' ? moe(app, s, body) : require(layout === 'glass' ? './layoutGlass' : './layoutBento').build(app, s, body);
+  // v0.69 (owner): Glass takes MOE's sidebar — every shortcut on the left, the icon row on top goes, the page gets the height
+  if (layout === 'glass') {
+    parts.top = parts.top.slice(1); // the Quick Bar strip moves into the sidebar (same as MOE)
+    parts.side = moeRail(app, s);
+    parts.overlay = s.layMenu ? menuPopover(app, s.layMenu) : parts.overlay;
+  }
   parts.header = header(app, parts.title, parts.titleExtra, parts.menuBtn);
   return parts;
 }

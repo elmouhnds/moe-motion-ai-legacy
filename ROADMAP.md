@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.75 — Glass with the sidebar ✅ (v0.69.0)
+- Glass takes MOE's sidebar; NOW and narrow Anchor spacing fixed.
+
 ## M1.74 — Look & Feel ✅ (v0.68.0)
 - Background Composer, frosted Glass, no banners in MOE (docs/features/LOOK_AND_FEEL.md).
 
