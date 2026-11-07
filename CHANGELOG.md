@@ -5,7 +5,7 @@ All notable changes. Versioning: semver, independent of other MOE products.
 ## [0.68.0] — 2026-11-07 — Look & Feel
 ### Changed
 - **Backgrounds is one instrument** (Background Composer): a live stage of the real background at your comp's size; Style · Motion · Colours always visible under it; palettes as light colour strips — a plain palette swaps only the colours and keeps your style and motion, a designed look (✦) takes all of it; Colorize, Save as client and Fine-tune beside it; one Apply.
-- **Faster Backgrounds**: only the stage animates (the 36 palettes are CSS strips, not canvases).
+- **Faster Backgrounds**: only the stage animates (the 36 palettes are CSS strips, not canvases) — idle CPU in the stress test 5 % → 2 %.
 - **Frosted Glass**: soft coloured light behind the panel, every surface blurs and lifts it with a bright rim and a faint frost grain; tiles, menus, hover cards and the Apply bar are glass too. Appearance › frost off removes it all; reduced motion stops the drifting light.
 - MOE (Classic) shows no section banners; filter rows scroll and fade instead of cutting a chip.
 ### Fixed
