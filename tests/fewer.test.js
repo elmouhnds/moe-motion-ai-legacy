@@ -76,7 +76,7 @@ test('three styles, one render path; the retired styles and Smart Home are gone 
   const fs = require('fs');
   const path = require('path');
   const L = require('../extension/app/ui/layouts');
-  assert.deepEqual(L.LAYOUTS.map((x) => x.id), ['bento', 'glass', 'moe']);
+  assert.deepEqual(L.LAYOUTS.map((x) => x.id), ['bento', 'glass', 'moe', 'control']);
   const shell = fs.readFileSync(path.join(__dirname, '../extension/app/ui/shell.js'), 'utf8');
   assert.ok(!/class: 'sidebar'/.test(shell), 'the Sidebar layout render is gone');
   assert.match(shell, /RETIRED\.includes\(services\.settings\.get\(\)\.ui\.layout\)/, 'a retired style is moved to Bento at start-up');

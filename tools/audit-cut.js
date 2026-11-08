@@ -8,7 +8,7 @@
  */
 const { chromium } = require('playwright');
 const VIEWS = ['home', 'kit', 'animate', 'text', 'layout', 'looks', 'zoom', 'expressions', 'shapes', 'backgrounds', 'compositing', 'deliver', 'quick', 'select', 'brand', 'tools', 'favorites', 'history', 'settings', 'diagnostics', 'templates', 'productui'];
-const STYLES = ['bento', 'glass', 'moe'];
+const STYLES = ['bento', 'glass', 'moe', 'control'];
 const WIDTHS = [420, 740];
 (async () => {
   const b = await chromium.launch();

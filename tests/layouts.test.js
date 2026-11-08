@@ -13,7 +13,7 @@ const studio = require('../extension/app/ui/studio/sections');
 const SECTIONS = [...new Set(studio.WORKSPACES.flatMap((w) => w.items))];
 
 test('styles (v0.29): only Bento (default), Glass and MOE; a retired style opens in Bento', () => {
-  assert.deepEqual(L.LAYOUTS.map((l) => l.id), ['bento', 'glass', 'moe']);
+  assert.deepEqual(L.LAYOUTS.map((l) => l.id), ['bento', 'glass', 'moe', 'control']);
   const app = (layout) => ({ services: { settings: { get: () => ({ ui: { layout } }) } } });
   assert.equal(L.layoutOf(app('moe')), 'moe');
   assert.equal(L.layoutOf(app('glass')), 'glass');

@@ -11,6 +11,8 @@
  *    never floods After Effects
  *  - the mouse wheel steps it only while the field has focus, so scrolling the page is never hijacked
  *  - `fill`: an optional element whose --p (0–100 %) shows where the value sits between min and max
+ *  - v0.70 `axis: 'y'` + `span` (px): a tall slider tile — drag up raises it, the whole range over `span` pixels,
+ *    snapped to `step` (Control style's sliders)
  * Inputs are rebuilt on every render, so listeners are attached directly (UI rule: allowed on inputs).
  */
 function attach(input, o) {
@@ -29,19 +31,22 @@ function attach(input, o) {
   const commit = (v) => { if (o.commit) o.commit(v); };
   show(read());
   input.classList.add('scrubbable');
-  if (!input.title) input.title = 'Drag sideways to change (Shift ×10, Ctrl fine) · ↑ ↓ step · click to type';
+  if (!input.title) input.title = o.axis === 'y' ? 'Drag up or down to change (Shift ×10, Ctrl fine) · ↑ ↓ step · click to type' : 'Drag sideways to change (Shift ×10, Ctrl fine) · ↑ ↓ step · click to type';
 
   input.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || document.activeElement === input || input.disabled) return;
     e.preventDefault();
-    const x0 = e.clientX, v0 = read();
+    const x0 = e.clientX, y0 = e.clientY, v0 = read();
+    const vert = o.axis === 'y';
+    const per = vert && o.span > 0 && Number.isFinite(lo) && Number.isFinite(hi) ? (hi - lo) / o.span : step;
     let moved = false, v = v0, cancelled = false;
     try { input.setPointerCapture(e.pointerId); } catch (_) { /* older CEP */ }
     const move = (m) => {
-      const dx = m.clientX - x0;
+      const dx = vert ? y0 - m.clientY : m.clientX - x0;
       if (!moved && Math.abs(dx) < 3) return;
       if (!moved) { moved = true; input.classList.add('scrubbing'); }
-      v = clamp(round(v0 + dx * step * k(m)));
+      const raw = v0 + dx * per * k(m);
+      v = clamp(round(vert ? Math.round(raw / step) * step : raw));
       live(v);
     };
     const esc = (ke) => { if (ke.key === 'Escape' && moved) { cancelled = true; live(v0); end(); } };

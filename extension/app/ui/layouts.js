@@ -6,6 +6,7 @@
  *
  *   bento  one page by how often you use things (layoutBento.js, workflow.js)
  *   glass  the five stages as spaces, frosted cards (layoutGlass.js)
+ *   control  v0.70 a Control Center for motion: squares that are the tools, a Mix and one Apply (layoutControl.js)
  *   moe    After Effects menu tabs (layoutAE.js) + a sidebar with Select and the whole Quick Bar (v0.45: the other
  *          menus by object were the tabs again — NO_REPEATS.md)
  */
@@ -17,7 +18,8 @@ const AR = require('./arrange');
 const LAYOUTS = [
   { id: 'bento', label: 'Bento', hint: 'One page by how often you use things · NOW · Power tools · stages' },
   { id: 'glass', label: 'Glass', hint: 'Frosted glass over a colour field · the five stages as spaces · Now card' },
-  { id: 'moe', label: 'MOE', hint: 'After Effects menu tabs and twirl-down groups, with every shortcut in a sidebar' }
+  { id: 'moe', label: 'MOE', hint: 'After Effects menu tabs and twirl-down groups, with every shortcut in a sidebar' },
+  { id: 'control', label: 'Control', hint: 'A Control Center for motion — squares that are the tools, follow the selection, mix and apply once' }
 ];
 const RETIRED = ['ae', 'studio', 'hub', 'bar', 'workspace', 'apple'];
 /** The panel style; anything unknown, unset or retired is the default, Bento. */
@@ -180,9 +182,10 @@ function moeRail(app, s) {
 
 /** Build a style's parts: { top[], title, titleExtra, content, bottom, side, overlay, header }. */
 function build(app, s, layout, body) {
-  const parts = layout === 'moe' ? moe(app, s, body) : require(layout === 'glass' ? './layoutGlass' : './layoutBento').build(app, s, body);
+  const parts = layout === 'moe' ? moe(app, s, body) : require(layout === 'glass' ? './layoutGlass' : layout === 'control' ? './layoutControl' : './layoutBento').build(app, s, body);
   // v0.69 (owner): Glass takes MOE's sidebar — every shortcut on the left, the icon row on top goes, the page gets the height
-  if (layout === 'glass') {
+  // v0.70: Control too (the squares get the whole page; shortcuts live where they live in MOE and Glass)
+  if (layout === 'glass' || layout === 'control') {
     parts.top = parts.top.slice(1); // the Quick Bar strip moves into the sidebar (same as MOE)
     parts.side = moeRail(app, s);
     parts.overlay = s.layMenu ? menuPopover(app, s.layMenu) : parts.overlay;

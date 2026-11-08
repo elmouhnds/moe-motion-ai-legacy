@@ -159,7 +159,7 @@ ${texts}
   function save() { try { sessionStorage.setItem(KEY, JSON.stringify(opts)); } catch (e) { /* ignore */ } }
   var h0 = (location.hash || '').slice(1);
   if (HASH[h0]) opts.layout = HASH[h0];
-  if (['bento', 'glass', 'moe'].indexOf(opts.layout) < 0) opts.layout = 'bento';
+  if (['bento', 'glass', 'moe', 'control'].indexOf(opts.layout) < 0) opts.layout = 'bento';
   if (window.innerWidth < 560) opts.w = Math.min(opts.w, 420);
   var frame = document.getElementById('pv-frame');
   function mark() {

@@ -271,3 +271,145 @@
 /* v0.69: with the sidebar the NOW actions get less width — an even column count keeps pairs (Cycle / Ping-Pong) on one row */
 .gl-now-acts:not(.mini) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .app:not(.kit-narrow):not(.kit-mid):not(.kit-tiny) .gl-now-acts:not(.mini) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* ================================================================== CONTROL (v0.70, docs/features/CONTROL_STYLE.md)
+   A Control Center for motion: squares that are the tools. Hover only changes colour (never size or place). */
+.app.layout-control {
+  --bg: #0a0a0c; --bg-raised: #17171b; --bg-sunken: #0e0e11; --bg-elev: #1e1e23; --bg-hover: rgba(255, 255, 255, 0.05); --bg-active: rgba(255, 255, 255, 0.09);
+  --line: rgba(255, 255, 255, 0.07); --line-strong: rgba(255, 255, 255, 0.16);
+  --text: #f4f4f6; --text-2: #c8c8cf; --text-3: #9d9da8;
+  --r: 8px; --r-lg: 18px;
+  --cc-sq: #1a1a1f; --cc-sq-hi: #222228; --cc-fill: rgba(255, 122, 89, 0.30); --cc-on-ink: #101013;
+  background: var(--bg); color: var(--text);
+}
+:root[data-theme="light"] .app.layout-control {
+  --bg: #e9e8ec; --bg-raised: #ffffff; --bg-sunken: #f2f2f5; --bg-elev: #ffffff; --bg-hover: rgba(0, 0, 0, 0.04); --bg-active: rgba(0, 0, 0, 0.07);
+  --line: rgba(0, 0, 0, 0.08); --line-strong: rgba(0, 0, 0, 0.16);
+  --text: #121216; --text-2: #3b3b44; --text-3: #5f5f6a;
+  --cc-sq: #ffffff; --cc-sq-hi: #f6f6f9; --cc-fill: rgba(194, 65, 12, 0.18); --cc-on-ink: #ffffff;
+}
+.app.layout-control .main, .app.layout-control .hdr, .app.layout-control .ctx, .app.layout-control .ae-searchrow, .app.layout-control .copilot { background: var(--bg); border-color: transparent; }
+.app.layout-control .hdr .title { font-family: var(--display); font-size: 15px; letter-spacing: -0.01em; }
+.app.layout-control .ae-search { height: 32px; border-radius: 16px; border: 1px solid var(--line); background: var(--bg-raised); }
+.app.layout-control .moe-rail { background: var(--bg); border-right-color: var(--line); }
+.app.layout-control .lay-crumb { background: none; border-color: transparent; }
+.cc-page { padding: 4px 12px 16px; }
+
+/* the selection, in one line */
+.cc-head { display: flex; align-items: center; gap: 10px; margin: 2px 2px 12px; min-width: 0; }
+.cc-stack { display: flex; flex: none; }
+.cc-stack i { display: block; width: 24px; height: 24px; border-radius: 7px; border: 2px solid var(--bg); background: var(--text-3); }
+.cc-stack i + i { margin-left: -9px; }
+.cc-stack i.t-text { background: #5b8cff; } .cc-stack i.t-shape { background: var(--accent); } .cc-stack i.t-solid { background: #b98cff; } .cc-stack i.t-null { background: #6b6b75; } .cc-stack i.t-precomp { background: #4fc58f; }
+.cc-head-t { display: flex; flex-direction: column; min-width: 0; }
+.cc-head-t b { font-family: var(--display); font-size: 17px; letter-spacing: -0.01em; line-height: 1.2; overflow-wrap: anywhere; }
+.cc-head-t span { color: var(--text-3); font-size: 11px; overflow-wrap: anywhere; }
+
+/* the squares */
+.cc-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 78px; gap: 10px; }
+.cc-sq { position: relative; min-width: 0; border-radius: var(--r-lg); background: var(--cc-sq); border: 1px solid var(--line); color: var(--text); overflow: hidden; transition: background var(--t), border-color var(--t), box-shadow var(--t); }
+.cc-sq.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.cc-on-dot { position: absolute; top: 10px; right: 10px; width: 8px; height: 8px; border-radius: 4px; background: var(--accent); box-shadow: 0 0 10px var(--accent); pointer-events: none; }
+
+/* Motion: the hero square plays the move it will write */
+.cc-hero { grid-column: span 2; grid-row: span 3; display: flex; flex-direction: column; background: linear-gradient(165deg, #241712 0%, var(--cc-sq) 70%); }
+:root[data-theme="light"] .cc-hero { background: linear-gradient(165deg, #fff1ea 0%, var(--cc-sq) 70%); }
+.cc-hero-hit { position: relative; flex: 1; min-height: 0; display: block; width: 100%; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+.cc-hero-hit:hover { background: var(--bg-hover); }
+.cc-hero-hit:focus-visible { outline: none; box-shadow: var(--focus); }
+.cc-canvas { position: absolute; left: 10px; right: 10px; top: 10px; height: calc(100% - 58px); width: calc(100% - 20px); pointer-events: none; }
+.cc-hero-name { position: absolute; left: 12px; bottom: 24px; font-family: var(--display); font-size: 18px; font-weight: 800; letter-spacing: -0.01em; pointer-events: none; }
+.cc-hero-sub { position: absolute; left: 12px; right: 12px; bottom: 8px; font-size: 11px; color: var(--text-3); pointer-events: none; overflow-wrap: anywhere; }
+.cc-hero-opts { display: flex; flex-direction: column; gap: 6px; padding: 8px; }
+.cc-seg { display: flex; gap: 2px; padding: 2px; border-radius: 10px; background: var(--bg-sunken); }
+.cc-segb { flex: 1 1 0; min-width: 0; height: var(--h-s); padding: 0 4px; border: 0; border-radius: 8px; background: none; color: var(--text-2); font: 600 11px var(--font); cursor: pointer; overflow-wrap: anywhere; line-height: 1.1; }
+.cc-segb:hover { background: var(--bg-hover); color: var(--text); }
+.cc-segb[aria-checked="true"] { background: var(--text); color: var(--bg); }
+.cc-seg-io { align-self: flex-start; width: 50%; }
+
+/* sliders: a tall square you drag; --p is set by scrub.js */
+.cc-slider { grid-row: span 2; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; cursor: ns-resize; }
+.cc-slider.wide { grid-column: span 3; grid-row: span 1; cursor: ew-resize; justify-content: center; }
+.cc-fill { position: absolute; left: 0; right: 0; bottom: 0; height: var(--p, 0%); background: var(--cc-fill); pointer-events: none; transition: height 60ms linear; }
+.cc-slider.wide .cc-fill { top: 0; right: auto; height: auto; width: var(--p, 0%); transition: width 60ms linear; }
+.cc-slider.on .cc-fill { background: var(--accent); opacity: 0.42; }
+.cc-val { position: relative; width: 100%; padding: 0; border: 0; background: none; color: var(--text); font: 800 22px var(--display); letter-spacing: -0.02em; cursor: inherit; }
+.cc-val:focus { outline: none; cursor: text; }
+.cc-val:focus-visible { box-shadow: var(--focus); border-radius: 4px; }
+.cc-unit { position: absolute; top: 10px; right: 12px; font-size: 11px; color: var(--text-3); }
+.cc-sl-name { position: relative; font-size: 12px; font-weight: 700; pointer-events: none; }
+.cc-sl-sub { position: relative; font-size: 10.5px; color: var(--text-3); pointer-events: none; overflow-wrap: anywhere; }
+.cc-slider.wide .cc-val { font-size: 20px; }
+.cc-slider.off { opacity: 0.55; cursor: default; }
+
+/* round switches */
+.cc-rounds { grid-column: span 2; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.cc-round { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 4px; border-radius: 39px; cursor: pointer; font: 600 10.5px var(--font); line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
+.cc-round:hover { background: var(--cc-sq-hi); }
+.cc-round[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+.cc-round[disabled] { opacity: 0.45; cursor: default; }
+.cc-round:focus-visible, .cc-wide:focus-visible, .cc-lib:focus-visible { outline: none; box-shadow: var(--focus); }
+.cc-grid > .cc-round { grid-column: span 1; }
+
+/* wide squares (Beats, Typewriter, Loop) */
+.cc-wide { grid-column: span 4; display: flex; align-items: center; gap: 12px; padding: 0 14px; text-align: left; cursor: pointer; font: inherit; }
+.cc-wide:hover { background: var(--cc-sq-hi); }
+.cc-w-ic { flex: none; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: var(--bg-sunken); color: var(--accent); }
+.cc-w-t { display: flex; flex-direction: column; min-width: 0; }
+.cc-w-t b { font-family: var(--display); font-size: 15px; letter-spacing: -0.01em; }
+.cc-w-t span { font-size: 11px; color: var(--text-3); overflow-wrap: anywhere; }
+.cc-beats { background: linear-gradient(100deg, #141a2b, var(--cc-sq) 75%); }
+:root[data-theme="light"] .cc-beats { background: linear-gradient(100deg, #e9eefc, var(--cc-sq) 75%); }
+.cc-beats .cc-w-ic { color: #8fb0ff; }
+:root[data-theme="light"] .cc-beats .cc-w-ic { color: #2f5bd3; }
+.cc-wave { flex: 1; min-width: 40px; height: 44px; display: flex; align-items: center; gap: 3px; overflow: hidden; }
+.cc-wave i { flex: none; width: 3px; border-radius: 2px; background: rgba(143, 176, 255, 0.35); }
+.cc-wave i.b { background: #8fb0ff; }
+.cc-loop { flex-wrap: wrap; align-content: center; cursor: default; padding: 8px 12px; }
+.cc-loop-hit { display: flex; align-items: center; gap: 12px; flex: 1 1 160px; min-width: 0; padding: 4px; border: 0; border-radius: 12px; background: none; color: inherit; text-align: left; cursor: pointer; }
+.cc-loop-hit:hover { background: var(--bg-hover); }
+.cc-loop .cc-seg { flex: 1 1 180px; }
+.cc-grid.k-keys { grid-auto-rows: auto; }
+.cc-grid.k-keys .cc-wide, .cc-grid.k-keys .cc-slider.wide { min-height: 64px; }
+
+/* the Motion Control rides as one square */
+.cc-control { grid-column: span 4; grid-row: auto; padding: 6px; }
+.cc-grid .cc-control { grid-row-end: span 1; }
+.cc-grid:not(.k-keys) { grid-auto-rows: 78px; }
+.cc-grid:not(.k-keys) .cc-control { grid-row: span 2; overflow: auto; }
+
+/* nothing selected */
+.cc-empty { grid-column: span 4; grid-row: span 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 16px; border-radius: var(--r-lg); border: 1px dashed var(--line-strong); color: var(--text-2); text-align: center; }
+.cc-empty b { font-family: var(--display); font-size: 16px; color: var(--text); }
+.cc-empty span { font-size: 11px; max-width: 280px; }
+
+/* libraries: every page one click away */
+.cc-libs { margin-top: 18px; }
+.cc-cap { margin: 0 2px 8px; font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); }
+.cc-lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
+.cc-lib { display: flex; align-items: center; gap: 6px; min-height: var(--h-l); padding: 4px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--cc-sq); color: var(--text-2); font: 600 11px var(--font); text-align: left; cursor: pointer; overflow-wrap: anywhere; line-height: 1.15; }
+.cc-lib:hover { background: var(--cc-sq-hi); color: var(--text); }
+.cc-lib .svg-i { flex: none; color: var(--text-3); }
+
+/* the Mix: what will happen + one Apply */
+.cc-mix { display: flex; flex-direction: column; gap: 6px; margin: 0 10px 10px; padding: 10px 12px; border-radius: 16px; background: var(--bg-raised); border: 1px solid var(--line); }
+.cc-mix.empty { flex-direction: row; align-items: center; gap: 8px; }
+.cc-mix-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cc-chip { display: inline-flex; align-items: center; gap: 2px; height: var(--h-s); padding: 0 2px 0 10px; border-radius: 12px; background: var(--accent-soft); color: var(--text); font-size: 11px; font-weight: 700; }
+.cc-chip-x { width: 20px; height: 20px; border: 0; border-radius: 10px; background: none; color: var(--text-2); cursor: pointer; font-size: 13px; line-height: 1; }
+.cc-chip-x:hover { background: var(--bg-active); color: var(--text); }
+.cc-mix-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.cc-mix-dot { flex: none; width: 8px; height: 8px; border-radius: 4px; background: var(--ok); }
+.cc-mix.empty .cc-mix-dot { background: var(--text-3); }
+.cc-mix.blocked .cc-mix-dot { background: var(--warn); }
+.cc-mix-t { flex: 1; min-width: 0; font-size: 11px; color: var(--text-2); overflow-wrap: anywhere; }
+.cc-apply { height: var(--h-l); padding: 0 16px; border-radius: 10px; font-weight: 800; }
+
+/* narrow dock: two columns */
+.app.layout-control.kit-narrow .cc-grid, .app.layout-control.kit-tiny .cc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.app.layout-control.kit-narrow .cc-hero, .app.layout-control.kit-tiny .cc-hero,
+.app.layout-control.kit-narrow .cc-rounds, .app.layout-control.kit-tiny .cc-rounds,
+.app.layout-control.kit-narrow .cc-wide, .app.layout-control.kit-tiny .cc-wide,
+.app.layout-control.kit-narrow .cc-control, .app.layout-control.kit-tiny .cc-control,
+.app.layout-control.kit-narrow .cc-empty, .app.layout-control.kit-tiny .cc-empty,
+.app.layout-control.kit-narrow .cc-slider.wide, .app.layout-control.kit-tiny .cc-slider.wide { grid-column: span 2; }

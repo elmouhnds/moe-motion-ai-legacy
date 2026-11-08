@@ -32,7 +32,7 @@ function render(app) {
     h('div', { class: 'section-h' }, 'Appearance'),
     h('div', { class: 'set-group' },
       h('div', { class: 'field', title: 'Bento (default): one page, tile size = importance · Glass: four spaces by stage of work · MOE: AE-named tabs with every shortcut in a sidebar (docs/features/STYLES_V2.md)' }, h('label', {}, 'Panel style'),
-        seg([['bento', 'Bento'], ['glass', 'Glass'], ['moe', 'MOE']], require('../layouts').layoutOf(app), (v) => { app.services.settings.update({ ui: { layout: v } }); app.state.set({ layMenu: null, view: 'home' }); app.render(); })),
+        seg([['bento', 'Bento'], ['glass', 'Glass'], ['moe', 'MOE'], ['control', 'Control']], require('../layouts').layoutOf(app), (v) => { app.services.settings.update({ ui: { layout: v } }); app.state.set({ layMenu: null, view: 'home' }); app.render(); })),
       require('../layouts').layoutOf(app) === 'glass' ? h('div', { class: 'field', title: 'The frosted blur behind the Glass bar, Now card and menus. Turn it off if After Effects feels slower.' }, h('label', {}, 'Glass blur'),
         seg([['on', 'On'], ['off', 'Off']], st.ui.glassBlur === false ? 'off' : 'on', (v) => updUi({ glassBlur: v === 'on' }))) : null,
       h('div', { class: 'field' }, h('label', {}, 'Theme'), seg(theme.THEMES, st.ui.theme || 'auto', (v) => updUi({ theme: v }))),
