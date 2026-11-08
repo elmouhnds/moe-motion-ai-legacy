@@ -127,6 +127,10 @@ async function main() {
     await p.waitForTimeout(500);
     await run(p, `kit@${w}`);
     errs.forEach((e) => found.push({ rule: 'jsError', screen: `@${w}`, detail: e }));
+    // Control (v0.70): its home for this selection (the squares, the Motion Control, the sidebar)
+    await p.evaluate(() => { const a = window.__app; a.services.settings.update({ ui: { layout: 'control' } }); a.state.set({ view: 'home' }); a.render(); });
+    await p.waitForTimeout(400);
+    await run(p, `control@${w}`);
     await p.close();
   }
   await b.close();

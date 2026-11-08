@@ -111,6 +111,10 @@ async function main() {
       await p.waitForTimeout(300);
       await run(`moe ${t.label} · ${kind}`);
     }
+    // Control (v0.70): its home for this selection (the squares, the Motion Control, the sidebar)
+    await p.evaluate(() => { const a = window.__app; a.services.settings.update({ ui: { layout: 'control' } }); a.state.set({ view: 'home' }); a.render(); });
+    await p.waitForTimeout(400);
+    await run(`control · ${kind}`);
     await p.close();
   }
   await b.close();
