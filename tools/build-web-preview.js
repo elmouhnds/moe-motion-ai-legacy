@@ -94,7 +94,7 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
     <div class="pv-ctl"><label for="pv-w">Panel</label><div class="pv-seg" id="pv-w" role="group" aria-label="Panel width">
       <button data-w="280" data-mode="kit" title="The Motion Kit as its own slim panel (Window › Extensions › MOE Motion Kit)">Kit panel</button><button data-w="340">Narrow</button><button data-w="420">Docked</button><button data-w="640">Wide</button><button data-w="920">Full</button></div></div>
     <div class="pv-ctl pv-layout"><label for="pv-layout">Layout</label><div class="pv-seg" id="pv-layout" role="group" aria-label="Panel style">
-      <button data-layout="bento" title="Default — one page by how often you use things: NOW, Power tools, stages">Bento</button><button data-layout="glass" title="Frosted glass, the five stages as spaces, Now card, floating bottom bar">Glass</button><button data-layout="moe" title="AE-named tabs and twirl-down groups, with every shortcut in a sidebar">MOE</button></div></div>
+      <button data-layout="bento" title="Default — one page by how often you use things: NOW, Power tools, stages">Bento</button><button data-layout="glass" title="Frosted glass, the five stages as spaces, Now card, floating bottom bar">Glass</button><button data-layout="moe" title="AE-named tabs and twirl-down groups, with every shortcut in a sidebar">MOE</button><button data-layout="control" title="New in 0.70 — a Control Center for motion: squares that are the tools, the Mix, one Apply">Control</button></div></div>
     <div class="pv-ctl"><label for="pv-scene">Comp</label><div class="pv-seg" id="pv-scene" role="group" aria-label="Sample composition">
       <button data-scene="title">Title</button><button data-scene="layout">9 cards</button><button data-scene="studio">Text</button></div></div>
     <div class="pv-ctl"><label for="pv-theme">Theme</label><div class="pv-seg" id="pv-theme" role="group" aria-label="Panel theme">
@@ -116,6 +116,10 @@ body { margin: 0; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.
         <li>The <b>sidebar</b> holds <b>Select</b> (every filter, one click — it opens beside it) and <b>your whole Quick Bar</b>. Each tab's <b>▾</b> is its quick menu; the round button is the Assistant.</li>
         <li><b>⇔</b> at its top shows the names; right-click a shortcut for its options; <i>Customize</i> edits them.</li>
         <li>Above the tools only the AE tabs (<kbd>Ctrl</kbd> <kbd>1</kbd>–<kbd>6</kbd>) and search remain — two rows freed for the graphs.</li></ol></div>
+      <div class="pv-lguide" data-for="control"><h2>Control — a Control Center for motion (new in 0.70)</h2><ol>
+        <li>Every <b>square is the tool</b>: <b>Motion</b> plays the move it will write (Fade · Pop · Rise · Slide · Spin, In / Out); <b>Duration</b> and <b>Stagger</b> are tall sliders — drag up or down; <b>Blur · Overshoot · Expo · Order</b> are round switches.</li>
+        <li>The squares <b>follow the selection</b>: <b>Wiggle</b> and <b>Beats</b> for layers, <b>Typewriter</b> for text, the <b>Motion Control</b> and <b>Loop</b> for keys — switch the <i>Comp</i> above.</li>
+        <li>Switched-on squares gather in the <b>Mix</b> at the bottom: one line says what will happen, <b>Apply</b> runs them in order (each its own Undo). Double-click a square to run it alone; right-click opens its page.</li></ol></div>
     </aside>
   </div>
 </div>
@@ -153,8 +157,8 @@ ${texts}
 
   /* ---------- options (kept for this tab only) ---------- */
   var KEY = 'moe-preview-options';
-  var opts = { w: 420, scene: 'title', theme: 'dark', mode: 'main', layout: 'bento' };
-  var HASH = { moe: 'moe', glass: 'glass', bento: 'bento' };
+  var opts = { w: 420, scene: 'layout', theme: 'dark', mode: 'main', layout: 'control' }; // 0.70: opens on the new Control style
+  var HASH = { moe: 'moe', glass: 'glass', bento: 'bento', control: 'control' };
   try { var saved = JSON.parse(sessionStorage.getItem(KEY) || 'null'); if (saved) for (var k in saved) opts[k] = saved[k]; } catch (e) { /* storage blocked: defaults */ }
   function save() { try { sessionStorage.setItem(KEY, JSON.stringify(opts)); } catch (e) { /* ignore */ } }
   var h0 = (location.hash || '').slice(1);
