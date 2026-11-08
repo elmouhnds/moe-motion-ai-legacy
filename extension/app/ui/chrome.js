@@ -84,6 +84,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['sliders', 'Control — a Control Center for motion', 'A fourth style (Settings › Style, or ≡ › Style): squares that ARE the tools. The Motion square plays the move it will write; Duration and Stagger are tall sliders you drag; Blur, Overshoot, Expo and Order are round switches; Wiggle, Typewriter, Loop and Beats follow what you select. Switch on what you want, read one line saying what will happen, press Apply once. Double-click a square to run it alone.'],
   ['layers', 'Glass has the sidebar', 'Every shortcut is on the left now, like MOE — the icon row on top is gone, so your tools start higher. Hover a shortcut for its card; ⇔ shows the names.'],
   ['background', 'Backgrounds you compose', 'Backgrounds is now one instrument: the real background plays on top, Style · Motion · Colours sit under it, and picking a palette keeps your style and motion.'],
   ['eye', 'See what MOE did — and what it will do', 'Rest the pointer on any button for its card: what it acts on, what it writes, what could surprise you. On this layer (Layer tab) reads what MOE already did to the selection — edit an expression with its own numbers or remove one item. Beat Markers put the music on your layers; Marker Trigger replays your animation at every marker.'],

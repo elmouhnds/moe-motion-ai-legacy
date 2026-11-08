@@ -342,14 +342,21 @@
 .cc-slider.wide .cc-val { font-size: 20px; }
 .cc-slider.off { opacity: 0.55; cursor: default; }
 
+/* a small switch inside a square (Wiggle on / off) */
+.cc-mini-switch { position: absolute; top: 9px; right: 40px; width: 34px; height: 20px; padding: 2px; border: 0; border-radius: 10px; background: var(--bg-active); cursor: pointer; }
+.cc-mini-switch i { display: block; width: 16px; height: 16px; border-radius: 8px; background: var(--text-2); transition: transform var(--t), background var(--t); }
+.cc-mini-switch.on { background: var(--accent); }
+.cc-mini-switch.on i { transform: translateX(14px); background: var(--accent-ink); }
+.cc-mini-switch:focus-visible { outline: none; box-shadow: var(--focus); }
+.cc-slider.wide { grid-column: span 4; }
+
 /* round switches */
 .cc-rounds { grid-column: span 2; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.cc-round { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 4px; border-radius: 39px; cursor: pointer; font: 600 10.5px var(--font); line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
+.cc-round { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 4px; width: 100%; max-width: 78px; aspect-ratio: 1 / 1; align-self: center; justify-self: center; border-radius: 50%; cursor: pointer; font: 600 10.5px var(--font); line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
 .cc-round:hover { background: var(--cc-sq-hi); }
 .cc-round[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
 .cc-round[disabled] { opacity: 0.45; cursor: default; }
 .cc-round:focus-visible, .cc-wide:focus-visible, .cc-lib:focus-visible { outline: none; box-shadow: var(--focus); }
-.cc-grid > .cc-round { grid-column: span 1; }
 
 /* wide squares (Beats, Typewriter, Loop) */
 .cc-wide { grid-column: span 4; display: flex; align-items: center; gap: 12px; padding: 0 14px; text-align: left; cursor: pointer; font: inherit; }
@@ -372,11 +379,9 @@
 .cc-grid.k-keys { grid-auto-rows: auto; }
 .cc-grid.k-keys .cc-wide, .cc-grid.k-keys .cc-slider.wide { min-height: 64px; }
 
-/* the Motion Control rides as one square */
-.cc-control { grid-column: span 4; grid-row: auto; padding: 6px; }
-.cc-grid .cc-control { grid-row-end: span 1; }
-.cc-grid:not(.k-keys) { grid-auto-rows: 78px; }
-.cc-grid:not(.k-keys) .cc-control { grid-row: span 2; overflow: auto; }
+/* the Motion Control rides as its own card (its one place for ease, anchor and align) */
+.cc-control { margin: 10px 0 0; padding: 6px; border-radius: var(--r-lg); background: var(--cc-sq); border: 1px solid var(--line); }
+.cc-head + .cc-control { margin: 0 0 10px; }
 
 /* nothing selected */
 .cc-empty { grid-column: span 4; grid-row: span 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 16px; border-radius: var(--r-lg); border: 1px dashed var(--line-strong); color: var(--text-2); text-align: center; }
@@ -392,7 +397,7 @@
 .cc-lib .svg-i { flex: none; color: var(--text-3); }
 
 /* the Mix: what will happen + one Apply */
-.cc-mix { display: flex; flex-direction: column; gap: 6px; margin: 0 10px 10px; padding: 10px 12px; border-radius: 16px; background: var(--bg-raised); border: 1px solid var(--line); }
+.cc-mix { display: flex; flex-direction: column; gap: 6px; margin: 0 10px 10px; min-width: 0; padding: 10px 12px; border-radius: 16px; background: var(--bg-raised); border: 1px solid var(--line); }
 .cc-mix.empty { flex-direction: row; align-items: center; gap: 8px; }
 .cc-mix-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .cc-chip { display: inline-flex; align-items: center; gap: 2px; height: var(--h-s); padding: 0 2px 0 10px; border-radius: 12px; background: var(--accent-soft); color: var(--text); font-size: 11px; font-weight: 700; }
@@ -405,11 +410,15 @@
 .cc-mix-t { flex: 1; min-width: 0; font-size: 11px; color: var(--text-2); overflow-wrap: anywhere; }
 .cc-apply { height: var(--h-l); padding: 0 16px; border-radius: 10px; font-weight: 800; }
 
-/* narrow dock: two columns */
-.app.layout-control.kit-narrow .cc-grid, .app.layout-control.kit-tiny .cc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.app.layout-control.kit-narrow .cc-hero, .app.layout-control.kit-tiny .cc-hero,
-.app.layout-control.kit-narrow .cc-rounds, .app.layout-control.kit-tiny .cc-rounds,
-.app.layout-control.kit-narrow .cc-wide, .app.layout-control.kit-tiny .cc-wide,
-.app.layout-control.kit-narrow .cc-control, .app.layout-control.kit-tiny .cc-control,
-.app.layout-control.kit-narrow .cc-empty, .app.layout-control.kit-tiny .cc-empty,
-.app.layout-control.kit-narrow .cc-slider.wide, .app.layout-control.kit-tiny .cc-slider.wide { grid-column: span 2; }
+/* a docked panel under 560 px: two columns, the hero and the wide squares full width */
+.app.layout-control.kit-mid .cc-grid, .app.layout-control.kit-narrow .cc-grid, .app.layout-control.kit-tiny .cc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.app.layout-control.kit-mid .cc-hero, .app.layout-control.kit-narrow .cc-hero, .app.layout-control.kit-tiny .cc-hero,
+.app.layout-control.kit-mid .cc-rounds, .app.layout-control.kit-narrow .cc-rounds, .app.layout-control.kit-tiny .cc-rounds,
+.app.layout-control.kit-mid .cc-wide, .app.layout-control.kit-narrow .cc-wide, .app.layout-control.kit-tiny .cc-wide,
+.app.layout-control.kit-mid .cc-empty, .app.layout-control.kit-narrow .cc-empty, .app.layout-control.kit-tiny .cc-empty,
+.app.layout-control.kit-mid .cc-slider.wide, .app.layout-control.kit-narrow .cc-slider.wide, .app.layout-control.kit-tiny .cc-slider.wide { grid-column: span 2; }
+.app.layout-control.kit-tiny .cc-rounds { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-row: span 2; }
+
+/* the floating Assistant button sits at the bottom corner: the Mix keeps clear of it */
+.app.layout-control.fab-right .cc-mix { margin-right: 62px; }
+.app.layout-control.fab-left .cc-mix { margin-left: 62px; }

@@ -166,6 +166,7 @@ function sliderSquare(app, key, o) {
   require('./scrub').attach(input, { axis: o.wide ? 'x' : 'y', span: o.wide ? 220 : 140, min: o.min, max: o.max, step: o.step, fill: box, commit: (v) => o.commit(v) });
   input.addEventListener('change', (e) => { const v = Number(String(e.target.value).replace(',', '.')); if (Number.isFinite(v)) o.commit(Math.max(o.min, Math.min(o.max, v))); });
   if (o.dbl) input.addEventListener('dblclick', (e) => { e.preventDefault(); o.dbl(); });
+  if (o.toggle) box.appendChild(o.toggle);
   box.insertBefore(input, box.children[1]);
   if (o.unit) box.insertBefore(h('span', { class: 'cc-unit', 'aria-hidden': 'true' }, o.unit), box.children[2]);
   return box;
@@ -219,7 +220,6 @@ function squares(app, s, kind) {
     out.push(h('div', { class: 'cc-empty', 'data-key': 'cc-empty' }, icon('cursor', 'lg'), h('b', {}, s.ctx && s.ctx.comp ? 'Select a layer' : 'Open a composition'), h('span', {}, 'The squares follow what you select: motion for layers, ease and loops for keys, a typewriter for text.')));
     return out;
   }
-  if (mods.includes('control')) out.push(h('div', { class: 'cc-sq cc-control', 'data-key': 'cc-control' }, AE.controlFull(app, kind)));
   if (mods.includes('move')) {
     const m = cc.move;
     out.push(motionSquare(app, s, kind, n, cc));
@@ -229,7 +229,7 @@ function squares(app, s, kind) {
       roundSwitch(app, 'blur', 'Blur', 'drop', m.blur, () => setCc(app, 'move', { blur: !m.blur, on: true }), `Comes in sharp from a ${BLUR_PX} px blur (MOE Blur, removed by Restore)`),
       roundSwitch(app, 'over', 'Overshoot', 'scaleUp', m.over && m.dir === 'in' && m.kind !== 'fade', () => setCc(app, 'move', { over: !m.over, on: true }), 'Goes a little past and settles', m.dir !== 'in' ? 'Overshoot is for moves in' : m.kind === 'fade' ? 'A fade has nothing to overshoot' : null),
       roundSwitch(app, 'expo', 'Expo', 'easeCurve', m.ease === 'expo', () => setCc(app, 'move', { ease: m.ease === 'expo' ? 'snappy' : 'expo', on: true }), 'Expo ease (fast start, long soft landing) instead of Snappy'),
-      roundSwitch(app, 'screen', 'Screen order', 'stagger', m.screen && n > 1, () => setCc(app, 'move', { screen: !m.screen, on: true }), 'Stagger by where the layers are on screen (rows, left → right)', n > 1 ? null : 'Screen order needs two or more layers')));
+      roundSwitch(app, 'screen', 'Order', 'stagger', m.screen && n > 1, () => setCc(app, 'move', { screen: !m.screen, on: true }), 'Screen order: stagger by where the layers are on screen (rows, left → right)', n > 1 ? null : 'Screen order needs two or more layers')));
   }
   if (mods.includes('loop')) {
     const lp = cc.loop;
@@ -242,12 +242,11 @@ function squares(app, s, kind) {
   if (mods.includes('wiggle')) {
     const w = cc.wiggle;
     out.push(sliderSquare(app, 'wig', { wide: true, label: 'Wiggle', unit: 'px', value: w.amp, min: 0, max: 200, step: 1, sub: `${w.freq} × a second · drag sideways`, on: w.on, title: 'How far it wiggles — drag sideways; double-click the number to run it alone',
-      commit: (v) => setCc(app, 'wiggle', { amp: v, on: true }), dbl: () => { const r = soloRun(cc, kind, n, 'wiggle'); if (r) runOne(app, r); } }));
-    out.push(roundSwitch(app, 'wigon', w.on ? 'On' : 'Off', 'xWiggle', w.on, () => setCc(app, 'wiggle', { on: !w.on }), 'Wiggle in the Mix (on Position — the classic wiggle(freq, amount))'));
+      commit: (v) => setCc(app, 'wiggle', { amp: v, on: true }), dbl: () => { const r = soloRun(cc, kind, n, 'wiggle'); if (r) runOne(app, r); },
+      toggle: h('button', { class: `cc-mini-switch ${w.on ? 'on' : ''}`, 'data-key': 'cc-wig-on', role: 'switch', 'aria-checked': String(w.on), 'aria-label': 'Wiggle in the Mix', title: w.on ? 'In the Mix — click to take it out' : 'Add Wiggle to the Mix (on Position — wiggle(freq, amount))', onclick: () => setCc(app, 'wiggle', { on: !w.on }) }, h('i', {})) }));
   }
   if (mods.includes('type')) out.push(wideSquare(app, s, kind, n, 'type', { icon: 'typewriter', label: 'Typewriter', sub: 'letters appear one by one', title: 'Types the text in', page: 'text' }));
   if (mods.includes('beats')) out.push(wideSquare(app, s, kind, n, 'beats', { cls: 'cc-beats', icon: 'xPulse', label: 'Beats', sub: 'markers on the music\'s beats', art: wave(), title: 'A marker on every beat of the comp\'s sound layer (read with After Effects\' Convert Audio to Keyframes)' }));
-  if (kind !== 'keys') { const ctl = AE.controlTop(app, kind); if (ctl) out.push(h('div', { class: 'cc-sq cc-control slim', 'data-key': 'cc-control' }, ctl)); }
   return out;
 }
 
@@ -284,7 +283,11 @@ function build(app, s, body) {
   if (q) { content = h('div', { class: 'view ae-page cc-page' }, AE.searchResults(app, q)); title = 'Search'; }
   else if (s.view === 'home' || AE.TAB_IDS.includes(s.view) || require('./workflow').STAGE_IDS.includes(s.view)) {
     title = 'Control';
-    content = h('div', { class: 'view cc-page', 'data-key': 'cc-page' }, selectionHead(s, kind), h('div', { class: `cc-grid k-${kind}`, 'data-key': `cc-grid-${kind}` }, squares(app, s, kind)), libraries(app));
+    // the Motion Control (ease, anchor, align — their one place) rides as its own card: first for keys, after the squares for layers
+    const ctl = kind === 'none' ? null : AE.controlTop(app, kind);
+    const ctlCard = ctl ? h('div', { class: 'cc-control', 'data-key': 'cc-control' }, ctl) : null;
+    content = h('div', { class: 'view cc-page', 'data-key': 'cc-page' }, selectionHead(s, kind), kind === 'keys' ? ctlCard : null,
+      h('div', { class: `cc-grid k-${kind}`, 'data-key': `cc-grid-${kind}` }, squares(app, s, kind)), kind === 'keys' ? null : ctlCard, libraries(app));
   } else {
     const sec = studio.byId(s.view);
     title = (sec || { label: s.view.charAt(0).toUpperCase() + s.view.slice(1) }).label;

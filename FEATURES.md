@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Control style** (v0.70.0): a Control Center for motion — squares that are the tools (live Motion preview, drag sliders, round switches), the Mix and one Apply (docs/features/CONTROL_STYLE.md).
+
 **Glass with the sidebar** (v0.69.0): every shortcut on the left like MOE, no icon row on top.
 
 **Look & Feel** (v0.68.0): Backgrounds as one composer (live stage, Style · Motion · Colours, palettes that keep your look) (docs/features/LOOK_AND_FEEL.md).

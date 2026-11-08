@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.70.0] — 2026-11-08 — Control: a Control Center for motion
+### Added
+- **Control**, a fourth style (owner picked it from the from-scratch concepts): squares that ARE the tools, following the selection. **Motion** plays the move it will write (Fade · Pop · Rise · Slide · Spin, In / Out); **Duration** and **Stagger** are tall sliders you drag; **Blur · Overshoot · Expo · Order** are round switches; **Wiggle** (amount + on / off), **Typewriter** for text, **Loop** for keys, **Beats** for the music. Switched-on squares gather in the **Mix**: one line says what will happen (the tools' own cards), **one Apply** runs them in order through the executor — each verified, each its own Undo in History; it stops and says so at the first that does not fit. Double-click a square to run it alone; right-click opens its page. The Motion Control stays the one place for ease, anchor and align; Libraries open every page (docs/features/CONTROL_STYLE.md).
+- Sliders can be tall: `scrub.js attach` takes `axis: 'y'` + `span`.
+### Tests
+- tests/control.test.js (6); `audit-cut` covers four styles. 541 tests.
+
 ## [0.69.0] — 2026-11-07 — Glass with the sidebar
 ### Changed
 - **Glass uses MOE's sidebar** (owner): every shortcut — Select, Parent & Link, In / Out, Loop, Guides and the whole Quick Bar — sits on the left (names on ⇔ from 600 px, over the page when narrower); the icon row on top is gone, so the page starts higher. Glass keeps its look, its NOW card and its bottom dock.
