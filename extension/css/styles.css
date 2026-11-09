@@ -356,7 +356,11 @@
 .cc-slider.off { opacity: 0.55; cursor: default; }
 
 /* a small switch inside a square (Wiggle on / off) */
-.cc-mini-switch { position: absolute; top: 10px; right: 10px; z-index: 2; width: 34px; height: 20px; padding: 2px; border: 0; border-radius: 10px; background: var(--bg-active); cursor: pointer; }
+.cc-wig-head { position: absolute; top: 8px; right: 10px; z-index: 2; display: flex; align-items: center; gap: 8px; }
+.cc-wig-head .cc-seg-mini { width: auto; }
+.cc-wig-head .cc-segb { padding: 0 7px; }
+.cc-slider.wide .cc-num { margin-top: 18px; }
+.cc-mini-switch { position: relative; flex: none; width: 34px; height: 20px; padding: 2px; border: 0; border-radius: 10px; background: var(--bg-active); cursor: pointer; }
 .cc-mini-switch i { display: block; width: 16px; height: 16px; border-radius: 8px; background: var(--text-2); transition: transform var(--t), background var(--t); }
 .cc-mini-switch.on { background: var(--accent); }
 .cc-mini-switch.on i { transform: translateX(14px); background: var(--accent-ink); }
@@ -534,3 +538,37 @@
 /* polish (v0.73): a press glows — it never moves or resizes (UI rule) */
 .app.layout-control .cc-sq:active, .app.layout-control .cc-item:active, .app.layout-control .pc:active, .app.layout-control .cc-tab:active, .app.layout-control .st-tile:active { filter: brightness(1.18); box-shadow: 0 0 0 2px var(--accent-soft), 0 0 22px var(--accent-soft); }
 .app.layout-control .cc-apply:active, .app.layout-control .st-actbar .btn.primary:active { filter: brightness(1.12); box-shadow: 0 0 18px var(--accent-soft); }
+
+/* ---------- v0.74 premium motion (Control): things arrive, they never jump. Hover still only changes colour (UI rule);
+   these play once when an element appears (a page, a square), and Settings › Motion › Reduced turns them all off. */
+@keyframes cc-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes cc-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cc-glow { 0%, 100% { box-shadow: 0 0 6px var(--accent); } 50% { box-shadow: 0 0 14px var(--accent), 0 0 2px var(--accent); } }
+@keyframes cc-sheen { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(220%); } }
+.app.layout-control .cc-head, .app.layout-control .cc-pages { animation: cc-fade 320ms ease-out both; }
+.app.layout-control .cc-group, .app.layout-control .cc-page-hero, .app.layout-control .cc-control, .app.layout-control .cc-libs { animation: cc-rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.app.layout-control .cc-group:nth-of-type(2) { animation-delay: 60ms; }
+.app.layout-control .cc-group:nth-of-type(3) { animation-delay: 120ms; }
+.app.layout-control .cc-group:nth-of-type(4) { animation-delay: 170ms; }
+.app.layout-control .cc-grid > *, .app.layout-control .cc-items > *, .app.layout-control .cc-strips > *, .app.layout-control .bgc-grid > *, .app.layout-control .bk-clients > * { animation: cc-rise 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.app.layout-control .cc-grid > :nth-child(2), .app.layout-control .cc-items > :nth-child(2), .app.layout-control .cc-strips > :nth-child(2), .app.layout-control .bgc-grid > :nth-child(2), .app.layout-control .bk-clients > :nth-child(2) { animation-delay: 40ms; }
+.app.layout-control .cc-grid > :nth-child(3), .app.layout-control .cc-items > :nth-child(3), .app.layout-control .cc-strips > :nth-child(3), .app.layout-control .bgc-grid > :nth-child(3), .app.layout-control .bk-clients > :nth-child(3) { animation-delay: 80ms; }
+.app.layout-control .cc-grid > :nth-child(4), .app.layout-control .cc-items > :nth-child(4), .app.layout-control .cc-strips > :nth-child(4), .app.layout-control .bgc-grid > :nth-child(4), .app.layout-control .bk-clients > :nth-child(4) { animation-delay: 120ms; }
+.app.layout-control .cc-grid > :nth-child(n+5), .app.layout-control .cc-items > :nth-child(n+5), .app.layout-control .cc-strips > :nth-child(n+5), .app.layout-control .bgc-grid > :nth-child(n+5) { animation-delay: 150ms; }
+.app.layout-control .bk-hero, .app.layout-control .bk-panel { animation: cc-rise 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.app.layout-control .cc-hero-cap { animation: cc-fade 500ms 120ms ease-out both; }
+.app.layout-control .cc-on-dot { animation: cc-glow 2.4s ease-in-out infinite; }
+.app.layout-control .cc-tab, .app.layout-control .cc-segb, .app.layout-control .bk-tab { transition: background-color 180ms ease, color 180ms ease, box-shadow 180ms ease; }
+.app.layout-control .cc-round { transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease, box-shadow 200ms ease; }
+.app.layout-control .cc-round[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--accent-soft), 0 6px 16px rgba(0, 0, 0, 0.35); }
+/* the one Apply breathes a soft light across itself while something is waiting in the Mix */
+.app.layout-control .cc-apply { position: relative; overflow: hidden; }
+.app.layout-control .cc-apply:not([disabled])::after { content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0)); animation: cc-sheen 3.6s ease-in-out infinite; pointer-events: none; }
+.app.layout-control .cc-chip { animation: cc-rise 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+/* My mixes (v0.74) */
+.cc-mix-saved { display: flex; flex-wrap: wrap; gap: 6px; }
+.cc-saved { display: inline-flex; align-items: center; gap: 2px; padding: 0 2px 0 0; border-radius: var(--r-pill); border: 1px solid var(--line); background: var(--cc-sq); }
+.cc-saved-b { display: inline-flex; align-items: center; gap: 6px; height: var(--h-m); padding: 0 6px 0 12px; border: 0; border-radius: var(--r-pill); background: none; color: var(--text); font: 700 11.5px var(--font); cursor: pointer; }
+.cc-saved-b:hover { background: var(--bg-hover); }
+.cc-saved-b .svg-i { color: var(--accent); }

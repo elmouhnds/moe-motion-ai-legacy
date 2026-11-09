@@ -673,6 +673,10 @@ function createApp(root, services, env = {}) {
     } else if ((e.ctrlKey || e.metaKey) && /^Digit[1-5]$/.test(e.code) && require('./layouts').layoutOf(app) === 'control') {
       // Control (v0.72): Ctrl+1…5 = its pages Move · Text · Design · Look · Deliver
       e.preventDefault(); const P = require('./layoutControlPages'); app.services.store.set(P.PAGE_KEY, P.PAGES[Number(e.code.slice(5)) - 1].id); app.state.set({ aeQ: '' }); app.go('home');
+    } else if (!typing && (e.key === 'Enter' || e.key === 'Escape') && !e.ctrlKey && !e.altKey && require('./layouts').layoutOf(app) === 'control' && app.state.get().view === 'home' && !app.state.get().modal && !app.paletteOpen) {
+      // Control (v0.74): Enter applies the Mix, Esc switches it off — only when something is in it
+      const C = require('./layoutControl'); const st = app.state.get(); const cc = C.ccOf(st);
+      if (Object.keys(cc).some((k) => cc[k].on)) { e.preventDefault(); if (e.key === 'Enter') C.applyMix(app); else app.state.set({ cc: Object.assign({}, cc, ...Object.keys(cc).map((k) => ({ [k]: Object.assign({}, cc[k], { on: false }) }))) }); }
     } else if (e.key === 'F4' && !e.ctrlKey && !e.altKey) { e.preventDefault(); app.repeatLast(); }
     else if ((e.key === 'q' || e.key === 'Q') && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat && !app.paletteOpen && !app.state.get().modal) {
       const pieUi = services.settings.get().ui.pie || {};

@@ -23,12 +23,19 @@ const MOVES = [['fade', 'Fade'], ['scale', 'Pop'], ['moveBT', 'Rise'], ['moveRL'
 const LOOPS = [['loopCycle', 'Cycle'], ['loopPingPong', 'Ping-Pong'], ['loopOffset', 'Offset']];
 const DEFAULTS = {
   move: { on: false, kind: 'scale', dir: 'in', duration: 0.6, ease: 'snappy', over: true, blur: false, screen: false, stagger: 0.08 },
-  wiggle: { on: false, freq: 2, amp: 30 },
+  wiggle: { on: false, freq: 2, amp: 30, target: 'position' },
   loop: { on: false, preset: 'loopCycle' },
   type: { on: false },
   beats: { on: false }
 };
 const BLUR_PX = 24;
+/** v0.74: what Wiggle moves — each is the expression library's own preset (amount = its amp) */
+const WIGGLES = [['position', 'Position', 'wiggle', 'px', 200], ['rotation', 'Rotation', 'wiggleRot', '°', 90], ['scale', 'Scale', 'wiggleScale', '%', 50]];
+const wiggleOf = (w) => WIGGLES.find(([id]) => id === w.target) || WIGGLES[0];
+/** v0.74: the numbers you set stay for next time (the switches do not — nothing is armed when the panel opens) */
+const TUNE_KEY = 'cc-tune';
+const MIX_KEY = 'cc-mixes';
+const numbersOf = (cc) => { const out = {}; for (const k of Object.keys(cc)) { out[k] = Object.assign({}, cc[k]); delete out[k].on; } return out; };
 const RISE_PX = 120;
 
 /** The Control state (switches and numbers), defaults filled in. */
@@ -40,7 +47,28 @@ function ccOf(s) {
 }
 function setCc(app, key, patch) {
   app.state.set((s) => { const cc = ccOf(s); cc[key] = Object.assign({}, cc[key], patch); return { cc }; });
+  try { app.services.store.set(TUNE_KEY, numbersOf(ccOf(app.state.get()))); } catch (e) { /* the store is optional in tests */ }
 }
+/** v0.74: the panel opens with your last numbers (switches off). */
+function restoreTune(app) {
+  const saved = app.services.store.get(TUNE_KEY, null);
+  if (!saved || typeof saved !== 'object') return;
+  const cc = {};
+  for (const k of Object.keys(DEFAULTS)) cc[k] = Object.assign({}, DEFAULTS[k], saved[k] || {}, { on: false });
+  app.state.set({ cc });
+}
+/** v0.74 My mixes: a Mix you use often, saved by name (its squares and numbers). Pure helpers + store. */
+const mixesOf = (app) => (app.services.store.get(MIX_KEY, []) || []).filter((m) => m && m.name && m.cc).slice(0, 12);
+function saveMix(app, name) {
+  const cc = ccOf(app.state.get());
+  const on = Object.keys(cc).filter((k) => cc[k].on);
+  if (!on.length || !String(name || '').trim()) return null;
+  const mix = { id: `mix_${Date.now().toString(36)}`, name: String(name).trim().slice(0, 28), cc: JSON.parse(JSON.stringify(cc)) };
+  app.services.store.set(MIX_KEY, [mix].concat(mixesOf(app)).slice(0, 12));
+  return mix;
+}
+const loadMix = (app, mix) => app.state.set({ cc: ccOf({ cc: mix.cc }) });
+const removeMix = (app, id) => app.services.store.set(MIX_KEY, mixesOf(app).filter((m) => m.id !== id));
 
 /** Which squares this selection gets (pure). */
 function modulesFor(kind) {
@@ -70,7 +98,7 @@ function plan(cc, kind, nLayers) {
     } });
   }
   if (mods.includes('type') && cc.type.on) runs.push({ id: 'type', label: 'Typewriter', tool: 'quick.typewriter', args: {} });
-  if (mods.includes('wiggle') && cc.wiggle.on) runs.push({ id: 'wiggle', label: `Wiggle ${cc.wiggle.amp}`, tool: 'expressions.quick', args: { preset: 'wiggle', freq: cc.wiggle.freq, amp: cc.wiggle.amp } });
+  if (mods.includes('wiggle') && cc.wiggle.on) { const [, wl, preset] = wiggleOf(cc.wiggle); runs.push({ id: 'wiggle', label: `Wiggle ${wl === 'Position' ? '' : `${wl} `}${cc.wiggle.amp}`, tool: 'expressions.quick', args: { preset, freq: cc.wiggle.freq, amp: cc.wiggle.amp } }); }
   if (mods.includes('loop') && cc.loop.on) runs.push({ id: 'loop', label: `Loop ${(LOOPS.find(([id]) => id === cc.loop.preset) || LOOPS[0])[1]}`, tool: 'expressions.quick', args: { preset: cc.loop.preset } });
   if (mods.includes('beats') && cc.beats.on) runs.push({ id: 'beats', label: 'Beat Markers', tool: 'markers.beats', args: {} });
   return runs;
@@ -261,13 +289,27 @@ function squares(app, s, kind) {
   }
   if (mods.includes('wiggle')) {
     const w = cc.wiggle;
-    add.push(sliderSquare(app, 'wig', { wide: true, label: 'Wiggle', unit: 'px', value: w.amp, min: 0, max: 200, step: 1, sub: `${w.freq} × a second · drag sideways`, on: w.on, title: 'How far it wiggles — drag sideways; double-click the number to run it alone',
+    const [, wl, , unit, max] = wiggleOf(w);
+    add.push(sliderSquare(app, 'wig', { wide: true, label: `Wiggle ${wl}`, unit, value: Math.min(w.amp, max), min: 0, max, step: 1, sub: `${w.freq} × a second · drag sideways`, on: w.on, title: 'How far it wiggles — drag sideways; double-click the number to run it alone',
       commit: (v) => setCc(app, 'wiggle', { amp: v, on: true }), dbl: () => { const r = soloRun(cc, kind, n, 'wiggle'); if (r) runOne(app, r); },
-      toggle: h('button', { class: `cc-mini-switch ${w.on ? 'on' : ''}`, 'data-key': 'cc-wig-on', role: 'switch', 'aria-checked': String(w.on), 'aria-label': 'Wiggle in the Mix', title: w.on ? 'In the Mix — click to take it out' : 'Add Wiggle to the Mix (on Position — wiggle(freq, amount))', onclick: () => setCc(app, 'wiggle', { on: !w.on }) }, h('i', {})) }));
+      toggle: h('span', { class: 'cc-wig-head' },
+        h('span', { class: 'cc-seg cc-seg-mini', role: 'radiogroup', 'aria-label': 'Wiggle what' }, WIGGLES.map(([id, label]) => h('button', { class: 'cc-segb', role: 'radio', 'data-key': `cc-wt-${id}`, 'aria-checked': String(wiggleOf(w)[0] === id), title: `Wiggle ${label}`, onclick: () => setCc(app, 'wiggle', { target: id, amp: Math.min(w.amp, WIGGLES.find((x) => x[0] === id)[4]), on: true }) }, label.slice(0, 3)))),
+        h('button', { class: `cc-mini-switch ${w.on ? 'on' : ''}`, 'data-key': 'cc-wig-on', role: 'switch', 'aria-checked': String(w.on), 'aria-label': 'Wiggle in the Mix', title: w.on ? 'In the Mix — click to take it out' : `Add Wiggle ${wl} to the Mix`, onclick: () => setCc(app, 'wiggle', { on: !w.on }) }, h('i', {}))) }));
   }
   if (mods.includes('type')) add.push(wideSquare(app, s, kind, n, 'type', { icon: 'typewriter', label: 'Typewriter', sub: 'letters appear one by one', title: 'Types the text in', page: 'text' }));
   if (mods.includes('beats')) add.push(wideSquare(app, s, kind, n, 'beats', { cls: 'cc-beats', icon: 'xPulse', label: 'Beats', sub: 'markers on the music\'s beats', art: wave(), title: 'A marker on every beat of the comp\'s sound layer (read with After Effects\' Convert Audio to Keyframes)' }));
   return { empty: null, move, add };
+}
+
+/** v0.74 My mixes: one click loads a saved Mix, double-click loads and applies it, × forgets it. */
+function myMixes(app, s, kind) {
+  const list = mixesOf(app);
+  if (!list.length || kind === 'none') return null;
+  return h('section', { class: 'cc-group cc-mixes', 'data-key': 'cc-g-mixes', 'aria-label': 'My mixes' }, h('div', { class: 'cc-cap' }, 'My mixes'),
+    h('div', { class: 'cc-mix-saved' }, list.map((m) => h('span', { class: 'cc-saved', 'data-key': `cc-mx-${m.id}` },
+      h('button', { class: 'cc-saved-b', title: `${m.name}\nClick: load it into the Mix · double-click: load and apply`, onclick: () => loadMix(app, m), ondblclick: (e) => { e.preventDefault(); loadMix(app, m); applyMix(app); } },
+        icon('layers', 'xs'), h('span', {}, m.name)),
+      h('button', { class: 'cc-chip-x', 'aria-label': `Forget ${m.name}`, title: 'Forget this mix', onclick: () => { removeMix(app, m.id); app.render(); } }, '×')))));
 }
 
 /** The Mix bar: what will happen, said by the tools' own cards, and the one Apply. */
@@ -292,11 +334,13 @@ function mixBar(app, s, kind) {
     h('div', { class: 'cc-mix-row' },
       h('span', { class: 'cc-mix-dot', 'aria-hidden': 'true' }),
       h('span', { class: 'cc-mix-t', title: warn || '' }, notReady ? `${notReady.r.label}: ${notReady.rd.hint}` : warn || `${runs.length > 1 ? `${runs.length} runs` : '1 run'}${kind === 'keys' ? '' : ` on ${n} layer${n === 1 ? '' : 's'}`} · each can be undone in History`),
-      h('button', { class: 'btn ghost sm', 'data-key': 'cc-clear', title: 'Switch everything off', onclick: () => app.state.set((x) => { const c2 = ccOf(x); Object.keys(c2).forEach((k) => { c2[k].on = false; }); return { cc: c2 }; }) }, 'Clear'),
-      h('button', { class: 'btn primary cc-apply', 'data-key': 'cc-apply', disabled: !!(notReady || s.running), title: notReady ? notReady.rd.hint : runs.map((r) => r.label).join(' → '), onclick: () => applyMix(app) }, icon('play', 'sm'), 'Apply')));
+      h('button', { class: 'icon-btn', 'data-key': 'cc-save-mix', title: 'Save this Mix by name (My mixes)', 'aria-label': 'Save this mix', onclick: async () => { const name = await app.dialog({ title: 'Save this mix', body: runs.map((r) => r.label).join(' + '), input: runs.map((r) => r.label).join(' + ').slice(0, 28), okLabel: 'Save' }); if (name && saveMix(app, name)) { app.toast(`${name} saved — My mixes`, 2200, 'ok'); app.render(); } } }, icon('star', 'sm')),
+      h('button', { class: 'btn ghost sm', 'data-key': 'cc-clear', title: 'Switch everything off (Esc)', onclick: () => app.state.set((x) => { const c2 = ccOf(x); Object.keys(c2).forEach((k) => { c2[k].on = false; }); return { cc: c2 }; }) }, 'Clear'),
+      h('button', { class: 'btn primary cc-apply', 'data-key': 'cc-apply', disabled: !!(notReady || s.running), title: notReady ? notReady.rd.hint : `${runs.map((r) => r.label).join(' → ')} (Enter)`, onclick: () => applyMix(app) }, icon('play', 'sm'), 'Apply')));
 }
 
 function build(app, s, body) {
+  if (!s.cc && !build.restored) { build.restored = true; setTimeout(() => restoreTune(app), 0); }
   const kind = A.profile(s.ctx);
   const q = (s.aeQ || '').trim();
   let content, title, page = 'move';
@@ -312,7 +356,7 @@ function build(app, s, body) {
       sq.empty ? h('div', { class: 'cc-grid', 'data-key': 'cc-grid-none' }, sq.empty) : null,
       kind === 'keys' ? h('section', { class: 'cc-group', 'data-key': 'cc-g-keys', 'aria-label': 'Keys' }, h('div', { class: 'cc-cap' }, 'Keys'), controlCard(app, s, kind)) : null,
       group('move', 'Move', sq.move), group('add', 'Add', sq.add),
-      kind === 'keys' ? null : controlCard(app, s, kind), libraries(app));
+      myMixes(app, s, kind), kind === 'keys' ? null : controlCard(app, s, kind), libraries(app));
   } else {
     const sec = studio.byId(s.view);
     title = (sec || { label: s.view.charAt(0).toUpperCase() + s.view.slice(1) }).label;
@@ -326,4 +370,4 @@ function build(app, s, body) {
     content, bottom: !home ? null : page === 'move' ? mixBar(app, s, kind) : require('./layoutControlPages').pickBar(app, s, page), overlay: s.aeMenu ? AE.panelMenu(app, s) : null, menuBtn: AE.menuButton(app, s) };
 }
 
-module.exports = { build, plan, modulesFor, ccOf, soloRun, applyMix, MOVES, LOOPS, DEFAULTS, BLUR_PX };
+module.exports = { build, plan, modulesFor, ccOf, soloRun, applyMix, MOVES, LOOPS, DEFAULTS, BLUR_PX, WIGGLES, numbersOf, saveMix, mixesOf, loadMix, removeMix, restoreTune, TUNE_KEY, MIX_KEY };

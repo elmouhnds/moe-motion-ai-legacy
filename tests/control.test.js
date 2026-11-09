@@ -175,3 +175,28 @@ test('v0.73: palette cards draw the real background (your look, or the tile\'s o
   assert.equal(EX.seedOnce(store2, own), 0, 'never over your own clients');
   assert.match(fs.readFileSync(path.join(__dirname, '../extension/app/ui/chrome.js'), 'utf8'), /ui\.layout === 'moe' \|\| ui\.layout === 'control'/);
 });
+
+test('v0.74: Wiggle moves Position / Rotation / Scale (the library\'s own presets); numbers are kept, switches are not; My mixes', () => {
+  const rot = C.plan(on({ wiggle: { on: true, target: 'rotation', amp: 12 } }), 'layer', 1)[0];
+  assert.deepEqual([rot.tool, rot.args.preset, rot.args.amp, rot.label], ['expressions.quick', 'wiggleRot', 12, 'Wiggle Rotation 12']);
+  assert.equal(C.plan(on({ wiggle: { on: true, target: 'scale' } }), 'layer', 1)[0].args.preset, 'wiggleScale');
+  assert.equal(C.plan(on({ wiggle: { on: true } }), 'layer', 1)[0].args.preset, 'wiggle', 'Position by default');
+  const E = require('../extension/features/expressions/quick');
+  for (const [, , preset] of C.WIGGLES) assert.ok(E.PRESETS[preset] && 'amp' in E.PRESETS[preset].nums, preset);
+  const nums = C.numbersOf(on({ move: { on: true, duration: 1.2 } }));
+  assert.equal(nums.move.duration, 1.2); assert.ok(!('on' in nums.move), 'a switch is never saved on');
+  // My mixes: saved by name with its squares, loaded back, forgotten
+  const mem = new Map(); let st = { cc: on({ move: { on: true, kind: 'fade' }, wiggle: { on: true, amp: 9 } }) };
+  const app = { services: { store: { get: (k, d) => (mem.has(k) ? mem.get(k) : d), set: (k, v) => mem.set(k, v) } }, state: { get: () => st, set: (p) => { st = Object.assign({}, st, typeof p === 'function' ? p(st) : p); } } };
+  assert.equal(C.saveMix(app, '   '), null, 'a name is needed');
+  const m = C.saveMix(app, 'Soft fade + wiggle');
+  assert.equal(C.mixesOf(app).length, 1);
+  st = { cc: on({}) }; C.loadMix(app, m);
+  assert.deepEqual(C.plan(C.ccOf(st), 'layer', 1).map((r) => r.label), ['Fade In', 'Wiggle 9']);
+  C.removeMix(app, m.id); assert.equal(C.mixesOf(app).length, 0);
+  st = { cc: on({}) }; assert.equal(C.saveMix(app, 'empty'), null, 'an empty Mix is not saved');
+  const sh = fs.readFileSync(path.join(__dirname, '../extension/app/ui/shell.js'), 'utf8');
+  assert.match(sh, /Control \(v0\.74\): Enter applies the Mix, Esc switches it off/);
+  const css = fs.readFileSync(path.join(__dirname, '../extension/css/styles.css'), 'utf8');
+  assert.ok(/@keyframes cc-rise/.test(css) && /cc-apply:not\(\[disabled\]\)::after/.test(css), 'premium motion is there (Reduced turns it off globally)');
+});
