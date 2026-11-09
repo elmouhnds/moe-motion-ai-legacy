@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.73.0] — 2026-11-09 — Palettes as backgrounds, Brand organised, Control everywhere
+### Changed (owner: "the background colours are shown badly", "the brand kit is full of information and not organised", "do the rest of the plan")
+- **Palette cards** (`app/ui/paletteCard.js`), in every style: each palette is a still frame of the real background (`bgDraw.bgFrame`) in YOUR style — a complete look ✦ in its own — with its colours fanned on top and the name over a fade. Backgrounds (all four styles) and Control › Design; Design's big square shows the real background too. Only the composer's stage animates.
+- **Brand Kit, organised** (docs/features/BRAND_KIT_LAYOUT.md): client cards, a client card in the brand's own colours and fonts, the four actions, then tabs Colours · Type · Guide · Manage.
+- **Three example clients** — Nile Roast, Pulse Pay, Sahara Atelier — saved the first time Brand opens with no clients (never over yours); Manage adds them back.
+- **Control's library pages** (plan 2): no banners; tiles as Control squares, pill tabs and chips, the Apply bar floats like the Mix; Brand in Control's look.
+- **Polish** (plan 3): a press glows (never moves); canvases redraw when they grow taller (`widgets.prep`); light theme checked.
+### Tests
+- tests/control.test.js +1 (palette card args, the examples: valid, readable body text, an ease each, seeded once and never over your clients; no banners in Control); tests/lookfeel.test.js updated. 546 tests.
+
 ## [0.72.0] — 2026-11-09 — Control has pages
 ### Added (owner: "only this page? no other pages?")
 - **Five pages** under the head, as a tab row (Ctrl+1…5; the page that fits the selection gets a dot, it never switches by itself): **Move** (the squares + the Mix), **Text**, **Design**, **Look**, **Deliver** (`app/ui/layoutControlPages.js`).

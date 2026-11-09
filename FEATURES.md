@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Palettes & Brand** (v0.73.0): palettes shown as real backgrounds in every style; Brand organised (client cards, tabs) with 3 example clients (docs/features/BRAND_KIT_LAYOUT.md).
+
 **Control pages** (v0.72.0): Move · Text · Design · Look · Deliver — squares of real tools with live previews, pick and apply.
 
 **Control layout** (v0.71.0): more room for the squares — one head line, preview-filled Motion square, tune block, Move / Add groups, folded Motion Control, one-row Libraries, a thin Mix.
