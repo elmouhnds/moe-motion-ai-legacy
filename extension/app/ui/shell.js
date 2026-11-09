@@ -670,6 +670,9 @@ function createApp(root, services, env = {}) {
     else if ((e.ctrlKey || e.metaKey) && /^Digit[1-6]$/.test(e.code) && require('./layouts').layoutOf(app) === 'moe') {
       // Classic: Ctrl+1…6 = the six tabs (Keys · Animate · Layer · Design · Effect · Comp)
       e.preventDefault(); app.state.set({ aeQ: '', aeTabMenu: null }); app.go(require('./layoutAE').TAB_IDS[Number(e.code.slice(5)) - 1]);
+    } else if ((e.ctrlKey || e.metaKey) && /^Digit[1-5]$/.test(e.code) && require('./layouts').layoutOf(app) === 'control') {
+      // Control (v0.72): Ctrl+1…5 = its pages Move · Text · Design · Look · Deliver
+      e.preventDefault(); const P = require('./layoutControlPages'); app.services.store.set(P.PAGE_KEY, P.PAGES[Number(e.code.slice(5)) - 1].id); app.state.set({ aeQ: '' }); app.go('home');
     } else if (e.key === 'F4' && !e.ctrlKey && !e.altKey) { e.preventDefault(); app.repeatLast(); }
     else if ((e.key === 'q' || e.key === 'Q') && !typing && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat && !app.paletteOpen && !app.state.get().modal) {
       const pieUi = services.settings.get().ui.pie || {};

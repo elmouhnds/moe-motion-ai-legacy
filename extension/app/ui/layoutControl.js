@@ -299,13 +299,16 @@ function mixBar(app, s, kind) {
 function build(app, s, body) {
   const kind = A.profile(s.ctx);
   const q = (s.aeQ || '').trim();
-  let content, title;
+  let content, title, page = 'move';
   if (q) { content = h('div', { class: 'view ae-page cc-page' }, AE.searchResults(app, q)); title = 'Search'; }
   else if (s.view === 'home' || AE.TAB_IDS.includes(s.view) || require('./workflow').STAGE_IDS.includes(s.view)) {
     title = 'Control';
     const sq = squares(app, s, kind);
     const group = (id, label, kids) => kids.length ? h('section', { class: `cc-group g-${id}`, 'data-key': `cc-g-${id}`, 'aria-label': label }, h('div', { class: 'cc-cap' }, label), h('div', { class: `cc-grid k-${kind}`, 'data-key': `cc-grid-${id}` }, kids)) : null;
-    content = h('div', { class: 'view cc-page', 'data-key': 'cc-page' }, selectionHead(app, s, kind),
+    const P = require('./layoutControlPages');
+    page = P.pageOf(app);
+    content = page !== 'move' ? h('div', { class: `view cc-page p-${page}`, 'data-key': `cc-page-${page}` }, selectionHead(app, s, kind), P.tabs(app, s, kind), P.render(app, s, page))
+      : h('div', { class: 'view cc-page', 'data-key': 'cc-page' }, selectionHead(app, s, kind), P.tabs(app, s, kind),
       sq.empty ? h('div', { class: 'cc-grid', 'data-key': 'cc-grid-none' }, sq.empty) : null,
       kind === 'keys' ? h('section', { class: 'cc-group', 'data-key': 'cc-g-keys', 'aria-label': 'Keys' }, h('div', { class: 'cc-cap' }, 'Keys'), controlCard(app, s, kind)) : null,
       group('move', 'Move', sq.move), group('add', 'Add', sq.add),
@@ -320,7 +323,7 @@ function build(app, s, body) {
   // v0.71: on the home the search is an icon in the header (Ctrl+K) and the comp line lives in the head — the squares start higher
   const search = h('button', { class: 'icon-btn cc-search', 'data-key': 'cc-search', title: 'Search tools & presets (Ctrl+K)', 'aria-label': 'Search tools and presets', onclick: () => require('./palette').open(app) }, icon('search', 'sm'));
   return { top: home ? [require('./quickbar').strip(app)] : [require('./quickbar').strip(app), AE.searchBox(app, s)], title, titleExtra: home ? search : null, hideCtx: home && !s.hostError,
-    content, bottom: home ? mixBar(app, s, kind) : null, overlay: s.aeMenu ? AE.panelMenu(app, s) : null, menuBtn: AE.menuButton(app, s) };
+    content, bottom: !home ? null : page === 'move' ? mixBar(app, s, kind) : require('./layoutControlPages').pickBar(app, s, page), overlay: s.aeMenu ? AE.panelMenu(app, s) : null, menuBtn: AE.menuButton(app, s) };
 }
 
 module.exports = { build, plan, modulesFor, ccOf, soloRun, applyMix, MOVES, LOOPS, DEFAULTS, BLUR_PX };

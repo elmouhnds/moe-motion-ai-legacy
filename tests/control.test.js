@@ -111,3 +111,37 @@ test('v0.71 layout: the comp line moves into the head, search is a header icon, 
   const css = fs.readFileSync(path.join(__dirname, '../extension/css/styles.css'), 'utf8');
   assert.match(css, /\.cc-lib-row \{ display: flex;[^}]*overflow-x: auto/, 'Libraries scroll sideways in one row');
 });
+
+test('v0.72 pages: Move · Text · Design · Look · Deliver — every square is a real tool with valid args, applied through the library', async () => {
+  const P = require('../extension/app/ui/layoutControlPages');
+  assert.deepEqual(P.PAGES.map((p) => p.id), ['move', 'text', 'design', 'look', 'deliver']);
+  const { services } = await createTestServices(studioComp([box('A', 400)], { comp: { time: 1 } }));
+  const store = new Map();
+  const app = { services: Object.assign({}, services, { store: { get: (k, d) => (store.has(k) ? store.get(k) : d), set: (k, v) => store.set(k, v) } }) };
+  assert.equal(P.pageOf(app), 'move', 'Move is the first page');
+  store.set(P.PAGE_KEY, 'nope'); assert.equal(P.pageOf(app), 'move', 'an unknown page falls back to Move');
+  const { validateArgs, defaults } = require('../extension/core/schema');
+  for (const page of ['text', 'design', 'look', 'deliver']) {
+    for (const kind of ['in', 'out']) {
+      const items = P.itemsOf(app, page, { ccText: { kind } });
+      assert.ok(items.length >= 4, `${page}: ${items.length} squares`);
+      for (const it of items) {
+        const tool = services.registry.get(it.tile.tool);
+        assert.ok(tool, `${page}/${it.key}: ${it.tile.tool} is registered`);
+        const v = validateArgs(tool.params || {}, Object.assign(defaults(tool.params || {}), it.tile.args));
+        assert.ok(v.ok, `${page}/${it.key}: ${v.errors}`);
+      }
+      if (page !== 'text') break;
+    }
+  }
+  // the Text page shows In or Out presets; the picked one is the first until you pick
+  const ins = P.itemsOf(app, 'text', { ccText: { kind: 'in' } }).filter((x) => x.preset);
+  assert.ok(ins.length && ins.every((x) => x.preset.kind === 'in'));
+  assert.equal(P.pickedOf(app, 'text', { ccText: { kind: 'in' } }).key, ins[0].key);
+  assert.equal(P.pickedOf(app, 'design', { ccPick: { design: 'backgrounds/bg-auroraProduct' } }).key, 'backgrounds/bg-auroraProduct');
+  // the page tab that fits the selection gets a dot — the page itself never switches
+  assert.equal(P.fitsPage('text'), 'text'); assert.equal(P.fitsPage('layers'), 'move');
+  const src = fs.readFileSync(path.join(__dirname, '../extension/app/ui/layoutControlPages.js'), 'utf8');
+  assert.match(src, /lib\(\)\.applyNow\(app, it\.tile, it\.section\)/, 'Apply goes through the library (readiness → runTool)');
+  assert.match(fs.readFileSync(path.join(__dirname, '../extension/app/ui/shell.js'), 'utf8'), /Control \(v0\.72\): Ctrl\+1…5/);
+});

@@ -14,9 +14,10 @@ function draw(entry, now) {
   const { canvas, preset, text } = entry;
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
+  // v0.72: the height counts too — a canvas that grows taller (Control's hero) redraws at its own size
   const W = canvas.clientWidth;
   const H = canvas.clientHeight;
-  if (canvas.width !== Math.round(W * dpr)) { canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); }
+  if (canvas.width !== Math.round(W * dpr) || canvas.height !== Math.round(H * dpr)) { canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); }
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
   const spec = entry.spec || (entry.spec = buildSpec(preset, hasArabic(text) && preset.basedOn < 3 ? { basedOn: 3 } : {}));
