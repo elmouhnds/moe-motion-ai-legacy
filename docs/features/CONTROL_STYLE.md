@@ -43,6 +43,10 @@ Tabs under the head (Ctrl+1…5): **Move** (above) · **Text** · **Design** · 
 - Look: Styles, Glass, Zoom & Focus; links to Compositing, Expressions. Deliver: social safe zones, composition guides; links to Deliver, Layout & Grid.
 - Click picks (big on top, the bar says what it will do from the tool's card, one Apply); double-click applies; right-click / All › open the library. Tiles that need setup stay on their library page.
 
+## Alive (v0.74)
+- The big squares play in Calm; small page squares play under the mouse. Premium motion is CSS that plays once when an element appears (rise + stagger, caption fade, breathing on-dot, a light across Apply while the Mix waits); Reduced motion turns it off; hover changes colour only.
+- Wiggle: Position · Rotation · Scale (the library's presets). Numbers kept (`cc-tune`), switches off at start. My mixes (☆ in the Mix bar). Enter applies, Esc empties.
+
 ## The Mix
 `layoutControl.plan(cc, kind, nLayers)` is pure (tested): the runs in order — the move first, then Typewriter, Wiggle,
 Loop, Beats — each as `{ tool, args }` of a registered tool. Squares the selection does not show never run.

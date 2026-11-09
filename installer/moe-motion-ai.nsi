@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.73: Brand organised with three example clients; palettes shown as real backgrounds."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.73: البراند كيت متنظم ومعاه 3 عملاء أمثلة، والألوان بتتعرض كخلفيات حقيقية"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.74: Control comes alive — live previews, gentle motion, My mixes, Wiggle on Rotation and Scale."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.74: Control بقى حي — معاينات شغالة وحركة خفيفة وMy mixes"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

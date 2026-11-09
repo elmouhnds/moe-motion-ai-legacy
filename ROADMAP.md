@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.80 — Control comes alive ✅ (v0.74.0)
+- Live previews, premium motion, Wiggle target, kept numbers, My mixes, Enter / Esc. Next: one Ctrl+Z per Mix.
+
 ## M1.79 — Palettes, Brand, Control everywhere ✅ (v0.73.0)
 - Palette cards in every style; Brand organised + 3 example clients; Control library pages; polish.
 

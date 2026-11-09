@@ -2,6 +2,20 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.74.0] — 2026-11-09 — Control comes alive
+### Added (owner: "finish the plan, make the preview moving and live, and a light premium animation touch")
+- **Live previews**: Control's big squares (Move, and every page's hero) play in Calm too — they were still because Calm only played squares under the mouse; small page squares play under the mouse. The live preview page plays everything (Full).
+- **Premium motion** (Control, CSS only): the head and page tabs fade in, groups and squares rise in with a short stagger, the hero caption fades up, the on-dot breathes, round switches and tabs ease their colours, a soft light crosses Apply while something waits in the Mix, Mix chips rise in. They play once when an element appears; hover still changes colour only; Settings › Motion › Reduced turns them off.
+- **Wiggle Position · Rotation · Scale** (the library's Wiggle, Wiggle Rotation, Wiggle Scale presets; px / ° / %).
+- **Your numbers stay** (duration, stagger, blur, wiggle… in `cc-tune`); switches start off.
+- **My mixes**: ☆ in the Mix bar saves the Mix by name; it waits under My mixes (click loads it, double-click loads and applies, × forgets).
+- **Enter** applies the Mix, **Esc** empties it (Control's home, when something is in it).
+### Not done (said plainly)
+- One Ctrl+Z for a whole Mix: each run is still its own History entry (joining runs needs an executor change — next).
+- Beats square with the real waveform: reading the sound needs After Effects' Convert Audio to Keyframes (a write), so it stays a click.
+### Tests
+- tests/control.test.js +1. 547 tests.
+
 ## [0.73.0] — 2026-11-09 — Palettes as backgrounds, Brand organised, Control everywhere
 ### Changed (owner: "the background colours are shown badly", "the brand kit is full of information and not organised", "do the rest of the plan")
 - **Palette cards** (`app/ui/paletteCard.js`), in every style: each palette is a still frame of the real background (`bgDraw.bgFrame`) in YOUR style — a complete look ✦ in its own — with its colours fanned on top and the name over a fade. Backgrounds (all four styles) and Control › Design; Design's big square shows the real background too. Only the composer's stage animates.
