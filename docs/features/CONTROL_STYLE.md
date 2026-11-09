@@ -36,6 +36,13 @@ gather in the **Mix**, and **one Apply** runs them.
 - **Motion Control** folds to one line for layers (`cc-control-open`, remembered); open for keys.
 - **Libraries**: one row that scrolls sideways. **Mix**: a thin line while empty. **Sidebar**: icons only.
 
+## Pages (v0.72, owner: "only this page?")
+Tabs under the head (Ctrl+1…5): **Move** (above) · **Text** · **Design** · **Look** · **Deliver** (`layoutControlPages.js`).
+- Text: text presets In / Out playing your own text (ع = Arabic-safe; a warning badge on letter-by-letter presets when your text is Arabic), Typewriter, Counter.
+- Design: backgrounds (big preview + colour strips), templates; links to Shapes & Icons, Product UI, Brand.
+- Look: Styles, Glass, Zoom & Focus; links to Compositing, Expressions. Deliver: social safe zones, composition guides; links to Deliver, Layout & Grid.
+- Click picks (big on top, the bar says what it will do from the tool's card, one Apply); double-click applies; right-click / All › open the library. Tiles that need setup stay on their library page.
+
 ## The Mix
 `layoutControl.plan(cc, kind, nLayers)` is pure (tested): the runs in order — the move first, then Typewriter, Wiggle,
 Loop, Beats — each as `{ tool, args }` of a registered tool. Squares the selection does not show never run.

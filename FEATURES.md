@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Control pages** (v0.72.0): Move · Text · Design · Look · Deliver — squares of real tools with live previews, pick and apply.
+
 **Control layout** (v0.71.0): more room for the squares — one head line, preview-filled Motion square, tune block, Move / Add groups, folded Motion Control, one-row Libraries, a thin Mix.
 
 **Control style** (v0.70.0): a Control Center for motion — squares that are the tools (live Motion preview, drag sliders, round switches), the Mix and one Apply (docs/features/CONTROL_STYLE.md).

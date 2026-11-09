@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.78 — Control pages ✅ (v0.72.0)
+- Move · Text · Design · Look · Deliver, squares of real tiles, pick + one Apply.
+
 ## M1.77 — Control layout ✅ (v0.71.0)
 - Head, hero, tune block, Move / Add, folded Motion Control, Libraries row, thin Mix, icon rail.
 

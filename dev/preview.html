@@ -40,7 +40,7 @@
       };
       var demoUp = q.get('demoUpdate') ? require('/dev/demo-update.js') : null;
       var platform = mem.createMemPlatform(q.get('demoAI') ? { apiKey: 'sk-ant-preview-demo', http: require('/dev/demo-ai.js') } : (demoUp ? { http: demoUp.http, system: demoUp.system } : {}));
-      require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform, mode: q.get('mode') || undefined, ui: { theme: q.get('theme') || 'auto', accent: q.get('accent') || 'tomato', splash: q.get('splash') === '1', banners: q.get('banners') !== '0', motion: q.get('motion') || 'calm', motionV: 2, seenVersion: q.get('fresh') ? '' : '0.71.0' } }).then(function (app) {
+      require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform, mode: q.get('mode') || undefined, ui: { theme: q.get('theme') || 'auto', accent: q.get('accent') || 'tomato', splash: q.get('splash') === '1', banners: q.get('banners') !== '0', motion: q.get('motion') || 'calm', motionV: 2, seenVersion: q.get('fresh') ? '' : '0.72.0' } }).then(function (app) {
         window.__app = app;
         if (demoUp) { app.services.settings.update({ updates: { feedUrl: 'https://updates.example.com/moe/latest.json' } }); app.render(); }
         if (q.get('seedBrand')) {

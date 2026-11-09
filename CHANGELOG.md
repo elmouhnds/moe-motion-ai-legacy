@@ -2,6 +2,19 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.72.0] — 2026-11-09 — Control has pages
+### Added (owner: "only this page? no other pages?")
+- **Five pages** under the head, as a tab row (Ctrl+1…5; the page that fits the selection gets a dot, it never switches by itself): **Move** (the squares + the Mix), **Text**, **Design**, **Look**, **Deliver** (`app/ui/layoutControlPages.js`).
+- **Text**: the text library's presets, In or Out, each square playing YOUR text (the first selected text layer); Arabic-safe presets are marked ع, letter-by-letter ones get a warning badge when your text is Arabic; Typewriter and Counter.
+- **Design**: the background plays big, the palettes are colour strips, the templates with their previews; Shapes & Icons, Product UI and Brand one click away.
+- **Look**: Styles, Glass (clear and thick), Zoom & Focus; Compositing and Expressions one click away.
+- **Deliver**: the social safe zones and the composition guides; Deliver and Layout & Grid one click away.
+- A square is a library tile (same tool + args): click picks it — it plays big on top and the bar under the page says what it will do (the tool's own card) with one Apply; double-click applies now; right-click opens its library; *All ›* opens the whole library. Tiles that need setup (a layer to pick) stay on their library page.
+### Fixed
+- Text previews redraw at their real height when their box grows.
+### Tests
+- tests/control.test.js +1 (every square on every page is a registered tool with valid args). 544 tests.
+
 ## [0.71.0] — 2026-11-09 — Control, laid out better
 ### Changed (owner: "start with all of it")
 - **Head**: the comp (name · fps) and the selection share one block with Refresh and Repeat; the separate context strip and the search row are gone from Control's home — search is the magnifier in the header (Ctrl+K). The squares start ~90 px higher.
