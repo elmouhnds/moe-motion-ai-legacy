@@ -494,13 +494,8 @@
 .cc-item-badge.warn { background: rgba(232, 189, 85, 0.9); color: #1d1606; }
 
 /* palettes as colour strips */
-.cc-strips { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
-.cc-strip { display: flex; flex-direction: column; gap: 5px; padding: 6px; border-radius: 14px; border: 1px solid var(--line); background: var(--cc-sq); color: var(--text); text-align: left; cursor: pointer; font: inherit; }
-.cc-strip:hover { background: var(--cc-sq-hi); }
-.cc-strip.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-.cc-strip-bars { display: flex; height: 26px; border-radius: 9px; overflow: hidden; }
-.cc-strip-bars i { flex: 1; }
-.cc-strip-name { padding: 0 2px; font-size: 10.5px; font-weight: 700; overflow-wrap: anywhere; }
+.cc-strips { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.cc-strip { border-radius: 14px; }
 
 /* link squares: a library one click away */
 .cc-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
@@ -512,3 +507,30 @@
 
 /* the picked bar under a page */
 .cc-pick .cc-mix-t b { color: var(--text); }
+
+/* Control: the library pages in its look (v0.73) — no banners, tiles as squares, the Apply bar like the Mix */
+.app.layout-control .lay-crumb.cc-crumb { padding: 4px 12px 0; }
+.app.layout-control .cc-crumb .btn { height: var(--h-m); border-radius: var(--r-pill); background: var(--bg-raised); border: 1px solid var(--line); }
+.app.layout-control .st-tabs [role="tab"] { height: var(--h-m); border-radius: var(--r-pill); }
+.app.layout-control .st-tabs [role="tab"][aria-selected="true"] { background: var(--cc-sq-hi); box-shadow: 0 1px 0 var(--line-strong) inset; }
+.app.layout-control .chip-btn { height: var(--h-s); border-radius: var(--r-pill); border-color: var(--line); background: var(--bg-raised); }
+.app.layout-control .chip-btn[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+.app.layout-control .st-tile, .app.layout-control .tp-card { border-radius: var(--r-lg); background: var(--cc-sq); border-color: var(--line); }
+.app.layout-control .st-tile:hover, .app.layout-control .tp-card:hover { border-color: var(--line-strong); background: var(--cc-sq-hi); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35); }
+.app.layout-control .st-tile.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset, 0 8px 22px rgba(0, 0, 0, 0.35); }
+.app.layout-control .st-thumb { height: 86px; background: var(--cc-stage); }
+.app.layout-control .st-meta { border-top-color: var(--line); padding: 8px 10px; }
+.app.layout-control .st-name { font-weight: 700; }
+.app.layout-control .st-inspector { border-radius: var(--r-lg); background: var(--cc-sq); border-color: var(--line); }
+.app.layout-control .st-actbar { margin: 4px 10px 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg-raised); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
+.app.layout-control.fab-right .st-actbar { margin-right: 62px; }
+.app.layout-control.fab-left .st-actbar { margin-left: 62px; }
+.app.layout-control .st-actbar .btn.primary { border-radius: 10px; font-weight: 800; }
+.app.layout-control .bk-hero { border-radius: var(--r-lg); }
+.app.layout-control .bk-client, .app.layout-control .bk-g, .app.layout-control .bk-font, .app.layout-control .bk-manages { background: var(--cc-sq); border-radius: var(--r-lg); }
+.app.layout-control .bk-tabs { border-radius: 14px; }
+.app.layout-control .bk-tab { border-radius: 11px; }
+.app.layout-control .bk-tab.on { background: var(--cc-sq-hi); }
+/* polish (v0.73): a press glows — it never moves or resizes (UI rule) */
+.app.layout-control .cc-sq:active, .app.layout-control .cc-item:active, .app.layout-control .pc:active, .app.layout-control .cc-tab:active, .app.layout-control .st-tile:active { filter: brightness(1.18); box-shadow: 0 0 0 2px var(--accent-soft), 0 0 22px var(--accent-soft); }
+.app.layout-control .cc-apply:active, .app.layout-control .st-actbar .btn.primary:active { filter: brightness(1.12); box-shadow: 0 0 18px var(--accent-soft); }

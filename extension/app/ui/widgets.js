@@ -65,7 +65,8 @@ function prep(canvas) {
   const c = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.clientWidth || 300, H = canvas.clientHeight || 160;
-  if (canvas.width !== Math.round(W * dpr)) { canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); }
+  // v0.73: the height counts too — a canvas laid out taller than its first draw redraws at its own size
+  if (canvas.width !== Math.round(W * dpr) || canvas.height !== Math.round(H * dpr)) { canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); }
   c.setTransform(dpr, 0, 0, dpr, 0, 0);
   c.clearRect(0, 0, W, H);
   return { c, W, H };

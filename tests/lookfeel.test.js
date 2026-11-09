@@ -24,8 +24,10 @@ test('Background Composer: a plain palette swaps only the colours (your style an
   // the composer shows Style / Motion / Colours itself: Fine-tune lists only the rest, without the second preview
   const src = fs.readFileSync(path.join(__dirname, '../extension/app/ui/studio/bgComposer.js'), 'utf8');
   assert.match(src, /hide: \['palette', 'style', 'motion', 'colorMotion'\], noBody: true/);
-  // palettes are light colour strips — only the stage animates (no canvas per palette)
-  assert.ok(!/h\('canvas'[^)]*bgc-pal/.test(src) && /bgc-bars/.test(src));
+  // palettes: still cards — only the stage animates
+  // v0.73: each palette is a STILL frame of the real background (paletteCard, still: true) — only the stage animates
+  assert.match(src, /require\('\.\.\/paletteCard'\)/);
+  assert.match(require('fs').readFileSync(require('path').join(__dirname, '../extension/app/ui/paletteCard.js'), 'utf8'), /\{ still: true \}/);
   // the stage's canvas is replaced when the look changes (a reused canvas kept drawing the old look)
   assert.match(src, /'data-key': `bgc-canvas\|\$\{\[a\.palette/);
 });

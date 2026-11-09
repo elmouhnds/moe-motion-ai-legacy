@@ -68,19 +68,6 @@ function review(app, r) {
       } }, icon('check', 'sm'), 'Save client'),
       h('button', { class: 'btn ghost', onclick: () => { app.clearResult('brand.fromSource'); app.state.set({ brandImport: null, brandEdit: JSON.parse(JSON.stringify(d)) }); } }, icon('edit', 'sm'), 'Edit first')));
 }
-/** What import found, shown on a saved client (tone, motion, rules, gradients, fonts to install). */
-function profileBlock(app, brand) {
-  const p = brand.profile;
-  if (!p) return null;
-  const missing = (p.fonts || []).filter((f) => !f.installed);
-  return h('div', { class: 'pad bi-profile' },
-    (p.gradients || []).length ? h('div', { class: 'bi-grads' }, p.gradients.map((g) => h('div', { class: 'bi-grad', title: g.name, style: { background: `linear-gradient(90deg, ${g.stops.join(', ')})` } }, h('span', {}, g.name)))) : null,
-    p.tone && p.tone.keywords && p.tone.keywords.length ? h('div', { class: 'bi-chips' }, h('span', { class: 'why' }, 'Tone'), p.tone.keywords.map((k) => h('span', { class: 'chip' }, k))) : null,
-    p.motion && p.motion.easing ? h('div', { class: 'why' }, `Motion: ${[p.motion.feel, p.motion.easing, p.motion.pace].filter(Boolean).join(' · ')}`) : null,
-    missing.length ? h('div', { class: 'bi-missing' }, h('span', { class: 'why' }, 'Fonts to install:'), missing.map((f) => f.getUrl ? h('button', { class: 'btn ghost sm', title: f.getUrl, onclick: () => openUrl(f.getUrl) }, f.family) : h('span', { class: 'chip' }, f.family))) : null,
-    p.source ? h('div', { class: 'why' }, `From ${p.source.kind === 'pdf' ? p.source.file : p.source.url}${p.source.usedAI ? ' (Claude)' : ' (local scan)'}`) : null);
-}
-
 function fontLabel(f) { return f ? `${f.family || f.ps}${f.style ? ' ' + f.style : ''}` : 'Not set'; }
 
 function fontPicker(app, current, onPick, arabicFirst) {
@@ -140,72 +127,141 @@ function editor(app, draft) {
       h('button', { class: 'btn ghost', onclick: () => app.state.set({ brandEdit: null }) }, 'Cancel')));
 }
 
+/* ---------- v0.73: the page, organised (owner: "full of information, not organised, not easy") ----------
+ * 1 your clients as cards (palette fan + name; Example badge) + New
+ * 2 the client card: its own background, name in its fonts, palette, tone — and the four actions
+ * 3 tabs: Colours (click to colour the selection) · Type (fonts by script) · Guide (gradients, tone, motion, rules, notes)
+ *   · Manage (edit, backup, import, examples, delete)
+ */
+const EX = () => require('../../../features/brand/examples');
+const TABS = [['colours', 'Colours', 'palette'], ['type', 'Type', 'type'], ['guide', 'Guide', 'info'], ['manage', 'Manage', 'gear']];
+
+function clientCards(app, s, brands, brand, startImport) {
+  const newOpen = !!s.brandNew;
+  const byHand = () => app.state.set({ brandNew: false, brandEdit: { name: '', colors: [], fonts: { arabic: null, english: null, extra: [] }, notes: '' } });
+  return h('div', { class: 'bk-clients', 'data-key': 'bk-clients', role: 'listbox', 'aria-label': 'Clients' },
+    brands.map((b) => h('button', {
+      class: `bk-client ${brand && b.id === brand.id ? 'on' : ''}`, 'data-key': `bk-c-${b.id}`, role: 'option', 'aria-selected': String(!!(brand && b.id === brand.id)), title: `${b.name}${EX().isExample(b) ? ' — example client' : ''}`,
+      onclick: () => { K.setActive(app.services.store, b.id); app.state.set({ brandId: b.id }); }
+    }, h('span', { class: 'bk-fan', 'aria-hidden': 'true' }, b.colors.slice(0, 5).map((c) => h('i', { style: { background: c.hex } }))),
+    h('span', { class: 'bk-cname' }, b.name), EX().isExample(b) ? h('span', { class: 'bk-ex' }, 'Example') : null)),
+    h('div', { class: 'bk-new-wrap' },
+      h('button', { class: 'bk-client bk-new', 'data-key': 'bk-new', 'aria-expanded': String(newOpen), title: 'Add a client', onclick: () => app.state.set({ brandNew: !newOpen }) }, icon('plus', ''), h('span', { class: 'bk-cname' }, 'New client')),
+      newOpen ? h('div', { class: 'bk-new-menu', role: 'menu' },
+        h('button', { class: 'bk-mi', role: 'menuitem', 'data-key': 'bi-start', title: 'Paste the client website or choose their brand book PDF — colours, fonts, tone and rules filled in for you', onclick: () => { app.state.set({ brandNew: false }); startImport(); } }, icon('sparkles', 'sm'), h('span', {}, h('b', {}, 'From website / PDF'), h('i', {}, 'colours, fonts, tone and rules found for you'))),
+        h('button', { class: 'bk-mi', role: 'menuitem', 'data-key': 'bk-hand', onclick: byHand }, icon('edit', 'sm'), h('span', {}, h('b', {}, 'By hand'), h('i', {}, 'name, colours, two fonts')))) : null));
+}
+
+/** The client card: the brand in its own colours and fonts. */
+function hero(app, s, brand) {
+  const AA = require('../../../features/brand/applyAll');
+  const r = AA.brandRoles(brand);
+  const bg = r ? r.background.hex : '#222';
+  const p = brand.profile || {};
+  const grad = (p.gradients || [])[0];
+  const fontCss = (f) => (f ? `"${f.family}", var(--font)` : 'var(--font)');
+  return h('section', { class: 'bk-hero', 'data-key': `bk-hero-${brand.id}`, style: { background: grad && grad.stops.length > 1 ? `linear-gradient(135deg, ${grad.stops.join(', ')})` : bg, color: r ? r.text.hex : '#fff' } },
+    h('div', { class: 'bk-hero-top' },
+      h('span', { class: 'bk-hero-name', style: { fontFamily: fontCss(brand.fonts.english), color: r ? r.headline.hex : undefined } }, brand.name),
+      EX().isExample(brand) ? h('span', { class: 'bk-ex on-hero' }, 'Example') : null),
+    p.tagline ? h('div', { class: 'bk-hero-tag', style: { fontFamily: fontCss(/[؀-ۿ]/.test(p.tagline) ? brand.fonts.arabic : brand.fonts.english) } }, p.tagline) : null,
+    h('div', { class: 'bk-hero-type' },
+      h('span', { style: { fontFamily: fontCss(brand.fonts.english) }, title: fontLabel(brand.fonts.english) }, 'Aa'),
+      h('span', { dir: 'rtl', lang: 'ar', style: { fontFamily: fontCss(brand.fonts.arabic) }, title: fontLabel(brand.fonts.arabic) }, 'أبجد')),
+    h('div', { class: 'bk-hero-pal' }, brand.colors.slice(0, 8).map((c) => h('span', { class: 'bk-dot', style: { background: c.hex }, title: `${c.name} ${c.hex}${c.role ? ` · ${ROLE_LABEL[c.role] || c.role}` : ''}` }))),
+    p.tone && p.tone.keywords && p.tone.keywords.length ? h('div', { class: 'bk-hero-tone' }, p.tone.keywords.slice(0, 4).map((k) => h('span', {}, k))) : null);
+}
+
+function coloursTab(app, s, brand) {
+  const target = s.brandTarget || 'fill';
+  const colorResult = s.results['brand.applyColor'];
+  const sel = s.ctx ? (s.ctx.layers || []) : [];
+  const selProps = s.ctx ? (s.ctx.properties || []).filter((p) => p.valueType === 'COLOR').length : 0;
+  return [
+    h('div', { class: 'bk-row' }, h('span', { class: 'bk-hint' }, selProps ? `Click a colour: ${selProps} selected colour propert${selProps > 1 ? 'ies' : 'y'}` : sel.length ? `Click a colour: ${sel.length} selected layer${sel.length > 1 ? 's' : ''}` : 'Select layers or a colour property, then click a colour'),
+      h('div', { class: 'seg mini' }, [['fill', 'Fill'], ['stroke', 'Stroke'], ['both', 'Both']].map(([v, l]) => h('button', { 'aria-pressed': String(target === v), onclick: () => app.state.set({ brandTarget: v }) }, l)))),
+    h('div', { class: 'bk-swatches' }, brand.colors.map((c, i) => {
+      const rgb = B.hexToRgb(c.hex);
+      const ink = B.contrast(rgb, [1, 1, 1]) >= 3 ? '#fff' : '#111';
+      return h('button', { class: 'bk-swatch', style: { background: c.hex, color: ink }, title: `${c.name} ${c.hex}${c.usage ? ` — ${c.usage}` : ''}`, disabled: !sel.length || !!s.running,
+        onclick: () => app.runTool('brand.applyColor', { brandId: brand.id, colorIndex: i, target }) },
+      c.role ? h('span', { class: 'bk-role' }, ROLE_LABEL[c.role] || c.role) : null, h('span', { class: 'sw-name' }, c.name), h('span', { class: 'sw-hex' }, c.hex));
+    })),
+    renderReport(colorResult, { onRestore: () => app.restore(colorResult.checkpointId, 'brand.applyColor'), onDismiss: () => app.clearResult('brand.applyColor') })];
+}
+
+function typeTab(app, s, brand) {
+  const fontResult = s.results['brand.applyFont'];
+  const texts = (s.ctx ? (s.ctx.layers || []) : []).filter((l) => l.type === 'text').length;
+  const p = brand.profile || {};
+  const missing = (p.fonts || []).filter((f) => !f.installed);
+  return [
+    [['arabic', 'Arabic', 'مرحبا بكم'], ['english', 'English', 'Hello there']].map(([role, label, sample]) => {
+      const f = brand.fonts[role];
+      return h('div', { class: 'bk-font' },
+        h('span', { class: 'bk-font-sample', dir: role === 'arabic' ? 'rtl' : 'ltr', style: { fontFamily: f ? `"${f.family}"` : 'inherit' } }, sample),
+        h('span', { class: 'bk-font-meta' }, h('b', {}, fontLabel(f)), h('i', {}, label)),
+        h('button', { class: 'btn sm', disabled: !f || !texts || !!s.running, title: texts ? `${label} font on the selected text` : 'Select text layers first', onclick: () => app.runTool('brand.applyFont', { brandId: brand.id, role }) }, 'Apply'));
+    }),
+    h('div', { class: 'actions' },
+      h('button', { class: 'btn primary', disabled: !texts || !!s.running, title: 'Arabic text gets the Arabic font (right-to-left); other text gets the English font', onclick: () => app.runTool('brand.applyFont', { brandId: brand.id, role: 'auto' }) }, `Auto fonts${texts ? ` · ${texts} text layer${texts > 1 ? 's' : ''}` : ''}`)),
+    missing.length ? h('div', { class: 'bk-row wrap' }, h('span', { class: 'bk-hint' }, 'Fonts to install:'), missing.map((f) => f.getUrl ? h('button', { class: 'btn ghost sm', title: f.getUrl, onclick: () => openUrl(f.getUrl) }, f.family) : h('span', { class: 'chip' }, f.family))) : null,
+    renderReport(fontResult, { onRestore: () => app.restore(fontResult.checkpointId, 'brand.applyFont'), onDismiss: () => app.clearResult('brand.applyFont') })];
+}
+
+function guideTab(app, brand) {
+  const p = brand.profile || {};
+  const blocks = [];
+  if ((p.gradients || []).length) blocks.push(h('div', { class: 'bk-g' }, h('span', { class: 'bk-g-h' }, 'Gradients'), h('div', { class: 'bi-grads' }, p.gradients.map((g) => h('div', { class: 'bi-grad', title: g.name, style: { background: `linear-gradient(90deg, ${g.stops.join(', ')})` } }, h('span', {}, g.name))))));
+  if (p.tone && (p.tone.keywords || []).length) blocks.push(h('div', { class: 'bk-g' }, h('span', { class: 'bk-g-h' }, 'Tone'), h('div', { class: 'bi-chips' }, p.tone.keywords.map((k) => h('span', { class: 'chip' }, k))), p.tone.description ? h('div', { class: 'bk-hint' }, p.tone.description) : null));
+  if (p.motion && (p.motion.easing || p.motion.feel)) blocks.push(h('div', { class: 'bk-g' }, h('span', { class: 'bk-g-h' }, 'Motion'), h('div', { class: 'bk-hint' }, [p.motion.feel, p.motion.easing && `${p.motion.easing} ease`, p.motion.pace && `${p.motion.pace} pace`].filter(Boolean).join(' · '))));
+  if ((p.rules || []).length) blocks.push(h('div', { class: 'bk-g' }, h('span', { class: 'bk-g-h' }, 'Rules'), h('ul', { class: 'bk-rules' }, p.rules.map((r) => h('li', {}, r)))));
+  if (brand.notes) blocks.push(h('div', { class: 'bk-g' }, h('span', { class: 'bk-g-h' }, 'Notes'), h('div', { class: 'explain bi-notes' }, brand.notes)));
+  if (p.source) blocks.push(h('div', { class: 'bk-hint' }, `From ${p.source.kind === 'pdf' ? p.source.file : p.source.url}${p.source.usedAI ? ' (Claude)' : ' (local scan)'}`));
+  return blocks.length ? blocks : h('div', { class: 'bk-hint' }, 'No guide yet — import the client from their website / PDF, or write notes in Edit.');
+}
+
+function manageTab(app, brand) {
+  const missing = EX().EXAMPLES.filter((x) => !app.services.brands.get(x.id)).length;
+  const row = (key, ic, label, sub, onclick, cls) => h('button', { class: `bk-manage ${cls || ''}`, 'data-key': key, onclick }, icon(ic, 'sm'), h('span', {}, h('b', {}, label), h('i', {}, sub)));
+  return h('div', { class: 'bk-manages' },
+    row('bk-edit', 'edit', 'Edit client', 'name, colours, fonts, notes', () => app.state.set({ brandEdit: JSON.parse(JSON.stringify(brand)) })),
+    row('bk-copy', 'copy', 'Copy all clients', 'as JSON — a backup, or to share', () => app.copy(app.services.brands.exportJSON())),
+    row('bk-import', 'upload', 'Import clients', 'paste exported JSON', async () => {
+      const text = await app.dialog({ title: 'Import clients', body: 'Paste exported JSON', input: '', okLabel: 'Import' });
+      if (!text) return;
+      const r = app.services.brands.importJSON(text);
+      app.toast(r.ok ? `Imported ${r.imported} client(s)` : r.errors.join(' · '), 4000);
+      app.render();
+    }),
+    missing ? row('bk-examples', 'sparkles', `Add the ${missing} example client${missing > 1 ? 's' : ''}`, 'Nile Roast · Pulse Pay · Sahara Atelier', () => { const n = EX().addMissing(app.services.brands); app.toast(`${n} example client${n === 1 ? '' : 's'} added`, 2400, 'ok'); app.render(); }) : null,
+    row('bk-delete', 'trash', `Delete ${brand.name}`, 'removes this client only', async () => { if (await app.dialog({ title: `Delete ${brand.name}?`, okLabel: 'Delete', danger: true })) { app.services.brands.remove(brand.id); app.state.set({ brandId: null }); } }, 'danger'));
+}
+
 function render(app) {
   const s = app.state.get();
+  // v0.73: three example clients the first time Brand opens with none (never over your own; Manage adds them back)
+  try { if (EX().seedOnce(app.services.store, app.services.brands)) setTimeout(() => app.render(), 0); } catch (e) { /* the store is optional in tests */ }
   const brands = app.services.brands.list();
   if (s.brandEdit) return h('div', { class: 'view' }, editor(app, s.brandEdit));
   if (s.brandImport) return importPanel(app, s);
   const startImport = () => app.state.set({ brandImport: { source: 'website', url: '', file: '', deep: true } });
   const active = K.activeBrand(app.services.store, app.services.brands);
   const brand = brands.find((b) => b.id === s.brandId) || active || brands[0] || null;
-  const target = s.brandTarget || 'fill';
-  const colorResult = s.results['brand.applyColor'];
-  const fontResult = s.results['brand.applyFont'];
-  const sel = s.ctx ? (s.ctx.layers || []) : [];
-  const selProps = s.ctx ? (s.ctx.properties || []).filter((p) => p.valueType === 'COLOR').length : 0;
-  const texts = sel.filter((l) => l.type === 'text').length;
 
-  const head = h('div', { class: 'pad brand-head' },
-    h('select', { 'aria-label': 'Client', onchange: (e) => { K.setActive(app.services.store, e.target.value); app.state.set({ brandId: e.target.value }); } },
-      brands.length ? brands.map((b) => h('option', { value: b.id, selected: brand && b.id === brand.id }, b.name)) : h('option', {}, 'No clients yet')),
-    h('button', { class: 'btn sm bi-start', 'data-key': 'bi-start', title: 'Paste the client website or choose their brand book PDF — colours, fonts, tone and rules filled in for you', onclick: startImport }, icon('sparkles', 'sm'), 'From website / PDF'),
-    h('button', { class: 'icon-btn', title: 'New client (by hand)', 'aria-label': 'New client by hand', onclick: () => app.state.set({ brandEdit: { name: '', colors: [], fonts: { arabic: null, english: null, extra: [] }, notes: '' } }) }, icon('plus', 'sm')),
-    brand ? h('button', { class: 'icon-btn', title: 'Edit client', onclick: () => app.state.set({ brandEdit: JSON.parse(JSON.stringify(brand)) }) }, icon('edit', 'sm')) : null,
-    h('button', { class: 'icon-btn', title: 'Copy all clients as JSON (backup / share)', onclick: () => app.copy(app.services.brands.exportJSON()) }, icon('copy', 'sm')),
-    h('button', { class: 'icon-btn', title: 'Import clients from JSON', onclick: async () => {
-      const text = await app.dialog({ title: 'Import clients', body: 'Paste exported JSON', input: '', okLabel: 'Import' });
-      if (!text) return;
-      const r = app.services.brands.importJSON(text);
-      app.toast(r.ok ? `Imported ${r.imported} client(s)` : r.errors.join(' · '), 4000);
-      app.render();
-    } }, icon('upload', 'sm')),
-    brand ? h('button', { class: 'icon-btn danger', title: 'Delete client', onclick: async () => { if (await app.dialog({ title: `Delete ${brand.name}?`, okLabel: 'Delete', danger: true })) { app.services.brands.remove(brand.id); app.state.set({ brandId: null }); } } }, icon('trash', 'sm')) : null);
-
-  if (!brand) return h('div', { class: 'view' }, head, h('div', { class: 'empty' }, h('b', {}, 'Add your first client'), h('br'), 'Paste their website (or brand book PDF) and MOE fills the palette, fonts, tone and rules — or add them by hand. Then colour and style the selection in one click.',
+  if (!brand) return h('div', { class: 'view bk' }, clientCards(app, s, brands, null, startImport), h('div', { class: 'empty' }, h('b', {}, 'Add your first client'), h('br'), 'Paste their website (or brand book PDF) and MOE fills the palette, fonts, tone and rules — or add them by hand. Then colour and style the selection in one click.',
     h('div', { class: 'actions', style: { justifyContent: 'center' } }, h('button', { class: 'btn primary', onclick: startImport }, icon('sparkles', 'sm'), 'From website / PDF'))));
 
   if (!active || active.id !== brand.id) setTimeout(() => K.setActive(app.services.store, brand.id), 0); // the client shown is the one you work for
-  const act = (ref, primary) => { const a = A.resolve(ref); if (!a) return null; const rd = a.ready(app); return h('button', { class: `btn ${primary ? 'primary' : ''} sm`, 'data-key': `ba-${ref}`, disabled: !!s.running, title: rd.ok ? a.where : `${a.label} — ${rd.hint}`, onclick: () => (rd.ok ? a.run(app) : app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn')) }, icon(a.icon, 'sm'), a.label); };
-  const useRow = h('div', { class: 'pad bi-use', 'data-key': 'bi-use' },
-    h('div', { class: 'why' }, `Working for ${brand.name} — Apply brand sets fonts by script and colours by role (headlines, body, shapes, background).`),
-    h('div', { class: 'actions' }, act('brand:apply', true), act('brand:applyComp'), act('brand:ease'),
-      h('button', { class: 'btn sm', 'data-key': 'ba-bg', title: 'Make Backgrounds presets from this client (its gradients, palette and a soft mesh) — Backgrounds › Mine', onclick: () => { const n = K.saveBrandBackgrounds(app.services.presets, brand); app.toast(n ? `${n} ${brand.name} backgrounds in Backgrounds › Mine` : `${brand.name} needs at least 2 colours`, 3500, n ? 'ok' : 'warn'); if (n) app.state.set((st) => ({ studio: Object.assign({}, st.studio, { backgrounds: Object.assign({}, (st.studio || {}).backgrounds, { filter: 'Mine' }) }) })); } }, icon('background', 'sm'), 'Make backgrounds')));
-  return h('div', { class: 'view' }, head, useRow,
-    h('div', { class: 'section-h' }, 'Colours', h('span', { class: 'spacer' }),
-      h('div', { class: 'seg mini' }, [['fill', 'Fill'], ['stroke', 'Stroke'], ['both', 'Both']].map(([v, l]) => h('button', { 'aria-pressed': String(target === v), onclick: () => app.state.set({ brandTarget: v }) }, l)))),
-    h('div', { class: 'pad why', style: { marginBottom: '6px' } }, selProps ? `Applies to ${selProps} selected colour propert${selProps > 1 ? 'ies' : 'y'}` : sel.length ? `Applies to ${sel.length} selected layer${sel.length > 1 ? 's' : ''}` : 'Select layers or a colour property, then click a colour'),
-    h('div', { class: 'swatch-grid pad' }, brand.colors.map((c, i) => {
-      const rgb = B.hexToRgb(c.hex);
-      const ink = B.contrast(rgb, [1, 1, 1]) >= 3 ? '#fff' : '#111';
-      return h('button', { class: 'brand-swatch', style: { background: c.hex, color: ink }, title: `${c.name} ${c.hex}`, disabled: !sel.length || !!s.running,
-        onclick: () => app.runTool('brand.applyColor', { brandId: brand.id, colorIndex: i, target }) },
-      h('span', { class: 'sw-name' }, c.name), h('span', { class: 'sw-hex' }, c.hex));
-    })),
-    renderReport(colorResult, { onRestore: () => app.restore(colorResult.checkpointId, 'brand.applyColor'), onDismiss: () => app.clearResult('brand.applyColor') }),
-    h('div', { class: 'section-h' }, 'Typography'),
-    h('div', { class: 'pad' },
-      [['arabic', 'Arabic', 'مرحبا'], ['english', 'English', 'Aa']].map(([role, label, sample]) => {
-        const f = brand.fonts[role];
-        return h('div', { class: 'list-row font-apply' },
-          h('span', { class: 'font-sample', style: { fontFamily: f ? `"${f.family}"` : 'inherit' } }, sample),
-          h('div', { class: 'main' }, h('div', { class: 't1' }, fontLabel(f)), h('div', { class: 't2' }, label)),
-          h('button', { class: 'btn', disabled: !f || !texts || !!s.running, onclick: () => app.runTool('brand.applyFont', { brandId: brand.id, role }) }, 'Apply'));
-      }),
-      h('div', { class: 'actions' },
-        h('button', { class: 'btn primary', disabled: !texts || !!s.running, title: 'Arabic text gets the Arabic font (right-to-left); other text gets the English font', onclick: () => app.runTool('brand.applyFont', { brandId: brand.id, role: 'auto' }) }, `Auto fonts${texts ? ` · ${texts} text layer${texts > 1 ? 's' : ''}` : ''}`)),
-      renderReport(fontResult, { onRestore: () => app.restore(fontResult.checkpointId, 'brand.applyFont'), onDismiss: () => app.clearResult('brand.applyFont') })),
-    profileBlock(app, brand),
-    brand.notes ? h('div', { class: 'pad' }, h('div', { class: 'section-h', style: { padding: '12px 0 4px' } }, 'Notes'), h('div', { class: 'explain bi-notes' }, brand.notes)) : null);
+  const act = (ref, primary) => { const a = A.resolve(ref); if (!a) return null; const rd = a.ready(app); return h('button', { class: `btn ${primary ? 'primary' : ''} sm`, 'data-key': `ba-${ref}`, disabled: !!s.running, title: rd.ok ? `${a.label} — fonts by script, colours by role (headlines, body, shapes, background)` : `${a.label} — ${rd.hint}`, onclick: () => (rd.ok ? a.run(app) : app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn')) }, icon(a.icon, 'sm'), a.label); };
+  const tab = TABS.some(([id]) => id === s.brandTab) ? s.brandTab : 'colours';
+  return h('div', { class: 'view bk' },
+    clientCards(app, s, brands, brand, startImport),
+    hero(app, s, brand),
+    h('div', { class: 'bk-actions', 'data-key': 'bi-use' }, act('brand:apply', true), act('brand:applyComp'), act('brand:ease'),
+      h('button', { class: 'btn sm', 'data-key': 'ba-bg', title: 'Make Backgrounds presets from this client (its gradients, palette and a soft mesh) — Backgrounds › Mine', onclick: () => { const n = K.saveBrandBackgrounds(app.services.presets, brand); app.toast(n ? `${n} ${brand.name} backgrounds in Backgrounds › Mine` : `${brand.name} needs at least 2 colours`, 3500, n ? 'ok' : 'warn'); if (n) app.state.set((st) => ({ studio: Object.assign({}, st.studio, { backgrounds: Object.assign({}, (st.studio || {}).backgrounds, { filter: 'Mine' }) }) })); } }, icon('background', 'sm'), 'Make backgrounds')),
+    h('nav', { class: 'bk-tabs', role: 'tablist', 'aria-label': 'Client' }, TABS.map(([id, label, ic]) => h('button', { class: `bk-tab ${tab === id ? 'on' : ''}`, role: 'tab', 'data-key': `bk-t-${id}`, 'aria-selected': String(tab === id), onclick: () => app.state.set({ brandTab: id }) }, icon(ic, 'sm'), h('span', {}, label)))),
+    h('div', { class: 'bk-panel', 'data-key': `bk-p-${tab}` }, tab === 'colours' ? coloursTab(app, s, brand) : tab === 'type' ? typeTab(app, s, brand) : tab === 'guide' ? guideTab(app, brand) : manageTab(app, brand)));
 }
 
 module.exports = { render };

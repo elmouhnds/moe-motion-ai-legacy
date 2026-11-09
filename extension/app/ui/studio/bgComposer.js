@@ -84,15 +84,15 @@ function render(app, section) {
     h('span', { class: 'spacer' }),
     h('button', { class: `btn ghost sm ${fine ? 'on' : ''}`, 'data-key': 'bgc-fine', 'aria-expanded': String(fine), title: 'Angle, spread, grain, loop, how far it moves', onclick: () => app.state.set({ bgcFine: !fine }) }, icon('sliders', 'sm'), 'Fine-tune'));
 
+  // v0.73 (owner: "the colours are shown badly"): each palette is a still frame of the real background in YOUR look
+  // (a designed look ✦ shows its own), with its colours fanned out — paletteCard.js
+  const PC = require('../paletteCard');
   const cell = (t) => {
     const pal = PAL.resolve(t.args.palette, t.args.colors, t.args.paletteName);
     const on = t.id === tile.id;
-    return h('button', {
-      class: `bgc-pal ${on ? 'on' : ''}`, 'data-key': t.id, 'aria-pressed': String(on),
+    return PC.card({ key: t.id, cls: 'bgc-pal', label: t.label, args: PC.cardArgs(t, a, fullLook(t)), colors: pal ? pal.colors : [], on, look: fullLook(t),
       title: `${t.label}${fullLook(t) ? ' — a complete look (style + motion)' : ' — swaps the colours, keeps your style and motion'} · double-click: apply now`,
-      onclick: () => pick(app, section, t), ondblclick: () => { pick(app, section, t); lib.applyNow(app, t, section, Object.assign({}, argsOf(app, t))); }
-    }, h('span', { class: 'bgc-bars' }, (pal ? pal.colors : []).map((hex) => h('i', { style: { background: hex } }))),
-    h('span', { class: 'bgc-name' }, t.label), fullLook(t) ? h('span', { class: 'bgc-look', title: 'A complete look' }, icon('sparkles', 'xs')) : null);
+      onclick: () => pick(app, section, t), ondblclick: () => { pick(app, section, t); lib.applyNow(app, t, section, Object.assign({}, argsOf(app, t))); } });
   };
 
   return h('div', { class: 'view studio-sec bgc' },

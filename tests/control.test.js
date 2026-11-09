@@ -145,3 +145,33 @@ test('v0.72 pages: Move · Text · Design · Look · Deliver — every square is
   assert.match(src, /lib\(\)\.applyNow\(app, it\.tile, it\.section\)/, 'Apply goes through the library (readiness → runTool)');
   assert.match(fs.readFileSync(path.join(__dirname, '../extension/app/ui/shell.js'), 'utf8'), /Control \(v0\.72\): Ctrl\+1…5/);
 });
+
+test('v0.73: palette cards draw the real background (your look, or the tile\'s own); three example clients; no banners in Control', () => {
+  const PC = require('../extension/app/ui/paletteCard');
+  const tile = { args: { palette: 'ocean', style: 'mesh', motion: 'orbit' } };
+  const mine = PC.cardArgs(tile, { style: 'radial', angle: 45, grain: 6 }, false);
+  assert.equal(mine.palette, 'ocean'); assert.equal(mine.style, 'radial', 'a plain palette is shown in YOUR style'); assert.equal(mine.grain, 0, 'no grain at card size');
+  assert.equal(PC.cardArgs(tile, { style: 'radial' }, true).style, 'mesh', 'a complete look shows its own style');
+  const EX = require('../extension/features/brand/examples');
+  const B = require('../extension/features/brand/brands');
+  const AA = require('../extension/features/brand/applyAll');
+  assert.equal(EX.EXAMPLES.length, 3);
+  for (const b of EX.EXAMPLES) {
+    assert.deepEqual(B.validateBrand ? B.validateBrand(b) : [], [], b.name);
+    const r = AA.brandRoles(b);
+    assert.ok(r.contrast.text >= 4.5, `${b.name}: body text readable (${r.contrast.text})`);
+    assert.ok(EX.isExample(b));
+    assert.ok(require('../extension/features/brand/kit').brandEaseRef(b), `${b.name}: its motion feel maps to an ease`);
+  }
+  // seeded once, only into an empty list; Manage adds back what is missing
+  const mem = new Map(); const store = { get: (k, d) => (mem.has(k) ? mem.get(k) : d), set: (k, v) => mem.set(k, v), update: (k, d, fn) => mem.set(k, fn(mem.has(k) ? mem.get(k) : d)) };
+  const brands = B.createBrandStore(store);
+  assert.equal(EX.seedOnce(store, brands), 3);
+  assert.equal(EX.seedOnce(store, brands), 0, 'only once');
+  brands.remove('example_pulse_pay');
+  assert.equal(EX.addMissing(brands), 1);
+  const mem2 = new Map(); const store2 = { get: (k, d) => (mem2.has(k) ? mem2.get(k) : d), set: (k, v) => mem2.set(k, v), update: (k, d, fn) => mem2.set(k, fn(mem2.has(k) ? mem2.get(k) : d)) };
+  const own = B.createBrandStore(store2); own.save({ name: 'My client', colors: [{ name: 'A', hex: '#112233' }] });
+  assert.equal(EX.seedOnce(store2, own), 0, 'never over your own clients');
+  assert.match(fs.readFileSync(path.join(__dirname, '../extension/app/ui/chrome.js'), 'utf8'), /ui\.layout === 'moe' \|\| ui\.layout === 'control'/);
+});

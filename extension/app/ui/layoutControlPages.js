@@ -118,6 +118,14 @@ function sampleText(s) {
 function thumbOf(app, it, s, big) {
   if (it.preset) return require('./textPreview').previewCanvas(it.preset, sampleText(s));
   if (it.icon && !it.tile.thumb) return h('div', { class: 'st-thumb icon' }, icon(it.icon, big ? 'lg' : ''));
+  // v0.73: a background, big, is the real background (the palette card's still frame) — not colour bars
+  if (big && it.tile.tool === 'design.background') {
+    const PC = require('./paletteCard');
+    const args = PC.cardArgs(it.tile, s.args && s.args['design.background'], require('./studio/bgComposer').fullLook(it.tile));
+    const widgets = require('./widgets');
+    const canvas = h('canvas', { class: 'st-thumb big', 'aria-hidden': 'true', 'data-key': `cc-bghero|${it.key}|${args.style}|${args.palette}` });
+    return widgets.animated(canvas, () => { const { c, W, H } = widgets.prep(canvas); require('./bgDraw').bgFrame(c, W, H, args, { width: 1600, height: 900 }, 0, false); }, { still: true });
+  }
   const L = lib();
   return L.thumbEl(L.tileThumb(app, it.tile), big ? 'big' : '');
 }
@@ -133,12 +141,15 @@ function itemSquare(app, s, page, it, on, o) {
   latinOnly ? h('span', { class: 'cc-item-badge warn', title: 'Letter by letter — not for Arabic' }, 'Aa') : null);
 }
 function stripSquare(app, s, page, it, on) {
+  // v0.73: the same palette card as the Background Composer — a still of the real background in your look
   const PAL = require('../../features/design/palettes');
+  const PC = require('./paletteCard');
   const a = it.tile.args || {};
   const pal = PAL.resolve(a.palette, a.colors, a.paletteName);
-  return h('button', { class: `cc-strip ${on ? 'on' : ''}`, 'data-key': `cc-i-${it.key}`, 'aria-pressed': String(on), title: `${it.label}\nClick: pick · double-click: apply now · right-click: Backgrounds`,
-    onclick: () => pick(app, page, it), ondblclick: (e) => { e.preventDefault(); pick(app, page, it); apply(app, it); }, oncontextmenu: (e) => { e.preventDefault(); app.go('backgrounds'); } },
-  h('span', { class: 'cc-strip-bars', 'aria-hidden': 'true' }, (pal ? pal.colors : []).map((hex) => h('i', { style: { background: hex } }))), h('span', { class: 'cc-strip-name' }, it.label));
+  const full = require('./studio/bgComposer').fullLook(it.tile);
+  return PC.card({ key: `cc-i-${it.key}`, cls: 'cc-strip', label: it.label, args: PC.cardArgs(it.tile, s.args && s.args['design.background'], full), colors: pal ? pal.colors : [], on, look: full,
+    title: `${it.label}\nClick: pick · double-click: apply now · right-click: Backgrounds`,
+    onclick: () => pick(app, page, it), ondblclick: (e) => { e.preventDefault(); pick(app, page, it); apply(app, it); }, oncontextmenu: (e) => { e.preventDefault(); app.go('backgrounds'); } });
 }
 function linkSquare(app, id, label) {
   const sec = studio.byId(id);
