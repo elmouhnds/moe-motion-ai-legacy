@@ -138,14 +138,15 @@ function closeRailOnOutside(app) {
 }
 // one picture per menu in the sidebar (the top-row menus shared the layers icon)
 /** MOE's sidebar: Select, then every Quick Bar shortcut; ⇔ shows names (remembered). */
-function moeRail(app, s) {
+function moeRail(app, s, opts) {
+  const iconsOnly = !!(opts && opts.iconsOnly); // v0.71: Control keeps the page wide — icons only, names in tooltips
   const qb = require('./quickbar');
   // v0.54: names show only when the panel has room (≥ 600 px); a narrow dock keeps icons so the page is not squeezed
-  const want = !!app.services.store.get('moe-rail-wide', false);
+  const want = !iconsOnly && !!app.services.store.get('moe-rail-wide', false);
   const room = s.navWide !== false;
   // owner (v0.54 comment): the toggle must always open the names. With room they sit beside the page; on a narrow
   // dock they open OVER the page (it is not squeezed) and close on a click outside or after a shortcut runs.
-  const peek = !room && !!s.railPeek;
+  const peek = !iconsOnly && !room && !!s.railPeek;
   closeRailOnOutside(app);
   const wide = (want && room) || peek;
   const open = room ? want : peek;
@@ -172,7 +173,7 @@ function moeRail(app, s) {
     onclick: (e) => { if (peek) app.state.set({ railPeek: false }); return e.altKey && !a.mods ? qb.openOptions(app, a) : qb.run(app, a, e); }, oncontextmenu: (e) => { e.preventDefault(); qb.openOptions(app, a); }
   }, icon(a.icon || 'bolt', 'sm'), h('span', { class: 'rail-l' }, a.label));
   return h('nav', { class: `moe-rail ${wide ? 'wide' : ''} ${peek ? 'float' : ''}`, 'data-key': 'moe-rail', 'aria-label': 'Shortcuts', onclick: (e) => { if (peek && e.target === e.currentTarget) app.state.set({ railPeek: false }); } },
-    h('button', { class: 'rail-btn rail-toggle', 'data-key': 'rail-toggle', 'aria-label': open ? 'Show icons only' : 'Show names', title: open ? 'Icons only' : (room ? 'Show names' : 'Show names (they open over the page on a narrow panel)'), 'aria-pressed': String(open), onclick: toggle }, icon('chev', `xs rail-chev ${open ? 'open' : ''}`), h('span', { class: 'rail-l' }, 'Shortcuts')),
+    iconsOnly ? null : h('button', { class: 'rail-btn rail-toggle', 'data-key': 'rail-toggle', 'aria-label': open ? 'Show icons only' : 'Show names', title: open ? 'Icons only' : (room ? 'Show names' : 'Show names (they open over the page on a narrow panel)'), 'aria-pressed': String(open), onclick: toggle }, icon('chev', `xs rail-chev ${open ? 'open' : ''}`), h('span', { class: 'rail-l' }, 'Shortcuts')),
     MENUS.map(menuBtn),
     h('div', { class: 'rail-sep', 'aria-hidden': 'true' }),
     h('div', { class: 'rail-cap' }, h('span', { class: 'rail-l' }, 'Quick Bar')),
@@ -187,7 +188,7 @@ function build(app, s, layout, body) {
   // v0.70: Control too (the squares get the whole page; shortcuts live where they live in MOE and Glass)
   if (layout === 'glass' || layout === 'control') {
     parts.top = parts.top.slice(1); // the Quick Bar strip moves into the sidebar (same as MOE)
-    parts.side = moeRail(app, s);
+    parts.side = moeRail(app, s, { iconsOnly: layout === 'control' });
     parts.overlay = s.layMenu ? menuPopover(app, s.layMenu) : parts.overlay;
   }
   parts.header = header(app, parts.title, parts.titleExtra, parts.menuBtn);

@@ -148,27 +148,30 @@ function motionSquare(app, s, kind, n, cc) {
     h('button', Object.assign({ class: 'cc-hero-hit', 'data-key': 'cc-move-hit', 'aria-pressed': String(m.on), 'aria-label': `${name} ${m.dir === 'in' ? 'In' : 'Out'} — ${m.on ? 'in the Mix' : 'add to the Mix'}`,
       title: `${name} ${m.dir === 'in' ? 'In' : 'Out'} · ${m.duration} s\nClick: add to the Mix · double-click: run it now · right-click: all motion presets` }, pressHandlers(app, s, kind, n, 'move', 'animate')),
     canvas,
-    h('span', { class: 'cc-hero-name' }, `${name} ${m.dir === 'in' ? 'In' : 'Out'}`),
-    h('span', { class: 'cc-hero-sub' }, `${m.duration} s${args.stagger ? ` · stagger ${args.stagger} s` : ''}${args.blur ? ' · blur' : ''}${args.overshoot ? ' · overshoot' : ''}`),
+    h('span', { class: 'cc-hero-cap' },
+      h('span', { class: 'cc-hero-name' }, `${name} ${m.dir === 'in' ? 'In' : 'Out'}`),
+      h('span', { class: 'cc-hero-sub' }, `${m.duration} s${args.stagger ? ` · stagger ${args.stagger} s` : ''}${args.blur ? ' · blur' : ''}${args.overshoot ? ' · overshoot' : ''}${m.ease === 'expo' ? ' · expo' : ''}`)),
     m.on ? h('span', { class: 'cc-on-dot', 'aria-hidden': 'true' }) : null),
     h('div', { class: 'cc-hero-opts' },
-      h('div', { class: 'cc-seg', role: 'radiogroup', 'aria-label': 'Move' }, MOVES.map(([id, label]) => h('button', { class: 'cc-segb', role: 'radio', 'aria-checked': String(m.kind === id), 'data-key': `cc-k-${id}`, onclick: () => setCc(app, 'move', { kind: id, on: true }) }, label))),
+      h('div', { class: 'cc-seg cc-seg-k', role: 'radiogroup', 'aria-label': 'Move' }, MOVES.map(([id, label]) => h('button', { class: 'cc-segb', role: 'radio', 'aria-checked': String(m.kind === id), 'data-key': `cc-k-${id}`, onclick: () => setCc(app, 'move', { kind: id, on: true }) }, label))),
       h('div', { class: 'cc-seg cc-seg-io', role: 'radiogroup', 'aria-label': 'Direction' }, [['in', 'In'], ['out', 'Out']].map(([id, label]) => h('button', { class: 'cc-segb', role: 'radio', 'aria-checked': String(m.dir === id), 'data-key': `cc-d-${id}`, onclick: () => setCc(app, 'move', { dir: id, on: true }) }, label)))));
 }
+
+/** The number's own width (digits ≈ 0.62 em, '.' ≈ 0.3 em) so the unit sits right after it. */
+const numWidth = (v) => Math.round(String(v).split('').reduce((w, ch) => w + (/[0-9]/.test(ch) ? 0.62 : 0.32), 0.12) * 100) / 100;
 
 /** A tall square that is a slider: drag up / down anywhere on it (scrub.js, one commit on release). */
 function sliderSquare(app, key, o) {
   const p = Math.max(0, Math.min(1, (o.value - o.min) / (o.max - o.min)));
+  const input = h('input', { class: 'cc-val', 'data-fk': `cc-v-${key}`, type: 'text', inputmode: 'decimal', value: String(o.value), style: { width: `${numWidth(o.value)}em` }, 'aria-label': `${o.label}${o.unit ? ` (${o.unit})` : ''}`, disabled: !!o.disabled });
   const box = h('div', { class: `cc-sq cc-slider ${o.on ? 'on' : ''} ${o.disabled ? 'off' : ''} ${o.wide ? 'wide' : ''}`, 'data-key': `cc-sl-${key}`, style: { '--p': `${Math.round(p * 1000) / 10}%` }, title: o.disabled || o.title },
     h('span', { class: 'cc-fill', 'aria-hidden': 'true' }),
+    o.toggle || null,
+    h('span', { class: 'cc-num' }, input, o.unit ? h('span', { class: 'cc-unit', 'aria-hidden': 'true' }, o.unit) : null),
     h('span', { class: 'cc-sl-name' }, o.label), o.sub ? h('span', { class: 'cc-sl-sub' }, o.disabled ? o.disabledShort : o.sub) : null);
-  const input = h('input', { class: 'cc-val', 'data-fk': `cc-v-${key}`, type: 'text', inputmode: 'decimal', value: String(o.value), 'aria-label': `${o.label}${o.unit ? ` (${o.unit})` : ''}`, disabled: !!o.disabled });
   require('./scrub').attach(input, { axis: o.wide ? 'x' : 'y', span: o.wide ? 220 : 140, min: o.min, max: o.max, step: o.step, fill: box, commit: (v) => o.commit(v) });
   input.addEventListener('change', (e) => { const v = Number(String(e.target.value).replace(',', '.')); if (Number.isFinite(v)) o.commit(Math.max(o.min, Math.min(o.max, v))); });
   if (o.dbl) input.addEventListener('dblclick', (e) => { e.preventDefault(); o.dbl(); });
-  if (o.toggle) box.appendChild(o.toggle);
-  box.insertBefore(input, box.children[1]);
-  if (o.unit) box.insertBefore(h('span', { class: 'cc-unit', 'aria-hidden': 'true' }, o.unit), box.children[2]);
   return box;
 }
 
@@ -194,46 +197,63 @@ function wave() {
 }
 
 /* ---------- the page ---------- */
-function selectionHead(s, kind) {
+/** v0.71: one head for the selection AND the comp (the shell's context strip is not shown on Control's home). */
+function selectionHead(app, s, kind) {
   const c = s.ctx;
   const ls = (c && c.layers) || [];
-  const what = !c ? 'Reading After Effects…' : !c.comp ? 'No active composition' : kind === 'none' ? 'Nothing selected' : kind === 'keys' ? `${(c.properties || []).reduce((t, p) => t + (p.selectedKeys || []).length, 0)} keys` : ls.length === 1 ? ls[0].name : `${ls.length} layers`;
-  const sub = c && c.comp ? `${c.comp.name}${ls.length > 1 && kind !== 'keys' ? ` · ${ls.slice(0, 3).map((l) => l.name).join(', ')}${ls.length > 3 ? '…' : ''}` : ''}` : '';
-  return h('div', { class: 'cc-head', 'data-key': 'cc-head' },
-    h('span', { class: 'cc-stack', 'aria-hidden': 'true' }, ls.slice(0, 3).map((l, i) => h('i', { class: `t-${l.type || 'av'}`, style: { zIndex: String(3 - i) } }))),
-    h('span', { class: 'cc-head-t' }, h('b', {}, what), sub ? h('span', {}, sub) : null));
+  const keys = c && c.comp ? (c.properties || []).reduce((t, p) => t + (p.selectedKeys || []).length, 0) : 0;
+  const what = !c ? 'Reading After Effects…' : !c.comp ? (c.project ? 'No active composition' : 'No project open') : kind === 'none' ? 'Nothing selected' : kind === 'keys' ? `${keys} keys` : ls.length === 1 ? ls[0].name : `${ls.length} layers`;
+  const fps = c && c.comp ? Math.round(c.comp.frameRate * 1000) / 1000 : 0;
+  const sub = c && c.comp ? `${c.comp.name} · ${fps} fps${ls.length > 1 && kind !== 'keys' ? ` · ${ls.slice(0, 3).map((l) => l.name).join(', ')}${ls.length > 3 ? ` +${ls.length - 3}` : ''}` : ''}` : '';
+  return h('div', { class: 'cc-head', 'data-key': 'cc-head', title: c && c.truncated ? 'Large selection: only the first part is read (see Settings › Performance)' : '' },
+    h('span', { class: 'cc-stack', 'aria-hidden': 'true' }, ls.length ? ls.slice(0, 3).map((l, i) => h('i', { class: `t-${l.type || 'av'}`, style: { zIndex: String(3 - i) } })) : h('i', { class: 'none' })),
+    h('span', { class: 'cc-head-t' }, h('b', {}, what), sub ? h('span', { title: sub }, sub) : null),
+    s.last ? h('button', { class: 'icon-btn cc-repeat', 'data-key': 'cc-repeat', title: `Repeat “${s.last.label}” on the current selection (F4)`, 'aria-label': `Repeat ${s.last.label}`, disabled: !!s.running, onclick: () => app.repeatLast() }, icon('repeat', 'sm')) : null,
+    h('button', { class: 'icon-btn', 'data-key': 'cc-refresh', title: 'Refresh selection', 'aria-label': 'Refresh selection', onclick: () => app.refreshContext(true) }, icon('refresh', 'sm')));
 }
 
+/** v0.71: every page in one row that scrolls sideways (it was a 17-button wall under the squares). */
 function libraries(app) {
   const ids = studio.NAV.filter((id) => id !== 'home');
   return h('section', { class: 'cc-libs', 'data-key': 'cc-libs', 'aria-label': 'Libraries' },
     h('div', { class: 'cc-cap' }, 'Libraries'),
-    h('div', { class: 'cc-lib-grid' }, ids.map((id) => { const sec = studio.byId(id); return sec ? h('button', { class: 'cc-lib', 'data-key': `cc-lib-${id}`, title: `Open ${sec.label}`, onclick: () => app.go(id) }, icon(sec.icon, 'sm'), h('span', {}, sec.label)) : null; })));
+    h('div', { class: 'cc-lib-row' }, ids.map((id) => { const sec = studio.byId(id); return sec ? h('button', { class: 'cc-lib', 'data-key': `cc-lib-${id}`, title: `Open ${sec.label}`, onclick: () => app.go(id) }, icon(sec.icon, 'sm'), h('span', {}, sec.label)) : null; })));
+}
+
+/** v0.71: the Motion Control as a card — open for keys (it is their tool), one line you open for layers. */
+function controlCard(app, s, kind) {
+  const ctl = kind === 'none' ? null : AE.controlTop(app, kind);
+  if (!ctl) return null;
+  if (kind === 'keys') return h('div', { class: 'cc-control open', 'data-key': 'cc-control' }, ctl);
+  const open = !!app.services.store.get('cc-control-open', false);
+  return h('div', { class: `cc-control ${open ? 'open' : ''}`, 'data-key': 'cc-control' },
+    h('button', { class: 'cc-ctl-h', 'data-key': 'cc-ctl-h', 'aria-expanded': String(open), title: open ? 'Fold the Motion Control' : 'Ease, anchor and align for the selection', onclick: () => { app.services.store.set('cc-control-open', !open); app.render(); } },
+      icon('chev', `xs cc-chev ${open ? 'open' : ''}`), h('b', {}, 'Motion Control'), h('span', {}, 'Ease · Anchor · Align')),
+    open ? ctl : null);
 }
 
 function squares(app, s, kind) {
   const cc = ccOf(s);
   const n = ((s.ctx && s.ctx.layers) || []).length;
   const mods = modulesFor(kind);
-  const out = [];
-  if (!mods.length) {
-    out.push(h('div', { class: 'cc-empty', 'data-key': 'cc-empty' }, icon('cursor', 'lg'), h('b', {}, s.ctx && s.ctx.comp ? 'Select a layer' : 'Open a composition'), h('span', {}, 'The squares follow what you select: motion for layers, ease and loops for keys, a typewriter for text.')));
-    return out;
-  }
+  const move = [], add = [];
+  if (!mods.length) return { empty: h('div', { class: 'cc-empty', 'data-key': 'cc-empty' }, icon('cursor', 'lg'), h('b', {}, s.ctx && s.ctx.comp ? 'Select a layer' : 'Open a composition'), h('span', {}, 'The squares follow what you select: motion for layers, ease and loops for keys, a typewriter for text.')), move, add };
   if (mods.includes('move')) {
     const m = cc.move;
-    out.push(motionSquare(app, s, kind, n, cc));
-    out.push(sliderSquare(app, 'dur', { label: 'Duration', unit: 's', value: m.duration, min: 0.1, max: 3, step: 0.05, sub: 'drag', on: m.on, title: 'How long the move takes — drag up or down', commit: (v) => setCc(app, 'move', { duration: v, on: true }) }));
-    out.push(sliderSquare(app, 'stag', { label: 'Stagger', unit: 's', value: m.stagger, min: 0, max: 0.5, step: 0.01, sub: 'between layers', on: m.on && n > 1, disabled: n > 1 ? null : 'Stagger needs two or more layers', disabledShort: '2+ layers', title: 'Delay between the layers — drag up or down', commit: (v) => setCc(app, 'move', { stagger: v, on: true }) }));
-    out.push(h('div', { class: 'cc-rounds', 'data-key': 'cc-rounds' },
-      roundSwitch(app, 'blur', 'Blur', 'drop', m.blur, () => setCc(app, 'move', { blur: !m.blur, on: true }), `Comes in sharp from a ${BLUR_PX} px blur (MOE Blur, removed by Restore)`),
-      roundSwitch(app, 'over', 'Overshoot', 'scaleUp', m.over && m.dir === 'in' && m.kind !== 'fade', () => setCc(app, 'move', { over: !m.over, on: true }), 'Goes a little past and settles', m.dir !== 'in' ? 'Overshoot is for moves in' : m.kind === 'fade' ? 'A fade has nothing to overshoot' : null),
-      roundSwitch(app, 'expo', 'Expo', 'easeCurve', m.ease === 'expo', () => setCc(app, 'move', { ease: m.ease === 'expo' ? 'snappy' : 'expo', on: true }), 'Expo ease (fast start, long soft landing) instead of Snappy'),
-      roundSwitch(app, 'screen', 'Order', 'stagger', m.screen && n > 1, () => setCc(app, 'move', { screen: !m.screen, on: true }), 'Screen order: stagger by where the layers are on screen (rows, left → right)', n > 1 ? null : 'Screen order needs two or more layers')));
+    move.push(motionSquare(app, s, kind, n, cc));
+    // v0.71: everything that tunes the move is one block beside it — two tall sliders and the four switches
+    move.push(h('div', { class: 'cc-tune', 'data-key': 'cc-tune' },
+      sliderSquare(app, 'dur', { label: 'Duration', unit: 's', value: m.duration, min: 0.1, max: 3, step: 0.05, on: m.on, title: 'How long the move takes — drag up or down', commit: (v) => setCc(app, 'move', { duration: v, on: true }) }),
+      sliderSquare(app, 'stag', { label: 'Stagger', unit: 's', value: m.stagger, min: 0, max: 0.5, step: 0.01, on: m.on && n > 1, sub: n > 1 ? null : '2+ layers', disabled: n > 1 ? null : 'Stagger needs two or more layers', disabledShort: '2+ layers', title: 'Delay between the layers — drag up or down', commit: (v) => setCc(app, 'move', { stagger: v, on: true }) }),
+      h('div', { class: 'cc-rounds', 'data-key': 'cc-rounds' },
+        roundSwitch(app, 'blur', 'Blur', 'drop', m.blur, () => setCc(app, 'move', { blur: !m.blur, on: true }), `Comes in sharp from a ${BLUR_PX} px blur (MOE Blur, removed by Restore)`),
+        roundSwitch(app, 'over', 'Overshoot', 'scaleUp', m.over && m.dir === 'in' && m.kind !== 'fade', () => setCc(app, 'move', { over: !m.over, on: true }), 'Goes a little past and settles', m.dir !== 'in' ? 'Overshoot is for moves in' : m.kind === 'fade' ? 'A fade has nothing to overshoot' : null),
+        roundSwitch(app, 'expo', 'Expo', 'easeCurve', m.ease === 'expo', () => setCc(app, 'move', { ease: m.ease === 'expo' ? 'snappy' : 'expo', on: true }), 'Expo ease (fast start, long soft landing) instead of Snappy'),
+        roundSwitch(app, 'screen', 'Order', 'stagger', m.screen && n > 1, () => setCc(app, 'move', { screen: !m.screen, on: true }), 'Screen order: stagger by where the layers are on screen (rows, left → right)', n > 1 ? null : 'Screen order needs two or more layers'))));
   }
   if (mods.includes('loop')) {
     const lp = cc.loop;
-    out.push(h('div', { class: `cc-sq cc-wide cc-loop ${lp.on ? 'on' : ''}`, 'data-key': 'cc-w-loop' },
+    add.push(h('div', { class: `cc-sq cc-wide cc-loop ${lp.on ? 'on' : ''}`, 'data-key': 'cc-w-loop' },
       h('button', Object.assign({ class: 'cc-loop-hit', 'data-key': 'cc-loop-hit', 'aria-pressed': String(lp.on), title: 'Loop the selected keys\nClick: add to the Mix · double-click: run it now · right-click: all expressions' }, pressHandlers(app, s, kind, n, 'loop', 'expressions')),
         h('span', { class: 'cc-w-ic', 'aria-hidden': 'true' }, icon('repeat', '')), h('span', { class: 'cc-w-t' }, h('b', {}, 'Loop'), h('span', {}, 'the selected keys, forever'))),
       h('div', { class: 'cc-seg', role: 'radiogroup', 'aria-label': 'Loop' }, LOOPS.map(([id, label]) => h('button', { class: 'cc-segb', role: 'radio', 'aria-checked': String(lp.preset === id), 'data-key': `cc-l-${id}`, onclick: () => setCc(app, 'loop', { preset: id, on: true }) }, label))),
@@ -241,13 +261,13 @@ function squares(app, s, kind) {
   }
   if (mods.includes('wiggle')) {
     const w = cc.wiggle;
-    out.push(sliderSquare(app, 'wig', { wide: true, label: 'Wiggle', unit: 'px', value: w.amp, min: 0, max: 200, step: 1, sub: `${w.freq} × a second · drag sideways`, on: w.on, title: 'How far it wiggles — drag sideways; double-click the number to run it alone',
+    add.push(sliderSquare(app, 'wig', { wide: true, label: 'Wiggle', unit: 'px', value: w.amp, min: 0, max: 200, step: 1, sub: `${w.freq} × a second · drag sideways`, on: w.on, title: 'How far it wiggles — drag sideways; double-click the number to run it alone',
       commit: (v) => setCc(app, 'wiggle', { amp: v, on: true }), dbl: () => { const r = soloRun(cc, kind, n, 'wiggle'); if (r) runOne(app, r); },
       toggle: h('button', { class: `cc-mini-switch ${w.on ? 'on' : ''}`, 'data-key': 'cc-wig-on', role: 'switch', 'aria-checked': String(w.on), 'aria-label': 'Wiggle in the Mix', title: w.on ? 'In the Mix — click to take it out' : 'Add Wiggle to the Mix (on Position — wiggle(freq, amount))', onclick: () => setCc(app, 'wiggle', { on: !w.on }) }, h('i', {})) }));
   }
-  if (mods.includes('type')) out.push(wideSquare(app, s, kind, n, 'type', { icon: 'typewriter', label: 'Typewriter', sub: 'letters appear one by one', title: 'Types the text in', page: 'text' }));
-  if (mods.includes('beats')) out.push(wideSquare(app, s, kind, n, 'beats', { cls: 'cc-beats', icon: 'xPulse', label: 'Beats', sub: 'markers on the music\'s beats', art: wave(), title: 'A marker on every beat of the comp\'s sound layer (read with After Effects\' Convert Audio to Keyframes)' }));
-  return out;
+  if (mods.includes('type')) add.push(wideSquare(app, s, kind, n, 'type', { icon: 'typewriter', label: 'Typewriter', sub: 'letters appear one by one', title: 'Types the text in', page: 'text' }));
+  if (mods.includes('beats')) add.push(wideSquare(app, s, kind, n, 'beats', { cls: 'cc-beats', icon: 'xPulse', label: 'Beats', sub: 'markers on the music\'s beats', art: wave(), title: 'A marker on every beat of the comp\'s sound layer (read with After Effects\' Convert Audio to Keyframes)' }));
+  return { empty: null, move, add };
 }
 
 /** The Mix bar: what will happen, said by the tools' own cards, and the one Apply. */
@@ -256,7 +276,7 @@ function mixBar(app, s, kind) {
   const runs = plan(cc, kind, ((s.ctx && s.ctx.layers) || []).length);
   if (!runs.length) {
     return h('div', { class: 'cc-mix empty', 'data-key': 'cc-mix' }, h('span', { class: 'cc-mix-dot', 'aria-hidden': 'true' }),
-      h('span', { class: 'cc-mix-t' }, kind === 'none' ? 'Select layers to get the squares' : 'Tap squares to mix them · double-click runs one now'));
+      h('span', { class: 'cc-mix-t' }, kind === 'none' ? 'Select layers to get the squares' : 'Tap squares to mix · double-click runs one'));
   }
   const TC = require('../../core/toolcard');
   const notReady = runs.map((r) => ({ r, rd: readyOf(app, r) })).find((x) => !x.rd.ok);
@@ -283,11 +303,13 @@ function build(app, s, body) {
   if (q) { content = h('div', { class: 'view ae-page cc-page' }, AE.searchResults(app, q)); title = 'Search'; }
   else if (s.view === 'home' || AE.TAB_IDS.includes(s.view) || require('./workflow').STAGE_IDS.includes(s.view)) {
     title = 'Control';
-    // the Motion Control (ease, anchor, align — their one place) rides as its own card: first for keys, after the squares for layers
-    const ctl = kind === 'none' ? null : AE.controlTop(app, kind);
-    const ctlCard = ctl ? h('div', { class: 'cc-control', 'data-key': 'cc-control' }, ctl) : null;
-    content = h('div', { class: 'view cc-page', 'data-key': 'cc-page' }, selectionHead(s, kind), kind === 'keys' ? ctlCard : null,
-      h('div', { class: `cc-grid k-${kind}`, 'data-key': `cc-grid-${kind}` }, squares(app, s, kind)), kind === 'keys' ? null : ctlCard, libraries(app));
+    const sq = squares(app, s, kind);
+    const group = (id, label, kids) => kids.length ? h('section', { class: `cc-group g-${id}`, 'data-key': `cc-g-${id}`, 'aria-label': label }, h('div', { class: 'cc-cap' }, label), h('div', { class: `cc-grid k-${kind}`, 'data-key': `cc-grid-${id}` }, kids)) : null;
+    content = h('div', { class: 'view cc-page', 'data-key': 'cc-page' }, selectionHead(app, s, kind),
+      sq.empty ? h('div', { class: 'cc-grid', 'data-key': 'cc-grid-none' }, sq.empty) : null,
+      kind === 'keys' ? h('section', { class: 'cc-group', 'data-key': 'cc-g-keys', 'aria-label': 'Keys' }, h('div', { class: 'cc-cap' }, 'Keys'), controlCard(app, s, kind)) : null,
+      group('move', 'Move', sq.move), group('add', 'Add', sq.add),
+      kind === 'keys' ? null : controlCard(app, s, kind), libraries(app));
   } else {
     const sec = studio.byId(s.view);
     title = (sec || { label: s.view.charAt(0).toUpperCase() + s.view.slice(1) }).label;
@@ -295,7 +317,10 @@ function build(app, s, body) {
       h('span', { class: 'lay-crumb-sep' }, '›'), h('span', {}, title)), body(s.view)];
   }
   const home = !q && (s.view === 'home' || AE.TAB_IDS.includes(s.view) || require('./workflow').STAGE_IDS.includes(s.view));
-  return { top: [require('./quickbar').strip(app), AE.searchBox(app, s)], title, content, bottom: home ? mixBar(app, s, kind) : null, overlay: s.aeMenu ? AE.panelMenu(app, s) : null, menuBtn: AE.menuButton(app, s) };
+  // v0.71: on the home the search is an icon in the header (Ctrl+K) and the comp line lives in the head — the squares start higher
+  const search = h('button', { class: 'icon-btn cc-search', 'data-key': 'cc-search', title: 'Search tools & presets (Ctrl+K)', 'aria-label': 'Search tools and presets', onclick: () => require('./palette').open(app) }, icon('search', 'sm'));
+  return { top: home ? [require('./quickbar').strip(app)] : [require('./quickbar').strip(app), AE.searchBox(app, s)], title, titleExtra: home ? search : null, hideCtx: home && !s.hostError,
+    content, bottom: home ? mixBar(app, s, kind) : null, overlay: s.aeMenu ? AE.panelMenu(app, s) : null, menuBtn: AE.menuButton(app, s) };
 }
 
 module.exports = { build, plan, modulesFor, ccOf, soloRun, applyMix, MOVES, LOOPS, DEFAULTS, BLUR_PX };

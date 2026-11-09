@@ -241,7 +241,7 @@ function createApp(root, services, env = {}) {
       p.side || null, // v0.25: a layout's own sidebar (MOE)
       h('div', { class: 'main' },
         p.header,
-        contextStrip(s),
+        p.hideCtx ? null : contextStrip(s), // v0.71: Control's home shows the comp in its own head
         p.top,
         h('div', { class: 'content' }, p.content),
         p.bottom || null,

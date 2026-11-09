@@ -49,7 +49,7 @@ test('Glass is back to its v0.67 look (the v0.68 frost was removed at the owner\
 
 test('Glass uses MOE\'s sidebar (every shortcut on the left, no icon row on top); NOW actions and the narrow Anchor header have room', () => {
   const src = fs.readFileSync(path.join(__dirname, '../extension/app/ui/layouts.js'), 'utf8');
-  assert.match(src, /if \(layout === 'glass'(?: \|\| layout === 'control')?\) \{\s*parts\.top = parts\.top\.slice\(1\);[^\n]*\n\s*parts\.side = moeRail\(app, s\);/);
+  assert.match(src, /if \(layout === 'glass'(?: \|\| layout === 'control')?\) \{\s*parts\.top = parts\.top\.slice\(1\);[^\n]*\n\s*parts\.side = moeRail\(app, s(?:, \{ iconsOnly: layout === 'control' \})?\);/);
   const L = require('../extension/app/ui/layoutGlass');
   const gsrc = fs.readFileSync(path.join(__dirname, '../extension/app/ui/layoutGlass.js'), 'utf8');
   assert.match(gsrc, /top: \[require\('\.\/quickbar'\)\.strip\(app\), AE\.searchBox\(app, s\)\]/, 'the strip Glass builds is the first top item — the one the sidebar replaces');

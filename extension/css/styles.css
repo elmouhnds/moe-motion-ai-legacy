@@ -272,94 +272,106 @@
 .gl-now-acts:not(.mini) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .app:not(.kit-narrow):not(.kit-mid):not(.kit-tiny) .gl-now-acts:not(.mini) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
-/* ================================================================== CONTROL (v0.70, docs/features/CONTROL_STYLE.md)
+/* ================================================================== CONTROL (v0.70, layout v0.71 — docs/features/CONTROL_STYLE.md)
    A Control Center for motion: squares that are the tools. Hover only changes colour (never size or place). */
 .app.layout-control {
   --bg: #0a0a0c; --bg-raised: #17171b; --bg-sunken: #0e0e11; --bg-elev: #1e1e23; --bg-hover: rgba(255, 255, 255, 0.05); --bg-active: rgba(255, 255, 255, 0.09);
   --line: rgba(255, 255, 255, 0.07); --line-strong: rgba(255, 255, 255, 0.16);
   --text: #f4f4f6; --text-2: #c8c8cf; --text-3: #9d9da8;
   --r: 8px; --r-lg: 18px;
-  --cc-sq: #1a1a1f; --cc-sq-hi: #222228; --cc-fill: rgba(255, 122, 89, 0.30); --cc-on-ink: #101013;
+  --cc-sq: #1a1a1f; --cc-sq-hi: #222228; --cc-fill: rgba(255, 122, 89, 0.30); --cc-stage: #0f0f12; --cc-cap-bg: rgba(10, 10, 12, 0.82);
   background: var(--bg); color: var(--text);
 }
 :root[data-theme="light"] .app.layout-control {
   --bg: #e9e8ec; --bg-raised: #ffffff; --bg-sunken: #f2f2f5; --bg-elev: #ffffff; --bg-hover: rgba(0, 0, 0, 0.04); --bg-active: rgba(0, 0, 0, 0.07);
   --line: rgba(0, 0, 0, 0.08); --line-strong: rgba(0, 0, 0, 0.16);
   --text: #121216; --text-2: #3b3b44; --text-3: #5f5f6a;
-  --cc-sq: #ffffff; --cc-sq-hi: #f6f6f9; --cc-fill: rgba(194, 65, 12, 0.18); --cc-on-ink: #ffffff;
+  --cc-sq: #ffffff; --cc-sq-hi: #f6f6f9; --cc-fill: rgba(194, 65, 12, 0.18); --cc-stage: #f3f1ee; --cc-cap-bg: rgba(255, 255, 255, 0.88);
 }
 .app.layout-control .main, .app.layout-control .hdr, .app.layout-control .ctx, .app.layout-control .ae-searchrow, .app.layout-control .copilot { background: var(--bg); border-color: transparent; }
 .app.layout-control .hdr .title { font-family: var(--display); font-size: 15px; letter-spacing: -0.01em; }
+.app.layout-control .hdr .cc-search { margin-left: auto; }
+.app.layout-control .hdr .cc-search ~ .spacer { display: none; }
 .app.layout-control .ae-search { height: 32px; border-radius: 16px; border: 1px solid var(--line); background: var(--bg-raised); }
 .app.layout-control .moe-rail { background: var(--bg); border-right-color: var(--line); }
 .app.layout-control .lay-crumb { background: none; border-color: transparent; }
-.cc-page { padding: 4px 12px 16px; }
+.cc-page { padding: 2px 12px 16px; }
 
-/* the selection, in one line */
-.cc-head { display: flex; align-items: center; gap: 10px; margin: 2px 2px 12px; min-width: 0; }
+/* the head: what is selected + the comp, in one block */
+.cc-head { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; padding: 2px 2px 0; min-width: 0; }
 .cc-stack { display: flex; flex: none; }
 .cc-stack i { display: block; width: 24px; height: 24px; border-radius: 7px; border: 2px solid var(--bg); background: var(--text-3); }
 .cc-stack i + i { margin-left: -9px; }
+.cc-stack i.none { background: none; border: 1.5px dashed var(--line-strong); }
 .cc-stack i.t-text { background: #5b8cff; } .cc-stack i.t-shape { background: var(--accent); } .cc-stack i.t-solid { background: #b98cff; } .cc-stack i.t-null { background: #6b6b75; } .cc-stack i.t-precomp { background: #4fc58f; }
-.cc-head-t { display: flex; flex-direction: column; min-width: 0; }
+.cc-head-t { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .cc-head-t b { font-family: var(--display); font-size: 17px; letter-spacing: -0.01em; line-height: 1.2; overflow-wrap: anywhere; }
 .cc-head-t span { color: var(--text-3); font-size: 11px; overflow-wrap: anywhere; }
+.cc-head .icon-btn { flex: none; }
 
-/* the squares */
-.cc-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 78px; gap: 10px; }
+/* groups: Move · Add (· Keys) */
+.cc-group + .cc-group { margin-top: 16px; }
+.cc-cap { margin: 0 2px 8px; font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); }
+.cc-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
 .cc-sq { position: relative; min-width: 0; border-radius: var(--r-lg); background: var(--cc-sq); border: 1px solid var(--line); color: var(--text); overflow: hidden; transition: background var(--t), border-color var(--t), box-shadow var(--t); }
 .cc-sq.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-.cc-on-dot { position: absolute; top: 10px; right: 10px; width: 8px; height: 8px; border-radius: 4px; background: var(--accent); box-shadow: 0 0 10px var(--accent); pointer-events: none; }
+.cc-on-dot { position: absolute; top: 10px; right: 10px; z-index: 2; width: 8px; height: 8px; border-radius: 4px; background: var(--accent); box-shadow: 0 0 10px var(--accent); pointer-events: none; }
 
-/* Motion: the hero square plays the move it will write */
-.cc-hero { grid-column: span 2; grid-row: span 3; display: flex; flex-direction: column; background: linear-gradient(165deg, #241712 0%, var(--cc-sq) 70%); }
-:root[data-theme="light"] .cc-hero { background: linear-gradient(165deg, #fff1ea 0%, var(--cc-sq) 70%); }
-.cc-hero-hit { position: relative; flex: 1; min-height: 0; display: block; width: 100%; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+/* Motion: the preview fills the square, its name sits on it */
+.cc-hero { grid-column: span 2; display: flex; flex-direction: column; min-height: 250px; background: var(--cc-stage); }
+.cc-hero-hit { position: relative; flex: 1; min-height: 170px; display: block; width: 100%; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
 .cc-hero-hit:hover { background: var(--bg-hover); }
-.cc-hero-hit:focus-visible { outline: none; box-shadow: var(--focus); }
-.cc-canvas { position: absolute; left: 10px; right: 10px; top: 10px; height: calc(100% - 58px); width: calc(100% - 20px); pointer-events: none; }
-.cc-hero-name { position: absolute; left: 12px; bottom: 24px; font-family: var(--display); font-size: 18px; font-weight: 800; letter-spacing: -0.01em; pointer-events: none; }
-.cc-hero-sub { position: absolute; left: 12px; right: 12px; bottom: 8px; font-size: 11px; color: var(--text-3); pointer-events: none; overflow-wrap: anywhere; }
-.cc-hero-opts { display: flex; flex-direction: column; gap: 6px; padding: 8px; }
-.cc-seg { display: flex; gap: 2px; padding: 2px; border-radius: 10px; background: var(--bg-sunken); }
-.cc-segb { flex: 1 1 0; min-width: 0; height: var(--h-s); padding: 0 4px; border: 0; border-radius: 8px; background: none; color: var(--text-2); font: 600 11px var(--font); cursor: pointer; overflow-wrap: anywhere; line-height: 1.1; }
+.cc-hero-hit:focus-visible { outline: none; box-shadow: var(--focus) inset; }
+.cc-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.cc-hero-cap { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 1px; padding: 26px 12px 9px; background: linear-gradient(to top, var(--cc-cap-bg) 45%, rgba(0, 0, 0, 0)); pointer-events: none; }
+:root[data-theme="light"] .cc-hero-cap { background: linear-gradient(to top, var(--cc-cap-bg) 45%, rgba(255, 255, 255, 0)); }
+.cc-hero-name { font-family: var(--display); font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+.cc-hero-sub { font-size: 11px; color: var(--text-2); overflow-wrap: anywhere; }
+.cc-hero-opts { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; background: var(--cc-sq); border-top: 1px solid var(--line); }
+.cc-seg { display: flex; gap: 2px; padding: 2px; border-radius: 10px; background: var(--bg-sunken); min-width: 0; }
+.cc-seg-k { flex: 1 1 230px; }
+.cc-seg-io { flex: 1 0 84px; max-width: 100%; }
+.cc-segb { flex: 1 1 0; min-width: 0; height: var(--h-s); padding: 0 3px; border: 0; border-radius: 8px; background: none; color: var(--text-2); font: 600 11px var(--font); cursor: pointer; overflow-wrap: anywhere; line-height: 1.1; }
 .cc-segb:hover { background: var(--bg-hover); color: var(--text); }
 .cc-segb[aria-checked="true"] { background: var(--text); color: var(--bg); }
-.cc-seg-io { align-self: flex-start; width: 50%; }
 
-/* sliders: a tall square you drag; --p is set by scrub.js */
-.cc-slider { grid-row: span 2; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; cursor: ns-resize; }
-.cc-slider.wide { grid-column: span 3; grid-row: span 1; cursor: ew-resize; justify-content: center; }
+/* the tune block beside the hero: two tall sliders + the four switches */
+.cc-tune { grid-column: span 2; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(150px, 1fr) auto; gap: 10px; }
+.cc-tune .cc-rounds { grid-column: span 2; }
+
+/* sliders: drag anywhere on the square; --p is set by scrub.js */
+.cc-slider { display: flex; flex-direction: column; justify-content: flex-end; gap: 1px; padding: 10px 11px; cursor: ns-resize; }
+.cc-slider.wide { grid-column: span 4; min-height: 74px; cursor: ew-resize; justify-content: center; }
 .cc-fill { position: absolute; left: 0; right: 0; bottom: 0; height: var(--p, 0%); background: var(--cc-fill); pointer-events: none; transition: height 60ms linear; }
 .cc-slider.wide .cc-fill { top: 0; right: auto; height: auto; width: var(--p, 0%); transition: width 60ms linear; }
 .cc-slider.on .cc-fill { background: var(--accent); opacity: 0.42; }
-.cc-val { position: relative; width: 100%; padding: 0; border: 0; background: none; color: var(--text); font: 800 22px var(--display); letter-spacing: -0.02em; cursor: inherit; }
+.cc-num { position: relative; display: flex; align-items: baseline; gap: 3px; }
+.cc-val { min-width: 1.4ch; max-width: 6ch; padding: 0; border: 0; background: none; color: var(--text); font: 800 24px var(--display); letter-spacing: -0.02em; cursor: inherit; }
+.cc-slider.wide .cc-val { font-size: 20px; }
 .cc-val:focus { outline: none; cursor: text; }
 .cc-val:focus-visible { box-shadow: var(--focus); border-radius: 4px; }
-.cc-unit { position: absolute; top: 10px; right: 12px; font-size: 11px; color: var(--text-3); }
+.cc-unit { font-size: 12px; font-weight: 700; color: var(--text-3); }
 .cc-sl-name { position: relative; font-size: 12px; font-weight: 700; pointer-events: none; }
 .cc-sl-sub { position: relative; font-size: 10.5px; color: var(--text-3); pointer-events: none; overflow-wrap: anywhere; }
-.cc-slider.wide .cc-val { font-size: 20px; }
 .cc-slider.off { opacity: 0.55; cursor: default; }
 
 /* a small switch inside a square (Wiggle on / off) */
-.cc-mini-switch { position: absolute; top: 9px; right: 40px; width: 34px; height: 20px; padding: 2px; border: 0; border-radius: 10px; background: var(--bg-active); cursor: pointer; }
+.cc-mini-switch { position: absolute; top: 10px; right: 10px; z-index: 2; width: 34px; height: 20px; padding: 2px; border: 0; border-radius: 10px; background: var(--bg-active); cursor: pointer; }
 .cc-mini-switch i { display: block; width: 16px; height: 16px; border-radius: 8px; background: var(--text-2); transition: transform var(--t), background var(--t); }
 .cc-mini-switch.on { background: var(--accent); }
 .cc-mini-switch.on i { transform: translateX(14px); background: var(--accent-ink); }
 .cc-mini-switch:focus-visible { outline: none; box-shadow: var(--focus); }
-.cc-slider.wide { grid-column: span 4; }
 
 /* round switches */
-.cc-rounds { grid-column: span 2; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.cc-round { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 4px; width: 100%; max-width: 78px; aspect-ratio: 1 / 1; align-self: center; justify-self: center; border-radius: 50%; cursor: pointer; font: 600 10.5px var(--font); line-height: 1.1; text-align: center; overflow-wrap: anywhere; }
+.cc-rounds { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; justify-items: center; }
+.cc-round { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 4px; width: 100%; max-width: 68px; aspect-ratio: 1 / 1; border-radius: 50%; cursor: pointer; font: 600 10px var(--font); line-height: 1.1; text-align: center; overflow-wrap: normal; word-break: keep-all; }
 .cc-round:hover { background: var(--cc-sq-hi); }
 .cc-round[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
 .cc-round[disabled] { opacity: 0.45; cursor: default; }
-.cc-round:focus-visible, .cc-wide:focus-visible, .cc-lib:focus-visible { outline: none; box-shadow: var(--focus); }
+.cc-round:focus-visible, .cc-wide:focus-visible, .cc-lib:focus-visible, .cc-ctl-h:focus-visible { outline: none; box-shadow: var(--focus); }
 
 /* wide squares (Beats, Typewriter, Loop) */
-.cc-wide { grid-column: span 4; display: flex; align-items: center; gap: 12px; padding: 0 14px; text-align: left; cursor: pointer; font: inherit; }
+.cc-wide { grid-column: span 4; display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 0 14px; text-align: left; cursor: pointer; font: inherit; }
 .cc-wide:hover { background: var(--cc-sq-hi); }
 .cc-w-ic { flex: none; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; background: var(--bg-sunken); color: var(--accent); }
 .cc-w-t { display: flex; flex-direction: column; min-width: 0; }
@@ -369,56 +381,70 @@
 :root[data-theme="light"] .cc-beats { background: linear-gradient(100deg, #e9eefc, var(--cc-sq) 75%); }
 .cc-beats .cc-w-ic { color: #8fb0ff; }
 :root[data-theme="light"] .cc-beats .cc-w-ic { color: #2f5bd3; }
-.cc-wave { flex: 1; min-width: 40px; height: 44px; display: flex; align-items: center; gap: 3px; overflow: hidden; }
+.cc-wave { flex: 1; min-width: 40px; height: 40px; display: flex; align-items: center; gap: 3px; overflow: hidden; }
 .cc-wave i { flex: none; width: 3px; border-radius: 2px; background: rgba(143, 176, 255, 0.35); }
 .cc-wave i.b { background: #8fb0ff; }
 .cc-loop { flex-wrap: wrap; align-content: center; cursor: default; padding: 8px 12px; }
 .cc-loop-hit { display: flex; align-items: center; gap: 12px; flex: 1 1 160px; min-width: 0; padding: 4px; border: 0; border-radius: 12px; background: none; color: inherit; text-align: left; cursor: pointer; }
 .cc-loop-hit:hover { background: var(--bg-hover); }
 .cc-loop .cc-seg { flex: 1 1 180px; }
-.cc-grid.k-keys { grid-auto-rows: auto; }
-.cc-grid.k-keys .cc-wide, .cc-grid.k-keys .cc-slider.wide { min-height: 64px; }
 
-/* the Motion Control rides as its own card (its one place for ease, anchor and align) */
-.cc-control { margin: 10px 0 0; padding: 6px; border-radius: var(--r-lg); background: var(--cc-sq); border: 1px solid var(--line); }
-.cc-head + .cc-control { margin: 0 0 10px; }
+/* the Motion Control: a card — open for keys, one line you open for layers */
+.cc-control { margin: 16px 0 0; padding: 4px; border-radius: var(--r-lg); background: var(--cc-sq); border: 1px solid var(--line); }
+.cc-group .cc-control { margin: 0; }
+.cc-control.open { padding: 6px; }
+.cc-ctl-h { display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--h-l); padding: 4px 10px; border: 0; border-radius: 14px; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
+.cc-ctl-h:hover { background: var(--bg-hover); }
+.cc-ctl-h b { font-size: 12px; }
+.cc-ctl-h span { font-size: 11px; color: var(--text-3); }
+.cc-chev { transition: transform var(--t); }
+.cc-chev.open { transform: rotate(90deg); }
 
 /* nothing selected */
-.cc-empty { grid-column: span 4; grid-row: span 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 16px; border-radius: var(--r-lg); border: 1px dashed var(--line-strong); color: var(--text-2); text-align: center; }
+.cc-empty { grid-column: span 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 150px; padding: 16px; border-radius: var(--r-lg); border: 1px dashed var(--line-strong); color: var(--text-2); text-align: center; }
 .cc-empty b { font-family: var(--display); font-size: 16px; color: var(--text); }
 .cc-empty span { font-size: 11px; max-width: 280px; }
 
-/* libraries: every page one click away */
-.cc-libs { margin-top: 18px; }
-.cc-cap { margin: 0 2px 8px; font-size: 10px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-3); }
-.cc-lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; }
-.cc-lib { display: flex; align-items: center; gap: 6px; min-height: var(--h-l); padding: 4px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--cc-sq); color: var(--text-2); font: 600 11px var(--font); text-align: left; cursor: pointer; overflow-wrap: anywhere; line-height: 1.15; }
+/* libraries: one row that scrolls sideways */
+.cc-libs { margin-top: 16px; }
+.cc-lib-row { display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; padding-bottom: 4px; scrollbar-width: thin; -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); }
+.cc-lib-row::-webkit-scrollbar { height: 4px; }
+.cc-lib-row::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 2px; }
+.cc-lib { flex: none; display: flex; align-items: center; gap: 6px; min-height: var(--h-l); padding: 4px 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--cc-sq); color: var(--text-2); font: 600 11px var(--font); white-space: nowrap; cursor: pointer; }
 .cc-lib:hover { background: var(--cc-sq-hi); color: var(--text); }
 .cc-lib .svg-i { flex: none; color: var(--text-3); }
 
-/* the Mix: what will happen + one Apply */
-.cc-mix { display: flex; flex-direction: column; gap: 6px; margin: 0 10px 10px; min-width: 0; padding: 10px 12px; border-radius: 16px; background: var(--bg-raised); border: 1px solid var(--line); }
-.cc-mix.empty { flex-direction: row; align-items: center; gap: 8px; }
+/* the Mix: a thin line when empty, grows when something is on */
+.cc-mix { display: flex; flex-direction: column; gap: 6px; margin: 0 10px 10px; min-width: 0; padding: 10px 12px; border-radius: 16px; background: var(--bg-raised); border: 1px solid var(--line); animation: cc-mix-in 180ms cubic-bezier(0.2, 0, 0, 1); }
+.cc-mix.empty { flex-direction: row; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 12px; background: none; animation: none; }
+@keyframes cc-mix-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .cc-mix-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .cc-chip { display: inline-flex; align-items: center; gap: 2px; height: var(--h-s); padding: 0 2px 0 10px; border-radius: 12px; background: var(--accent-soft); color: var(--text); font-size: 11px; font-weight: 700; }
 .cc-chip-x { width: 20px; height: 20px; border: 0; border-radius: 10px; background: none; color: var(--text-2); cursor: pointer; font-size: 13px; line-height: 1; }
 .cc-chip-x:hover { background: var(--bg-active); color: var(--text); }
 .cc-mix-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .cc-mix-dot { flex: none; width: 8px; height: 8px; border-radius: 4px; background: var(--ok); }
-.cc-mix.empty .cc-mix-dot { background: var(--text-3); }
+.cc-mix.empty .cc-mix-dot { width: 6px; height: 6px; background: var(--text-3); }
 .cc-mix.blocked .cc-mix-dot { background: var(--warn); }
 .cc-mix-t { flex: 1; min-width: 0; font-size: 11px; color: var(--text-2); overflow-wrap: anywhere; }
+.cc-mix.empty .cc-mix-t { color: var(--text-3); }
 .cc-apply { height: var(--h-l); padding: 0 16px; border-radius: 10px; font-weight: 800; }
-
-/* a docked panel under 560 px: two columns, the hero and the wide squares full width */
-.app.layout-control.kit-mid .cc-grid, .app.layout-control.kit-narrow .cc-grid, .app.layout-control.kit-tiny .cc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.app.layout-control.kit-mid .cc-hero, .app.layout-control.kit-narrow .cc-hero, .app.layout-control.kit-tiny .cc-hero,
-.app.layout-control.kit-mid .cc-rounds, .app.layout-control.kit-narrow .cc-rounds, .app.layout-control.kit-tiny .cc-rounds,
-.app.layout-control.kit-mid .cc-wide, .app.layout-control.kit-narrow .cc-wide, .app.layout-control.kit-tiny .cc-wide,
-.app.layout-control.kit-mid .cc-empty, .app.layout-control.kit-narrow .cc-empty, .app.layout-control.kit-tiny .cc-empty,
-.app.layout-control.kit-mid .cc-slider.wide, .app.layout-control.kit-narrow .cc-slider.wide, .app.layout-control.kit-tiny .cc-slider.wide { grid-column: span 2; }
-.app.layout-control.kit-tiny .cc-rounds { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-row: span 2; }
-
 /* the floating Assistant button sits at the bottom corner: the Mix keeps clear of it */
 .app.layout-control.fab-right .cc-mix { margin-right: 62px; }
 .app.layout-control.fab-left .cc-mix { margin-left: 62px; }
+
+/* a docked panel under 560 px: two columns — the hero full width, the tune block under it */
+.app.layout-control.kit-mid .cc-grid, .app.layout-control.kit-narrow .cc-grid, .app.layout-control.kit-tiny .cc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.app.layout-control.kit-mid .cc-hero, .app.layout-control.kit-narrow .cc-hero, .app.layout-control.kit-tiny .cc-hero,
+.app.layout-control.kit-mid .cc-tune, .app.layout-control.kit-narrow .cc-tune, .app.layout-control.kit-tiny .cc-tune,
+.app.layout-control.kit-mid .cc-wide, .app.layout-control.kit-narrow .cc-wide, .app.layout-control.kit-tiny .cc-wide,
+.app.layout-control.kit-mid .cc-empty, .app.layout-control.kit-narrow .cc-empty, .app.layout-control.kit-tiny .cc-empty,
+.app.layout-control.kit-mid .cc-slider.wide, .app.layout-control.kit-narrow .cc-slider.wide, .app.layout-control.kit-tiny .cc-slider.wide { grid-column: span 2; }
+/* mid: the two sliders and the switches side by side (switches as a 2 × 2 column) */
+.app.layout-control.kit-mid .cc-tune { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr); grid-template-rows: 150px; }
+.app.layout-control.kit-mid .cc-tune .cc-rounds { grid-column: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: space-between; gap: 6px; }
+.app.layout-control.kit-mid .cc-tune .cc-round { max-width: 64px; }
+.app.layout-control.kit-narrow .cc-tune, .app.layout-control.kit-tiny .cc-tune { grid-template-rows: 130px auto; }
+.app.layout-control.kit-tiny .cc-rounds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.app.layout-control.kit-tiny .cc-hero-opts { flex-wrap: wrap; }
+.app.layout-control.kit-tiny .cc-seg-io { width: 100%; }

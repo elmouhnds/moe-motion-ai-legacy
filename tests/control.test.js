@@ -98,3 +98,16 @@ test('Control CSS: scoped, hover never moves a square, only Chromium 99 CSS; eve
   assert.match(src, /require\('\.\/scrub'\)\.attach\(input/, 'sliders go through scrub.js');
   assert.match(src, /TC\.card\(tool, fullArgs\(app, r\)/, 'the Mix line comes from the tools\' own cards');
 });
+
+test('v0.71 layout: the comp line moves into the head, search is a header icon, the rail is icons only, Move / Add groups, Libraries one row', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../extension/app/ui/layoutControl.js'), 'utf8');
+  assert.match(src, /hideCtx: home && !s\.hostError/, 'the context strip hides only on the home, never over an error');
+  assert.match(fs.readFileSync(path.join(__dirname, '../extension/app/ui/shell.js'), 'utf8'), /p\.hideCtx \? null : contextStrip\(s\)/);
+  assert.match(src, /require\('\.\/palette'\)\.open\(app\)/, 'search opens Ctrl+K');
+  assert.match(src, /group\('move', 'Move', sq\.move\), group\('add', 'Add', sq\.add\)/);
+  assert.match(src, /'cc-control-open'/, 'the Motion Control folds for layers (remembered)');
+  const lay = fs.readFileSync(path.join(__dirname, '../extension/app/ui/layouts.js'), 'utf8');
+  assert.match(lay, /moeRail\(app, s, \{ iconsOnly: layout === 'control' \}\)/);
+  const css = fs.readFileSync(path.join(__dirname, '../extension/css/styles.css'), 'utf8');
+  assert.match(css, /\.cc-lib-row \{ display: flex;[^}]*overflow-x: auto/, 'Libraries scroll sideways in one row');
+});
