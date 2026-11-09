@@ -84,6 +84,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['layout', 'Control, laid out better', 'The squares start higher: the comp and the selection share one line, search is the magnifier in the header (Ctrl+K). The Motion square is all preview with its name on it; Duration, Stagger and the switches sit together beside it; Move and Add are two groups; the Motion Control folds to one line for layers; Libraries is one row that scrolls; the Mix is a thin line until you switch something on.'],
   ['sliders', 'Control — a Control Center for motion', 'A fourth style (Settings › Style, or ≡ › Style): squares that ARE the tools. The Motion square plays the move it will write; Duration and Stagger are tall sliders you drag; Blur, Overshoot, Expo and Order are round switches; Wiggle, Typewriter, Loop and Beats follow what you select. Switch on what you want, read one line saying what will happen, press Apply once. Double-click a square to run it alone.'],
   ['layers', 'Glass has the sidebar', 'Every shortcut is on the left now, like MOE — the icon row on top is gone, so your tools start higher. Hover a shortcut for its card; ⇔ shows the names.'],
   ['background', 'Backgrounds you compose', 'Backgrounds is now one instrument: the real background plays on top, Style · Motion · Colours sit under it, and picking a palette keeps your style and motion.'],

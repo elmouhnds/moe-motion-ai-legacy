@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.70: Control — a Control Center for motion. Squares that are the tools, one Apply."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.70: ستايل Control — كنترول سنتر للموشن، مربعات هي الأدوات وزرار تطبيق واحد"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.71: Control laid out better: more room for the squares, Move and Add groups, a thin Mix."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.71: توزيع أحسن لستايل Control ومساحة أكبر للمربعات"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

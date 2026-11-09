@@ -28,6 +28,14 @@ gather in the **Mix**, and **one Apply** runs them.
 - **Libraries**: every page (`studio.NAV`) one click away, so nothing is lost in this style. Shortcuts are in the
   sidebar, as in MOE and Glass.
 
+## Layout (v0.71, owner: "start with all of it")
+- One **head**: selection + comp (name · fps) + Refresh / Repeat; Control's home hides the shell's context strip (`hideCtx`, never over a host error) and the search row — search is the header magnifier (Ctrl+K).
+- **Motion**: preview fills the square, caption over a fade; kinds and In / Out in one row.
+- **Tune block** beside it: Duration + Stagger (unit right after the number) and the four switches (2 × 2 beside the sliders at 400–560 px).
+- Groups **Move** and **Add** (**Keys** first with keys selected).
+- **Motion Control** folds to one line for layers (`cc-control-open`, remembered); open for keys.
+- **Libraries**: one row that scrolls sideways. **Mix**: a thin line while empty. **Sidebar**: icons only.
+
 ## The Mix
 `layoutControl.plan(cc, kind, nLayers)` is pure (tested): the runs in order — the move first, then Typewriter, Wiggle,
 Loop, Beats — each as `{ tool, args }` of a registered tool. Squares the selection does not show never run.
