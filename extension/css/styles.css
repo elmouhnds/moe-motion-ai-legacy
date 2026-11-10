@@ -294,7 +294,7 @@
 .app.layout-control .hdr .cc-search ~ .spacer { display: none; }
 .app.layout-control .ae-search { height: 32px; border-radius: 16px; border: 1px solid var(--line); background: var(--bg-raised); }
 .app.layout-control .moe-rail { background: var(--bg); border-right-color: var(--line); }
-.app.layout-control .lay-crumb { background: none; border-color: transparent; }
+.app.layout-control .lay-crumb { background: var(--bg); border-color: transparent; z-index: 4; }
 .cc-page { padding: 2px 12px 16px; }
 
 /* the head: what is selected + the comp, in one block */

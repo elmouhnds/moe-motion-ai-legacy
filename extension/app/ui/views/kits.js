@@ -19,7 +19,8 @@ function itemCard(app, s, ref) {
     const sec = studio.byId(secId);
     const tile = sec && sec.tiles.find((t) => t.id === tileId);
     page = secId;
-    if (tile) { const L = require('../studio/library'); thumb = L.thumbEl(L.tileThumb(app, tile)); }
+    if (tile && tile.tool === 'design.background') { const PC = require('../paletteCard'); thumb = PC.art(tile.id, PC.cardArgs(tile, s.args && s.args['design.background'], require('../studio/bgComposer').fullLook(tile))); }
+    else if (tile) { const L = require('../studio/library'); thumb = L.thumbEl(L.tileThumb(app, tile)); }
   } else if (kind === 'nav') page = rest;
   const rd = a.ready(app);
   return h('button', {

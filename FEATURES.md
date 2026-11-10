@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Style Kits & Signature colours** (v0.75.0): each look's tools in one place (SaaS, Apple Glass, Kinetic Type, Social, MoGraph); 16 moving Signature backgrounds; Brand › Motion (a client's own ease); one Ctrl+Z per Control Mix (docs/features/STYLE_KITS.md).
+
 **Control comes alive** (v0.74.0): live previews, gentle premium motion, Wiggle Position / Rotation / Scale, My mixes, Enter / Esc.
 
 **Palettes & Brand** (v0.73.0): palettes shown as real backgrounds in every style; Brand organised (client cards, tabs) with 3 example clients (docs/features/BRAND_KIT_LAYOUT.md).

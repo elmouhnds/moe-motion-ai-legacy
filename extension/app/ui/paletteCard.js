@@ -37,4 +37,13 @@ function card(o) {
   o.look ? h('span', { class: 'pc-look', title: 'A complete look (style + motion)' }, '✦') : null);
 }
 
-module.exports = { card, cardArgs };
+/** v0.75: just the art (a still / hover-playing background) — for squares that are not cards (Style Kits). */
+function art(key, a, cls) {
+  const widgets = require('./widgets');
+  const { bgFrame, moves } = require('./bgDraw');
+  const canvas = h('canvas', { class: cls || 'st-thumb', 'aria-hidden': 'true', 'data-key': `pca|${key}|${[a.style, a.palette, a.colors, a.motion, a.colorMotion].join('|')}` });
+  const t0 = Date.now();
+  return widgets.animated(canvas, (now) => { const { c, W, H } = widgets.prep(canvas); bgFrame(c, W, H, a, { width: 1600, height: 900 }, now === null ? 0 : ((Date.now() - t0) / 1000) % Math.max(a.loop || 8, 0.1), false); }, { still: !moves(a) });
+}
+
+module.exports = { card, cardArgs, art };

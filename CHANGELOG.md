@@ -2,6 +2,19 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.75.0] — 2026-11-10 — Style Kits, Signature colours, a brand that moves
+### Added (owner)
+- **One Ctrl+Z per Mix**: `executor.batch` opens ONE After Effects undo group around all the Mix's runs (tx.begin / tx.end once); each run still validates, verifies, checkpoints and has its own History entry; the group always closes, nested batches join it.
+- **Style Kits** (Design › Style Kits, every style; `app/ui/kits.js`, `views/kits.js`): SaaS Product Video · Apple Glass · Kinetic Type · Social & Reels · MoGraph Cloner — each look's EXISTING tools gathered in build order (backdrop → build → bring in → interact → camera…). Click applies (readiness first), right-click opens the library. General tools stay where they are.
+- **16 Signature looks** at the top of Backgrounds (Liquid Chrome, Peach Fuzz, Mocha Mousse, Electric Lime, Ultraviolet Dream, Northern Lights, Tokyo Night, Miami Sunset, Desert Rose, Matcha Latte, Ocean Glass, Holographic, Ember Glow, Cosmic Latte, Neo Mint, Midnight Gold) — each a complete look with its own motion; 52 palettes.
+- **Brand › Motion**: a client's own Ease Out / Ease In (%), from a feel (Smooth, Snappy, Expo, Gentle, Soft land, Launch) or typed / dragged; a curve and a ball show the feel; saved on the client; **Brand ease** applies exactly these values with Smart Ease. The three examples have their own.
+- **Liquid sliders** (Control): the fill has a moving liquid surface; while you drag it pours (faster waves, bubbles). Round switches answer with one soft ring; the small switch's knob lands with a little elastic.
+### Changed (owner)
+- **Text-animation previews always play "MOE Motion"** (Arabic text selected: "مو موشن") — two words, so moves by words, lines or letters read clearly (Text library and Control › Text).
+- **Previews play when the mouse rests on them** (tiles, Control squares and heroes, palette cards, kit tiles, the brand curve); a palette card plays its real motion. The live preview page behaves like the panel (Calm).
+### Tests
+- tests/control.test.js +2 (one undo group per Mix; kits, Signature looks, text samples, brand ease). tests/space.content + premium-ui updated. 551 tests.
+
 ## [0.74.0] — 2026-11-09 — Control comes alive
 ### Added (owner: "finish the plan, make the preview moving and live, and a light premium animation touch")
 - **Live previews**: Control's big squares (Move, and every page's hero) play in Calm too — they were still because Calm only played squares under the mouse; small page squares play under the mouse. The live preview page plays everything (Full).
