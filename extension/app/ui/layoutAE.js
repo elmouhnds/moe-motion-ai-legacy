@@ -84,7 +84,7 @@ const TABS = [
       { id: 'bg', label: 'Backgrounds', kind: 'tiles', section: 'backgrounds', ids: ['bg-tomato', 'bg-midnight', 'bg-ocean', 'bg-sunset', 'bg-aurora', 'bg-cyber'], more: 'backgrounds', fits: ['none'] },
       { id: 'brand', label: 'Brand', kind: 'acts', fits: ['layers', 'text'], hero: ['brand:apply'], refs: ['brand:apply', 'brand:applyComp', 'brand:ease'], links: [['brand', 'Brand Kit — clients, from website / PDF']] },
       // v0.75: Style Kits — a look's tools gathered in one place (SaaS, Apple Glass, Kinetic Type, Social, MoGraph)
-      { id: 'kits', label: 'Style Kits', kind: 'links', fits: ['none'], open: true, links: [['kits', 'SaaS · Apple Glass · Kinetic Type · Social · MoGraph — each look\'s tools in one place']] }
+      { id: 'kits', label: 'Style Kits', kind: 'links', fits: ['none'], open: true, links: [['kits', 'Each look\'s tools in one place']] }
     ] },
   { id: 'ae-effect', label: 'Look', icon: 'glass', bar: false, title: 'Finish the look: styles, glass, key & colour, camera & zoom (Effect menu)', fits: ['layer', 'layers', 'shapes', 'text'], owns: ['looks', 'compositing', 'zoom'],
     groups: [
