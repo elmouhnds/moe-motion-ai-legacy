@@ -3,7 +3,7 @@
  * Palette cards (v0.73, owner: "the background colours are shown badly — there are creative ways to show them, in every
  * style"). A palette is shown as what it becomes: a still frame of the real background (bgDraw.bgFrame — the same plan
  * the expressions write) in the style you are using (or the tile's own look), with its colours fanned out as overlapping
- * chips and its name over a soft fade. One still canvas each — only the composer's stage animates (LOOK_AND_FEEL rule).
+ * chips and its name over a soft fade. A look that moves plays under the mouse (v0.75); otherwise one still frame.
  * Used by the Background Composer (Bento · Glass · MOE · Control) and by Control's Design page.
  */
 const { h } = require('./dom');
@@ -22,8 +22,11 @@ function card(o) {
   const widgets = require('./widgets');
   const { bgFrame } = require('./bgDraw');
   const a = o.args;
-  const canvas = h('canvas', { class: 'pc-art', 'aria-hidden': 'true', 'data-key': `pc|${o.key}|${[a.style, a.from, a.to, a.angle, a.spread, a.palette, a.colors].join('|')}` });
-  widgets.animated(canvas, () => { const { c, W, H } = widgets.prep(canvas); bgFrame(c, W, H, a, { width: 1600, height: 900 }, 0, false); }, { still: true });
+  const canvas = h('canvas', { class: 'pc-art', 'aria-hidden': 'true', 'data-key': `pc|${o.key}|${[a.style, a.from, a.to, a.angle, a.spread, a.palette, a.colors, a.motion, a.colorMotion, a.loop, a.amount].join('|')}` });
+  // v0.75: rest the mouse on a card and it plays its real motion (the same maths as the expressions); a still look stays still
+  const { moves } = require('./bgDraw');
+  const t0 = Date.now();
+  widgets.animated(canvas, (now) => { const { c, W, H } = widgets.prep(canvas); bgFrame(c, W, H, a, { width: 1600, height: 900 }, now === null ? 0 : ((Date.now() - t0) / 1000) % Math.max(a.loop || 8, 0.1), false); }, { still: !moves(a) });
   const cols = (o.colors || []).slice(0, 6);
   return h('button', {
     class: `pc ${o.on ? 'on' : ''} ${o.cls || ''}`, 'data-key': o.key, 'aria-pressed': String(!!o.on), title: o.title || o.label,

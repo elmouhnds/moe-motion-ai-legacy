@@ -8,6 +8,23 @@ const P = (id, name, tags, colors) => ({ id, name, tags, colors });
 
 const PALETTES = [
   P('tomato', 'MOE Tomato', ['Warm', 'Brand'], ['#1C1C1E', '#2F3A56', '#FF7A59', '#FFB38A', '#F4EDE4']),
+  // v0.75 (owner: "a very attractive colour library"): Signature looks — today's colours, each with its own motion
+  P('liquidChrome', 'Liquid Chrome', ['Signature', 'Neutral'], ['#0E0F13', '#3A3F4B', '#8A93A6', '#C9D1E0', '#F5F7FB']),
+  P('peachFuzz', 'Peach Fuzz', ['Signature', 'Warm'], ['#3B1F1A', '#B5654A', '#FFBE98', '#FFD9C2', '#FFF4EC']),
+  P('mochaMousse', 'Mocha Mousse', ['Signature', 'Warm'], ['#1F1410', '#4A3026', '#A47864', '#D9BBA9', '#F6EDE6']),
+  P('electricLime', 'Electric Lime', ['Signature', 'Bold'], ['#06120A', '#0F3D24', '#2BD97A', '#D7FF3A', '#F4FFE0']),
+  P('ultraDream', 'Ultraviolet Dream', ['Signature', 'Neon'], ['#0D0221', '#3A0CA3', '#7209B7', '#F72585', '#FFC8F0']),
+  P('northernLights', 'Northern Lights', ['Signature', 'Cool'], ['#020B16', '#0A2E3D', '#14B8A6', '#7C3AED', '#A7F3D0']),
+  P('tokyoNight', 'Tokyo Night', ['Signature', 'Neon'], ['#0B0B1A', '#1F1D47', '#E11D74', '#3ABFF8', '#FDE68A']),
+  P('miamiSunset', 'Miami Sunset', ['Signature', 'Warm'], ['#2A0944', '#A12568', '#FE7F2D', '#FEC260', '#FFF1D6']),
+  P('desertRose', 'Desert Rose', ['Signature', 'Luxury'], ['#3D1F26', '#8E4A55', '#D4848C', '#F1C6C0', '#FFF2EC']),
+  P('matchaLatte', 'Matcha Latte', ['Signature', 'Nature'], ['#1C2416', '#4F6B3A', '#9CB880', '#DDE8C9', '#FBF8EF']),
+  P('oceanGlass', 'Ocean Glass', ['Signature', 'Cool'], ['#021526', '#03346E', '#0D7C9C', '#6EACDA', '#E2F1FF']),
+  P('holographic', 'Holographic', ['Signature', 'Pastel'], ['#C4B5FD', '#93C5FD', '#A7F3D0', '#FBCFE8', '#FFFFFF']),
+  P('emberGlow', 'Ember Glow', ['Signature', 'Dark'], ['#0B0503', '#3D0E05', '#B3260E', '#FF7B39', '#FFD29D']),
+  P('cosmicLatte', 'Cosmic Latte', ['Signature', 'Pastel'], ['#1A1625', '#3E3657', '#C9A9A6', '#F2E3D5', '#FFF8E7']),
+  P('neoMint', 'Neo Mint', ['Signature', 'Clean'], ['#062925', '#044A42', '#3EB489', '#A8F0D1', '#F0FFF8']),
+  P('midnightGold', 'Midnight Gold', ['Signature', 'Luxury'], ['#05060A', '#121A2B', '#2B3A55', '#C8A24A', '#F6E7B8']),
   // v0.60 (SAAS_INTERACTION.md): product backdrops — the quiet, lit fields product UI sits on (a glow, a studio sweep)
   P('productNight', 'Product Night', ['Product', 'Dark'], ['#05070D', '#0B1226', '#2F6BFF', '#7AA2FF', '#E8EEFF']),
   P('studioLight', 'Studio Light', ['Product', 'Clean'], ['#C9CED8', '#DDE1E8', '#EEF0F4', '#F7F8FA', '#FFFFFF']),

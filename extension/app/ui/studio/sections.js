@@ -191,6 +191,18 @@ const PRODUCT_BG = {
   auroraProduct: { style: 'mesh', from: 0, grain: 3, motion: 'drift' },
   graphite: { style: 'radial', from: 2, to: 0, spread: 120, grain: 4 }
 };
+// v0.75 Signature looks: each palette with the style and motion it was made for (loops exactly — bgMotion rules)
+const SIG = (style, motion, colorMotion, extra) => Object.assign({ style, motion, colorMotion: colorMotion || 'none', grain: 2, loop: 10, amount: 35 }, extra || {});
+Object.assign(PRODUCT_BG, {
+  liquidChrome: SIG('mesh', 'wander', 'none', { from: 0 }), peachFuzz: SIG('mesh', 'drift', 'none', { from: 1 }),
+  mochaMousse: SIG('radial', 'breathe', 'none', { from: 2, to: 0, spread: 140 }), electricLime: SIG('mesh', 'orbit', 'none', { from: 0 }),
+  ultraDream: SIG('mesh', 'swirl', 'cycle', { from: 0, loop: 12 }), northernLights: SIG('mesh', 'wave', 'none', { from: 0 }),
+  tokyoNight: SIG('radial', 'drift', 'pulse', { from: 3, to: 0, spread: 130 }), miamiSunset: SIG('linear', 'breathe', 'none', { from: 0, to: 3, angle: 160 }),
+  desertRose: SIG('mesh', 'drift', 'none', { from: 1 }), matchaLatte: SIG('radial', 'breathe', 'none', { from: 3, to: 1, spread: 150 }),
+  oceanGlass: SIG('mesh', 'wander', 'none', { from: 0 }), holographic: SIG('mesh', 'swirl', 'hue', { from: 0, amount: 30 }),
+  emberGlow: SIG('radial', 'breathe', 'pulse', { from: 3, to: 0, spread: 120 }), cosmicLatte: SIG('mesh', 'drift', 'none', { from: 1 }),
+  neoMint: SIG('linear', 'wave', 'none', { from: 1, to: 3, angle: 120 }), midnightGold: SIG('radial', 'drift', 'none', { from: 3, to: 0, spread: 125 })
+});
 const BACKGROUNDS = PAL.PALETTES.map((p) => { const x = PRODUCT_BG[p.id]; const a = Object.assign({ palette: p.id, style: 'linear', from: 0, to: 2 }, x); const t = T(`bg-${p.id}`, p.name, 'design.background', a, Object.assign({ k: 'bg' }, a), p.tags, x ? 'NEW' : undefined); if (x) t.ownLook = true; return t; });
 
 /**

@@ -7,7 +7,8 @@ const { previewCanvas } = require('../textPreview');
 const { defaults } = require('../../../core/schema');
 
 const GROUPS = ['All', 'Signature', 'Slide', 'Blur', 'Fade', 'Type', 'Scale', 'Rotate', 'Imported'];
-const SAMPLES = { en: 'Motion Design', ar: 'تصميم الحركة' };
+// v0.75 (owner): every text-animation preview plays a two-word phrase, so word / line / letter moves all read clearly
+const SAMPLES = { en: 'MOE Motion', ar: 'مو موشن' };
 
 function render(app) {
   const s = app.state.get();

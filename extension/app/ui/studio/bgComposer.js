@@ -17,7 +17,7 @@ const { bgFrame, BG_DEFAULTS, moves } = require('../bgDraw');
 const TOOL = 'design.background';
 const STYLES = [['linear', 'Linear', 'Two colours along a line'], ['radial', 'Radial', 'A glow from a point'], ['mesh', 'Mesh', 'Four colours blended — the richest'], ['solid', 'Flat', 'One colour']];
 // tiles that ARE a designed look (style, colours, motion): picking one takes all of it; a plain palette swaps colours only
-const fullLook = (t) => t.user || (t.tags || []).includes('Product');
+const fullLook = (t) => !!(t.user || t.ownLook || (t.tags || []).includes('Product') || (t.tags || []).includes('Signature'));
 
 function argsOf(app, tile) {
   const tool = app.services.registry.get(TOOL);

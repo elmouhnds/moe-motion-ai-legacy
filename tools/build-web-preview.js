@@ -213,7 +213,7 @@ ${texts}
     };
     var mem = require('/dev/platform-mem.js');
     var platform = mem.createMemPlatform({ apiKey: 'sk-ant-preview-demo', http: require('/dev/demo-ai.js') });
-    require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform, mode: opts.mode === 'kit' ? 'kit' : undefined, ui: { layout: opts.layout, theme: opts.theme, accent: 'tomato', splash: false, banners: true, motion: 'full', motionV: 2, /* v0.74: the live preview plays every preview (the panel's own default stays Calm) */ seenVersion: opts.seen ? '${VERSION}' : '' } }).then(function (app) {
+    require('/extension/app/main.js').start({ cs: cs, root: '/extension', platform: platform, mode: opts.mode === 'kit' ? 'kit' : undefined, ui: { layout: opts.layout, theme: opts.theme, accent: 'tomato', splash: false, banners: true, motion: 'calm', motionV: 2, /* v0.75: like the panel — previews play under the mouse */ seenVersion: opts.seen ? '${VERSION}' : '' } }).then(function (app) {
       window.__app = app;
       opts.seen = true; save();
       var start = (location.hash || '').slice(1);

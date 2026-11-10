@@ -27,7 +27,7 @@ test('Background Composer: a plain palette swaps only the colours (your style an
   // palettes: still cards — only the stage animates
   // v0.73: each palette is a STILL frame of the real background (paletteCard, still: true) — only the stage animates
   assert.match(src, /require\('\.\.\/paletteCard'\)/);
-  assert.match(require('fs').readFileSync(require('path').join(__dirname, '../extension/app/ui/paletteCard.js'), 'utf8'), /\{ still: true \}/);
+  assert.match(require('fs').readFileSync(require('path').join(__dirname, '../extension/app/ui/paletteCard.js'), 'utf8'), /\{ still: !moves\(a\) \}/, 'a still look draws once; a moving one plays under the mouse');
   // the stage's canvas is replaced when the look changes (a reused canvas kept drawing the old look)
   assert.match(src, /'data-key': `bgc-canvas\|\$\{\[a\.palette/);
 });

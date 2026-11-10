@@ -66,7 +66,7 @@ function rawGroups(app, page, s) {
   }
   if (page === 'design') {
     return [
-      { id: 'bg', label: 'Background', items: tilesOf('backgrounds').slice(0, 14).map((t) => tileItem('backgrounds', t)), strips: true, more: 'backgrounds' },
+      { id: 'bg', label: 'Background', items: tilesOf('backgrounds').slice(0, 20).map((t) => tileItem('backgrounds', t)), strips: true, more: 'backgrounds' },
       { id: 'tpl', label: 'Templates', items: tilesOf('templates').map((t) => tileItem('templates', t)), more: 'templates' },
       { id: 'mk', label: 'Make', links: [['shapes', 'Shapes & Icons'], ['productui', 'Product UI'], ['brand', 'Brand']] }
     ];
@@ -105,14 +105,11 @@ const pick = (app, page, it) => app.state.set((x) => ({ ccPick: Object.assign({}
 const apply = (app, it) => lib().applyNow(app, it.tile, it.section);
 
 /* ---------- squares ---------- */
-/** Your own text (the first selected text layer), short enough for a square: whole words up to ~12 letters. */
+/** v0.75 (owner rule): a text-animation preview always plays a two-word phrase — "MOE Motion" (Arabic text selected:
+    "مو موشن") — so a move by words, lines or letters reads clearly in every square. */
+const TEXT_SAMPLE = { en: 'MOE Motion', ar: 'مو موشن' };
 function sampleText(s) {
-  const t = ((s.ctx && s.ctx.layers) || []).find((l) => l.type === 'text' && l.text);
-  const line = t ? String(t.text).split(/\r|\n/)[0].trim() : 'Motion';
-  const max = 12;
-  let out = '';
-  for (const w of line.split(/\s+/)) { if (out && (out + ' ' + w).length > max) break; out = out ? `${out} ${w}` : w; }
-  return out.slice(0, max + 6) || 'Motion';
+  return ((s.ctx && s.ctx.layers) || []).some((l) => l.type === 'text' && hasArabic(l.text)) ? TEXT_SAMPLE.ar : TEXT_SAMPLE.en;
 }
 /** The preview an item plays: the library's own thumb, a text preset on your text, or a Quick tool's icon. */
 function thumbOf(app, it, s, big) {
@@ -211,4 +208,4 @@ function tabs(app, s, kind) {
   }, icon(p.icon, 'sm'), h('span', {}, p.label), fit === p.id && cur !== p.id ? h('span', { class: 'ae-dot', 'aria-hidden': 'true' }) : null)));
 }
 
-module.exports = { PAGES, PAGE_KEY, pageOf, fitsPage, groupsFor, itemsOf, pickedOf, render, pickBar, tabs };
+module.exports = { TEXT_SAMPLE, sampleText, PAGES, PAGE_KEY, pageOf, fitsPage, groupsFor, itemsOf, pickedOf, render, pickBar, tabs };
