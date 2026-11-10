@@ -226,7 +226,7 @@ test('v0.75: Style Kits point at real tools only; Signature looks are complete, 
   const KITS = require('../extension/app/ui/kits');
   const A = require('../extension/app/ui/actions');
   const S = require('../extension/app/ui/studio/sections');
-  assert.deepEqual(KITS.KITS.map((k) => k.id), ['saas', 'glass', 'kinetic', 'social', 'effectors', 'mograph']);
+  assert.deepEqual(KITS.KITS.map((k) => k.id), ['saas', 'glass', 'kinetic', 'social', 'effectors', 'beat', 'loops', 'mograph']);
   for (const k of KITS.KITS) { const refs = KITS.refsOf(k); assert.equal(new Set(refs).size, refs.length, `${k.id}: each tool once`); refs.forEach((r) => assert.ok(A.resolve(r), `${k.id}: ${r}`)); }
   assert.ok(S.byId('kits') && S.WORKSPACES.some((w) => w.items.includes('kits')), 'a page reachable like any other');
   // Signature looks: 16, each a complete look with motion, args valid for the background tool
@@ -290,6 +290,7 @@ test('v0.76 Smart Kits: kinds, recipes made of the kit\'s own tools, progress, a
       runTool: async (id, args) => { const r = await t.services.executor.run(id, args); s1.ctx = await t.services.executor.readContext(); return r; } };
     const o1 = await R.runRecipe(a1, k, rc);
     if (rc.id === 'wordCascade') assert.deepEqual(o1, { done: [], stopped: 'Text Cloner' });
+    else if (rc.id === 'pulseOnBeat') assert.ok(o1.stopped && !o1.done.length, 'no soundtrack in the comp: it stops before writing');
     else assert.equal(o1.stopped, null, `${k.id}/${rc.id} stopped at ${o1.stopped}`);
   }
   // a recipe runs in order inside ONE transaction and ticks its steps
@@ -316,4 +317,41 @@ test('v0.76 Smart Kits: kinds, recipes made of the kit\'s own tools, progress, a
   const app2 = Object.assign({}, app, { state: { get: () => st2, set: (p) => { st2 = Object.assign({}, st2, typeof p === 'function' ? p(st2) : p); } } });
   const out2 = await R.runRecipe(app2, glass, rec);
   assert.ok(out2.stopped && !out2.done.length && !Object.keys(R.doneOf(st2, 'glass')).length);
+});
+
+test('v0.77 My Recipes: a chain of the kit\'s own tools, picked by clicks, named, kept per kit, run like a built-in one; ready-now counts real readiness', async () => {
+  const KITS = require('../extension/app/ui/kits');
+  const R = require('../extension/app/ui/kitRun');
+  const loops = KITS.byId('loops');
+  assert.equal(KITS.makeRecipe(loops, 'x', ['tile:expressions/x-float'], []).ok, false, 'two tools at least');
+  assert.equal(KITS.makeRecipe(loops, 'x', KITS.refsOf(loops).slice(0, 5), []).ok, false, 'four at most');
+  assert.equal(KITS.makeRecipe(loops, 'x', ['tile:expressions/x-float', 'tile:layout/cloneGrid'], []).ok, false, 'only this kit\'s tools');
+  assert.equal(KITS.makeRecipe(KITS.byId('kinetic'), 'x', ['nav:text', 'quick:counter'], []).ok, false, 'a page is not a step');
+  const m1 = KITS.makeRecipe(loops, '  Float & Breathe ', ['tile:expressions/x-float', 'tile:expressions/x-swing', 'tile:expressions/x-float'], []);
+  assert.ok(m1.ok && m1.recipe.label === 'Float & Breathe 2' && m1.recipe.refs.length === 2 && m1.recipe.mine, 'a taken name gets a number; a repeated tool counts once');
+  // the click flow
+  const { services } = await createTestServices(studioComp([box('A', 400)], { comp: { time: 1 } }));
+  let st = { ctx: await services.executor.readContext(), args: {} };
+  const app = { services, state: { get: () => st, set: (p) => { st = Object.assign({}, st, typeof p === 'function' ? p(st) : p); } }, toast: () => {}, render: () => {}, go: () => {},
+    dialog: async (o) => (o.input !== undefined ? 'Idle life' : true),
+    runTool: async (id, args) => { const r = await services.executor.run(id, args); st.ctx = await services.executor.readContext(); return r; } };
+  R.startBuild(app, 'loops');
+  assert.equal(await R.runRef(app, loops, 'tile:expressions/x-float'), null, 'while building, a click picks — it does not run');
+  await R.runRef(app, loops, 'tile:expressions/x-breathe');
+  await R.runRef(app, loops, 'tile:expressions/x-swing'); await R.runRef(app, loops, 'tile:expressions/x-swing');
+  assert.deepEqual(R.buildOf(st, 'loops'), ['tile:expressions/x-float', 'tile:expressions/x-breathe'], 'a second click takes a tool out');
+  const saved = await R.saveBuild(app, loops);
+  assert.equal(saved.label, 'Idle life'); assert.equal(R.buildOf(st, 'loops'), null);
+  assert.deepEqual(R.mineOf(app, 'loops').map((r) => r.label), ['Idle life']);
+  assert.deepEqual(R.mineOf(app, 'glass'), [], 'kept per kit');
+  const out = await R.runRecipe(app, loops, R.mineOf(app, 'loops')[0]);
+  assert.equal(out.stopped, null); assert.equal(out.done.length, 2);
+  // a stored chain with a tool that no longer exists is not offered
+  services.store.set(R.MINE_KEY, { loops: R.mineOf(app, 'loops').concat({ id: 'old', label: 'Old', refs: ['tile:expressions/x-float', 'tile:expressions/gone'] }) });
+  assert.deepEqual(R.mineOf(app, 'loops').map((r) => r.label), ['Idle life']);
+  assert.ok(await R.removeMine(app, loops, R.mineOf(app, 'loops')[0])); assert.deepEqual(R.mineOf(app, 'loops'), []);
+  // ready now
+  assert.ok(R.readyCount(app, loops) > 0);
+  const none = Object.assign({}, app, { state: { get: () => Object.assign({}, st, { ctx: Object.assign({}, st.ctx, { layers: [], properties: [] }) }), set: () => {} } });
+  assert.ok(R.readyCount(none, loops) < R.readyCount(app, loops));
 });

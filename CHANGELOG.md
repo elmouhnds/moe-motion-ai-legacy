@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.77.0] — 2026-11-10 — Your own recipes, Beat Sync, Living Loops
+### Added (owner: "more ideas")
+- **My Recipes** (`kitRun` build mode, `kits.makeRecipe` pure): *New recipe* in a kit → click 2–4 of its tools in order (a click picks instead of running), name it, Save. Kept per kit (store `kit-my-recipes`), run exactly like a built-in recipe (one undo group, stops honestly); right-click removes after a confirmation. A stored chain whose tool no longer exists is not offered.
+- **Beat Sync** and **Living Loops** technique kits (existing tools only), with 3 more recipes (Pulse on the Beat, Float & Breathe, Pop & Settle).
+- **Ready now**: each kit card counts its tools that can run on the current selection (the tools' own readiness).
+- A recipe's chain lights up step by step under the mouse (colour only; off with Reduced motion).
+### Honest notes
+- Mock + browser preview only. Pulse on the Beat needs a soundtrack: on the mock (none) it stops before writing.
+
 ## [0.76.0] — 2026-11-10 — Smart Kits: recipes, progress, Effectors Pro
 ### Added (owner: "ideas that are not only what already exists")
 - **Recipes** (`app/ui/kitRun.js`): a kit's named chain of its OWN tools — one click, one After Effects undo group (`executor.batch`); readiness before every step; stops at the first step that is not ready or fails and says what ran. 11 recipes (Click & Punch, Rise & Spotlight, Liquid Card, Frost & Focus, Word Cascade, Reel Pop, Ripple Wall, Spring Bloom, Jelly Ring, Living Field, Ring Scatter).

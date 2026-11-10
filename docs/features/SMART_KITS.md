@@ -11,5 +11,12 @@ Owner: *"the ideas should not only build on what exists — add ideas that are n
 | **Progress** | A step ticks when one of its tools ran here; the next step is marked | `kits.progress` (pure); session memory, not a read of the comp |
 | **Work in this kit** | The pinned kit's next step as a strip on Home, every style | `kitRun.focusStrip`, store `kit-focus`; opt-in |
 
+## v0.77
+| Idea | What it does | Rule |
+|---|---|---|
+| **My Recipes** | *New recipe* → click 2–4 tools in order → name → Save; right-click removes | `kits.makeRecipe`; store `kit-my-recipes`; a click picks while building |
+| **Beat Sync / Living Loops** | Two more technique kits | existing refs only |
+| **Ready now** | How many of a kit's tools can run on the selection | the tools' own `ready()` |
+
 ## Not verified
 Mock + browser preview only. A recipe's later steps depend on the selection After Effects leaves after the earlier step.

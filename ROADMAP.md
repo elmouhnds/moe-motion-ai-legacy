@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.83 — Your own recipes ✅ (v0.77.0)
+- My Recipes, Beat Sync + Living Loops kits, Ready now. Next: recipes on the Quick Bar / pie, the layout plan (one map of tab names, shorter Bento Home, grouped Quick Bar).
+
 ## M1.82 — Smart Kits ✅ (v0.76.0)
 - Recipes (one click, one undo), step progress, Effectors Pro technique kit, Work in this kit on Home. Next: one map of tab names across styles, shorter Bento Home, grouped Quick Bar, libraries that start with tiles.
 

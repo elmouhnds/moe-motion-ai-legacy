@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Your own recipes** (v0.77.0): build a recipe by clicking a kit's tools, name it, run it in one click; Beat Sync and Living Loops technique kits; kit cards show what is ready for the selection.
+
 **Smart Kits** (v0.76.0): Looks and Techniques; Recipes — a kit's own tools chained in one click and one Ctrl+Z; step progress; the Effectors Pro technique kit; *Work in this kit* shows its next step on Home in every style.
 
 **Style Kits & Signature colours** (v0.75.0): each look's tools in one place (SaaS, Apple Glass, Kinetic Type, Social, MoGraph); 16 moving Signature backgrounds; Brand › Motion (a client's own ease); one Ctrl+Z per Control Mix (docs/features/STYLE_KITS.md).

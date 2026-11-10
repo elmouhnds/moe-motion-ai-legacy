@@ -82,6 +82,36 @@ const KITS = [
     ]
   },
   {
+    // v0.77: sound-driven motion as one technique (Beat Markers come from After Effects' own Convert Audio to Keyframes)
+    id: 'beat', kind: 'technique', label: 'Beat Sync', icon: 'gTiktok', accent: ['#F59E0B', '#EF4444'],
+    tagline: 'Find the beats, then make layers, clones and hits land on them',
+    recipes: [
+      { id: 'pulseOnBeat', label: 'Pulse on the Beat', hint: 'Beat markers on the layer, then it pulses on each one', refs: ['quick:k_beats', 'tile:expressions/x-markerPulse'] }
+    ],
+    steps: [
+      { label: '1 · Find the beat', refs: ['quick:k_beats'] },
+      { label: '2 · React to markers', refs: ['tile:expressions/x-markerPulse', 'tile:expressions/x-markerTrigger', 'tile:expressions/x-markerInOut'] },
+      { label: '3 · Keep a pulse', refs: ['tile:expressions/x-heartbeat', 'tile:expressions/x-pulse', 'tile:expressions/x-blink'] },
+      { label: '4 · Clones on sound', refs: ['tile:layout/efBeat', 'tile:layout/efBeatWave'] },
+      { label: '5 · Hits', refs: ['tile:animate/shake-bump', 'tile:animate/shake-slam', 'tile:animate/shake-zoomPunch', 'tile:zoom/punch'] }
+    ]
+  },
+  {
+    // v0.77: motion that never stops — idle life for anything that would otherwise sit still
+    id: 'loops', kind: 'technique', label: 'Living Loops', icon: 'xLoop', accent: ['#8B5CF6', '#EC4899'],
+    tagline: 'Idle life: float, breathe, swing and loop — nothing sits dead on screen',
+    recipes: [
+      { id: 'floatBreathe', label: 'Float & Breathe', hint: 'A slow float on Position and a breath on Scale', refs: ['tile:expressions/x-float', 'tile:expressions/x-breathe'] },
+      { id: 'popSettle', label: 'Pop & Settle', hint: 'A soft pop in, then it keeps drifting', refs: ['tile:animate/gentlePop', 'tile:expressions/x-drift'] }
+    ],
+    steps: [
+      { label: '1 · Breathe', refs: ['tile:expressions/x-float', 'tile:expressions/x-breathe', 'tile:expressions/x-drift', 'tile:expressions/x-organic'] },
+      { label: '2 · Loop your keys', refs: ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut', 'tile:expressions/x-loopWiggle'] },
+      { label: '3 · Swing & turn', refs: ['tile:expressions/x-pendulum', 'tile:expressions/x-swing', 'tile:expressions/x-orbit', 'tile:expressions/x-timeRotate'] },
+      { label: '4 · Follow-through', refs: ['tile:animate/gentlePop', 'tile:expressions/x-inertia', 'tile:expressions/x-squash', 'tile:expressions/x-bounceBack', 'quick:k_delay'] }
+    ]
+  },
+  {
     id: 'mograph', kind: 'technique', label: 'MoGraph Cloner', icon: 'grid', accent: ['#22D3EE', '#A78BFA'],
     tagline: 'Clones, effectors and trails — the procedural look',
     recipes: [
@@ -110,4 +140,23 @@ function progress(kit, done) {
   return { steps, next, count: steps.filter(Boolean).length, total: steps.length };
 }
 
-module.exports = { KITS, KINDS, byId, refsOf, progress };
+
+/**
+ * v0.77 My Recipes (pure): a user's chain is 2–4 of the kit's OWN runnable refs, each once, with a name no other
+ * recipe of that kit has. → { ok, recipe } or { ok: false, error }.
+ */
+const MINE_MAX = 12;
+function makeRecipe(kit, label, refs, mine) {
+  const own = refsOf(kit);
+  const list = (refs || []).filter((r, i, a) => a.indexOf(r) === i);
+  if (list.length < 2) return { ok: false, error: 'Pick at least two tools' };
+  if (list.length > 4) return { ok: false, error: 'A recipe is at most four tools' };
+  if (list.some((r) => own.indexOf(r) < 0 || /^nav:/.test(r))) return { ok: false, error: 'A recipe uses this kit\'s own tools only' };
+  if ((mine || []).length >= MINE_MAX) return { ok: false, error: `At most ${MINE_MAX} recipes of your own per kit` };
+  let name = String(label || '').replace(/\s+/g, ' ').trim().slice(0, 32) || 'My recipe';
+  const taken = (kit.recipes || []).concat(mine || []).map((r) => r.label.toLowerCase());
+  for (let n = 2, base = name; taken.indexOf(name.toLowerCase()) >= 0; n++) name = `${base} ${n}`;
+  return { ok: true, recipe: { id: `my_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 5)}`, label: name, hint: 'Your recipe', refs: list, mine: true } };
+}
+
+module.exports = { KITS, KINDS, byId, refsOf, progress, makeRecipe, MINE_MAX };

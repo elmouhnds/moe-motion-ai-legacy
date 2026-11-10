@@ -1823,3 +1823,26 @@ input.scrubbable.scrubbing { color: var(--accent); }
 @media (max-width: 520px) { .kf { flex-wrap: wrap; } .kf-tools { flex-basis: 100%; order: 5; } .kf-dots { margin-left: auto; } }
 .st-badge, .st-why { font-size: 10px; }
 .st-new { font-size: 10px; }
+/* v0.77 My Recipes, ready-now, recipe chain glow */
+.sk-step-h .spacer { flex: 1; }
+.sk-new { text-transform: none; letter-spacing: 0; }
+.sk-card-ready { display: flex; align-items: center; gap: 6px; align-self: flex-start; padding: 2px 8px; border-radius: var(--r-pill); background: rgba(0, 0, 0, 0.4); font-size: 10.5px; font-weight: 700; }
+.sk-card-ready i { width: 6px; height: 6px; border-radius: 50%; background: #4ADE80; box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.25); }
+.sk-tray { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border: 1px dashed var(--accent); border-radius: var(--r-lg); background: var(--bg-sunken); }
+.sk-tray-t { flex: 1; min-width: 160px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-size: var(--fs-sm); color: var(--text-3); }
+.sk-tray-t em { width: 12px; height: 1px; background: var(--accent); }
+.sk-tray-chip { display: flex; align-items: center; gap: 6px; height: var(--h-m); padding: 0 8px 0 4px; border: 1px solid var(--accent); border-radius: var(--r-pill); background: var(--bg-raised); color: var(--text); font: 600 var(--fs-sm) var(--font, inherit); cursor: pointer; }
+.sk-tray-chip b { display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 10.5px; }
+.sk-tray-chip:hover { background: var(--bg-active); }
+.sk-tray-chip:focus-visible { outline: none; box-shadow: var(--focus); }
+.sk-tray-b { display: flex; gap: 6px; }
+.sk-building .sk-item { border-style: dashed; }
+.sk-item.picked { border-style: solid; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.sk-order { position: absolute; top: 6px; right: 6px; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 800; }
+.sk-rec.mine::before { background: linear-gradient(var(--accent), transparent); }
+.sk-rec.mine .sk-rec-t i { color: var(--accent); }
+@keyframes sk-chain { 0%, 100% { background: var(--bg-sunken); color: var(--accent); } 40% { background: var(--accent); color: var(--accent-ink); } }
+.sk-rec:hover .sk-rec-ic { animation: sk-chain 1400ms ease-in-out infinite; }
+.sk-rec:hover .sk-rec-ic:nth-of-type(2) { animation-delay: 220ms; }
+.sk-rec:hover .sk-rec-ic:nth-of-type(3) { animation-delay: 440ms; }
+.sk-rec:hover .sk-rec-ic:nth-of-type(4) { animation-delay: 660ms; }
