@@ -69,6 +69,17 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
   async function closeTx() {
     try { await host.call('tx.end', {}); } catch (e) { logger.error('exec', 'tx.end failed', { message: e.message }); }
   }
+  /**
+   * v0.75 (owner: one Apply = one Ctrl+Z): several runs inside ONE After Effects undo group. Each run still validates,
+   * verifies, checkpoints and has its own History / Restore; only the undo group is shared. Always closed (finally).
+   * Nested calls join the open group. A host without tx ops runs each tool as before.
+   */
+  let outerTx = null;
+  async function batch(label, fn) {
+    if (outerTx) return fn();
+    outerTx = (await openTx(label)) ? label : null;
+    try { return await fn(); } finally { if (outerTx) { outerTx = null; await closeTx(); } }
+  }
 
   function saveCheckpoint(tool, data, label) {
     const cp = { id: `cp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`, toolId: tool.id, label, t: new Date().toISOString(), data, restored: false };
@@ -123,7 +134,7 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
       let result;
       // v0.61 (docs/features/ENGINE2.md): a tool that writes runs inside ONE After Effects undo group — one Ctrl+Z
       // undoes the whole run, whatever number of host ops it took. Always closed, even when the tool throws.
-      const tx = writes(tool) ? await openTx(`MOE: ${tool.name}`) : false;
+      const tx = !outerTx && writes(tool) ? await openTx(`MOE: ${tool.name}`) : false; // inside a batch the batch's group holds it
       const sh = stepHost(toolId, started);
       try {
         result = await tool.execute({ args: c.args, ctx, prepared, host: sh, services });
@@ -189,7 +200,7 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
   function stop() { if (running) { stopRequested = true; emit({ type: 'stopping' }); } return running; }
 
   return {
-    check, run, restore, readContext, stop,
+    check, run, restore, readContext, stop, batch,
     history: (limit = 200) => store.tail('history', limit).reverse(),
     checkpoint: (id) => checkpoints.find((x) => x.id === id) || null,
     on: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },

@@ -119,17 +119,24 @@ async function applyMix(app) {
   const runs = plan(ccOf(s), kind, ((s.ctx && s.ctx.layers) || []).length);
   if (!runs.length || s.running) return null;
   const done = [];
-  for (const run of runs) {
-    const rd = readyOf(app, run);
-    if (!rd.ok) { app.toast(`${run.label}: ${rd.hint}${done.length ? ` — done before it: ${done.join(', ')}` : ''}`, 5000, 'warn'); return { done, stopped: run.id }; }
-    const r = await app.runTool(run.tool, fullArgs(app, run), { label: run.label });
-    const ok = r && (r.status === 'success' || r.status === 'partial');
-    if (!ok) { app.toast(`${run.label}: ${r ? (r.errors || r.reasons || [r.status]).join(' · ') : 'not run'}${done.length ? ` — done before it: ${done.join(', ')}` : ''}`, 6000, 'err'); return { done, stopped: run.id }; }
-    done.push(run.label);
-  }
+  // v0.75: the whole Mix is ONE After Effects undo group — one Ctrl+Z takes it all back (each run keeps its History entry)
+  const ex = app.services.executor;
+  const go = async () => {
+    for (const run of runs) {
+      const rd = readyOf(app, run);
+      if (!rd.ok) { app.toast(`${run.label}: ${rd.hint}${done.length ? ` — done before it: ${done.join(', ')} (Ctrl+Z undoes them)` : ''}`, 5000, 'warn'); return { done, stopped: run.id }; }
+      const r = await app.runTool(run.tool, fullArgs(app, run), { label: run.label });
+      const ok = r && (r.status === 'success' || r.status === 'partial');
+      if (!ok) { app.toast(`${run.label}: ${r ? (r.errors || r.reasons || [r.status]).join(' · ') : 'not run'}${done.length ? ` — done before it: ${done.join(', ')} (Ctrl+Z undoes them)` : ''}`, 6000, 'err'); return { done, stopped: run.id }; }
+      done.push(run.label);
+    }
+    return null;
+  };
+  const stopped = ex && ex.batch && runs.length > 1 ? await ex.batch(`MOE: ${runs.map((r) => r.label).join(' + ')}`.slice(0, 110), go) : await go();
+  if (stopped) return stopped;
   // switched off after it ran, so a second click never repeats it by accident; the numbers stay
   app.state.set((x) => { const cc = ccOf(x); runs.forEach((r) => { cc[r.id] = Object.assign({}, cc[r.id], { on: false }); }); return { cc }; });
-  app.toast(`${done.join(' · ')}${done.length > 1 ? ` — ${done.length} runs, each can be undone in History` : ''}`, 3200, 'ok');
+  app.toast(`${done.join(' · ')}${done.length > 1 ? ' — one Ctrl+Z undoes them all' : ''}`, 3200, 'ok');
   return { done, stopped: null };
 }
 
@@ -333,7 +340,7 @@ function mixBar(app, s, kind) {
       h('button', { class: 'cc-chip-x', 'aria-label': `Take ${r.label} out of the Mix`, title: 'Take it out', onclick: () => setCc(app, r.id, { on: false }) }, '×')))),
     h('div', { class: 'cc-mix-row' },
       h('span', { class: 'cc-mix-dot', 'aria-hidden': 'true' }),
-      h('span', { class: 'cc-mix-t', title: warn || 'Each run can be undone on its own in History' }, notReady ? `${notReady.r.label}: ${notReady.rd.hint}` : warn || `${runs.length > 1 ? `${runs.length} runs` : '1 run'}${kind === 'keys' ? '' : ` · ${n} layer${n === 1 ? '' : 's'}`}`),
+      h('span', { class: 'cc-mix-t', title: warn || 'One Ctrl+Z undoes the whole Mix; each run also has its own entry in History' }, notReady ? `${notReady.r.label}: ${notReady.rd.hint}` : warn || `${runs.length > 1 ? `${runs.length} runs` : '1 run'}${kind === 'keys' ? '' : ` · ${n} layer${n === 1 ? '' : 's'}`}`),
       h('button', { class: 'icon-btn', 'data-key': 'cc-save-mix', title: 'Save this Mix by name (My mixes)', 'aria-label': 'Save this mix', onclick: async () => { const name = await app.dialog({ title: 'Save this mix', body: runs.map((r) => r.label).join(' + '), input: runs.map((r) => r.label).join(' + ').slice(0, 28), okLabel: 'Save' }); if (name && saveMix(app, name)) { app.toast(`${name} saved — My mixes`, 2200, 'ok'); app.render(); } } }, icon('star', 'sm')),
       h('button', { class: 'btn ghost sm', 'data-key': 'cc-clear', title: 'Switch everything off (Esc)', onclick: () => app.state.set((x) => { const c2 = ccOf(x); Object.keys(c2).forEach((k) => { c2[k].on = false; }); return { cc: c2 }; }) }, 'Clear'),
       h('button', { class: 'btn primary cc-apply', 'data-key': 'cc-apply', disabled: !!(notReady || s.running), title: notReady ? notReady.rd.hint : `${runs.map((r) => r.label).join(' → ')} (Enter)`, onclick: () => applyMix(app) }, icon('play', 'sm'), 'Apply')));

@@ -200,3 +200,24 @@ test('v0.74: Wiggle moves Position / Rotation / Scale (the library\'s own preset
   const css = fs.readFileSync(path.join(__dirname, '../extension/css/styles.css'), 'utf8');
   assert.ok(/@keyframes cc-rise/.test(css) && /cc-apply:not\(\[disabled\]\)::after/.test(css), 'premium motion is there (Reduced turns it off globally)');
 });
+
+test('v0.75: one Apply = ONE undo group for the whole Mix (tx.begin / tx.end once), each run still verified and in History', async () => {
+  const { services, comp } = await createTestServices(studioComp([box('A', 400), box('B', 800)], { comp: { time: 1 } }));
+  const calls = [];
+  const orig = services.host.call.bind(services.host);
+  services.host.call = (op, args, o) => { calls.push(op); return orig(op, args, o); };
+  let st = { ctx: await services.executor.readContext(), cc: on({ move: { on: true, kind: 'fade' }, wiggle: { on: true, amp: 5 } }), args: {} };
+  const app = { services, state: { get: () => st, set: (p) => { st = Object.assign({}, st, typeof p === 'function' ? p(st) : p); } },
+    runTool: async (id, args) => { const r = await services.executor.run(id, args); st.ctx = await services.executor.readContext(); return r; }, toast: () => {} };
+  const out = await C.applyMix(app);
+  assert.equal(out.stopped, null);
+  assert.equal(calls.filter((c) => c === 'tx.begin').length, 1, calls.join(','));
+  assert.equal(calls.filter((c) => c === 'tx.end').length, 1);
+  assert.ok(calls.indexOf('tx.end') > calls.lastIndexOf('expressions.set'), 'the group closes after the last write');
+  assert.equal(services.executor.history(5).filter((x) => x.status === 'success').length, 2, 'each run in History');
+  assert.match(comp._layers[0].property('ADBE Transform Group').property('ADBE Position').expression, /wiggle\(2, 5\)/);
+  // a nested batch joins the open group; a failing run still closes it
+  calls.length = 0;
+  await services.executor.batch('outer', async () => { await services.executor.batch('inner', async () => {}); throw Object.assign(new Error('x'), {}); }).catch(() => {});
+  assert.deepEqual(calls.filter((c) => /^tx\./.test(c)), ['tx.begin', 'tx.end']);
+});
