@@ -68,7 +68,7 @@ function rawGroups(app, page, s) {
     return [
       { id: 'bg', label: 'Background', items: tilesOf('backgrounds').slice(0, 20).map((t) => tileItem('backgrounds', t)), strips: true, more: 'backgrounds' },
       { id: 'tpl', label: 'Templates', items: tilesOf('templates').map((t) => tileItem('templates', t)), more: 'templates' },
-      { id: 'mk', label: 'Make', links: [['shapes', 'Shapes & Icons'], ['productui', 'Product UI'], ['brand', 'Brand']] }
+      { id: 'mk', label: 'Make', links: [['kits', 'Style Kits'], ['shapes', 'Shapes & Icons'], ['productui', 'Product UI'], ['brand', 'Brand']] }
     ];
   }
   if (page === 'look') {

@@ -35,7 +35,7 @@ const STAGES = [
     groups: [['ae-layer', 'select', 'core'], ['ae-layer', 'reader', 'core'], ['ae-layer', 'transform', 'core'], ['ae-layer', 'parent', 'core'], ['ae-layer', 'arrange', 'core'], ['ae-comp', 'guides', 'more']] },
   { id: 'st-design', label: 'Design', icon: 'palette', fits: ['none'],
     title: 'Product UI, templates, shapes and icons, backgrounds, the client brand',
-    groups: [['ae-design', 'productui', 'core'], ['ae-design', 'templates', 'core'], ['ae-design', 'shapes', 'core'], ['ae-design', 'bg', 'core'], ['ae-design', 'brand', 'core']] },
+    groups: [['ae-design', 'productui', 'core'], ['ae-design', 'templates', 'core'], ['ae-design', 'shapes', 'core'], ['ae-design', 'bg', 'core'], ['ae-design', 'brand', 'core'], ['ae-design', 'kits', 'core']] },
   { id: 'st-finish', label: 'Finish', icon: 'sparkles', fits: [],
     title: 'Styles, glass, key and colour, camera and zoom — the polish pass (MOE: the Look tab)',
     groups: [['ae-effect', 'styles', 'core'], ['ae-effect', 'looks', 'core'], ['ae-effect', 'keycolor', 'core'], ['ae-effect', 'zoom', 'core']] },

@@ -89,6 +89,14 @@ function brandAction(ref, rest) {
       ready: (app) => { const bb = brandSource(); return bb ? require('./studio/library').readiness(app, { id: ref, label, tool: 'brand.applyAll', args: args(bb) }) : { ok: false, kind: 'input', hint: 'Choose a client in Brand first (or add one from their website / PDF)' }; } };
   }
   if (rest === 'ease') {
+    // v0.75: the brand's own Easy Ease values (Brand › Motion) win over its easing word
+    const own = K.brandEase(b);
+    if (own) {
+      const args = Object.assign(require('../../core/schema').defaults(require('../../features/motion/smartEase').params), { influenceOut: own.out, influenceIn: own.in, sides: 'both' });
+      return { id: ref, label: 'Brand ease', icon: 'easeCurve', where: `Brand · ${b.name} · out ${own.out}% · in ${own.in}%`, tool: 'motion.smartEase', args,
+        run: (app) => app.runTool('motion.smartEase', args, { label: `Brand ease: ${b.name}` }),
+        ready: (app) => require('./studio/library').readiness(app, { id: ref, label: 'Brand ease', tool: 'motion.smartEase', args }) };
+    }
     const er = K.brandEaseRef(b);
     const inner = er ? resolve(er) : null;
     return { id: ref, label: 'Brand ease', icon: 'easeCurve', where: b ? `Brand · ${b.name}${inner ? ` · ${b.profile.motion.easing}` : ''}` : 'Brand',

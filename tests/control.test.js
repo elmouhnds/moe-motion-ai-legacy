@@ -221,3 +221,42 @@ test('v0.75: one Apply = ONE undo group for the whole Mix (tx.begin / tx.end onc
   await services.executor.batch('outer', async () => { await services.executor.batch('inner', async () => {}); throw Object.assign(new Error('x'), {}); }).catch(() => {});
   assert.deepEqual(calls.filter((c) => /^tx\./.test(c)), ['tx.begin', 'tx.end']);
 });
+
+test('v0.75: Style Kits point at real tools only; Signature looks are complete, valid and loop; text previews say "MOE Motion"; brand motion identity', async () => {
+  const KITS = require('../extension/app/ui/kits');
+  const A = require('../extension/app/ui/actions');
+  const S = require('../extension/app/ui/studio/sections');
+  assert.deepEqual(KITS.KITS.map((k) => k.id), ['saas', 'glass', 'kinetic', 'social', 'mograph']);
+  for (const k of KITS.KITS) { const refs = KITS.refsOf(k); assert.equal(new Set(refs).size, refs.length, `${k.id}: each tool once`); refs.forEach((r) => assert.ok(A.resolve(r), `${k.id}: ${r}`)); }
+  assert.ok(S.byId('kits') && S.WORKSPACES.some((w) => w.items.includes('kits')), 'a page reachable like any other');
+  // Signature looks: 16, each a complete look with motion, args valid for the background tool
+  const { services } = await createTestServices(studioComp([box('A', 400)], { comp: { time: 1 } }));
+  const bg = services.registry.get('design.background');
+  const { validateArgs, defaults } = require('../extension/core/schema');
+  const sig = S.byId('backgrounds').tiles.filter((t) => t.tags.includes('Signature'));
+  assert.equal(sig.length, 16);
+  const BC = require('../extension/app/ui/studio/bgComposer');
+  for (const t of sig) {
+    assert.ok(BC.fullLook(t), `${t.id} is a complete look`);
+    assert.ok(t.args.motion && t.args.motion !== 'none', `${t.id} moves`);
+    const v = validateArgs(bg.params, Object.assign(defaults(bg.params), t.args)); assert.ok(v.ok, `${t.id}: ${v.errors}`);
+  }
+  // the text-preview rule
+  const P = require('../extension/app/ui/layoutControlPages');
+  assert.equal(P.sampleText({ ctx: { layers: [{ type: 'text', text: 'Hello world, a long line' }] } }), 'MOE Motion');
+  assert.equal(P.sampleText({ ctx: { layers: [{ type: 'text', text: 'مرحبا' }] } }), 'مو موشن');
+  assert.match(fs.readFileSync(path.join(__dirname, '../extension/app/ui/views/text.js'), 'utf8'), /SAMPLES = \{ en: 'MOE Motion', ar: 'مو موشن' \}/);
+  // brand motion identity: saved on the client, Brand ease applies exactly those values with Smart Ease
+  const K = require('../extension/features/brand/kit');
+  const EX = require('../extension/features/brand/examples');
+  const pulse = EX.EXAMPLES.find((b) => b.id === 'example_pulse_pay');
+  assert.deepEqual(K.brandEase(pulse), { out: 12, in: 88 });
+  const edited = K.withEase(pulse, { out: 40, in: 70 });
+  assert.deepEqual(K.brandEase(edited), { out: 40, in: 70 });
+  assert.equal(K.brandEase(K.withEase(pulse, null)), null, 'removed');
+  assert.ok(require('../extension/features/brand/brands').validateBrand(edited).length === 0);
+  A.setBrandSource(() => edited);
+  const act = A.resolve('brand:ease');
+  assert.equal(act.tool, 'motion.smartEase'); assert.equal(act.args.influenceOut, 40); assert.equal(act.args.influenceIn, 70);
+  A.setBrandSource(null);
+});

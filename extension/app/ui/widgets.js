@@ -46,7 +46,7 @@ function loop(now) {
     let animate = mode === 'full' && !e.still;
     // v0.75 (owner: "a preview of anything that moves plays when the mouse rests on it"): tiles, Control's squares and
     // heroes, palette cards — all play under the mouse in Calm; Inspector / tool previews keep playing (you are tuning them)
-    if (mode === 'calm' && !e.still) { const host = e.canvas.closest('.st-tile, .ae-tile, .tp-card, .cc-item, .cc-hero, .pc, .st-inspector, .tool'); animate = !!host && (/(^| )(st-tile|ae-tile|tp-card|cc-item|cc-hero|pc)( |$)/.test(host.className) ? isOver(host) : true); }
+    if (mode === 'calm' && !e.still) { const host = e.canvas.closest('.st-tile, .ae-tile, .tp-card, .cc-item, .cc-hero, .pc, .sk-item, .bk-curve, .st-inspector, .tool'); animate = !!host && (/(^| )(st-tile|ae-tile|tp-card|cc-item|cc-hero|pc|sk-item|bk-curve)( |$)/.test(host.className) ? isOver(host) : true); }
     // After a hover ends, draw the still frame once (it used to freeze on the last moving frame).
     if (!animate && e.drawn && !e.moving) continue;
     e.draw(animate ? now : null); e.drawn = true; e.moving = animate; // null = still frame (each drawer picks its rest pose)

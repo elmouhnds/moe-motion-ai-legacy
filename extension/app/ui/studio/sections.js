@@ -265,6 +265,7 @@ const SECTIONS = [
     modes: [['In', 'In', 'The layer arrives'], ['Out', 'Out', 'The layer leaves'], ['Shake', 'Shake', 'An impact that settles back (real keys)'], ['Trim', 'Draw On', 'Trim paths for shape lines'], ['Proximity', 'Proximity', 'Layers react to a moving point']],
     elsewhere: [['kit', 'Ease', 'Ease presets and the speed graph are in Motion Control']], tools: (t) => t.category === 'motion' && !/^(zoom|interact)\./.test(t.id) && t.id !== 'motion.easeCurve' && t.id !== 'motion.pasteEase' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },
+  { id: 'kits', label: 'Style Kits', icon: 'sparkles', kind: 'view' }, // v0.75: each look's tools in one place (app/ui/kits.js)
   { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true,
     // v0.66 (TOOL_CARDS.md): a list grouped by what each expression moves; the group that fits the selection comes first
     groupBy: (t) => (EXPR[t.args.preset] || {}).target, groups: [['position', 'Position'], ['rotation', 'Rotation'], ['scale', 'Scale'], ['opacity', 'Opacity'], ['keyed', 'Your keyframes']] },
@@ -291,7 +292,7 @@ const SECTIONS = [
 const WORKSPACES = [
   { id: 'ws-kit', label: 'Toolbox', icon: 'kExcite', items: ['kit'] },
   { id: 'ws-animate', label: 'Animate', icon: 'motion', items: ['animate', 'text', 'expressions'] },
-  { id: 'ws-design', label: 'Design', icon: 'palette', items: ['templates', 'productui', 'shapes', 'backgrounds', 'looks', 'brand'] },
+  { id: 'ws-design', label: 'Design', icon: 'palette', items: ['kits', 'templates', 'productui', 'shapes', 'backgrounds', 'looks', 'brand'] },
   { id: 'ws-layout', label: 'Layout', icon: 'grid', items: ['layout', 'zoom', 'deliver'] },
   { id: 'ws-finish', label: 'Finish', icon: 'layers', items: ['compositing'] },
   { id: 'ws-tools', label: 'Utilities', icon: 'tools', items: ['quick', 'select', 'tools'] } // v0.14: was "Tools" (too close to Toolbox)

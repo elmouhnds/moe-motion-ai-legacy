@@ -204,7 +204,10 @@ function sliderSquare(app, key, o) {
     o.toggle || null,
     h('span', { class: 'cc-num' }, input, o.unit ? h('span', { class: 'cc-unit', 'aria-hidden': 'true' }, o.unit) : null),
     h('span', { class: 'cc-sl-name' }, o.label), o.sub ? h('span', { class: 'cc-sl-sub' }, o.disabled ? o.disabledShort : o.sub) : null);
-  require('./scrub').attach(input, { axis: o.wide ? 'x' : 'y', span: o.wide ? 220 : 140, min: o.min, max: o.max, step: o.step, fill: box, commit: (v) => o.commit(v) });
+  // v0.75: while you drag, the liquid "pours" (its surface moves faster and bubbles rise) — CSS only, no host call
+  let calm = null;
+  const pour = () => { box.classList.add('pouring'); clearTimeout(calm); calm = setTimeout(() => box.classList.remove('pouring'), 700); };
+  require('./scrub').attach(input, { axis: o.wide ? 'x' : 'y', span: o.wide ? 220 : 140, min: o.min, max: o.max, step: o.step, fill: box, live: pour, commit: (v) => { pour(); o.commit(v); } });
   input.addEventListener('change', (e) => { const v = Number(String(e.target.value).replace(',', '.')); if (Number.isFinite(v)) o.commit(Math.max(o.min, Math.min(o.max, v))); });
   if (o.dbl) input.addEventListener('dblclick', (e) => { e.preventDefault(); o.dbl(); });
   return box;

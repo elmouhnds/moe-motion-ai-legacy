@@ -24,7 +24,7 @@ const EXAMPLES = [
       example: true, tagline: 'Slow mornings, roasted by the Nile',
       gradients: [{ name: 'Morning roast', stops: ['#2B1A12', '#8C4A2F', '#E9B872'] }],
       tone: { keywords: ['warm', 'crafted', 'calm'], description: 'Talks like a barista who knows you.' },
-      motion: { feel: 'Soft, unhurried entrances; steam-like drifts', easing: 'smooth', pace: 'slow' },
+      motion: { feel: 'Soft, unhurried entrances; steam-like drifts', easing: 'smooth', pace: 'slow', ease: { out: 60, in: 70 } },
       rules: ['Keep the logo on Espresso or Crema only', 'Honey is for highlights — never body text', 'Arabic first on local posts']
     }
   },
@@ -43,7 +43,7 @@ const EXAMPLES = [
       example: true, tagline: 'Money at the speed of a tap',
       gradients: [{ name: 'Pulse', stops: ['#0B1020', '#5B8CFF', '#22D3B6'] }, { name: 'Signal', stops: ['#5B8CFF', '#F5C542'] }],
       tone: { keywords: ['fast', 'clear', 'friendly'], description: 'Short sentences, numbers up front.' },
-      motion: { feel: 'Snappy UI moves, clicks that press in place', easing: 'snappy', pace: 'fast' },
+      motion: { feel: 'Snappy UI moves, clicks that press in place', easing: 'snappy', pace: 'fast', ease: { out: 12, in: 88 } },
       rules: ['Numbers in Signal yellow only when they are the point', 'Never more than two accent colours in a frame', 'UI mockups on Night']
     }
   },
@@ -62,7 +62,7 @@ const EXAMPLES = [
       example: true, tagline: 'صُنع بصبر — made with patience',
       gradients: [{ name: 'Dune', stops: ['#F6EFE4', '#B08D57'] }, { name: 'Oasis night', stops: ['#1E3A34', '#0F1E1B'] }],
       tone: { keywords: ['quiet', 'luxury', 'heritage'], description: 'Few words, generous space.' },
-      motion: { feel: 'Gentle reveals by words, long holds', easing: 'gentle', pace: 'slow' },
+      motion: { feel: 'Gentle reveals by words, long holds', easing: 'gentle', pace: 'slow', ease: { out: 33, in: 80 } },
       rules: ['Arabic headline first, English below it', 'Brass for lines and frames, not large fills', 'Leave a third of the frame empty']
     }
   }

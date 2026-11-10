@@ -75,14 +75,16 @@ const TABS = [
         modeFor: { layer: 'clone', shapes: 'clone', text: 'clone', grid: 'effect' },
         ids: ['grid', 'honey', 'wall', 'ring', 'fan', 'spiral', 'galaxy', 'path', 'globe', 'carousel', 'carouselTilt', 'carouselQuick', 'cloneGrid', 'cloneRow', 'cloneRing', 'cloneSpiral', 'cloneSun', 'cloneGlobe', 'colCycle', 'colGradient', 'colRandom', 'clonePoints', 'textWords', 'textLetters', 'trailEcho', 'trailGhost', 'trailSpin', 'efPush', 'efShrink', 'efReveal', 'efScatter', 'efStep', 'efWave', 'efCascade', 'efTint', 'efSpring', 'efJelly', 'efInertia', 'efBounce', 'efAim', 'efLook', 'efBeat', 'efBeatWave', 'efField', 'efFlicker', 'efImage', 'efImageReveal'] }
     ] },
-  { id: 'ae-design', label: 'Design', icon: 'palette', bar: false, title: 'Build: product UI (Click on Layer first), templates, shapes & icons, backgrounds, brand', fits: ['none'], owns: ['productui', 'templates', 'shapes', 'backgrounds', 'brand'],
+  { id: 'ae-design', label: 'Design', icon: 'palette', bar: false, title: 'Build: product UI (Click on Layer first), templates, shapes & icons, backgrounds, brand', fits: ['none'], owns: ['kits', 'productui', 'templates', 'shapes', 'backgrounds', 'brand'],
     groups: [
       { id: 'productui', label: 'Product UI', kind: 'tiles', section: 'productui', ids: ['ui-click', 'ui-reveal', 'ui-button', 'ui-toggle', 'ui-search', 'ui-task', 'ui-notify', 'ui-progress', 'ui-chat', 'ui-stat'], more: 'productui', fits: ['none'], open: true },
       // v0.49 (TEMPLATES.md): lower thirds, titles, callouts, tags — built native in the comp, sized to the text
       { id: 'templates', label: 'Templates', kind: 'tiles', section: 'templates', ids: ['tpl-lowerThird', 'tpl-titleCard', 'tpl-handle', 'tpl-endCard', 'tpl-callout', 'tpl-quote', 'tpl-chapter', 'tpl-tag'], more: 'templates', fits: ['none'], open: true },
       { id: 'shapes', label: 'Shapes & Icons', kind: 'links', fits: ['none'], open: true, links: [['shapes', '1,899 icons and 22 native shapes, editable in AE']] },
       { id: 'bg', label: 'Backgrounds', kind: 'tiles', section: 'backgrounds', ids: ['bg-tomato', 'bg-midnight', 'bg-ocean', 'bg-sunset', 'bg-aurora', 'bg-cyber'], more: 'backgrounds', fits: ['none'] },
-      { id: 'brand', label: 'Brand', kind: 'acts', fits: ['layers', 'text'], hero: ['brand:apply'], refs: ['brand:apply', 'brand:applyComp', 'brand:ease'], links: [['brand', 'Brand Kit — clients, from website / PDF']] }
+      { id: 'brand', label: 'Brand', kind: 'acts', fits: ['layers', 'text'], hero: ['brand:apply'], refs: ['brand:apply', 'brand:applyComp', 'brand:ease'], links: [['brand', 'Brand Kit — clients, from website / PDF']] },
+      // v0.75: Style Kits — a look's tools gathered in one place (SaaS, Apple Glass, Kinetic Type, Social, MoGraph)
+      { id: 'kits', label: 'Style Kits', kind: 'links', fits: ['none'], open: true, links: [['kits', 'SaaS · Apple Glass · Kinetic Type · Social · MoGraph — each look\'s tools in one place']] }
     ] },
   { id: 'ae-effect', label: 'Look', icon: 'glass', bar: false, title: 'Finish the look: styles, glass, key & colour, camera & zoom (Effect menu)', fits: ['layer', 'layers', 'shapes', 'text'], owns: ['looks', 'compositing', 'zoom'],
     groups: [

@@ -134,7 +134,7 @@ function editor(app, draft) {
  *   · Manage (edit, backup, import, examples, delete)
  */
 const EX = () => require('../../../features/brand/examples');
-const TABS = [['colours', 'Colours', 'palette'], ['type', 'Type', 'type'], ['guide', 'Guide', 'info'], ['manage', 'Manage', 'gear']];
+const TABS = [['colours', 'Colours', 'palette'], ['type', 'Type', 'type'], ['motion', 'Motion', 'easeCurve'], ['guide', 'Guide', 'info'], ['manage', 'Manage', 'gear']];
 
 function clientCards(app, s, brands, brand, startImport) {
   const newOpen = !!s.brandNew;
@@ -209,6 +209,69 @@ function typeTab(app, s, brand) {
     renderReport(fontResult, { onRestore: () => app.restore(fontResult.checkpointId, 'brand.applyFont'), onDismiss: () => app.clearResult('brand.applyFont') })];
 }
 
+/* ---------- v0.75 motion identity (owner: "edit and add Easy Ease keyframe values so the brand has a motion identity") ----------
+   The brand's own Ease Out / Ease In influence (%), started from a preset or typed / dragged (scrub.js). The curve and a
+   ball show the feel (hover plays it). Save stores it on the client (profile.motion.ease); Brand ease then applies exactly
+   these values with Smart Ease (motion.smartEase) — the same tool as everywhere else. */
+function easeY(x, o, i) {
+  // cubic-bezier(o, 0, 1 - i, 1): solve x(t) by bisection, return y(t)
+  const p1x = o / 100, p2x = 1 - i / 100;
+  const bx = (t) => 3 * (1 - t) * (1 - t) * t * p1x + 3 * (1 - t) * t * t * p2x + t * t * t;
+  const by = (t) => 3 * (1 - t) * t * t + t * t * t;
+  let lo = 0, hi = 1, t = x;
+  for (let k = 0; k < 30; k++) { t = (lo + hi) / 2; if (bx(t) < x) lo = t; else hi = t; }
+  return by(t);
+}
+function curveCanvas(o, i, key) {
+  const widgets = require('../widgets');
+  const canvas = h('canvas', { class: 'bk-curve-c', 'aria-hidden': 'true', 'data-key': `bk-curve|${key}|${o}|${i}` });
+  const t0 = Date.now();
+  widgets.animated(canvas, (now) => {
+    const { c, W, H } = widgets.prep(canvas);
+    const css = getComputedStyle(canvas);
+    const acc = css.getPropertyValue('--accent').trim() || '#ff7a59', line = css.getPropertyValue('--line-strong').trim() || 'rgba(255,255,255,.2)', txt = css.getPropertyValue('--text-3').trim() || '#999';
+    const pad = 14, gw = W - pad * 2, gh = H - pad * 2 - 22;
+    c.strokeStyle = line; c.lineWidth = 1; c.strokeRect(pad + 0.5, pad + 0.5, gw, gh);
+    // handles
+    c.strokeStyle = txt; c.beginPath(); c.moveTo(pad, pad + gh); c.lineTo(pad + gw * o / 100, pad + gh); c.moveTo(pad + gw, pad); c.lineTo(pad + gw * (1 - i / 100), pad); c.stroke();
+    c.fillStyle = txt; c.beginPath(); c.arc(pad + gw * o / 100, pad + gh, 3.5, 0, 7); c.arc(pad + gw * (1 - i / 100), pad, 3.5, 0, 7); c.fill();
+    // the curve
+    c.strokeStyle = acc; c.lineWidth = 2.5; c.beginPath();
+    for (let k = 0; k <= 60; k++) { const x = k / 60, y = easeY(x, o, i); const px = pad + gw * x, py = pad + gh - gh * y; if (k) c.lineTo(px, py); else c.moveTo(px, py); }
+    c.stroke();
+    // a ball that moves with this feel (hover plays it; at rest it waits at the end)
+    const cyc = 1.6, tt = now === null ? 1 : Math.min(1, Math.max(0, (((Date.now() - t0) / 1000) % (cyc + 0.6)) / cyc));
+    const v = easeY(tt, o, i);
+    c.fillStyle = acc; c.beginPath(); c.arc(pad + gw * tt, pad + gh - gh * v, 4.5, 0, 7); c.fill();
+    c.beginPath(); c.arc(pad + 8 + (gw - 16) * v, H - 11, 6, 0, 7); c.fill();
+  });
+  return canvas;
+}
+function motionTab(app, s, brand) {
+  const saved = K.brandEase(brand);
+  const d = s.brandEase && s.brandEase.id === brand.id ? s.brandEase : { id: brand.id, out: saved ? saved.out : 33, in: saved ? saved.in : 33 };
+  const set = (patch) => app.state.set({ brandEase: Object.assign({}, d, patch) });
+  const changed = !saved || saved.out !== d.out || saved.in !== d.in;
+  const field = (key, label) => {
+    const input = h('input', { class: 'txt bk-ease-v', 'data-fk': `bk-ease-${key}`, value: String(d[key]), 'aria-label': `${label} (%)` });
+    require('../scrub').attach(input, { step: 1, min: 0.1, max: 100, commit: (v) => set({ [key]: v }) });
+    input.addEventListener('change', (e) => { const v = Number(e.target.value); if (Number.isFinite(v)) set({ [key]: Math.max(0.1, Math.min(100, v)) }); });
+    return h('label', { class: 'bk-ease-f' }, h('span', {}, label), input, h('i', {}, '%'));
+  };
+  const keysSel = s.ctx ? (s.ctx.properties || []).reduce((n, p) => n + (p.selectedKeys || []).length, 0) : 0;
+  const smartArgs = Object.assign(require('../../../core/schema').defaults(require('../../../features/motion/smartEase').params), { influenceOut: d.out, influenceIn: d.in, sides: 'both' });
+  return [
+    h('div', { class: 'bk-row' }, h('span', { class: 'bk-hint' }, saved ? `${brand.name} moves with Ease Out ${saved.out}% · Ease In ${saved.in}% — Brand ease applies it.` : `Give ${brand.name} its own ease: start from a feel, then fine-tune.`)),
+    h('div', { class: 'bk-ease-presets', role: 'radiogroup', 'aria-label': 'Start from' }, K.EASE_PRESETS.map(([id, label, o, i]) => h('button', { class: `chip-btn ${d.out === o && d.in === i ? 'on' : ''}`, 'data-key': `bk-ep-${id}`, role: 'radio', 'aria-checked': String(d.out === o && d.in === i), 'aria-pressed': String(d.out === o && d.in === i), title: `Ease Out ${o}% · Ease In ${i}%`, onclick: () => set({ out: o, in: i }) }, label))),
+    h('div', { class: 'bk-ease' },
+      h('div', { class: 'bk-curve', title: 'Rest the mouse here to play the feel' }, curveCanvas(d.out, d.in, brand.id)),
+      h('div', { class: 'bk-ease-fields' }, field('out', 'Ease Out'), field('in', 'Ease In'))),
+    h('div', { class: 'actions' },
+      h('button', { class: 'btn primary sm', 'data-key': 'bk-ease-save', disabled: !changed, title: changed ? `Save as ${brand.name}'s motion identity` : 'Saved', onclick: () => { const r = app.services.brands.save(K.withEase(brand, d)); app.toast(r.ok ? `${brand.name} moves with ${d.out}% / ${d.in}% now` : r.errors.join(' · '), 2600, r.ok ? 'ok' : 'err'); app.state.set({ brandEase: null }); } }, icon('check', 'sm'), saved ? 'Save changes' : 'Save to client'),
+      h('button', { class: 'btn sm', 'data-key': 'bk-ease-apply', disabled: !keysSel || !!s.running, title: keysSel ? `Ease Out ${d.out}% · Ease In ${d.in}% on ${keysSel} selected keys (Smart Ease)` : 'Select keyframes first', onclick: () => app.runTool('motion.smartEase', smartArgs, { label: `${brand.name} ease` }) }, icon('easeCurve', 'sm'), keysSel ? `Apply to ${keysSel} keys` : 'Apply to keys'),
+      saved ? h('button', { class: 'btn ghost sm', 'data-key': 'bk-ease-clear', title: 'Remove the motion identity (Brand ease falls back to its easing word)', onclick: () => { app.services.brands.save(K.withEase(brand, null)); app.state.set({ brandEase: null }); } }, 'Remove') : null)];
+}
+
 function guideTab(app, brand) {
   const p = brand.profile || {};
   const blocks = [];
@@ -261,7 +324,7 @@ function render(app) {
     h('div', { class: 'bk-actions', 'data-key': 'bi-use' }, act('brand:apply', true), act('brand:applyComp'), act('brand:ease'),
       h('button', { class: 'btn sm', 'data-key': 'ba-bg', title: 'Make Backgrounds presets from this client (its gradients, palette and a soft mesh) — Backgrounds › Mine', onclick: () => { const n = K.saveBrandBackgrounds(app.services.presets, brand); app.toast(n ? `${n} ${brand.name} backgrounds in Backgrounds › Mine` : `${brand.name} needs at least 2 colours`, 3500, n ? 'ok' : 'warn'); if (n) app.state.set((st) => ({ studio: Object.assign({}, st.studio, { backgrounds: Object.assign({}, (st.studio || {}).backgrounds, { filter: 'Mine' }) }) })); } }, icon('background', 'sm'), 'Make backgrounds')),
     h('nav', { class: 'bk-tabs', role: 'tablist', 'aria-label': 'Client' }, TABS.map(([id, label, ic]) => h('button', { class: `bk-tab ${tab === id ? 'on' : ''}`, role: 'tab', 'data-key': `bk-t-${id}`, 'aria-selected': String(tab === id), onclick: () => app.state.set({ brandTab: id }) }, icon(ic, 'sm'), h('span', {}, label)))),
-    h('div', { class: 'bk-panel', 'data-key': `bk-p-${tab}` }, tab === 'colours' ? coloursTab(app, s, brand) : tab === 'type' ? typeTab(app, s, brand) : tab === 'guide' ? guideTab(app, brand) : manageTab(app, brand)));
+    h('div', { class: 'bk-panel', 'data-key': `bk-p-${tab}` }, tab === 'colours' ? coloursTab(app, s, brand) : tab === 'type' ? typeTab(app, s, brand) : tab === 'motion' ? motionTab(app, s, brand) : tab === 'guide' ? guideTab(app, brand) : manageTab(app, brand)));
 }
 
 module.exports = { render };

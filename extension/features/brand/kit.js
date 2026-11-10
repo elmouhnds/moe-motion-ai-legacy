@@ -48,5 +48,22 @@ function saveBrandBackgrounds(presets, brand) {
 /** The ease that matches the brand's motion feel (the refs are existing presets / quick actions). */
 const EASE_REF = { smooth: 'tile:animate/easeSmooth', snappy: 'tile:animate/easeSnappy', gentle: 'quick:k_easy', bouncy: 'quick:curveBack', elastic: 'quick:curveBack', linear: 'quick:k_linear' };
 const brandEaseRef = (brand) => { const e = brand && brand.profile && brand.profile.motion && brand.profile.motion.easing; return EASE_REF[e] || null; };
+/** v0.75 motion identity: the brand's own Easy Ease values (influence out / in, %) when set — else null (pure). */
+function brandEase(brand) {
+  const e = brand && brand.profile && brand.profile.motion && brand.profile.motion.ease;
+  if (!e) return null;
+  const clamp = (v) => Math.max(0.1, Math.min(100, Number(v)));
+  return Number.isFinite(Number(e.out)) && Number.isFinite(Number(e.in)) ? { out: clamp(e.out), in: clamp(e.in) } : null;
+}
+/** The brand with new ease values (a copy, for brands.save). */
+function withEase(brand, ease) {
+  const b = JSON.parse(JSON.stringify(brand));
+  b.profile = b.profile || {};
+  b.profile.motion = Object.assign({}, b.profile.motion, { ease: ease ? { out: +ease.out, in: +ease.in } : undefined });
+  if (!ease) delete b.profile.motion.ease;
+  return b;
+}
+/** The ease presets a brand can start from (the values the plugin's ease tools use). */
+const EASE_PRESETS = [['smooth', 'Smooth', 60, 60], ['snappy', 'Snappy', 12, 88], ['expo', 'Expo', 5, 96], ['gentle', 'Gentle', 33, 33], ['soft', 'Soft land', 20, 75], ['launch', 'Launch', 85, 15]];
 
-module.exports = { ACTIVE_KEY, activeBrand, setActive, brandBackgrounds, saveBrandBackgrounds, brandEaseRef, EASE_REF };
+module.exports = { ACTIVE_KEY, activeBrand, setActive, brandBackgrounds, saveBrandBackgrounds, brandEaseRef, EASE_REF, brandEase, withEase, EASE_PRESETS };

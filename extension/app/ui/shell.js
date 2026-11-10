@@ -25,6 +25,7 @@ const views = {
   compositing: { render: (app) => require('./views/motion').renderCategory(app, 'compositing', (t) => !/^glass\./.test(t.id)) },
   text: require('./views/text'),
   brand: require('./views/brand'),
+  kits: require('./views/kits'),
   select: require('./views/select'),
   quick: { render: (app) => quickbar.view(app) },
   deliver: require('./views/deliver'),
