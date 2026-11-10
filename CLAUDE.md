@@ -112,6 +112,7 @@ Permanent rules for anyone (human or AI) working in this repository.
 - **Every text-animation preview plays a two-word phrase — "MOE Motion" (Arabic: "مو موشن")** so a move by words, lines or letters reads clearly; never the user's long text or a single word.
 - A preview of anything that moves plays **when the mouse rests on it** (Calm); Inspector / tool previews you are tuning keep playing. Palette cards play their real motion on hover.
 - **Style Kits** (`app/ui/kits.js`): a look or technique with its own style (SaaS, Apple Glass, Kinetic Type, Social, MoGraph…) gets its tools gathered on one kit page, in build order — refs to EXISTING tools only (never a copy, never a second engine); general tools stay where they are. A new technique becomes a new kit; every ref must resolve (tested).
+- **Smart Kits (v0.76, docs/features/SMART_KITS.md)**: interface ideas may be NEW ones, not only a rearrangement of what exists (owner) — but still made of registered tools. A recipe is 2–4 of its kit's own refs run in order through `kitRun.runRecipe` (readiness before every step, one `executor.batch`, stops honestly); never a combined host call, never a tool the kit does not list. Kits are `look` or `technique`. Progress is session memory (never presented as what the comp holds). The *Working in* strip is opt-in, on Home only.
 - A brand's motion identity is its own Ease Out / Ease In (`profile.motion.ease`); Brand ease applies it through `motion.smartEase`.
 
 ## Testing rules

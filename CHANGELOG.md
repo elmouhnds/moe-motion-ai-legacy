@@ -2,6 +2,17 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.76.0] — 2026-11-10 — Smart Kits: recipes, progress, Effectors Pro
+### Added (owner: "ideas that are not only what already exists")
+- **Recipes** (`app/ui/kitRun.js`): a kit's named chain of its OWN tools — one click, one After Effects undo group (`executor.batch`); readiness before every step; stops at the first step that is not ready or fails and says what ran. 11 recipes (Click & Punch, Rise & Spotlight, Liquid Card, Frost & Focus, Word Cascade, Reel Pop, Ripple Wall, Spring Bloom, Jelly Ring, Living Field, Ring Scatter).
+- **Effectors Pro** — a technique kit: Clone · Shape · Physics · Fields · Aim & sound · Colour & trails (29 existing tools in build order). Kits are now grouped as **Looks** and **Techniques**.
+- **Progress**: a step ticks when one of its tools ran here (session memory), the next step is marked, the kit head shows n / total.
+- **Work in this kit**: pin one kit; every style's Home shows a slim strip with its next step's tools (opt-in, removable).
+### Changed
+- Tile badges are never smaller than 10 px.
+### Honest notes
+- Verified on the mock and the browser preview only. Progress is what you did in this session — it does not read the comp. A recipe's later steps rely on what After Effects leaves selected after the earlier one (as on the mock); unverified in After Effects.
+
 ## [0.75.0] — 2026-11-10 — Style Kits, Signature colours, a brand that moves
 ### Added (owner)
 - **One Ctrl+Z per Mix**: `executor.batch` opens ONE After Effects undo group around all the Mix's runs (tx.begin / tx.end once); each run still validates, verifies, checkpoints and has its own History entry; the group always closes, nested batches join it.

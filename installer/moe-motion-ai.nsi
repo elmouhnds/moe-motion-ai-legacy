@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.75: Style Kits (SaaS, Apple Glass...), 16 Signature backgrounds, brand motion identity, one Ctrl+Z per Mix."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.75: Style Kits، و16 خلفية Signature، وهوية حركة للبراند، وCtrl+Z واحدة للـ Mix"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.76: Smart Kits - one-click Recipes, step progress, Effectors Pro kit, and the kit you work in on Home."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.76: Recipes بضغطة واحدة، وتقدّم الخطوات، وكيت Effectors Pro، والكيت اللي شغال عليه في الـ Home"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

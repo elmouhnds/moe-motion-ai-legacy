@@ -8,8 +8,9 @@ const { h, icon } = require('../dom');
 const K = require('../kits');
 const A = require('../actions');
 const studio = require('../studio/sections');
+const R = require('../kitRun');
 
-function itemCard(app, s, ref) {
+function itemCard(app, s, ref, kit, done) {
   const a = A.resolve(ref);
   if (!a) return null;
   const [kind, rest] = [ref.slice(0, ref.indexOf(':')), ref.slice(ref.indexOf(':') + 1)];
@@ -24,20 +25,41 @@ function itemCard(app, s, ref) {
   } else if (kind === 'nav') page = rest;
   const rd = a.ready(app);
   return h('button', {
-    class: `sk-item ${rd.ok || a.nav ? '' : 'off'}`, 'data-key': `kit-i-${ref}`, 'aria-label': a.label,
+    class: `sk-item ${rd.ok || a.nav ? '' : 'off'} ${done && done[ref] ? 'done' : ''}`, 'data-key': `kit-i-${ref}`, 'aria-label': a.label,
     title: `${a.label}${rd.ok || a.nav ? '' : ` — ${rd.hint}`}\nClick: ${a.nav ? 'open' : 'apply'}${page && !a.nav ? ' · right-click: its library' : ''}`,
-    onclick: (e) => { if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else a.run(app, e); },
+    onclick: (e) => R.runRef(app, kit, ref, e),
     oncontextmenu: page && !a.nav ? (e) => { e.preventDefault(); app.go(page); } : undefined
-  }, h('span', { class: 'sk-thumb' }, thumb || icon(a.icon || 'bolt', 'lg')), h('span', { class: 'sk-name' }, a.label));
+  }, h('span', { class: 'sk-thumb' }, thumb || icon(a.icon || 'bolt', 'lg')), h('span', { class: 'sk-name' }, a.label),
+  done && done[ref] ? h('span', { class: 'sk-tick', title: 'You used this here', 'aria-label': 'used' }, icon('check', 'xs')) : null);
 }
 
-function overview(app) {
-  return h('div', { class: 'sk-cards' }, K.KITS.map((k) => h('button', {
-    class: 'sk-card', 'data-key': `kit-c-${k.id}`, style: { '--k1': k.accent[0], '--k2': k.accent[1] }, title: `${k.label} — ${k.tagline}`,
+function kitCard(app, k) {
+  const pinned = R.focusId(app) === k.id;
+  return h('button', {
+    class: `sk-card ${pinned ? 'pinned' : ''}`, 'data-key': `kit-c-${k.id}`, style: { '--k1': k.accent[0], '--k2': k.accent[1] }, title: `${k.label} — ${k.tagline}`,
     onclick: () => app.state.set({ kitId: k.id })
   }, h('span', { class: 'sk-card-ic', 'aria-hidden': 'true' }, icon(k.icon, 'lg')),
+  pinned ? h('span', { class: 'sk-card-pin' }, 'Working in') : null,
   h('span', { class: 'sk-card-t' }, h('b', {}, k.label), h('span', {}, k.tagline)),
-  h('span', { class: 'sk-card-n' }, `${K.refsOf(k).length} tools · ${k.steps.length} steps`))));
+  h('span', { class: 'sk-card-n' }, `${K.refsOf(k).length} tools · ${k.steps.length} steps${(k.recipes || []).length ? ` · ${k.recipes.length} recipe${k.recipes.length > 1 ? 's' : ''}` : ''}`));
+}
+function overview(app) {
+  return K.KINDS.map(([id, label, hint]) => h('section', { class: 'sk-kind', 'data-key': `kit-k-${id}`, 'aria-label': label },
+    h('div', { class: 'sk-kind-h' }, h('b', {}, label), h('span', {}, hint)),
+    h('div', { class: 'sk-cards' }, K.KITS.filter((k) => k.kind === id).map((k) => kitCard(app, k)))));
+}
+
+/** v0.76: a recipe — the chain as its tools' icons, one click runs it (one undo). */
+function recipeCard(app, kit, rec) {
+  const acts = rec.refs.map((r) => A.resolve(r)).filter(Boolean);
+  const first = acts[0] && acts[0].ready(app);
+  return h('button', {
+    class: `sk-rec ${first && !first.ok ? 'off' : ''}`, 'data-key': `kit-r-${kit.id}-${rec.id}`,
+    title: `${rec.label} — ${rec.hint}\n${acts.map((a) => a.label).join(' → ')}\nOne click, one Ctrl+Z${first && !first.ok ? `\nNeeds: ${first.hint}` : ''}`,
+    onclick: () => R.runRecipe(app, kit, rec)
+  }, h('span', { class: 'sk-rec-t' }, h('b', {}, rec.label), h('i', {}, rec.hint)),
+  h('span', { class: 'sk-rec-chain', 'aria-hidden': 'true' }, acts.map((a, i) => [i ? h('em', {}) : null, h('span', { class: 'sk-rec-ic' }, icon(a.icon || 'bolt', 'sm'))])),
+  h('span', { class: 'sk-rec-go' }, icon('play', 'xs'), `${acts.length} steps`));
 }
 
 function render(app) {
@@ -48,14 +70,23 @@ function render(app) {
       h('div', { class: 'sk-intro' }, h('b', {}, 'Style Kits'), h('span', {}, 'Each look\'s tools in one place, in the order you build it. Everyday tools stay where they are.')),
       overview(app));
   }
+  const done = R.doneOf(s, kit.id);
+  const pg = K.progress(kit, done);
+  const pinned = R.focusId(app) === kit.id;
   return h('div', { class: 'view sk-page', 'data-key': `kit-p-${kit.id}` },
     h('div', { class: 'sk-head', style: { '--k1': kit.accent[0], '--k2': kit.accent[1] } },
       h('button', { class: 'btn ghost sm sk-back', 'data-key': 'sk-back', onclick: () => app.state.set({ kitId: null }) }, icon('chev', 'xs'), 'All kits'),
-      h('span', { class: 'sk-head-t' }, icon(kit.icon, 'lg'), h('span', {}, h('b', {}, kit.label), h('i', {}, kit.tagline)))),
+      h('span', { class: 'sk-head-t' }, icon(kit.icon, 'lg'), h('span', {}, h('b', {}, kit.label), h('i', {}, kit.tagline))),
+      h('div', { class: 'sk-head-b' },
+        h('span', { class: 'sk-prog', title: 'Steps you have touched here (this session)' }, h('span', { class: 'sk-prog-bar', 'aria-hidden': 'true' }, h('i', { style: { width: `${Math.round(100 * pg.count / pg.total)}%` } })), `${pg.count} / ${pg.total} steps`),
+        h('button', { class: `btn sm sk-pin ${pinned ? 'on' : ''}`, 'data-key': 'sk-pin', 'aria-pressed': String(pinned), title: pinned ? 'Stop showing this kit on Home' : 'Show this kit\'s next step on Home, in every style', onclick: () => R.setFocus(app, pinned ? null : kit.id) }, icon(pinned ? 'check' : 'target', 'xs'), pinned ? 'Working in this kit' : 'Work in this kit'))),
     h('nav', { class: 'sk-switch', 'aria-label': 'Kits' }, K.KITS.map((k) => h('button', { class: `sk-chip ${k.id === kit.id ? 'on' : ''}`, 'data-key': `kit-s-${k.id}`, 'aria-pressed': String(k.id === kit.id), onclick: () => app.state.set({ kitId: k.id }) }, k.label))),
-    kit.steps.map((st, i) => h('section', { class: 'sk-step', 'data-key': `kit-st-${kit.id}-${i}`, 'aria-label': st.label },
-      h('div', { class: 'sk-step-h' }, st.label),
-      h('div', { class: 'sk-items' }, st.refs.map((r) => itemCard(app, s, r))))));
+    (kit.recipes || []).length ? h('section', { class: 'sk-recs', 'data-key': `kit-rs-${kit.id}`, 'aria-label': 'Recipes' },
+      h('div', { class: 'sk-step-h' }, 'Recipes · one click, one undo'),
+      h('div', { class: 'sk-rec-row' }, kit.recipes.map((rc) => recipeCard(app, kit, rc)))) : null,
+    kit.steps.map((st, i) => h('section', { class: `sk-step ${pg.steps[i] ? 'done' : ''} ${pg.next === i ? 'next' : ''}`, 'data-key': `kit-st-${kit.id}-${i}`, 'aria-label': st.label },
+      h('div', { class: 'sk-step-h' }, h('span', { class: 'sk-step-dot', 'aria-hidden': 'true' }, pg.steps[i] ? icon('check', 'xs') : null), st.label, pg.next === i && pg.count ? h('span', { class: 'sk-step-next' }, 'Next') : null),
+      h('div', { class: 'sk-items' }, st.refs.map((r) => itemCard(app, s, r, kit, done))))));
 }
 
 module.exports = { render };

@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.82 — Smart Kits ✅ (v0.76.0)
+- Recipes (one click, one undo), step progress, Effectors Pro technique kit, Work in this kit on Home. Next: one map of tab names across styles, shorter Bento Home, grouped Quick Bar, libraries that start with tiles.
+
 ## M1.81 — Style Kits, Signature colours, brand motion ✅ (v0.75.0)
 - One Ctrl+Z per Mix, Style Kits, 16 Signature looks, Brand › Motion, liquid sliders, MOE Motion text previews, hover previews.
 

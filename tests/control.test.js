@@ -226,7 +226,7 @@ test('v0.75: Style Kits point at real tools only; Signature looks are complete, 
   const KITS = require('../extension/app/ui/kits');
   const A = require('../extension/app/ui/actions');
   const S = require('../extension/app/ui/studio/sections');
-  assert.deepEqual(KITS.KITS.map((k) => k.id), ['saas', 'glass', 'kinetic', 'social', 'mograph']);
+  assert.deepEqual(KITS.KITS.map((k) => k.id), ['saas', 'glass', 'kinetic', 'social', 'effectors', 'mograph']);
   for (const k of KITS.KITS) { const refs = KITS.refsOf(k); assert.equal(new Set(refs).size, refs.length, `${k.id}: each tool once`); refs.forEach((r) => assert.ok(A.resolve(r), `${k.id}: ${r}`)); }
   assert.ok(S.byId('kits') && S.WORKSPACES.some((w) => w.items.includes('kits')), 'a page reachable like any other');
   // Signature looks: 16, each a complete look with motion, args valid for the background tool
@@ -259,4 +259,61 @@ test('v0.75: Style Kits point at real tools only; Signature looks are complete, 
   const act = A.resolve('brand:ease');
   assert.equal(act.tool, 'motion.smartEase'); assert.equal(act.args.influenceOut, 40); assert.equal(act.args.influenceIn, 70);
   A.setBrandSource(null);
+});
+
+test('v0.76 Smart Kits: kinds, recipes made of the kit\'s own tools, progress, and a recipe is one undo group that stops honestly', async () => {
+  const KITS = require('../extension/app/ui/kits');
+  const A = require('../extension/app/ui/actions');
+  const R = require('../extension/app/ui/kitRun');
+  const kinds = KITS.KINDS.map(([id]) => id);
+  for (const k of KITS.KITS) {
+    assert.ok(kinds.includes(k.kind), `${k.id}: a look or a technique`);
+    const own = KITS.refsOf(k);
+    for (const rc of k.recipes || []) {
+      assert.ok(rc.refs.length >= 2 && rc.refs.length <= 4 && rc.label && rc.hint, `${k.id}/${rc.id}: a short named chain`);
+      rc.refs.forEach((r) => { assert.ok(own.includes(r), `${k.id}/${rc.id}: ${r} is one of the kit's tools`); assert.ok(A.resolve(r) && !A.resolve(r).nav, `${r} runs`); });
+    }
+  }
+  const names = [].concat(...KITS.KITS.map((k) => (k.recipes || []).map((r) => r.label)));
+  assert.equal(new Set(names).size, names.length, 'no two recipes share a name');
+  assert.ok(KITS.byId('effectors').steps.length === 6 && KITS.byId('effectors').kind === 'technique');
+  // progress (pure)
+  const ef = KITS.byId('effectors');
+  assert.deepEqual(KITS.progress(ef, {}), { steps: [false, false, false, false, false, false], next: 0, count: 0, total: 6 });
+  const pg = KITS.progress(ef, { 'tile:layout/cloneGrid': true, 'tile:layout/efSpring': true });
+  assert.deepEqual([pg.steps, pg.next, pg.count], [[true, false, true, false, false, false], 1, 2]);
+  // every recipe runs to its end on a clean layer (Word Cascade needs text, and says so before writing anything)
+  for (const k of KITS.KITS) for (const rc of k.recipes || []) {
+    const t = await createTestServices(studioComp([box('A', 400)], { comp: { time: 1 } }));
+    let s1 = { ctx: await t.services.executor.readContext(), args: {} };
+    const a1 = { services: t.services, state: { get: () => s1, set: (p) => { s1 = Object.assign({}, s1, typeof p === 'function' ? p(s1) : p); } }, toast: () => {}, render: () => {}, go: () => {},
+      runTool: async (id, args) => { const r = await t.services.executor.run(id, args); s1.ctx = await t.services.executor.readContext(); return r; } };
+    const o1 = await R.runRecipe(a1, k, rc);
+    if (rc.id === 'wordCascade') assert.deepEqual(o1, { done: [], stopped: 'Text Cloner' });
+    else assert.equal(o1.stopped, null, `${k.id}/${rc.id} stopped at ${o1.stopped}`);
+  }
+  // a recipe runs in order inside ONE transaction and ticks its steps
+  const { services } = await createTestServices(studioComp([box('A', 400)], { comp: { time: 1 } }));
+  const calls = [];
+  const host = services.host; const call = host.call.bind(host);
+  host.call = async (op, a) => { calls.push(op); return call(op, a); };
+  let st = { ctx: await services.executor.readContext(), args: {}, view: 'kits' };
+  const toasts = [];
+  const app = {
+    services, state: { get: () => st, set: (p) => { st = Object.assign({}, st, typeof p === 'function' ? p(st) : p); } },
+    runTool: async (id, args) => { const r = await services.executor.run(id, args); st.ctx = await services.executor.readContext(); return r; },
+    toast: (m, t, k) => toasts.push([k, m]), render: () => {}, go: () => {}
+  };
+  const glass = KITS.byId('glass');
+  const rec = glass.recipes.find((r) => r.id === 'frostFocus');
+  const out = await R.runRecipe(app, glass, rec);
+  assert.deepEqual(out, { done: ['Frosted Glass', 'Focus In'].slice(0, out.done.length), stopped: null }, JSON.stringify([out, toasts]));
+  assert.deepEqual(calls.filter((c) => /^tx\./.test(c)), ['tx.begin', 'tx.end'], 'one undo group');
+  assert.deepEqual(Object.keys(R.doneOf(st, 'glass')).sort(), rec.refs.slice().sort());
+  assert.equal(KITS.progress(glass, R.doneOf(st, 'glass')).count, 2);
+  // it stops at the first step that is not ready, and says so — nothing is ticked
+  let st2 = { ctx: Object.assign({}, st.ctx, { layers: [], properties: [] }), args: {}, view: 'kits' };
+  const app2 = Object.assign({}, app, { state: { get: () => st2, set: (p) => { st2 = Object.assign({}, st2, typeof p === 'function' ? p(st2) : p); } } });
+  const out2 = await R.runRecipe(app2, glass, rec);
+  assert.ok(out2.stopped && !out2.done.length && !Object.keys(R.doneOf(st2, 'glass')).length);
 });

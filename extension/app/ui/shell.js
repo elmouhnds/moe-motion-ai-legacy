@@ -244,6 +244,7 @@ function createApp(root, services, env = {}) {
         p.header,
         p.hideCtx ? null : contextStrip(s), // v0.71: Control's home shows the comp in its own head
         p.top,
+        require('./kitRun').focusStrip(app, s), // v0.76: the kit you are working in — its next step, on every style's Home
         h('div', { class: 'content' }, p.content),
         p.bottom || null,
         require('./assistant').render(app)),
