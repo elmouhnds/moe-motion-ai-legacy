@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.91 — Assistant mark ✅ (v0.85.0)
+- A premium Assistant button with its own mark in the four styles; end room so it never hides the last row. Waiting: the Self-Test report from After Effects, the signing decision.
+
 ## M1.90 — Glass nav and sizes ✅ (v0.84.0)
 - Key-hint boxes removed, selected tab marked, 24 px controls in Glass. Waiting: the Self-Test report from After Effects, the signing decision.
 

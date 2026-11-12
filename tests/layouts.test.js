@@ -194,3 +194,21 @@ test('v0.26: pinned NOW tiles reorder (movePin), unknown target puts it last', (
   Bn.movePin(app, 'quick:x_loopCycle', 'nope');
   assert.deepEqual(data['bento-pins'], ['quick:k_easy', 'quick:reverse', 'quick:x_loopCycle']);
 });
+
+test('v0.85: the Assistant button has its own mark and states — not the Look stage\'s icon, no motion without a reason', () => {
+  const fs = require('fs'); const path = require('path');
+  const src = fs.readFileSync(path.join(__dirname, '../extension/app/ui/assistant.js'), 'utf8');
+  assert.ok(!/icon\('sparkles'/.test(src), 'sparkles is the Look stage');
+  assert.match(src, /c\.phase === 'thinking' \? 'busy' : ''/);
+  assert.match(src, /!c\.open && tips\.length \? 'hint' : ''/);
+  const css = fs.readFileSync(path.join(__dirname, '../extension/css/app.css'), 'utf8');
+  const base = css.match(/\.as-aura::before \{[^}]*\}/)[0];
+  assert.ok(!/animation/.test(base), 'the rim is still unless there is a reason');
+  assert.match(css, /\.as-fab\.hint \.as-aura::before \{ animation: as-turn [^;]* 1; \}/);
+  assert.match(css, /\.as-fab\.busy \.as-aura::before \{ animation: as-turn [^;]*infinite; \}/);
+  assert.match(css, /:root\[data-motion="reduced"\] \.as-fab \.as-aura::before[^{]*\{ animation: none !important; \}/);
+  assert.match(css, /\.as-fab \{[^}]*width: 44px; height: 44px;/, 'the bars reserve 44 px');
+  assert.ok(!/backdrop-filter/.test(css.match(/\.as-core \{[^}]*\}/)[0]));
+  const styles = fs.readFileSync(path.join(__dirname, '../extension/css/styles.css'), 'utf8');
+  for (const l of ['glass', 'moe', 'control']) assert.match(styles, new RegExp(`\\.app\\.layout-${l} \\.as-fab \\{`), l);
+});

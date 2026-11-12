@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.85.0] — 2026-11-12 — The Assistant button says what it is
+- The floating Assistant button is no longer a flat accent circle with the Look stage's sparkle icon. It is a dark tile with a lit rim and its own mark: a speech bubble holding a spark (owner: "premium, and it must say AI assistant, in every style").
+- One shape per style: a rounded tile in Bento, a round solid bead in Glass, a small-cornered tile in MOE, a hard square in Control. Dark and light themes, every accent (token colours only).
+- States: the rim turns once when a suggestion arrives and keeps turning while the Assistant thinks (the spark beats); still otherwise. Reduced motion turns both off. Nothing moves on hover.
+- The suggestion badge is the accent colour with its number (in Glass the number was invisible).
+- The same mark is in the Assistant's header (with an "AI" chip) and beside its messages.
+- The last row of a page can be scrolled clear of the button in every style (it used to stay under it, most visibly above Glass's nav).
+
 ## [0.84.0] — 2026-11-12 — Glass: a clean nav, controls you can hit
 ### Changed (owner: "review them and design the best; and the nav bar at the bottom — each of the five icons has a black box behind it, I do not know what it is for")
 - **Nav bar**: the boxes were the `^1 … ^5` key hints (Ctrl+1…5), 9 px on a dark chip. Removed — the shortcut stays in each tab's tooltip. The selected tab has a thin rim and a short accent line; tabs have a focus ring.

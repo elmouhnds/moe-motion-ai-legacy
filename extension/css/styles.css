@@ -250,6 +250,15 @@
 .gl-rare { color: var(--text-3); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.08em; }
 /* v0.28: five stages in the Glass capsule; the assistant floats above it */
 .app.layout-glass .assistant { bottom: 72px; }
+/* v0.85: the Assistant's tile takes each style's own shape — a round solid bead over Glass (floating = solid, v0.83),
+   a quiet small-cornered tile in MOE, a hard square in Control */
+.app.layout-glass .as-fab { border-radius: 50%; --bg-elev: #221e2d; --bg-hover: #342f41; --bg-sunken: #14111b; --line-strong: #544c66; box-shadow: 0 14px 34px rgba(4, 2, 12, 0.6), 0 0 22px var(--accent-soft); }
+:root[data-theme="light"] .app.layout-glass .as-fab { --bg-elev: #ffffff; --bg-hover: #ffffff; --bg-sunken: #ebe7f3; --line-strong: #bdb4cf; }
+.app.layout-glass .as-core { border-radius: 50%; }
+.app.layout-moe .as-fab { border-radius: var(--r-lg); box-shadow: var(--shadow-2); }
+.app.layout-moe .as-core { border-radius: 6.5px; }
+.app.layout-control .as-fab { border-radius: var(--r); box-shadow: var(--shadow-2); }
+.app.layout-control .as-core { border-radius: 4.5px; }
 .app.layout-glass .gl-tab { font-size: 10.5px; }
 /* v0.29: anchor in NOW = a 2×2 cell, not a full-width card */
 .b-tall { grid-row: span 2; }

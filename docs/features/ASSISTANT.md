@@ -45,3 +45,10 @@ as whole words so *عايز* is not *ايز*), then:
 - Answers about After Effects come from Claude's knowledge; the prompt tells it to say when it is not sure, but it
   can still be wrong — the plan part is what MOE checks.
 - Tested with a canned demo reply in the preview and fake HTTP in tests, not against the live API in AE.
+
+## v0.85 — the button's look (owner: "premium, says AI assistant, in every style")
+- **Mark**: a speech bubble (it answers) holding a four-point spark (it thinks), drawn in `assistant.js MARK` with token colours. Lucide's `sparkles` is the Look stage's icon, so the Assistant no longer uses it.
+- **Tile**: 44 px (the action bars reserve exactly that), a dark body inside a lit conic rim. Shape per style: Bento 14 px corners · Glass round and solid · MOE 8 px · Control 6 px.
+- **States**: idle = still · `hint` (suggestions) = the rim turns once + accent badge with the number · `busy` (thinking) = the rim keeps turning, the spark beats · `on` (open) = the sheet replaces it. Reduced motion: no animation. Hover changes brightness and shadow only.
+- **End room**: `.content::after` (60 px, not on pages with the sticky action bar, which already reserves its corner) lets the last row scroll clear of the button.
+- Not verified in After Effects; proven in the Chromium preview by pictures and measurements (TEST_REPORT.md).

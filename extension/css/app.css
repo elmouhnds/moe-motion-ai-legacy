@@ -1211,18 +1211,39 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .assistant { position: absolute; bottom: 12px; right: 12px; z-index: 40; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none; }
 .assistant.side-left { right: auto; left: 12px; align-items: flex-start; }
 .assistant > * { pointer-events: auto; }
-.as-fab { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--accent); border-radius: 50%; background: radial-gradient(120% 120% at 30% 20%, var(--accent-hover), var(--accent)); color: var(--accent-ink); box-shadow: var(--shadow-2); cursor: pointer; transition: box-shadow var(--t), filter var(--t); }
-.as-fab:hover { filter: brightness(1.08); box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5), 0 0 0 4px var(--accent-soft); }
+/* v0.85 (docs/features/ASSISTANT_MARK.md): the Assistant is a small dark tile with a lit rim and its own mark — a speech
+   bubble holding a spark — instead of a flat accent circle. The rim is still; it turns only for a reason (one sweep when a
+   suggestion arrives, round and round while it thinks). 44 px footprint, as the bars reserve. Nothing moves on hover. */
+.as-fab { position: relative; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 14px; background: none; color: var(--text); box-shadow: var(--shadow-2), 0 0 22px var(--accent-soft); cursor: pointer; transition: box-shadow var(--t), filter var(--t); }
+.as-fab:hover { filter: brightness(1.12); box-shadow: var(--shadow-2), 0 0 0 4px var(--accent-soft); }
 .as-fab:focus-visible { outline: none; box-shadow: var(--focus), var(--shadow-2); }
-.as-fab .svg-i { width: var(--ic-l); height: var(--ic-l); color: var(--accent-ink); }
-.as-fab.on { background: var(--bg-elev); border-color: var(--line-strong); color: var(--text); }
-.as-fab.on .svg-i { color: var(--text); }
-.as-badge { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 5px; border: 2px solid var(--bg); border-radius: var(--r-pill); background: var(--text); color: var(--bg); font-size: 10px; font-weight: 800; line-height: 14px; text-align: center; }
+.as-aura { position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: inherit; overflow: hidden; }
+.as-aura::before { content: ''; position: absolute; left: -50%; top: -50%; width: 200%; height: 200%; background: conic-gradient(from 300deg, var(--accent) 0deg, var(--accent-hover) 50deg, var(--text) 95deg, var(--accent) 140deg, var(--accent-soft) 230deg, var(--line-strong) 290deg, var(--accent) 360deg); }
+.as-core { position: absolute; top: 1.5px; right: 1.5px; bottom: 1.5px; left: 1.5px; display: grid; place-items: center; border-radius: 12.5px; background: var(--bg-elev) linear-gradient(160deg, var(--bg-hover), var(--bg-sunken) 70%); }
+.as-core .svg-i { width: var(--ic-l); height: var(--ic-l); color: var(--text); }
+.as-mark { display: grid; place-items: center; width: 26px; height: 26px; }
+.as-mark svg { display: block; width: 100%; height: 100%; }
+.as-m-b { fill: none; stroke: var(--text); stroke-width: 1.5; stroke-linejoin: round; }
+.as-m-s { fill: var(--accent); stroke: none; }
+.as-fab.on { box-shadow: var(--shadow-2); }
+.as-fab.on .as-aura::before { background: var(--line-strong); animation: none; }
+@keyframes as-turn { to { transform: rotate(360deg); } }
+@keyframes as-beat { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.as-fab.hint .as-aura::before { animation: as-turn 1.8s cubic-bezier(0.4, 0, 0.2, 1) 1; }
+.as-fab.busy .as-aura::before { animation: as-turn 1.4s linear infinite; }
+.as-fab.busy .as-m-s { animation: as-beat 1.4s ease-in-out infinite; }
+:root[data-motion="reduced"] .as-fab .as-aura::before, :root[data-motion="reduced"] .as-fab .as-m-s { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .as-fab .as-aura::before, .as-fab .as-m-s { animation: none !important; } }
+.as-badge { position: absolute; top: -5px; right: -5px; z-index: 1; min-width: 18px; height: 18px; padding: 0 5px; border: 2px solid var(--bg-sunken); border-radius: var(--r-pill); background: var(--accent); color: var(--accent-ink); font-size: 10px; font-weight: 800; line-height: 14px; text-align: center; }
+.assistant.side-left .as-badge { right: auto; left: -5px; }
+/* the last row of a page can always be scrolled clear of the button (it used to stay under it for good) */
+.app:not(.has-actbar) .content::after { content: ''; display: block; flex: none; height: 60px; }
+.as-chip { flex: none; padding: 0 6px; border: 1px solid var(--accent); border-radius: var(--r-pill); color: var(--accent); font-size: 10px; font-weight: 800; line-height: 16px; letter-spacing: 0.06em; }
 .as-sheet { display: flex; flex-direction: column; width: min(420px, calc(100vw - 24px)); max-height: min(72vh, 620px); border: 1px solid var(--line-strong); border-radius: 14px; background: var(--bg-raised); box-shadow: var(--shadow-2); overflow: hidden; animation: reveal 160ms ease-out; }
 .as-h { display: flex; align-items: center; gap: 8px; padding: 10px 10px 8px 12px; border-bottom: 1px solid var(--line); }
 .as-h b { font-family: var(--display); font-size: 14px; }
-.as-logo { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); }
-.as-logo .svg-i { color: var(--accent); }
+.as-logo { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--line-strong); border-radius: var(--r-lg); background: var(--bg-sunken); }
+.as-logo .as-mark { width: 20px; height: 20px; }
 .as-ctx { min-width: 0; overflow: hidden; color: var(--text-3); font-size: var(--fs-sm); white-space: nowrap; text-overflow: ellipsis; }
 .as-tips { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--bg); }
 .as-tip { display: flex; align-items: center; gap: 8px; min-height: 28px; font-size: var(--fs-sm); color: var(--text-2); }
@@ -1238,7 +1259,7 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .as-msg.you { justify-content: flex-end; }
 .as-msg.you .as-bubble { max-width: 85%; background: var(--accent-soft); border-color: transparent; color: var(--text); white-space: pre-wrap; }
 .as-av { flex: none; display: grid; place-items: center; width: 22px; height: 22px; margin-top: 2px; border-radius: 50%; background: var(--accent-soft); }
-.as-av .svg-i { color: var(--accent); }
+.as-av .as-mark { width: 16px; height: 16px; }
 .as-bubble { min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-size: var(--fs); line-height: 1.5; }
 .as-msg.moe .as-bubble { flex: 1; }
 .as-text { white-space: pre-wrap; overflow-wrap: anywhere; }

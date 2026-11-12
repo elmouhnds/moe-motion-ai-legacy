@@ -12,6 +12,14 @@
  *                 and power cards — one click runs or opens them
  */
 const { h, icon } = require('./dom');
+
+/**
+ * v0.85: the Assistant's own mark — a speech bubble (it answers) holding a spark (it thinks). Drawn here because
+ * Lucide's `sparkles` is also the Look stage's icon: the assistant must not look like a stage. Token colours only.
+ */
+const MARK = '<path class="as-m-b" d="M12 3.2c5 0 8.8 3.3 8.8 7.6s-3.8 7.6-8.8 7.6c-1 0-2-.1-2.9-.4L5 20.6l.9-3.9C4.2 15.3 3.2 13.2 3.2 10.8 3.2 6.5 7 3.2 12 3.2z"/>'
+  + '<path class="as-m-s" d="M12 6c.5 3.1 1.7 4.3 4.8 4.8-3.1.5-4.3 1.7-4.8 4.8-.5-3.1-1.7-4.3-4.8-4.8 3.1-.5 4.3-1.7 4.8-4.8z"/>';
+function mark(cls) { return h('span', { class: `as-mark ${cls || ''}`, 'aria-hidden': 'true', html: `<svg viewBox="0 0 24 24">${MARK}</svg>` }); }
 const A = require('./actions');
 const W = require('./workflow');
 
@@ -87,7 +95,7 @@ function planBody(app, c, e) {
 function entryView(app, c, e) {
   if (e.role === 'user') return h('div', { class: 'as-msg you', 'data-key': `m-${e.id}` }, h('div', { class: 'as-bubble' }, e.text));
   return h('div', { class: `as-msg moe ${e.kind || ''}`, 'data-key': `m-${e.id}` },
-    h('span', { class: 'as-av', 'aria-hidden': 'true' }, icon('sparkles', 'xs')),
+    h('span', { class: 'as-av', 'aria-hidden': 'true' }, mark()),
     h('div', { class: 'as-bubble' }, e.text ? h('div', { class: 'as-text', dir: 'auto' }, e.text) : null,
       e.kind === 'local' ? localBody(app, e) : null,
       e.plan ? planBody(app, c, e) : null));
@@ -107,7 +115,7 @@ function sheet(app, s, c, tips) {
   const thinking = c.phase === 'thinking';
   const prompts = W.PROMPTS[kind] || W.PROMPTS.none;
   return h('div', { class: 'as-sheet', role: 'dialog', 'aria-label': 'Assistant', 'data-key': 'as-sheet' },
-    h('div', { class: 'as-h' }, h('span', { class: 'as-logo' }, icon('sparkles', 'sm')), h('b', {}, 'Assistant'),
+    h('div', { class: 'as-h' }, h('span', { class: 'as-logo' }, mark()), h('b', {}, 'Assistant'), h('span', { class: 'as-chip', title: 'Answers and plans come from Claude when a key is set; without one your words are matched to MOE tools' }, 'AI'),
       h('span', { class: 'as-ctx' }, [s.ctx && s.ctx.comp ? A.CONTEXT_LABEL[kind] : 'No comp', f ? `${f.ratio} ${f.size}` : null, client ? client.name : null].filter(Boolean).join(' · ')),
       h('span', { class: 'spacer' }),
       c.thread.length ? h('button', { class: 'icon-btn', 'data-key': 'as-clear', 'aria-label': 'Start a new conversation', title: 'New conversation', onclick: () => app.clearAssistant() }, icon('refresh', 'sm')) : null,
@@ -117,7 +125,7 @@ function sheet(app, s, c, tips) {
       c.thread.length ? c.thread.map((e) => entryView(app, c, e)) : h('div', { class: 'as-empty' },
         h('p', {}, 'Ask how to do something in After Effects, or tell me what to change — I plan it with MOE tools and nothing changes until you approve.'),
         h('div', { class: 'as-prompts' }, prompts.map((p) => h('button', { class: 'as-prompt', 'data-key': `as-p-${p}`, onclick: () => app.askAssistant(p) }, p)))),
-      thinking ? h('div', { class: 'as-msg moe', 'data-key': 'as-thinking' }, h('span', { class: 'as-av' }, icon('sparkles', 'xs')), h('div', { class: 'as-bubble' }, h('span', { class: 'spin' }), ' Thinking…')) : null),
+      thinking ? h('div', { class: 'as-msg moe', 'data-key': 'as-thinking' }, h('span', { class: 'as-av' }, mark()), h('div', { class: 'as-bubble' }, h('span', { class: 'spin' }), ' Thinking…')) : null),
     h('div', { class: 'as-in' }, input,
       h('button', { class: 'btn primary as-send', 'data-key': 'as-send', disabled: thinking, 'aria-label': 'Send', title: 'Send (Enter) · new line: Shift+Enter', onclick: () => { const v = input.value; if (!v.trim()) { input.focus(); app.toast('Type a question or a change first — or pick a prompt', 2500, 'warn'); return; } input.value = ''; app.askAssistant(v); } }, thinking ? h('span', { class: 'spin' }) : icon('play', 'sm'))),
     h('div', { class: 'as-foot' }, 'Enter send · Shift+Enter new line · ` or Ctrl+Space open / close'));
@@ -133,11 +141,11 @@ function render(app) {
   const side = app.services.store.get(SIDE_KEY, 'right') === 'left' ? 'left' : 'right';
   const tips = currentTips(app, s);
   const fab = h('button', {
-    class: `as-fab ${c.open ? 'on' : ''}`, 'data-key': 'as-fab', 'aria-label': c.open ? 'Close the assistant' : `Assistant${tips.length ? ` — ${tips.length} suggestion${tips.length > 1 ? 's' : ''}` : ''}`, 'aria-expanded': String(!!c.open),
+    class: `as-fab ${c.open ? 'on' : ''} ${c.phase === 'thinking' ? 'busy' : ''} ${!c.open && tips.length ? 'hint' : ''}`, 'data-key': 'as-fab', 'aria-label': c.open ? 'Close the assistant' : `Assistant${tips.length ? ` — ${tips.length} suggestion${tips.length > 1 ? 's' : ''}` : ''}`, 'aria-expanded': String(!!c.open),
     title: `${c.open ? 'Close' : 'Ask or describe a change'} (\` or Ctrl+Space)\nRight-click: move to the ${side === 'right' ? 'left' : 'right'} corner`,
     onclick: () => app.toggleAssistant(),
     oncontextmenu: (e) => { e.preventDefault(); app.services.store.set(SIDE_KEY, side === 'right' ? 'left' : 'right'); app.render(); }
-  }, icon(c.open ? 'x' : 'sparkles', ''), !c.open && tips.length ? h('span', { class: 'as-badge', 'aria-hidden': 'true' }, String(tips.length)) : null);
+  }, h('span', { class: 'as-aura', 'aria-hidden': 'true' }), h('span', { class: 'as-core' }, c.open ? icon('x', '') : mark()), !c.open && tips.length ? h('span', { class: 'as-badge', 'aria-hidden': 'true' }, String(tips.length)) : null);
   return h('div', { class: `assistant side-${side} ${c.open ? 'open' : ''}`, 'data-key': 'assistant' }, c.open ? sheet(app, s, c, tips) : null, fab);
 }
 

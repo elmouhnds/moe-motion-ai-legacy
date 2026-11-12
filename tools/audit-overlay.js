@@ -39,6 +39,7 @@ const THEMES = ['dark', 'light'];
     await p.evaluate(() => window.__app.state.set({ modal: 'whatsnew' })); await p.waitForTimeout(400); await check('sheet', ['.sheet']); await close();
     p.evaluate(() => window.__app.dialog({ title: 'Remove?', body: ['Only the recipe is removed.'], okLabel: 'Remove' })); await p.waitForTimeout(300); await check('dialog', ['.overlay > .palette', '.overlay > div']); await close();
     await p.evaluate(() => window.__app.toast('Pop In — Animated 4 propert(ies)', 5000, 'ok')); await p.waitForTimeout(250); await check('toast', ['.toast']);
+    await check('assistant button', ['.as-core']);
     await p.keyboard.press('`'); await p.waitForTimeout(500); await check('assistant', ['.as-sheet']); await p.keyboard.press('`');
     await p.close();
   }
