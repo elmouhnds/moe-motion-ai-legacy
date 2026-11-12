@@ -105,7 +105,7 @@ function sheet(app, s, c, tips) {
   const kind = A.profile(s.ctx);
   const f = W.formatOf(s.ctx && s.ctx.comp);
   const client = require('../../features/brand/kit').activeBrand(app.services.store, app.services.brands);
-  const input = h('textarea', { class: 'as-input', 'data-fk': 'as-input', rows: '2', dir: 'auto', placeholder: 'Ask anything about After Effects, or describe a change…  (Arabic or English)', 'aria-label': 'Ask the assistant or describe a change' }, c.request || '');
+  const input = h('textarea', { class: 'as-input', 'data-fk': 'as-input', rows: '1', dir: 'auto', placeholder: 'Ask, or describe a change…', title: 'Arabic or English', 'aria-label': 'Ask the assistant or describe a change' }, c.request || '');
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); const v = input.value; input.value = ''; app.askAssistant(v); }
     if (e.key === 'Escape') { e.preventDefault(); app.closeCopilot(); }
@@ -114,21 +114,45 @@ function sheet(app, s, c, tips) {
   if (c.phase !== 'thinking') setTimeout(() => { if (document.activeElement !== input && !document.querySelector('.overlay') && document.contains(input)) input.focus(); }, 0);
   const thinking = c.phase === 'thinking';
   const prompts = W.PROMPTS[kind] || W.PROMPTS.none;
+  const asks = W.ASK[kind] || W.ASK.none;
+  const m = mode(c);
+  const tab = c.homeTab === 'ask' ? 'ask' : 'do';
+  const setTab = (t) => app.state.set((st) => ({ copilot: Object.assign({}, st.copilot, { homeTab: t }) }));
+  const sees = [s.ctx && s.ctx.comp ? A.CONTEXT_LABEL[kind] : 'No comp open', s.ctx && s.ctx.comp ? s.ctx.comp.name : null, f ? `${f.ratio} ${f.size}` : null, client ? client.name : null].filter(Boolean);
+  const row = (p, ic, k) => h('button', { class: 'as-prompt', 'data-key': `as-p-${k}-${p}`, onclick: () => app.askAssistant(p) }, icon(ic, 'sm'), h('span', { class: 'as-prompt-t' }, p), icon('chev', 'xs'));
   return h('div', { class: 'as-sheet', role: 'dialog', 'aria-label': 'Assistant', 'data-key': 'as-sheet' },
-    h('div', { class: 'as-h' }, h('span', { class: 'as-logo' }, mark()), h('b', {}, 'Assistant'), h('span', { class: 'as-chip', title: 'Answers and plans come from Claude when a key is set; without one your words are matched to MOE tools' }, 'AI'),
-      h('span', { class: 'as-ctx' }, [s.ctx && s.ctx.comp ? A.CONTEXT_LABEL[kind] : 'No comp', f ? `${f.ratio} ${f.size}` : null, client ? client.name : null].filter(Boolean).join(' · ')),
+    h('div', { class: 'as-h' }, h('span', { class: 'as-logo' }, mark()), h('b', {}, 'Assistant'), h('span', { class: 'as-chip' }, 'AI'),
       h('span', { class: 'spacer' }),
       c.thread.length ? h('button', { class: 'icon-btn', 'data-key': 'as-clear', 'aria-label': 'Start a new conversation', title: 'New conversation', onclick: () => app.clearAssistant() }, icon('refresh', 'sm')) : null,
       h('button', { class: 'icon-btn', 'data-key': 'as-close', 'aria-label': 'Close the assistant', title: 'Close (Esc)', onclick: () => app.closeCopilot() }, icon('x', 'sm'))),
-    tips.length ? h('div', { class: 'as-tips', 'aria-label': 'Suggestions' }, tips.map((t) => tipRow(app, s, t))) : null,
+    // what it works from, said plainly: the selection, the comp, its format, the active client
+    h('div', { class: 'as-sees', 'aria-label': `The assistant sees: ${sees.join(', ')}`, title: 'What the assistant works from — the active comp and your selection, nothing else' }, icon('eye', 'xs'), sees.map((t, i) => h('span', { class: `as-see ${i === 0 ? 'as-see-main' : ''}`, 'data-key': `see-${i}` }, t)),
+      m === 'claude' ? h('span', { class: 'as-mode on', title: 'The last answer came from Claude' }, 'Claude') : null,
+      m === 'offline' ? h('button', { class: 'as-mode', 'data-key': 'as-mode', title: 'The last request was answered without Claude: your words were matched to MOE tools. Click to open Settings.', onclick: () => app.go('settings') }, 'Offline') : null),
+    tips.length ? h('div', { class: 'as-tips', 'aria-label': 'Suggestions' }, h('div', { class: 'as-sec' }, icon('lightbulb', 'xs'), 'Suggested now'), tips.map((t) => tipRow(app, s, t))) : null,
     h('div', { class: 'as-thread', 'data-key': 'as-thread' },
       c.thread.length ? c.thread.map((e) => entryView(app, c, e)) : h('div', { class: 'as-empty' },
-        h('p', {}, 'Ask how to do something in After Effects, or tell me what to change — I plan it with MOE tools and nothing changes until you approve.'),
-        h('div', { class: 'as-prompts' }, prompts.map((p) => h('button', { class: 'as-prompt', 'data-key': `as-p-${p}`, onclick: () => app.askAssistant(p) }, p)))),
+        h('div', { class: 'as-hello' }, W.HEAD[kind] || W.HEAD.none),
+        // one list at a time: what it can DO to the selection, or what you can ASK about it
+        h('div', { class: 'seg as-tabs', role: 'group', 'aria-label': 'What the assistant can do' },
+          h('button', { 'data-key': 'as-tab-do', 'aria-pressed': String(tab === 'do'), onclick: () => setTab('do') }, 'Do it for me'),
+          h('button', { 'data-key': 'as-tab-ask', 'aria-pressed': String(tab === 'ask'), onclick: () => setTab('ask') }, 'Ask a question')),
+        h('div', { class: 'as-prompts' }, (tab === 'ask' ? asks : prompts).map((p) => row(p, tab === 'ask' ? 'lightbulb' : 'play', tab))),
+        h('div', { class: 'as-note' }, tab === 'ask' ? (m === 'offline' ? 'Offline: your words are matched to MOE tools. Answers need a Claude key.' : 'About After Effects, motion or MOE — in Arabic or English.') : 'I plan it with MOE tools. Nothing changes until you approve.')),
       thinking ? h('div', { class: 'as-msg moe', 'data-key': 'as-thinking' }, h('span', { class: 'as-av' }, mark()), h('div', { class: 'as-bubble' }, h('span', { class: 'spin' }), ' Thinking…')) : null),
     h('div', { class: 'as-in' }, input,
       h('button', { class: 'btn primary as-send', 'data-key': 'as-send', disabled: thinking, 'aria-label': 'Send', title: 'Send (Enter) · new line: Shift+Enter', onclick: () => { const v = input.value; if (!v.trim()) { input.focus(); app.toast('Type a question or a change first — or pick a prompt', 2500, 'warn'); return; } input.value = ''; app.askAssistant(v); } }, thinking ? h('span', { class: 'spin' }) : icon('play', 'sm'))),
-    h('div', { class: 'as-foot' }, 'Enter send · Shift+Enter new line · ` or Ctrl+Space open / close'));
+    h('div', { class: 'as-foot' }, h('kbd', {}, 'Enter'), 'send', h('kbd', {}, 'Shift+Enter'), 'new line', h('kbd', {}, '`'), 'open / close'));
+}
+
+/** Where the last answer came from — known only from the conversation itself, never guessed. */
+function mode(c) {
+  for (let i = c.thread.length - 1; i >= 0; i--) {
+    const e = c.thread[i];
+    if (e.role !== 'assistant') continue;
+    return e.kind === 'local' ? 'offline' : 'claude';
+  }
+  return '';
 }
 
 let seenTurns = -1;
@@ -145,8 +169,8 @@ function render(app) {
     title: `${c.open ? 'Close' : 'Ask or describe a change'} (\` or Ctrl+Space)\nRight-click: move to the ${side === 'right' ? 'left' : 'right'} corner`,
     onclick: () => app.toggleAssistant(),
     oncontextmenu: (e) => { e.preventDefault(); app.services.store.set(SIDE_KEY, side === 'right' ? 'left' : 'right'); app.render(); }
-  }, h('span', { class: 'as-aura', 'aria-hidden': 'true' }), h('span', { class: 'as-core' }, c.open ? icon('x', '') : mark()), !c.open && tips.length ? h('span', { class: 'as-badge', 'aria-hidden': 'true' }, String(tips.length)) : null);
+  }, h('span', { class: 'as-aura', 'aria-hidden': 'true' }), h('span', { class: 'as-core' }, c.open ? icon('x', '') : [mark(), h('span', { class: 'as-ai' }, 'AI')]), !c.open && tips.length ? h('span', { class: 'as-badge', 'aria-hidden': 'true' }, String(tips.length)) : null);
   return h('div', { class: `assistant side-${side} ${c.open ? 'open' : ''}`, 'data-key': 'assistant' }, c.open ? sheet(app, s, c, tips) : null, fab);
 }
 
-module.exports = { render, localMatches, currentTips, SIDE_KEY };
+module.exports = { render, localMatches, currentTips, mode, SIDE_KEY };

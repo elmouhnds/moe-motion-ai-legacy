@@ -85,6 +85,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['sparkles', 'The Assistant: AI on the button, an organised window', 'The button now says AI. Its window starts with what it sees (your selection, the comp, its format, the client), then the suggestion for it, then one list at a time — Do it for me (a plan you approve first) or Ask a question — with prompts written for what you selected. After an answer it says whether it came from Claude or from the offline tool search.'],
   ['sparkles', 'A new Assistant button', 'A dark tile with a lit rim and its own mark — a speech bubble holding a spark — in every style\'s own shape. The rim turns once when a suggestion arrives and keeps turning while it thinks. The last row of a page now scrolls clear of it.'],
   ['glass', 'Glass: a clean nav, controls you can hit', 'The five tabs at the bottom lost the small dark key-hint boxes (Ctrl+1…5 is still in each tab\'s tooltip); the tab you are in has a short accent line. Chips, switches, tags, segments and colour bars in Glass are 24 px to click, like the other styles.'],
   ['glass', 'Glass: menus you can read', 'Everything that opens over the page in Glass is solid now — the sidebar menus, a tool\'s options, What\'s new and the other sheets, the toast, the Assistant — with a firm edge and a deeper shadow, and the page steps back behind a dialog. The page itself keeps its glass.'],

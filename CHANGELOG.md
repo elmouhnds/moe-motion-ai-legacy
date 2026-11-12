@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.86.0] — 2026-11-12 — The Assistant: AI on the button, an organised window
+- The button carries the word **AI** under its mark (owner).
+- The window is organised top to bottom: **what it sees** (selection · comp · format · client) → **Suggested now** → an opening line for the selection → one list at a time, **Do it for me** (a plan you approve first) or **Ask a question** (new prompts per selection, `workflow.ASK`) → the text box with key hints.
+- After an answer a small pill says where it came from — *Claude* or *Offline* (tool search; click opens Settings). It is read from the conversation itself, never guessed, so it shows nothing before the first answer.
+- Prompts are full-width rows instead of loose pills; the fixed parts of the window no longer squeeze when it is short (340 px checked).
+
 ## [0.85.0] — 2026-11-12 — The Assistant button says what it is
 - The floating Assistant button is no longer a flat accent circle with the Look stage's sparkle icon. It is a dark tile with a lit rim and its own mark: a speech bubble holding a spark (owner: "premium, and it must say AI assistant, in every style").
 - One shape per style: a rounded tile in Bento, a round solid bead in Glass, a small-cornered tile in MOE, a hard square in Control. Dark and light themes, every accent (token colours only).

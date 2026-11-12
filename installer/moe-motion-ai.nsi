@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.85: a new Assistant button with its own AI mark in every style; Glass nav and 24 px controls (0.84)."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.85: زرار مساعد جديد بعلامة AI خاصة في كل الاستايلات، وشريط Glass وأزرار 24 بكسل (0.84)"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.86: the Assistant button says AI and its window is organised - what it sees, Do it for me / Ask a question."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.86: زرار المساعد مكتوب عليه AI ونافذته منظمة - شايف إيه، نفذلي / اسأل"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

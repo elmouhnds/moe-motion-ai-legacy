@@ -261,6 +261,18 @@ const PROMPTS = {
   shapesMany: ['Draw them on one after another', 'Arrange them in a ring', 'Animate them in one after another'],
   none: ['How do I make a 9:16 version of this?', 'Add safe-area guides', 'What can MOE do with screen recordings?']
 };
+/** v0.86: questions worth asking for what is selected (answers need Claude; offline the words still find tools). */
+const ASK = {
+  keys: ['Which ease suits a UI pop?', 'Why does this motion feel stiff?'],
+  text: ['How do I animate Arabic text safely?', 'What makes a title readable in motion?'],
+  layer: ['How long should an entrance last?', 'When do I use overshoot?'],
+  layers: ['How much stagger between layers?', 'How do I keep many layers in sync?'],
+  shapes: ['How do I morph one shape into another?', 'When do I use Trim Paths?'],
+  shapesMany: ['How do I build a repeating pattern?', 'How do effectors work?'],
+  none: ['What should I animate first in a logo?', 'What are the safe areas for Reels?']
+};
+/** The Assistant's opening line for what is selected. */
+const HEAD = { keys: 'Shape these keyframes', text: 'Bring this text to life', layer: 'What should this layer do?', layers: 'Move these layers together', shapes: 'Animate this shape', shapesMany: 'Arrange and animate these shapes', none: 'Where do we start?' };
 
 /* ---------- v0.30: what usually comes next (tools ordered by the job, not by name) ---------- */
 /**
@@ -295,5 +307,5 @@ function nextAfter(last) {
   return NEXT[last.toolId].filter((r) => A.resolve(r)).slice(0, 4);
 }
 
-module.exports = { NEXT, nextAfter, AR_WORDS, keywordsOf, powerFor, PROMPTS, STAGES, STAGE_IDS, stageGroups, stageOfView, EVERYDAY, SLOT_KEYS, POWER, LEARN_KEY, LEARNED_AT, isLearned, learn, gotIt, explainAgain,
+module.exports = { NEXT, nextAfter, AR_WORDS, keywordsOf, powerFor, PROMPTS, ASK, HEAD, STAGES, STAGE_IDS, stageGroups, stageOfView, EVERYDAY, SLOT_KEYS, POWER, LEARN_KEY, LEARNED_AT, isLearned, learn, gotIt, explainAgain,
   formatOf, safeArgs, tips, dismissedTips, dismissTip, TIP_KEY, syncProject, PROJ_KEY };

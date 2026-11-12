@@ -52,3 +52,9 @@ as whole words so *عايز* is not *ايز*), then:
 - **States**: idle = still · `hint` (suggestions) = the rim turns once + accent badge with the number · `busy` (thinking) = the rim keeps turning, the spark beats · `on` (open) = the sheet replaces it. Reduced motion: no animation. Hover changes brightness and shadow only.
 - **End room**: `.content::after` (60 px, not on pages with the sticky action bar, which already reserves its corner) lets the last row scroll clear of the button.
 - Not verified in After Effects; proven in the Chromium preview by pictures and measurements (TEST_REPORT.md).
+
+## v0.86 — AI on the button, an organised window (owner)
+- The button shows the mark and the word **AI**.
+- Window order: header (mark · Assistant · AI · new conversation · close) → **Sees** row (selection kind in accent, comp name, format, client; the Claude / Offline pill at its end) → **Suggested now** (tips) → empty state: opening line (`workflow.HEAD`), a two-way switch **Do it for me / Ask a question**, the prompts as rows, one note saying what happens → text box → key hints.
+- `assistant.mode(c)`: `claude` when the last assistant entry is a real answer, `offline` when it is a local match, empty before the first answer. The panel does not know whether a key is stored until a request is made, so it does not claim either.
+- Not exercised: the online path in the preview (no key there).

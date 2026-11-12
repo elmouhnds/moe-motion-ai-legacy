@@ -212,3 +212,18 @@ test('v0.85: the Assistant button has its own mark and states — not the Look s
   const styles = fs.readFileSync(path.join(__dirname, '../extension/css/styles.css'), 'utf8');
   for (const l of ['glass', 'moe', 'control']) assert.match(styles, new RegExp(`\\.app\\.layout-${l} \\.as-fab \\{`), l);
 });
+
+test('v0.86: the Assistant says AI on its button; its window lists what it sees and splits Do / Ask; the mode comes from the conversation', () => {
+  const fs = require('fs'); const path = require('path');
+  const src = fs.readFileSync(path.join(__dirname, '../extension/app/ui/assistant.js'), 'utf8');
+  assert.match(src, /h\('span', \{ class: 'as-ai' \}, 'AI'\)/);
+  assert.match(src, /class: 'as-sees'/);
+  assert.match(src, /'data-key': 'as-tab-do'/); assert.match(src, /'data-key': 'as-tab-ask'/);
+  const W = require('../extension/app/ui/workflow');
+  for (const k of Object.keys(W.PROMPTS)) { assert.ok(W.ASK[k] && W.ASK[k].length >= 2, `ASK ${k}`); assert.ok(W.HEAD[k], `HEAD ${k}`); assert.ok(W.ASK[k].every((q) => /\?$/.test(q)), `questions ${k}`); }
+  const { mode } = require('../extension/app/ui/assistant');
+  assert.equal(mode({ thread: [] }), '');
+  assert.equal(mode({ thread: [{ role: 'user', text: 'x' }] }), '', 'nothing is claimed before an answer');
+  assert.equal(mode({ thread: [{ role: 'user' }, { role: 'assistant', kind: 'local' }] }), 'offline');
+  assert.equal(mode({ thread: [{ role: 'assistant', kind: 'local' }, { role: 'user' }, { role: 'assistant', text: 'a' }] }), 'claude');
+});
