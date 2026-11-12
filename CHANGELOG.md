@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.83.0] — 2026-11-12 — Glass: menus you can read
+### Fixed (owner: "in Glass any pop-up or menu over the plugin is transparent — make it opaque or another style so it reads")
+- Measured in the preview: the sidebar menus, a tool's options, the sheets (What's new, About, Shortcuts), the toast and the Assistant were **7 % opaque** in Glass (the panel menu 78 %) — they used the page cards' see-through tokens, so the page showed through their text.
+- Every surface that floats over the page in Glass now gets **solid tokens** (`css/styles.css`, dark and light): its rows, fields and chips inherit them; a firm edge, a deeper shadow, no backdrop blur; the page dims to 60 % behind a dialog. The page's own cards keep their glass.
+- New `tools/audit-overlay.js`: four styles × two themes, opens 8 floating surfaces in each (64) and fails when the page shows through (background alpha × every parent's opacity, after the fade-in, under 0.97).
+
 ## [0.82.0] — 2026-11-12 — Easier to hit, the rest of the layout plan
 ### Changed (owner: "approved for Glass, finish the plan")
 - **Glass** uses the stages' words — Layer, Look (the owner approved the before / after pictures of exactly that).

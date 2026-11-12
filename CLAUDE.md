@@ -136,6 +136,10 @@ Permanent rules for anyone (human or AI) working in this repository.
 - Sizes (v0.82): run `node tools/audit-size.js` after UI changes — 0 texts under 10 px, 0 controls that do not answer a click 12 px from their centre. Widen a small control with an invisible `::before` (never by a hover style); if a scrolling row clips it, make the control really 24 px. A size fix is proven by the audit's click probe, never by a computed style. Glass's own sizes are in the audit's `WAITING` list until the owner approves pictures.
 - The user's own Home is the Quick Bar (tools, presets, `recipe:` and `kit:` refs) — never a second personal page.
 
+## Glass overlays (v0.83, docs/features/GLASS_OVERLAYS.md — the owner's rule)
+- In Glass the PAGE is glass; anything that floats over it (menu, pop-over, sheet, dialog, toast, tip, Assistant) is SOLID. A new floating surface must be added to the solid-token block in `css/styles.css` and to `tools/audit-overlay.js`, which must stay at 0 see-through in every style and theme.
+- A visual fix is proven by what is on screen (a click probe, opacity through the parents, a picture after the animation) — a computed style alone passed twice while the result was wrong (v0.82 hit areas, v0.83 a picture taken mid-fade).
+
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).
 - Tests run the **real host .jsx** against `tests/mock/ae-mock.js`. That proves logic, not host behaviour. Never describe mock results as After Effects results.

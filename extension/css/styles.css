@@ -272,6 +272,34 @@
 .gl-now-acts:not(.mini) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .app:not(.kit-narrow):not(.kit-mid):not(.kit-tiny) .gl-now-acts:not(.mini) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
+/* ---- v0.83 Glass: what floats over the page is solid (owner: "any pop-up or menu that appears over the plugin is
+   transparent — make it opaque, or another style, so it reads"). Glass's own tokens are see-through on purpose for
+   the page's cards (--bg-raised is 7 % white); a menu, sheet, tip or toast used the same tokens and let the page
+   show through its text. Every floating surface gets solid tokens here — its children (rows, fields, chips) inherit
+   them — a firm edge and a deeper shadow. No backdrop blur is needed any more on these. ---- */
+.app.layout-glass .lay-drop, .app.layout-glass .ae-menu, .app.layout-glass .palette, .app.layout-glass .sheet, .app.layout-glass .toast,
+.app.layout-glass .as-sheet, .app.layout-glass .qb-rest-pop, .app.layout-glass .bk-new-menu, .app.layout-glass .pie, .app.layout-glass .moe-activity,
+.app.layout-glass .moe-rail.float, .app.layout-glass .hovercard, .hovercard.on-glass {
+  --bg: #1b1824; --bg-raised: #2a2635; --bg-sunken: #14111b; --bg-hover: #342f41; --bg-active: #3f394e; --bg-elev: #221e2d;
+  --line: #3a3447; --line-strong: #544c66; --g-card: none; --g-rim: #544c66;
+}
+:root[data-theme="light"] .app.layout-glass .lay-drop, :root[data-theme="light"] .app.layout-glass .ae-menu, :root[data-theme="light"] .app.layout-glass .palette,
+:root[data-theme="light"] .app.layout-glass .sheet, :root[data-theme="light"] .app.layout-glass .toast, :root[data-theme="light"] .app.layout-glass .as-sheet,
+:root[data-theme="light"] .app.layout-glass .qb-rest-pop, :root[data-theme="light"] .app.layout-glass .bk-new-menu, :root[data-theme="light"] .app.layout-glass .pie,
+:root[data-theme="light"] .app.layout-glass .moe-activity, :root[data-theme="light"] .app.layout-glass .moe-rail.float, :root[data-theme="light"] .app.layout-glass .hovercard,
+:root[data-theme="light"] .hovercard.on-glass {
+  --bg: #f4f1fa; --bg-raised: #ffffff; --bg-sunken: #ebe7f3; --bg-hover: #f0ecf8; --bg-active: #e4dff0; --bg-elev: #ffffff;
+  --line: #ddd7e8; --line-strong: #bdb4cf; --g-rim: #bdb4cf;
+}
+.app.layout-glass .lay-drop, .app.layout-glass .ae-menu, .app.layout-glass .palette, .app.layout-glass .sheet, .app.layout-glass .toast,
+.app.layout-glass .as-sheet, .app.layout-glass .qb-rest-pop, .app.layout-glass .bk-new-menu, .app.layout-glass .moe-activity,
+.app.layout-glass .moe-rail.float, .app.layout-glass .hovercard, .hovercard.on-glass {
+  background: var(--bg-elev); background-image: none; -webkit-backdrop-filter: none; backdrop-filter: none;
+  border: 1px solid var(--line-strong); box-shadow: 0 18px 48px rgba(4, 2, 12, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+/* the page steps back further behind a dialog, so the solid sheet is the only thing to read */
+.app.layout-glass .overlay { background: rgba(8, 6, 16, 0.6); }
+
 /* ================================================================== CONTROL (v0.70, layout v0.71 — docs/features/CONTROL_STYLE.md)
    A Control Center for motion: squares that are the tools. Hover only changes colour (never size or place). */
 .app.layout-control {
