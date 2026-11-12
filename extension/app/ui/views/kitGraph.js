@@ -309,6 +309,7 @@ function widget(opts) {
   const up = () => { if (!S.drag) return; S.drag = 0; S.free = null; commit(); };
   canvas.addEventListener('pointerup', up);
   canvas.addEventListener('pointercancel', up);
+  require('../scrub').guard(canvas, () => !!S.drag, up); // v0.80: a mouse-up the panel never heard cannot leave the handle stuck to the pointer
   canvas.addEventListener('dblclick', (e) => {
     const n = near(at(e));
     if (n.d > 30) return;
@@ -336,8 +337,10 @@ function widget(opts) {
     const y0 = e.clientY, h0 = canvas.clientHeight;
     try { grip.setPointerCapture(e.pointerId); } catch (_) { /* older CEP */ }
     const mv = (ev) => { canvas.style.height = `${clamp(h0 + ev.clientY - y0, 100, 360)}px`; paint(); };
-    const done = () => { grip.removeEventListener('pointermove', mv); grip.removeEventListener('pointerup', done); grip.removeEventListener('pointercancel', done); if (opts.onHeight) opts.onHeight(canvas.clientHeight); };
-    grip.addEventListener('pointermove', mv); grip.addEventListener('pointerup', done); grip.addEventListener('pointercancel', done);
+    let live = true;
+    const mv0 = (ev) => { if (ev.buttons === 0) { done(); return; } mv(ev); }; // v0.80: released outside the panel
+    const done = () => { if (!live) return; live = false; grip.removeEventListener('pointermove', mv0); grip.removeEventListener('pointerup', done); grip.removeEventListener('pointercancel', done); if (opts.onHeight) opts.onHeight(canvas.clientHeight); };
+    grip.addEventListener('pointermove', mv0); grip.addEventListener('pointerup', done); grip.addEventListener('pointercancel', done);
     e.preventDefault();
   });
   return { canvas, grip, paint, state: S, set(cv) { S.cv = Object.assign({}, cv); paint(); }, hover(u) { if (S.drag) return; S.hoverT = u; paint(); } };

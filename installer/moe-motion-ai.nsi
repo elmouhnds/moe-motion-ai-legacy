@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.79: tune a result after applying it, Variations, Copy / Paste Motion, Retime keys."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.79: عدّل النتيجة بعد التطبيق، Variations، نسخ ولصق الحركة كاملة، وRetime للمفاتيح"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.79.1: dragging rebuilt - the whole bar is the handle in Control; drags never stick or get lost."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.79.1: السحب اتبنى من جديد - البار كله بقى بيتسحب في Control، والسحب مبقاش بيعلّق أو يضيع"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

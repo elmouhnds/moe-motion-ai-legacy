@@ -424,6 +424,7 @@ function curveEditor(args, setArgs, { h, app, ctx }) {
   canvas.addEventListener('pointermove', move);
   canvas.addEventListener('pointerup', up);
   canvas.addEventListener('pointercancel', up);
+  require('./scrub').guard(canvas, () => !!drag, up); // v0.80
   canvas.setAttribute('data-fresh', '');
   animated(canvas, (now) => drawCurve(canvas, cv, drag ? null : now, drag));
 

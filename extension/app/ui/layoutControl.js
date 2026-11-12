@@ -206,8 +206,9 @@ function sliderSquare(app, key, o) {
     h('span', { class: 'cc-sl-name' }, o.label), o.sub ? h('span', { class: 'cc-sl-sub' }, o.disabled ? o.disabledShort : o.sub) : null);
   // v0.75: while you drag, the liquid "pours" (its surface moves faster and bubbles rise) — CSS only, no host call
   let calm = null;
-  const pour = () => { box.classList.add('pouring'); clearTimeout(calm); calm = setTimeout(() => box.classList.remove('pouring'), 700); };
-  require('./scrub').attach(input, { axis: o.wide ? 'x' : 'y', span: o.wide ? 220 : 140, min: o.min, max: o.max, step: o.step, fill: box, live: pour, commit: (v) => { pour(); o.commit(v); } });
+  const pour = (v) => { box.classList.add('pouring'); clearTimeout(calm); calm = setTimeout(() => box.classList.remove('pouring'), 700); if (v !== undefined) input.style.width = `${numWidth(v)}em`; };
+  // v0.80: the whole square is the handle (it was only the number) — drag anywhere, click sets the level, double-click resets
+  require('./scrub').attach(input, { axis: o.wide ? 'x' : 'y', span: o.wide ? 220 : 140, surface: o.disabled ? null : box, reset: o.reset, min: o.min, max: o.max, step: o.step, fill: box, live: pour, commit: (v) => { pour(v); o.commit(v); } });
   input.addEventListener('change', (e) => { const v = Number(String(e.target.value).replace(',', '.')); if (Number.isFinite(v)) o.commit(Math.max(o.min, Math.min(o.max, v))); });
   if (o.dbl) input.addEventListener('dblclick', (e) => { e.preventDefault(); o.dbl(); });
   return box;
@@ -281,8 +282,8 @@ function squares(app, s, kind) {
     move.push(motionSquare(app, s, kind, n, cc));
     // v0.71: everything that tunes the move is one block beside it — two tall sliders and the four switches
     move.push(h('div', { class: 'cc-tune', 'data-key': 'cc-tune' },
-      sliderSquare(app, 'dur', { label: 'Duration', unit: 's', value: m.duration, min: 0.1, max: 3, step: 0.05, on: m.on, title: 'How long the move takes — drag up or down', commit: (v) => setCc(app, 'move', { duration: v, on: true }) }),
-      sliderSquare(app, 'stag', { label: 'Stagger', unit: 's', value: m.stagger, min: 0, max: 0.5, step: 0.01, on: m.on && n > 1, sub: n > 1 ? null : '2+ layers', disabled: n > 1 ? null : 'Stagger needs two or more layers', disabledShort: '2+ layers', title: 'Delay between the layers — drag up or down', commit: (v) => setCc(app, 'move', { stagger: v, on: true }) }),
+      sliderSquare(app, 'dur', { label: 'Duration', unit: 's', value: m.duration, min: 0.1, max: 3, step: 0.05, on: m.on, reset: DEFAULTS.move.duration, title: 'How long the move takes\nDrag anywhere on the bar · click sets the level · double-click: 0.6 s\nShift: bigger steps · Ctrl: fine · click the number to type', commit: (v) => setCc(app, 'move', { duration: v, on: true }) }),
+      sliderSquare(app, 'stag', { label: 'Stagger', unit: 's', value: m.stagger, min: 0, max: 0.5, step: 0.01, on: m.on && n > 1, sub: n > 1 ? null : '2+ layers', disabled: n > 1 ? null : 'Stagger needs two or more layers', disabledShort: '2+ layers', reset: DEFAULTS.move.stagger, title: 'Delay between the layers\nDrag anywhere on the bar · click sets the level · double-click: 0.08 s\nShift: bigger steps · Ctrl: fine · click the number to type', commit: (v) => setCc(app, 'move', { stagger: v, on: true }) }),
       h('div', { class: 'cc-rounds', 'data-key': 'cc-rounds' },
         roundSwitch(app, 'blur', 'Blur', 'drop', m.blur, () => setCc(app, 'move', { blur: !m.blur, on: true }), `Comes in sharp from a ${BLUR_PX} px blur (MOE Blur, removed by Restore)`),
         roundSwitch(app, 'over', 'Overshoot', 'scaleUp', m.over && m.dir === 'in' && m.kind !== 'fade', () => setCc(app, 'move', { over: !m.over, on: true }), 'Goes a little past and settles', m.dir !== 'in' ? 'Overshoot is for moves in' : m.kind === 'fade' ? 'A fade has nothing to overshoot' : null),
@@ -300,7 +301,7 @@ function squares(app, s, kind) {
   if (mods.includes('wiggle')) {
     const w = cc.wiggle;
     const [, wl, , unit, max] = wiggleOf(w);
-    add.push(sliderSquare(app, 'wig', { wide: true, label: `Wiggle ${wl}`, unit, value: Math.min(w.amp, max), min: 0, max, step: 1, sub: `${w.freq} × a second · drag sideways`, on: w.on, title: 'How far it wiggles — drag sideways; double-click the number to run it alone',
+    add.push(sliderSquare(app, 'wig', { wide: true, label: `Wiggle ${wl}`, unit, value: Math.min(w.amp, max), min: 0, max, step: 1, sub: `${w.freq} × a second · drag sideways`, on: w.on, title: 'How far it wiggles\nDrag sideways anywhere on the bar · click sets the level · Shift: bigger steps · Ctrl: fine\nDouble-click the number: run it alone',
       commit: (v) => setCc(app, 'wiggle', { amp: v, on: true }), dbl: () => { const r = soloRun(cc, kind, n, 'wiggle'); if (r) runOne(app, r); },
       toggle: h('span', { class: 'cc-wig-head' },
         h('span', { class: 'cc-seg cc-seg-mini', role: 'radiogroup', 'aria-label': 'Wiggle what' }, WIGGLES.map(([id, label]) => h('button', { class: 'cc-segb', role: 'radio', 'data-key': `cc-wt-${id}`, 'aria-checked': String(wiggleOf(w)[0] === id), title: `Wiggle ${label}`, onclick: () => setCc(app, 'wiggle', { target: id, amp: Math.min(w.amp, WIGGLES.find((x) => x[0] === id)[4]), on: true }) }, label.slice(0, 3)))),

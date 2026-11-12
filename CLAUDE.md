@@ -121,6 +121,10 @@ Permanent rules for anyone (human or AI) working in this repository.
 - Retime / Paste Motion rebuild a key snapshot (`keys.snapshot` → `keys.rebuild`) because a snapshot carries spatial tangents and per-key interpolation `keys.write` cannot — the times are snapped by `core/framegrid` in `plan.js`. Position is pasted as a move (offset to the target), never as a place; a clip is untrusted text (`parseClip`: Transform properties only).
 - A Self-Test check may answer `{ ok, detail }`; the runner turns it into pass / fail.
 
+## Drag engine (v0.79.1, docs/features/DRAG_ENGINE.md)
+- A bar the user drags is a `surface` of `scrub.attach` — never a listener on the bar itself: the shell morphs a bar in place but rebuilds its number, so a listener on the bar reads and writes the number of an old render. Surfaces are delegated (`data-scrub`); the newest render's options win.
+- Every drag goes through `scrub.track` (window listeners, 16 ms clock, a move with `buttons === 0` or a window blur ends and commits, Esc cancels); a canvas with its own drag adds `scrub.guard`. If a control looks draggable (resize cursor), all of it must drag — `tests/smartcontrols.test.js`.
+
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).
 - Tests run the **real host .jsx** against `tests/mock/ae-mock.js`. That proves logic, not host behaviour. Never describe mock results as After Effects results.

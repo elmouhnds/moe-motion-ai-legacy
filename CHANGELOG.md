@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.79.1] — 2026-11-12 — Dragging that follows your hand
+### Fixed (owner: "dragging the bars in Control does not work well — review every drag")
+- **Control's bars**: only the number (≈ 40 × 30 px of a 160 × 173 px bar) answered a drag. The whole bar is the handle now (`scrub.attach({ surface })`): the range over the bar's own size, click sets the level, double-click resets (Duration, Stagger), Shift bigger steps, Ctrl a quarter of the pace. Switches inside a bar and the number while typing keep their clicks; the number's width follows the value while dragging.
+- **Stale number**: a bar is morphed in place while its number is rebuilt, so a listener on the bar would read and write the number of the first render. Bars get no listener of their own — one delegated listener resolves the bar and the number that are on screen now (`scrub.js`, tested).
+- **Every drag** (`scrub.track`): tracked on the window (leaving the control or a refused pointer capture no longer loses it), painted on a 16 ms clock (not requestAnimationFrame), a mouse-up the panel never hears (released outside, window blur) still commits, Esc cancels, modifiers can change mid-drag without a jump, no dead zone after the 3 px threshold.
+- **Canvases** (graph handles, graph grip, curve editor, cloner stage): `scrub.guard` — a lost mouse-up can no longer leave a handle stuck to the pointer.
+- Tune strip: the number you set stays shown while the run is redone.
+
 ## [0.79.0] — 2026-11-12 — Tune after you apply
 ### Added (owner picked ideas 12 · 13 · 14 · 15 · 16)
 - **Tune strip** (`app/ui/retune.js`): after a run, its numbers stay under the header — a change restores that run's checkpoint and runs the tool again inside ONE undo group (`executor.batch`; `restore` now joins an open batch). Only for the selection the run was made on; a later write that cannot be tuned forgets it.

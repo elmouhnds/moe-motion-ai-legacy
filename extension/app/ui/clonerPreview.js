@@ -102,6 +102,7 @@ function effectorPreview(args, setArgs, { h, app, ctx }, tools) {
   const up = () => { if (!sim.dragging) return; sim.release(now()); S.state = 'moved'; app.scheduleRender(); };
   canvas.addEventListener('pointerup', up);
   canvas.addEventListener('pointercancel', up);
+  require('./scrub').guard(canvas, () => !!sim.dragging, up); // v0.80
   animated(canvas, () => draw());
 
   const grid = ctx ? GT.gridFor(ctx, args) : null;

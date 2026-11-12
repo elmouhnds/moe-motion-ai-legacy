@@ -1874,3 +1874,8 @@ input.scrubbable.scrubbing { color: var(--accent); }
 .tn-var > span:last-child { padding: 0 8px; font-size: 10.5px; color: var(--text-3); overflow-wrap: anywhere; }
 .tn-stag { display: flex; flex-direction: column; gap: 2px; width: 74px; padding: 3px 4px; border-radius: var(--r); background: var(--bg-sunken); }
 .tn-stag i { display: block; width: 54%; height: 3px; border-radius: 2px; background: var(--accent); transition: margin-left 90ms linear; }
+/* ---- v0.80 drag engine (app/ui/scrub.js): the whole bar is the handle; nothing lags or selects while dragging ---- */
+.scrub-surface { touch-action: none; -webkit-user-select: none; user-select: none; }
+.scrub-surface.scrubbing, .scrub-surface.scrubbing * { transition: none !important; }
+html.moe-scrub-y, html.moe-scrub-y * { cursor: ns-resize !important; -webkit-user-select: none !important; user-select: none !important; }
+html.moe-scrub-x, html.moe-scrub-x * { cursor: ew-resize !important; -webkit-user-select: none !important; user-select: none !important; }

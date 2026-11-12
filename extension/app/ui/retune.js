@@ -38,6 +38,7 @@ async function retune(app, patch, name) {
   const args = Object.assign({}, t.args, patch);
   if (JSON.stringify(args) === JSON.stringify(t.args)) return null;
   const ex = app.services.executor;
+  app.state.set({ tune: Object.assign({}, t, { show: args }) }); // v0.79.1: the strip shows the number you set while the run is redone
   const go = async () => {
     const back = await ex.restore(t.checkpointId);
     if (!back.ok) { app.toast(`${t.label}: cannot go back to before it (${(back.errors || []).join(' · ')}) — nothing was changed`, 5000, 'warn'); app.state.set({ tune: null }); return null; }
@@ -48,6 +49,7 @@ async function retune(app, patch, name) {
   };
   const r = ex.batch ? await ex.batch(`MOE: Tune ${t.label}`, go) : await go();
   if (okOf(r)) app.toast(`${t.label}${name ? ` · ${name}` : ''} — ${r.summary || 'done'}`, 2400, 'ok');
+  else if (app.state.get().tune && app.state.get().tune.show) app.state.set((x) => ({ tune: Object.assign({}, x.tune, { show: null }) }));
   return r;
 }
 
@@ -71,7 +73,8 @@ function strip(app, s) {
   const vars = P.variations(tool, t.args);
   const isStag = t.toolId === 'motion.stagger';
   const field = (p) => {
-    const value = t.args[p.key] !== undefined ? t.args[p.key] : p.default;
+    const shown = t.show || t.args;
+    const value = shown[p.key] !== undefined ? shown[p.key] : p.default;
     const step = p.step || (p.type === 'integer' ? 1 : 0.1);
     const input = h('input', { class: 'num tn-num', type: 'number', value: fmt(p, value), step, min: p.min, max: p.max, 'aria-label': p.label, 'data-fk': `tn-${t.toolId}-${p.key}`, disabled: s.running ? 'disabled' : undefined,
       title: `${p.label}: drag sideways, ↑ ↓, or type — Shift ×10, Ctrl fine. One change = one Ctrl+Z${p.default !== undefined ? ` · double-click: ${p.default}` : ''}` });
