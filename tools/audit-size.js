@@ -14,7 +14,7 @@ const STYLES = process.argv.slice(2).length ? process.argv.slice(2) : ['bento', 
 const WIDTHS = [420, 740];
 /** class prefix → why it may be smaller than 24 px */
 /** Findings that are a style's own look, waiting for the owner (reported, not failed): style → class prefixes */
-const WAITING = { glass: ['gl-kbd', 'plan-row>select', 'kit-vel', 'chip-btn', 'bgc-sw', 'tag', 'kit-chip', 'kit-dot', 'seg>button', 'toggle', 'qt-pin', 'adv-toggle'] };
+const WAITING = {}; // v0.84: nothing waits — Glass has the same sizes as the other styles
 const ALLOW = {
   'qb-sep': 'a separator, not a control',
   'kit-grip': 'the graph\'s resize edge: full width, 6 px tall by design (a grip, like After Effects\' own)'

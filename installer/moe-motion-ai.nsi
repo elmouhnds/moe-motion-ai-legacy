@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.83: in Glass, every menu and pop-up over the page is solid and readable."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.83: في Glass كل قايمة أو نافذة منبثقة بقت معتمة ومقروءة"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.84: Glass - a clean bottom nav and 24 px controls; solid menus (0.83)."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.84: Glass - شريط تنقل نضيف وأزرار 24 بكسل، وقوايم معتمة (0.83)"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

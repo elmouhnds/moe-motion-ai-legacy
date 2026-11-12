@@ -1950,20 +1950,22 @@ html.moe-scrub-x, html.moe-scrub-x * { cursor: ew-resize !important; -webkit-use
 .bgc-sw::before { top: -7px; bottom: -7px; }
 .kit-chip::before { left: -2px; right: -2px; }
 .qt-pin::before { top: -3px; bottom: -3px; left: -3px; right: -3px; }
-.app:not(.layout-glass) .plan-row select { height: var(--h-s); }
-.app:not(.layout-glass) .kit-vfield { height: 26px; }
-.app:not(.layout-glass) .kit-vel { height: var(--h-s); }
+.app .plan-row select { height: var(--h-s); }
+.app .kit-vfield { height: 26px; }
+.app .kit-vel { height: var(--h-s); }
 /* the widened hit area must not be clipped: these never overflow their own box (they size to their label) */
 .seg button, .chip-btn, .kit-seg button, .tag, .check, .adv-toggle, .label-sw, .accent-sw, .sw, .bgc-sw, .kit-chip, .cc-segb { overflow: visible; }
-/* inside a row that scrolls the invisible area is clipped, so these are really 24 px (Bento, MOE, Control —
-   Glass keeps its sizes until the owner approves pictures; the audit lists them as waiting) */
-.app:not(.layout-glass) .chip-btn { height: var(--h-s); border-radius: 12px; }
-.app:not(.layout-glass) .bgc-sw { height: var(--h-s); }
-.app:not(.layout-glass) .tag { display: inline-flex; align-items: center; min-height: var(--h-s); }
-.app:not(.layout-glass) .kit-chip { min-width: var(--h-s); }
-.app:not(.layout-glass) .seg { padding-top: 0; padding-bottom: 0; }
-.app:not(.layout-glass) .seg button { min-height: var(--h-s); }
-.app:not(.layout-glass) .toggle { height: var(--h-s); border-radius: 12px; }
-.app:not(.layout-glass) .toggle::after { top: 4px; }
-.app:not(.layout-glass) .qt-pin { width: var(--h-s); height: var(--h-s); top: 0; right: 0; }
-.app:not(.layout-glass) .adv-toggle { min-height: var(--h-s); }
+/* inside a row that scrolls the invisible area is clipped, so these are really 24 px — in every style
+   (v0.84: Glass too; the owner asked for the best design there) */
+.app .chip-btn { height: var(--h-s); border-radius: 12px; }
+.app .bgc-sw { height: var(--h-s); }
+.app .tag { display: inline-flex; align-items: center; min-height: var(--h-s); }
+.app .kit-chip { min-width: var(--h-s); }
+.app .seg { padding-top: 0; padding-bottom: 0; }
+.app .seg button { min-height: var(--h-s); }
+.app .toggle { height: var(--h-s); border-radius: 12px; }
+.app .toggle::after { top: 4px; }
+.app .qt-pin { width: var(--h-s); height: var(--h-s); top: 0; right: 0; }
+.app .adv-toggle { min-height: var(--h-s); }
+
+.kit-anchor.mini .kit-dot { min-height: var(--h-s); }

@@ -76,7 +76,9 @@
 .gl-tab { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; height: 46px; min-width: 0; border: 0; border-radius: 999px; background: none; color: var(--text-3); font: inherit; font-size: 10.5px; font-weight: 600; cursor: pointer; transition: background var(--t), color var(--t); }
 .gl-tab .svg-i { width: 20px; height: 20px; }
 .gl-tab:hover { color: var(--text); }
-.gl-tab.on { background: var(--bg-active); color: var(--text); }
+.gl-tab.on { background: var(--bg-active); color: var(--text); box-shadow: inset 0 0 0 1px var(--g-rim); }
+.gl-tab.on::after { content: ''; position: absolute; left: 50%; bottom: 5px; width: 18px; height: 2px; margin-left: -9px; border-radius: 2px; background: var(--accent); }
+.gl-tab:focus-visible { outline: none; box-shadow: var(--focus); }
 .gl-tab.on .svg-i { color: var(--accent); }
 .gl-tab .ae-dot { position: absolute; top: 7px; right: calc(50% - 16px); }
 .app.layout-glass .ae-menu { border-radius: 16px; background: var(--bg-elev); backdrop-filter: blur(20px) saturate(150%); }
@@ -199,8 +201,7 @@
 .gl-chev { transform: rotate(90deg); transition: transform var(--t); }
 .gl-chev.open { transform: rotate(-90deg); }
 .gl-now-acts.mini { display: flex; flex-wrap: wrap; gap: 4px; }
-.gl-kbd { display: none; }
-.app.layout-glass:not(.kit-narrow):not(.kit-tiny) .gl-kbd { display: block; position: absolute; top: 6px; left: 12px; font: 600 9px/1 var(--mono); color: var(--text-3); opacity: 0.7; }
+/* v0.84: the ^1 … ^5 key hints are gone from the nav (owner: a dark box behind each icon, of no clear use) — Ctrl+1…5 is in each tab's tooltip */
 /* v0.26: drop target while reordering (sidebar shortcuts, pinned NOW tiles) */
 .rail-btn.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
 .bt.drop-before { box-shadow: inset 3px 0 0 var(--accent); }
@@ -250,7 +251,6 @@
 /* v0.28: five stages in the Glass capsule; the assistant floats above it */
 .app.layout-glass .assistant { bottom: 72px; }
 .app.layout-glass .gl-tab { font-size: 10.5px; }
-.app.layout-glass:not(.kit-wide) .gl-kbd { left: 6px; }
 /* v0.29: anchor in NOW = a 2×2 cell, not a full-width card */
 .b-tall { grid-row: span 2; }
 .bt-anchor .kit-anchor-body { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }

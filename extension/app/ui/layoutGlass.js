@@ -49,7 +49,7 @@ function nav(app, sp, kind) {
   return h('nav', { class: 'gl-nav', 'aria-label': 'Spaces', role: 'tablist' }, SPACES.map((x) => h('button', {
     role: 'tab', class: `gl-tab ${sp && sp.id === x.id ? 'on' : ''}`, 'data-key': `gl-${x.id}`, 'aria-selected': String(!!(sp && sp.id === x.id)), title: `${x.title}${x.fits.includes(kind) ? ' — fits what you selected' : ''} · Ctrl+${SPACES.indexOf(x) + 1}`,
     onclick: () => { app.state.set({ aeQ: '' }); app.go(x.id); }
-  }, icon(x.icon, ''), h('span', {}, x.label), h('kbd', { class: 'gl-kbd', 'aria-hidden': 'true' }, `^${SPACES.indexOf(x) + 1}`), x.fits.includes(kind) ? h('span', { class: 'ae-dot', 'aria-hidden': 'true' }) : null)));
+  }, icon(x.icon, ''), h('span', {}, x.label), x.fits.includes(kind) ? h('span', { class: 'ae-dot', 'aria-hidden': 'true' }) : null)));
 }
 
 function build(app, s, body) {

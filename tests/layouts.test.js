@@ -147,6 +147,8 @@ test('style proposals (v0.24): every group has one place in Glass and Bento; ids
   // v0.82: the owner approved the pictures — Glass uses the same words as the stages and MOE's tabs
   assert.deepEqual(G.SPACES.map((sp) => sp.label), ['Animate', 'Layer', 'Design', 'Look', 'Deliver']);
   assert.deepEqual(G.SPACES.map((sp) => sp.stage.id), W.STAGES.map((st) => st.id));
+  // v0.84: no key-hint boxes in the nav (the shortcut is in the tooltip)
+  assert.ok(!/gl-kbd/.test(require('fs').readFileSync(require('path').join(__dirname, '../extension/app/ui/layoutGlass.js'), 'utf8')));
   const covered = W.STAGES.flatMap((st) => st.groups.map(([t, g]) => `${t}/${g}`));
   assert.deepEqual([...covered].sort(), AE.TABS.flatMap((t) => t.groups.map((g) => `${t.id}/${g.id}`)).sort());
   assert.equal(new Set(covered).size, covered.length);

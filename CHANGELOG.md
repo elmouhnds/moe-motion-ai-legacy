@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.84.0] — 2026-11-12 — Glass: a clean nav, controls you can hit
+### Changed (owner: "review them and design the best; and the nav bar at the bottom — each of the five icons has a black box behind it, I do not know what it is for")
+- **Nav bar**: the boxes were the `^1 … ^5` key hints (Ctrl+1…5), 9 px on a dark chip. Removed — the shortcut stays in each tab's tooltip. The selected tab has a thin rim and a short accent line; tabs have a focus ring.
+- **Sizes**: Glass gets the same real 24 px controls as Bento, MOE and Control (chips, tags, switches, segments, colour bars, the Quick Bar's ★, anchor dots, format selects). `tools/audit-size.js` has no waiting list any more: 0 in all four styles.
+
 ## [0.83.0] — 2026-11-12 — Glass: menus you can read
 ### Fixed (owner: "in Glass any pop-up or menu over the plugin is transparent — make it opaque or another style so it reads")
 - Measured in the preview: the sidebar menus, a tool's options, the sheets (What's new, About, Shortcuts), the toast and the Assistant were **7 % opaque** in Glass (the panel menu 78 %) — they used the page cards' see-through tokens, so the page showed through their text.
