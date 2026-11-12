@@ -35,7 +35,12 @@ function tileAction(ref) {
   tileCache.set(ref, a);
   return a;
 }
-const byId = (id) => { if (!id) return null; const m = B.migrate(id); return m.indexOf('tile:') === 0 ? tileAction(m) : ACTIONS.find((a) => a.id === m); };
+/** v0.78: a kit recipe on the bar ('recipe:<kit>/<id>') — it runs through kitRun, never as one tool. */
+function recipeAction(ref) {
+  const R = require('./kitRun'); const x = R.byRef(ref);
+  return x ? { id: ref, recipe: true, icon: x.kit.icon, label: x.rec.label, group: 'Recipes' } : null;
+}
+const byId = (id) => { if (!id) return null; const m = B.migrate(id); return m.indexOf('recipe:') === 0 ? recipeAction(m) : m.indexOf('tile:') === 0 ? tileAction(m) : ACTIONS.find((a) => a.id === m); };
 
 /** The bar's ids (old ids migrated, duplicates and missing ones dropped). */
 function barIds(app) {
@@ -51,6 +56,7 @@ function togglePin(app, id) {
 }
 
 async function run(app, a, e) {
+  if (a.recipe) { const x = require('./kitRun').byRef(a.id, app); return x ? require('./kitRun').runRecipe(app, x.kit, x.rec) : app.toast(`${a.label}: this recipe was removed`, 3500, 'warn'); }
   const tool = app.services.registry.get(a.tool);
   // v0.46: Shift / Alt variants (bar.withMods) — the label says which, so Repeat (F4) repeats the same variant
   const m = require('../../features/quick/bar').withMods(a, e);
@@ -69,6 +75,7 @@ function whyFailed(r) {
 }
 
 function openOptions(app, a) {
+  if (a.recipe) { const x = require('./kitRun').byRef(a.id, app); if (x) { app.state.set({ kitId: x.kit.id }); app.go('kits'); } return; } // a recipe's options are its kit page
   const tool = app.services.registry.get(a.tool);
   app.state.set((s) => ({
     quickPop: a.id,
@@ -82,7 +89,7 @@ function button(app, a, cls = 'qb-btn', slot) {
   // v0.28: the first ten buttons are the Everyday slots — Alt+1…0 runs them (hold Alt to see the numbers)
   const key = slot != null && slot < 10 ? String((slot + 1) % 10) : null;
   return h('button', {
-    class: cls, title: `${a.label}${key ? ` · Alt+${key}` : ''}${a.mods ? `\n${require('../../features/quick/bar').modsHint(a)}` : ''}\nRight-click: options`, 'aria-label': a.label, disabled: !!s.running, 'data-slot': key || undefined,
+    class: cls, title: `${a.label}${key ? ` · Alt+${key}` : ''}${a.mods ? `\n${require('../../features/quick/bar').modsHint(a)}` : ''}\nRight-click: ${a.recipe ? 'its kit' : 'options'}`, 'aria-label': a.label, disabled: !!s.running, 'data-slot': key || undefined,
     // Alt-click opens the options — except on a button whose Alt is a variant (Select: Alt removes); right-click always does
     onclick: (e) => (e.altKey && !a.mods ? openOptions(app, a) : run(app, a, e)),
     oncontextmenu: (e) => { e.preventDefault(); openOptions(app, a); }

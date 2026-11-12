@@ -55,13 +55,20 @@ function actionItems(app) {
     run: () => { const rd = a.ready(app); if (!rd.ok && !a.nav) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else a.run(app); } }));
 }
 
+/** v0.78: every recipe (built-in and yours) is findable by its name. */
+function recipeItems(app) {
+  const A = require('./actions');
+  return require('./kitRun').allRefs(app).map((r) => [r, A.resolve(r.ref)]).filter(([, a]) => a).map(([r, a]) => ({ kind: 'action', id: `rec-${r.ref}`, name: a.label, desc: `${r.kit} recipe · ${a.hint} · one click, one undo`, icon: a.icon, ws: 'Style Kits',
+    run: () => { const rd = a.ready(app); if (!rd.ok) app.toast(`${a.label} needs ${rd.hint} — nothing was changed`, 5000, 'warn'); else a.run(app); } }));
+}
+
 function results(app, q) {
   const { nav, extra } = commands(app);
   // Arabic: the same words the assistant understands ("حدد كل التكستات" → select · text) — every word must match
   if (/[\u0600-\u06FF]/.test(String(q || ''))) {
     const kws = require('./workflow').keywordsOf(q);
     if (!kws.length) return [];
-    const pool = [...actionItems(app), ...presetItems(app), ...app.services.registry.search('').map((t) => ({ kind: 'tool', id: t.id, name: t.name, desc: t.description, icon: t.icon, ws: t.category, run: () => app.openTool(t) })), ...nav];
+    const pool = [...actionItems(app), ...recipeItems(app), ...presetItems(app), ...app.services.registry.search('').map((t) => ({ kind: 'tool', id: t.id, name: t.name, desc: t.description, icon: t.icon, ws: t.category, run: () => app.openTool(t) })), ...nav];
     const hits = (x) => { const tx = `${x.name} ${x.desc}`.toLowerCase(); return kws.filter((k) => tx.includes(k)).length; };
     const nameHits = (x) => kws.filter((k) => x.name.toLowerCase().includes(k)).length;
     return pool.map((x, i) => ({ x, i, h: hits(x), n: nameHits(x) })).filter((o) => o.h === kws.length || o.n >= Math.min(2, kws.length))
@@ -74,7 +81,7 @@ function results(app, q) {
   if (!ql) return [...tools, ...recipes, ...extra, ...nav].slice(0, 40);
   // With a query: presets too, best matches first (name starts with > name contains > description).
   const score = (x) => { const n = x.name.toLowerCase(); return n === ql ? 4 : n.startsWith(ql) ? 3 : n.includes(ql) ? 2 : 1; };
-  const all = [...actionItems(app).filter(match), ...presetItems(app).filter(match), ...tools, ...recipes, ...extra.filter(match), ...nav.filter(match)];
+  const all = [...actionItems(app).filter(match), ...recipeItems(app).filter(match), ...presetItems(app).filter(match), ...tools, ...recipes, ...extra.filter(match), ...nav.filter(match)];
   return all.map((x, i) => ({ x, i, s: score(x) })).sort((a, b) => b.s - a.s || a.i - b.i).map((o) => o.x).slice(0, 40);
 }
 

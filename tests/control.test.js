@@ -355,3 +355,66 @@ test('v0.77 My Recipes: a chain of the kit\'s own tools, picked by clicks, named
   const none = Object.assign({}, app, { state: { get: () => Object.assign({}, st, { ctx: Object.assign({}, st.ctx, { layers: [], properties: [] }) }), set: () => {} } });
   assert.ok(R.readyCount(none, loops) < R.readyCount(app, loops));
 });
+
+test('v0.78: a recipe is checked before anything is written; it is a one-click ref (Quick Bar, pie, Ctrl+K); your recipes export and import as checked data', async () => {
+  const KITS = require('../extension/app/ui/kits');
+  const R = require('../extension/app/ui/kitRun');
+  const A = require('../extension/app/ui/actions');
+  const QB = require('../extension/app/ui/quickbar');
+  const mk = async (layers) => {
+    const t = await createTestServices(studioComp(layers, { comp: { time: 1 } }));
+    let st = { ctx: await t.services.executor.readContext(), args: {} }; const toasts = []; const calls = [];
+    const call = t.services.host.call.bind(t.services.host); t.services.host.call = async (op, a) => { calls.push(op); return call(op, a); };
+    const app = { services: t.services, state: { get: () => st, set: (p) => { st = Object.assign({}, st, typeof p === 'function' ? p(st) : p); } }, toast: (m, d, k) => toasts.push([k, m]), render: () => {}, go: () => {},
+      dialog: async (o) => (o.input !== undefined ? 'Mine' : true),
+      runTool: async (id, args) => { const r = await t.services.executor.run(id, args); st.ctx = await t.services.executor.readContext(); return r; } };
+    return { app, toasts, calls, get st() { return st; } };
+  };
+  // precheck: Reel Pop on nothing selected — step 1 (guides) is ready, step 2 needs layers → it must NOT add the guides
+  const none = await mk([Object.assign(box('A', 400), { selected: false })]);
+  const reel = KITS.byId('social').recipes.find((r) => r.id === 'reelPop');
+  const pc = R.precheck(none.app, reel);
+  assert.equal(pc.ok, false); assert.equal(pc.steps[0].state, 'ready'); assert.equal(pc.block.at, 1); assert.ok(pc.block.hint);
+  none.calls.length = 0;
+  const out = await R.runRecipe(none.app, KITS.byId('social'), reel);
+  assert.deepEqual(out.done, []); assert.equal(out.stopped, pc.block.label);
+  assert.ok(!none.calls.some((c) => /^tx\.|guides/.test(c)), `nothing was written: ${none.calls}`);
+  assert.match(none.toasts[0][1], /nothing was changed/);
+  // a step that acts on what an earlier one makes is 'after', never a block
+  const one = await mk([box('A', 400)]);
+  const ripple = KITS.byId('effectors').recipes.find((r) => r.id === 'rippleWall');
+  const pr = R.precheck(one.app, ripple);
+  assert.ok(pr.ok && pr.steps[0].state === 'ready' && pr.steps.slice(1).every((s) => s.state !== 'needs'));
+  for (const k of KITS.KITS) for (const rc of k.recipes || []) { const p1 = R.precheck(one.app, rc); if (!['wordCascade', 'pulseOnBeat'].includes(rc.id)) assert.ok(p1.ok, `${rc.id}: ${JSON.stringify(p1.block)}`); }
+  // a ref: resolves, is ready by the same precheck, runs the chain
+  R.bind(one.app);
+  const a = A.resolve('recipe:glass/frostFocus');
+  assert.ok(a && a.recipe && a.label === 'Frost & Focus' && /→/.test(a.hint));
+  assert.deepEqual(a.ready(one.app), { ok: true });
+  assert.equal(A.resolve('recipe:social/reelPop').ready(none.app).ok, false);
+  assert.equal((await a.run(one.app)).stopped, null);
+  assert.equal(A.resolve('recipe:glass/nope'), null); assert.equal(A.resolve('recipe:nokit/x'), null);
+  assert.ok(A.catalog().filter((x) => x.group === 'Recipes').length >= 14, 'the pie can hold a recipe');
+  // on the Quick Bar: toggled by its ref, runs as the chain, dropped when the recipe is gone
+  QB.togglePin(one.app, 'recipe:loops/floatBreathe');
+  assert.ok(QB.barIds(one.app).includes('recipe:loops/floatBreathe'));
+  const btn = QB.byId('recipe:loops/floatBreathe'); assert.ok(btn.recipe && btn.label === 'Float & Breathe');
+  assert.equal((await QB.run(one.app, btn)).stopped, null);
+  R.startBuild(one.app, 'loops'); await R.runRef(one.app, KITS.byId('loops'), 'tile:expressions/x-float'); await R.runRef(one.app, KITS.byId('loops'), 'tile:expressions/x-swing');
+  const mine = await R.saveBuild(one.app, KITS.byId('loops'));
+  const mref = R.refOf(KITS.byId('loops'), mine);
+  QB.togglePin(one.app, mref); assert.ok(QB.barIds(one.app).includes(mref));
+  // export → import into another machine: checked, not duplicated, junk refused
+  const x = R.exportMine(one.app); assert.equal(x.count, 1);
+  const other = await mk([box('A', 400)]);
+  assert.deepEqual(R.importMine(other.app, x.json), { imported: 1, skipped: [] });
+  assert.deepEqual(R.mineOf(other.app, 'loops').map((r) => [r.label, r.refs.length]), [['Mine', 2]]);
+  assert.equal(R.importMine(other.app, x.json).imported, 0, 'the same chain twice is skipped');
+  assert.equal(R.importMine(other.app, '{"format":"x"}').imported, 0);
+  assert.equal(R.importMine(other.app, 'not json').imported, 0);
+  const evil = JSON.stringify({ format: R.PACK, version: 1, kits: { loops: [{ label: 'E', refs: ['tile:expressions/x-float', 'tile:layout/cloneGrid'] }, { label: 'F', refs: ['quick:purge', 'cmd:search'] }], ghost: [{ label: 'G', refs: [] }] } });
+  const ev = R.importMine(other.app, evil); assert.equal(ev.imported, 0); assert.equal(ev.skipped.length, 3);
+  await R.removeMine(one.app, KITS.byId('loops'), mine);
+  assert.ok(!QB.barIds(one.app).includes(mref), 'a removed recipe leaves the bar');
+  R.bind(null);
+});

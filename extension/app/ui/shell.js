@@ -359,6 +359,7 @@ function createApp(root, services, env = {}) {
   /* ---------- running tools ---------- */
   /** Tools whose last successful run can be repeated (F4): anything that changes the comp. */
   const repeatable = (tool) => tool && (tool.permissions || []).some((p) => p !== 'read') && !(tool.ai === null && tool.destructive);
+  require('./kitRun').bind(app); // v0.78: recipes of your own resolve as refs (Quick Bar, pie, Ctrl+K)
   app.runTool = async (toolId, args, { resultKey, label } = {}) => {
     const key = resultKey || toolId;
     app.lastStart = { toolId, at: Date.now() }; // v0.44: what the user just started (gridPanel's one-time scroll)
@@ -607,6 +608,23 @@ function createApp(root, services, env = {}) {
     if (!text) return;
     const r = services.presets.importPack(text);
     app.toast(r.imported ? `Imported ${r.imported} preset(s)${r.skipped.length ? ` · skipped ${r.skipped.length}` : ''}` : `Nothing imported: ${r.skipped.slice(0, 2).join(' · ')}`, 5000, r.imported ? 'ok' : 'err');
+    app.render();
+  };
+  // v0.78: your recipes as a small data file (same way as preset packs: saved to the data folder + copied)
+  app.exportRecipes = () => {
+    const R = require('./kitRun'); const x = R.exportMine(app);
+    if (!x.count) { app.toast('You have no recipes of your own yet — make one with New recipe in a kit', 4000, 'warn'); return; }
+    const name = `MOE-Recipes-${new Date().toISOString().slice(0, 10)}.moerecipes.json`;
+    let where = '';
+    try { const fsa = services.platform && services.platform.fs; if (fsa && fsa.join && fsa.writeText) { where = fsa.join(fsa.dataDir, name); fsa.writeText(where, x.json); } } catch (e) { where = ''; }
+    app.copy(x.json);
+    app.toast(where ? `${x.count} recipe(s) saved: ${where} (also copied)` : `${x.count} recipe(s) copied to the clipboard`, 5000, 'ok');
+  };
+  app.importRecipes = async () => {
+    const text = await app.dialog({ title: 'Import recipes', body: 'Paste a MOE recipe file (JSON). Each recipe is checked against its kit\'s own tools before it is added; nothing runs.', input: '', okLabel: 'Import' });
+    if (!text) return;
+    const r = require('./kitRun').importMine(app, text);
+    app.toast(r.imported ? `Imported ${r.imported} recipe(s)${r.skipped.length ? ` · skipped ${r.skipped.length}: ${r.skipped[0]}` : ''}` : `Nothing imported: ${r.skipped.slice(0, 2).join(' · ')}`, 6000, r.imported ? 'ok' : 'err');
     app.render();
   };
   app.copy = (text) => {

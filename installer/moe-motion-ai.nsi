@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.77: your own Recipes, Beat Sync and Living Loops kits, and kits that say what is ready for your selection."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.77: Recipes من صنعك، وكيتس Beat Sync وLiving Loops، وكل كيت بيقول الجاهز لاختيارك"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.78: recipes are checked before they run, go on the Quick Bar and pie, and export / import."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.78: الـ Recipes بتتفحص قبل التشغيل، وبتتحط على الـ Quick Bar والـ pie، وبتتصدّر وتتستورد"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

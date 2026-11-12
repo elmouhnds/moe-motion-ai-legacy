@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.78.0] — 2026-11-12 — Recipes: checked first, everywhere, shareable
+### Added (owner picked ideas 8, 4, 7)
+- **Precheck** (`kitRun.precheck`): every step is judged against the selection before the first one runs — `ready`, `needs` (the tool's own hint) or `after` (it acts on what an earlier step makes: `PRODUCERS`). A recipe with a `needs` step does not start (no undo group opened); its card shows the need.
+- **Recipes as refs** (`recipe:<kit>/<id>` in `actions.resolve`): Ctrl+K, My pie's catalogue, and the Quick Bar / sidebar (Shift-click a recipe card). A removed recipe drops off the bar by itself.
+- **Export / Import** your recipes (`kitRun.exportMine` / `importMine`): names + refs only; every imported recipe goes through `kits.makeRecipe`, duplicates and unknown kits are skipped, nothing runs.
+### Honest notes
+- Mock + browser preview only. `after` steps cannot be judged in advance, so a recipe can still stop there (and says what ran).
+
 ## [0.77.0] — 2026-11-10 — Your own recipes, Beat Sync, Living Loops
 ### Added (owner: "more ideas")
 - **My Recipes** (`kitRun` build mode, `kits.makeRecipe` pure): *New recipe* in a kit → click 2–4 of its tools in order (a click picks instead of running), name it, Save. Kept per kit (store `kit-my-recipes`), run exactly like a built-in recipe (one undo group, stops honestly); right-click removes after a confirmation. A stored chain whose tool no longer exists is not offered.

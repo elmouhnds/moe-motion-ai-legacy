@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.84 — Recipes everywhere ✅ (v0.78.0)
+- Precheck, recipe refs (Quick Bar, pie, Ctrl+K), export / import. Next (owner's list): v0.79 tune after apply (12 · 13 · 14 · 15 · 16), v0.80 scene + delivery (5 · 18 · 19 · 20 · 21), v0.81 layout plan + own Home (10 · 23).
+
 ## M1.83 — Your own recipes ✅ (v0.77.0)
 - My Recipes, Beat Sync + Living Loops kits, Ready now. Next: recipes on the Quick Bar / pie, the layout plan (one map of tab names, shorter Bento Home, grouped Quick Bar).
 

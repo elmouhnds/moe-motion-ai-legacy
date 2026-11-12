@@ -57,14 +57,20 @@ function overview(app) {
 /** v0.76: a recipe — the chain as its tools' icons, one click runs it (one undo). */
 function recipeCard(app, kit, rec) {
   const acts = rec.refs.map((r) => A.resolve(r)).filter(Boolean);
-  const first = acts[0] && acts[0].ready(app);
+  const pc = R.precheck(app, rec); // v0.78: what it needs is on the card before you click
+  const ref = R.refOf(kit, rec);
+  const qb = require('../quickbar');
+  const onBar = qb.barIds(app).indexOf(ref) >= 0;
+  const need = pc.block ? `Step ${pc.block.at + 1} · ${pc.block.label}: ${pc.block.hint}` : '';
   return h('button', {
-    class: `sk-rec ${first && !first.ok ? 'off' : ''} ${rec.mine ? 'mine' : ''}`, 'data-key': `kit-r-${kit.id}-${rec.id}`,
+    class: `sk-rec ${pc.ok ? '' : 'off'} ${rec.mine ? 'mine' : ''}`, 'data-key': `kit-r-${kit.id}-${rec.id}`,
     oncontextmenu: rec.mine ? (e) => { e.preventDefault(); R.removeMine(app, kit, rec); } : undefined,
-    title: `${rec.label} — ${rec.hint}\n${acts.map((a) => a.label).join(' → ')}\nOne click, one Ctrl+Z${rec.mine ? ' · right-click: remove' : ''}${first && !first.ok ? `\nNeeds: ${first.hint}` : ''}`,
-    onclick: () => R.runRecipe(app, kit, rec)
+    title: `${rec.label} — ${rec.hint}\n${acts.map((a) => a.label).join(' → ')}\nClick: run (one Ctrl+Z) · Shift-click: ${onBar ? 'take off' : 'put on'} the Quick Bar${rec.mine ? ' · right-click: remove' : ''}${need ? `\nNeeds — ${need}` : ''}`,
+    onclick: (e) => (e.shiftKey ? qb.togglePin(app, ref) : R.runRecipe(app, kit, rec))
   }, h('span', { class: 'sk-rec-t' }, h('b', {}, rec.label), h('i', {}, rec.hint)),
-  h('span', { class: 'sk-rec-chain', 'aria-hidden': 'true' }, acts.map((a, i) => [i ? h('em', {}) : null, h('span', { class: 'sk-rec-ic' }, icon(a.icon || 'bolt', 'sm'))])),
+  need ? h('span', { class: 'sk-rec-need', title: need }, icon('info', 'xs'), h('span', {}, `Needs: ${pc.block.hint}`)) : null,
+  h('span', { class: 'sk-rec-chain', 'aria-hidden': 'true' }, pc.steps.map((st, i) => [i ? h('em', {}) : null, h('span', { class: `sk-rec-ic ${st.state}` }, icon((A.resolve(st.ref) || {}).icon || 'bolt', 'sm'))])),
+  onBar ? h('span', { class: 'sk-rec-bar', title: 'On your Quick Bar' }, icon('bolt', 'xs')) : null,
   h('span', { class: 'sk-rec-go' }, icon('play', 'xs'), `${acts.length} steps`));
 }
 
@@ -83,7 +89,10 @@ function render(app) {
   const kit = K.byId(s.kitId);
   if (!kit) {
     return h('div', { class: 'view sk-page' },
-      h('div', { class: 'sk-intro' }, h('b', {}, 'Style Kits'), h('span', {}, 'Each look\'s tools in one place, in the order you build it. Everyday tools stay where they are.')),
+      h('div', { class: 'sk-intro' }, h('b', {}, 'Style Kits'), h('span', {}, 'Each look\'s tools in one place, in the order you build it. Everyday tools stay where they are.'),
+        h('span', { class: 'sk-share' }, 'Your recipes:',
+          h('button', { class: 'btn ghost sm', 'data-key': 'sk-export', title: 'Save your recipes as a small file (names and tools only) and copy it', onclick: () => app.exportRecipes && app.exportRecipes() }, 'Export'),
+          h('button', { class: 'btn ghost sm', 'data-key': 'sk-import', title: 'Paste a recipe file — each recipe is checked before it is added; nothing runs', onclick: () => app.importRecipes && app.importRecipes() }, 'Import'))),
       overview(app));
   }
   const done = R.doneOf(s, kit.id);
