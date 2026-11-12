@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.88 — Easier to hit ✅ (v0.82.0)
+- Size audit (click-probed), 24 px targets in Bento / MOE / Control, Glass names, sidebar groups, audits see inside Bento's stages. Waiting: the owner's yes for Glass's sizes (9 kinds) and its 9 px key hints, the Self-Test report from After Effects, the signing decision.
+
 ## M1.87 — Layout plan ✅ (v0.81.0)
 - Bento Home on one screen, Control key jobs, Anchor · Align on demand, one set of names, kits on the Quick Bar. Waiting: the owner's yes for Glass (Layer / Look), the Self-Test report from After Effects, the signing decision.
 

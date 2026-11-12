@@ -132,7 +132,8 @@ Permanent rules for anyone (human or AI) working in this repository.
 ## Layout plan (v0.81, docs/features/LAYOUT_PLAN.md)
 - Bento's Home stays about one screen: a stage starts folded as one row naming its groups (`FOLDED_BY_DEFAULT`); a user's own fold / open always wins. A Power card shows its explanation only on *How*.
 - With keys selected, anchor + align are behind `layoutAE.placeToggle` in Bento and Control; keep `controlShows` in step with what is hidden so nothing becomes unreachable. Glass and MOE do not use it.
-- A place has ONE name in every style: the stages use MOE's tab words (Animate · Layer · Design · Look · Deliver). Glass still says Arrange / Finish (`layoutGlass.GLASS_LABEL`) — remove that map only when the owner approves the screenshots.
+- A place has ONE name in every style: the stages use MOE's tab words (Animate · Layer · Design · Look · Deliver). Glass uses them too since v0.82 (the owner approved the before / after pictures of exactly that change — any other change to Glass still needs its own approved pictures).
+- Sizes (v0.82): run `node tools/audit-size.js` after UI changes — 0 texts under 10 px, 0 controls that do not answer a click 12 px from their centre. Widen a small control with an invisible `::before` (never by a hover style); if a scrolling row clips it, make the control really 24 px. A size fix is proven by the audit's click probe, never by a computed style. Glass's own sizes are in the audit's `WAITING` list until the owner approves pictures.
 - The user's own Home is the Quick Bar (tools, presets, `recipe:` and `kit:` refs) — never a second personal page.
 
 ## Testing rules

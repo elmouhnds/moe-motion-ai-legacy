@@ -95,7 +95,7 @@ async function main() {
     await p.evaluate(({ kinds, gids }) => {
       const a = window.__app, st = a.services.store;
       const open = {}; kinds.forEach((k) => { open[k] = {}; gids.forEach((g) => { open[k][g] = true; }); });
-      st.set('ae-open', open); st.set('bento-fold', {}); st.set('bento-more', { 'st-core': true, 'st-anim': true, 'st-arr': true, 'st-design': true, 'st-finish': true, 'st-deliver': true });
+      st.set('ae-open', open); st.set('bento-fold', Object.fromEntries(require('/extension/app/ui/workflow.js').STAGES.map((x) => [x.id, false]))); st.set('bento-more', { 'st-core': true, 'st-anim': true, 'st-arr': true, 'st-design': true, 'st-finish': true, 'st-deliver': true });
     }, { kinds: KINDS, gids: GROUP_IDS });
     // Bento: one scroll
     await p.evaluate((ids) => { const a = window.__app; const more = {}; ids.forEach((i) => { more[i] = true; }); a.services.store.set('bento-more', more); a.services.settings.update({ ui: { layout: 'bento' } }); a.state.set({ view: 'home' }); a.render(); }, W.STAGES.map((s) => s.id));

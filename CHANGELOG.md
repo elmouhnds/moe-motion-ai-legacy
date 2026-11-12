@@ -2,6 +2,16 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.82.0] — 2026-11-12 — Easier to hit, the rest of the layout plan
+### Changed (owner: "approved for Glass, finish the plan")
+- **Glass** uses the stages' words — Layer, Look (the owner approved the before / after pictures of exactly that).
+- **Size audit** (`tools/audit-size.js`, new): 192 screens — no text under 10 px, and every control must answer a click 12 px from its centre in each direction (probed with `document.elementFromPoint`, so a widened hit area counts only when it really works). It found 19 kinds of control under 24 px in every style (swatches 10 px tall, segment buttons 18 px, chips and switches 22 px, the Quick Bar's ★ 18 px …).
+- **Fixed in Bento, MOE and Control**: an invisible `::before` widens what answers a click where nothing clips it; inside rows that scroll the control is really 24 px (chips, tags, switches, swatches, segments, ★). **Glass keeps its sizes** — 9 kinds are listed by the audit as waiting for the owner.
+- **Sidebar shortcuts** (MOE, Control): *Everyday* (the ten Alt+1…0 slots) and *More*, a thin line where the kind of shortcut changes. Glass keeps the plain list.
+- **Audits open Bento's stages**: `audit-arrange`, `audit-repeat` and `audit-cut` set every stage open (they are folded by default since v0.81, so the audits had been looking at one row per stage).
+### Honest notes
+- A first version of the size fix passed a computed-style check and failed a real click (the hit area was clipped by `overflow`); the audit was rewritten to click, and the fix redone.
+
 ## [0.81.0] — 2026-11-12 — A shorter Home, a fuller Control
 ### Changed (owner picked ideas 10 · 23)
 - **Bento Home**: 5 070 px → 1 002 px at 740 px wide (5 391 → 1 078 at 420). A stage starts as one row naming its groups (`FOLDED_BY_DEFAULT`; your own folds and opens are kept and win); a Power card is its name, *When* and its buttons — *How* opens what / needs / steps.

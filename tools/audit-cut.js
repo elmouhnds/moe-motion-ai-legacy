@@ -18,7 +18,7 @@ const WIDTHS = [420, 740];
     p.on('pageerror', (e) => errs.push(`${style}@${w}: ${e.message}`));
     await p.goto(`http://localhost:5173/?w=${w}`); await p.waitForFunction(() => !!window.__app); await p.waitForTimeout(500);
     // the MOE sidebar open wide is the tightest case: the page gets the least room
-    await p.evaluate((s) => { const a = window.__app; a.services.settings.update({ ui: { layout: s } }); a.services.store.set('moe-rail-wide', true); const qb = require('/extension/app/ui/quickbar.js'); a.services.store.set('quick-bar', qb.ACTIONS.map((x) => x.id)); a.render(); }, style);
+    await p.evaluate((s) => { const a = window.__app; a.services.settings.update({ ui: { layout: s } }); a.services.store.set('moe-rail-wide', true); a.services.store.set('bento-fold', Object.fromEntries(require('/extension/app/ui/workflow.js').STAGES.map((x) => [x.id, false]))); /* v0.82: stages are folded by default — open them so their names are checked */ const qb = require('/extension/app/ui/quickbar.js'); a.services.store.set('quick-bar', qb.ACTIONS.map((x) => x.id)); a.render(); }, style);
     for (const v of VIEWS) {
       await p.evaluate((v) => window.__app.go(v), v); await p.waitForTimeout(450);
       const found = await p.evaluate(() => [...document.querySelectorAll('body *')].filter((e) => {

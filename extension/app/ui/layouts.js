@@ -139,6 +139,7 @@ function closeRailOnOutside(app) {
 // one picture per menu in the sidebar (the top-row menus shared the layers icon)
 /** MOE's sidebar: Select, then every Quick Bar shortcut; ⇔ shows names (remembered). */
 function moeRail(app, s, opts) {
+  const glass = (app.services.settings.get().ui || {}).layout === 'glass';
   const iconsOnly = !!(opts && opts.iconsOnly); // v0.71: Control keeps the page wide — icons only, names in tooltips
   const qb = require('./quickbar');
   // v0.54: names show only when the panel has room (≥ 600 px); a narrow dock keeps icons so the page is not squeezed
@@ -177,7 +178,23 @@ function moeRail(app, s, opts) {
     MENUS.map(menuBtn),
     h('div', { class: 'rail-sep', 'aria-hidden': 'true' }),
     h('div', { class: 'rail-cap' }, h('span', { class: 'rail-l' }, 'Quick Bar')),
-    qb.barIds(app).map(qb.byId).filter(Boolean).map(shortcut),
+    // v0.82 (LAYOUT_PLAN.md): the shortcuts read as groups — the ten Everyday slots, then one caption per group
+    // (a thin line when only icons show). Glass keeps the plain list: only its two words were approved.
+    (() => {
+      const list = qb.barIds(app).map(qb.byId).filter(Boolean);
+      if (glass) return list.map(shortcut);
+      // two captions only — the bar is in YOUR order (drag to reorder), so a caption per group would repeat itself;
+      // a thin line marks where one kind of shortcut ends and the next begins
+      const out = []; let last = null;
+      list.forEach((a, i) => {
+        if (i === 0 && list.length > 10) out.push(h('div', { class: 'rail-cap rail-gcap', 'data-key': 'rg-everyday', title: 'The first ten: Alt+1 … Alt+0' }, h('span', { class: 'rail-l' }, 'Everyday')));
+        if (i === 10) { out.push(h('div', { class: 'rail-sep rail-gsep', 'data-key': 'rg-sep-more', 'aria-hidden': 'true' })); out.push(h('div', { class: 'rail-cap rail-gcap', 'data-key': 'rg-more' }, h('span', { class: 'rail-l' }, 'More'))); }
+        else if (i > 10 && a.group !== last) out.push(h('div', { class: 'rail-sep rail-gsep', 'data-key': `rg-sep-${i}`, 'aria-hidden': 'true' }));
+        last = a.group;
+        out.push(shortcut(a));
+      });
+      return out;
+    })(),
     h('button', { class: 'rail-btn rail-edit', 'data-key': 'rail-edit', 'aria-label': 'Customize shortcuts', title: 'Add, remove or reorder shortcuts (Quick Bar editor)', onclick: () => app.go('quick') }, icon('edit', 'sm'), h('span', { class: 'rail-l' }, 'Customize')));
 }
 

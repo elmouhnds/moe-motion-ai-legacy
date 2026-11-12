@@ -16,10 +16,8 @@ const studio = require('./studio/sections');
 
 // v0.28: the spaces are the workflow stages (app/ui/workflow.js) — Animate · Arrange · Design · Finish · Deliver
 const W = require('./workflow');
-/* v0.81: the stages are named like MOE's tabs now (Layer, Look). Glass keeps Arrange / Finish until the owner
-   approves the before / after screenshots (CLAUDE.md: Glass changes only with approved screenshots). */
-const GLASS_LABEL = { 'st-arrange': 'Arrange', 'st-finish': 'Finish' };
-const SPACES = W.STAGES.map((st) => ({ id: `gl-${st.id.slice(3)}`, label: GLASS_LABEL[st.id] || st.label, icon: st.icon, fits: st.fits, title: st.title, stage: st }));
+/* v0.82: the owner approved the before / after pictures — Glass uses the same words as every style (Layer, Look). */
+const SPACES = W.STAGES.map((st) => ({ id: `gl-${st.id.slice(3)}`, label: st.label, icon: st.icon, fits: st.fits, title: st.title, stage: st }));
 const SPACE_IDS = SPACES.map((x) => x.id);
 const ownerOf = (view) => { const st = W.stageOfView(view); return st ? SPACES.find((sp) => sp.stage === st) : null; };
 

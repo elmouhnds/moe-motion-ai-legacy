@@ -94,7 +94,7 @@ async function main() {
       }
     };
     // Bento: one scroll, every stage open
-    await p.evaluate((ids) => { const a = window.__app; const more = {}; ids.forEach((i) => { more[i] = true; }); a.services.store.set('bento-more', more); a.services.store.set('bento-fold', {}); a.services.settings.update({ ui: { layout: 'bento' } }); a.state.set({ view: 'home' }); a.render(); }, W.STAGES.map((s) => s.id));
+    await p.evaluate((ids) => { const a = window.__app; const more = {}; ids.forEach((i) => { more[i] = true; }); a.services.store.set('bento-more', more); a.services.store.set('bento-fold', Object.fromEntries(require('/extension/app/ui/workflow.js').STAGES.map((x) => [x.id, false]))); a.services.settings.update({ ui: { layout: 'bento' } }); a.state.set({ view: 'home' }); a.render(); }, W.STAGES.map((s) => s.id));
     await p.waitForTimeout(500);
     await run(`bento · ${kind}`);
     // Glass: every space

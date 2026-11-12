@@ -1935,3 +1935,35 @@ html.moe-scrub-x, html.moe-scrub-x * { cursor: ew-resize !important; -webkit-use
 .scn-shot figcaption { display: flex; flex-direction: column; }
 .scn-shot figcaption b { font-size: var(--fs-sm); overflow-wrap: anywhere; } .scn-shot figcaption span { font-size: 10.5px; color: var(--text-3); }
 .scn-link { align-self: flex-start; }
+
+/* ---- v0.82 size audit (tools/audit-size.js, docs/features/LAYOUT_PLAN.md): every control offers the pointer at
+   least 24 × 24 px. The look does not change — an invisible ::before widens what answers a click (so Glass looks
+   exactly as it did). A control that cannot carry a pseudo-element (select, input) grows by 2 px instead. ---- */
+.chip-btn, .seg button, .kit-seg button, .label-sw, .toggle, .accent-sw, .sw, .bgc-sw, .check, .adv-toggle, .tag, .kit-chip, .kit-dot, button.kit-t, .cc-segb, .cc-mini-switch { position: relative; }
+.chip-btn::before, .seg button::before, .kit-seg button::before, .label-sw::before, .toggle::before, .accent-sw::before, .sw::before, .bgc-sw::before, .check::before, .adv-toggle::before, .tag::before, .kit-chip::before, .kit-dot::before, button.kit-t::before, .cc-segb::before, .cc-mini-switch::before, .qt-pin::before { content: ''; position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
+.chip-btn::before, .toggle::before, .check::before, .kit-dot::before { top: -1px; bottom: -1px; }
+.label-sw::before, .accent-sw::before, .sw::before { top: -1px; bottom: -1px; left: -1px; right: -1px; }
+.seg button::before { top: -3px; bottom: -3px; }
+.kit-seg button::before, .cc-segb::before, .cc-mini-switch::before, button.kit-t::before { top: -2px; bottom: -2px; }
+.tag::before { top: -3px; bottom: -3px; }
+.adv-toggle::before { top: -5px; bottom: -5px; }
+.bgc-sw::before { top: -7px; bottom: -7px; }
+.kit-chip::before { left: -2px; right: -2px; }
+.qt-pin::before { top: -3px; bottom: -3px; left: -3px; right: -3px; }
+.app:not(.layout-glass) .plan-row select { height: var(--h-s); }
+.app:not(.layout-glass) .kit-vfield { height: 26px; }
+.app:not(.layout-glass) .kit-vel { height: var(--h-s); }
+/* the widened hit area must not be clipped: these never overflow their own box (they size to their label) */
+.seg button, .chip-btn, .kit-seg button, .tag, .check, .adv-toggle, .label-sw, .accent-sw, .sw, .bgc-sw, .kit-chip, .cc-segb { overflow: visible; }
+/* inside a row that scrolls the invisible area is clipped, so these are really 24 px (Bento, MOE, Control —
+   Glass keeps its sizes until the owner approves pictures; the audit lists them as waiting) */
+.app:not(.layout-glass) .chip-btn { height: var(--h-s); border-radius: 12px; }
+.app:not(.layout-glass) .bgc-sw { height: var(--h-s); }
+.app:not(.layout-glass) .tag { display: inline-flex; align-items: center; min-height: var(--h-s); }
+.app:not(.layout-glass) .kit-chip { min-width: var(--h-s); }
+.app:not(.layout-glass) .seg { padding-top: 0; padding-bottom: 0; }
+.app:not(.layout-glass) .seg button { min-height: var(--h-s); }
+.app:not(.layout-glass) .toggle { height: var(--h-s); border-radius: 12px; }
+.app:not(.layout-glass) .toggle::after { top: 4px; }
+.app:not(.layout-glass) .qt-pin { width: var(--h-s); height: var(--h-s); top: 0; right: 0; }
+.app:not(.layout-glass) .adv-toggle { min-height: var(--h-s); }

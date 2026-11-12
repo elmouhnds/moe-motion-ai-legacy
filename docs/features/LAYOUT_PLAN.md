@@ -15,5 +15,13 @@ Owner picked ideas 10 (the layout plan from the four-style review) and 23 (a Hom
 ## Waiting for the owner
 Glass: `v081-glass-before.png` / `v081-glass-after-proposal.png` — only the two words change (Arrange → Layer, Finish → Look).
 
-## Not done
-Group captions on the Quick Bar; a size audit tool (no text under 10 px was found on Bento's Home).
+## v0.82 — the rest
+| Item | Result |
+|---|---|
+| Glass names | Layer, Look (approved) |
+| Size audit | `tools/audit-size.js`: 19 kinds of control under 24 px found; 0 left in Bento / MOE / Control |
+| Sidebar groups | Everyday · More, lines between kinds (MOE, Control) |
+| Audits and folded stages | the three audits open every Bento stage |
+
+## Waiting for the owner
+Glass: 9 kinds of control under 24 px (chips 22, switches 22, tags 19, colour swatches 10, ★ 18, anchor dots 22, curve chips 20 wide, "Advanced" 15, format selects 22) and the 9 px key hints (^1 … ^5).
