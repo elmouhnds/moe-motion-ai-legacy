@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Scene Check** (v0.80.0): one read of the comp — which Style Kit fits and why, a motion timeline of every layer, a quality check (short moves, off-frame keys, empty text, title safe, brand colours), and a storyboard page.
+
 **Tune after you apply** (v0.79.0): the last result's numbers stay within reach (drag = replace, one Ctrl+Z), Variations with real previews, Stagger by drag, Retime Keys, Copy / Paste Motion.
 
 **Recipes everywhere** (v0.78.0): a recipe is checked before it starts and says what it needs; it can sit on the Quick Bar and the pie and is in Ctrl+K; your recipes export and import.

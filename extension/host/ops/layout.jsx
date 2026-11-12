@@ -606,6 +606,38 @@
         }
     };
 
+    /* v0.80 (docs/features/SCENE_CHECK.md) - read-only: the markers of the comp and of its layers.
+       Layer markers: the layer's Marker property ('ADBE Marker'); comp markers: CompItem.markerProperty (After Effects 14+,
+       Scripting Guide) - read inside try / catch, an older host simply reports none.
+       args: { compId } -> { comp: [{ t, comment }], layers: [{ layerId, name, markers: [{ t, comment }] }], truncated } */
+    ops['markers.list'] = {
+        mutates: false,
+        run: function (args) {
+            var comp = U.compById(args.compId), out = { comp: [], layers: [], truncated: false }, i, k, L, M, list, c;
+            function read(prop) {
+                var res = [], n;
+                if (!prop) { return res; }
+                for (n = 1; n <= prop.numKeys && n <= 100; n++) {
+                    c = '';
+                    try { c = String(prop.keyValue(n).comment || ''); } catch (eC) { c = ''; }
+                    res.push({ t: prop.keyTime(n), comment: U.truncate(c, 80) });
+                }
+                return res;
+            }
+            try { out.comp = read(comp.markerProperty); } catch (eM) { out.comp = []; }
+            for (i = 1; i <= comp.numLayers; i++) {
+                if (i > 200) { out.truncated = true; break; }
+                L = comp.layer(i);
+                M = null;
+                try { M = L.property('ADBE Marker'); } catch (eL) { M = null; }
+                list = read(M);
+                if (list.length) { out.layers.push({ layerId: L.id, name: L.name, markers: list }); }
+            }
+            for (k = 0; k < out.layers.length; k++) { if (out.layers[k].markers.length >= 100) { out.truncated = true; } }
+            return out;
+        }
+    };
+
     /* v0.67: remove only markers at these times whose comment is exactly `comment` (what markers.add wrote).
        args: { compId, label, layers: [id], times: [s], comment } */
     ops['markers.remove'] = {

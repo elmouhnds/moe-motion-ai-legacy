@@ -86,7 +86,7 @@ function rawGroups(app, page, s) {
     return [
       { id: 'so', label: 'Social safe zones', items: pick(social), more: 'layout' },
       { id: 'gd', label: 'Composition guides', items: pick(ids), more: 'layout' },
-      { id: 'ex', label: 'Export & layout', links: [['deliver', 'Deliver'], ['layout', 'Layout & Grid']] }
+      { id: 'ex', label: 'Export & layout', links: [['scene', 'Scene Check'], ['deliver', 'Deliver'], ['layout', 'Layout & Grid']] }
     ];
   }
   return [];

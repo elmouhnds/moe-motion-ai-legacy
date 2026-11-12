@@ -95,11 +95,11 @@ const TABS = [
       { id: 'keycolor', label: 'Key & Color', kind: 'tiles', compact: true, section: 'compositing', hero: ['c-compositing.keySetup'], ids: ['c-compositing.keySetup', 'c-compositing.analyze', 'c-compositing.matchColor', 'c-compositing.grade', 'c-compositing.lookAssist'], more: 'compositing', fits: [] },
       { id: 'zoom', label: 'Camera & Zoom', kind: 'tiles', section: 'zoom', ids: ['punch', 'smooth', 'detail', 'follow', 'spot', 'cursorArrow'], more: 'zoom', fits: [], minor: ['quick:k_vignette'] }
     ] },
-  { id: 'ae-comp', label: 'Deliver', icon: 'resize', bar: false, title: 'Guides, every format at once, project (Composition menu)', fits: ['none'], owns: ['deliver', 'quick', 'tools'],
+  { id: 'ae-comp', label: 'Deliver', icon: 'resize', bar: false, title: 'Guides, every format at once, project (Composition menu)', fits: ['none'], owns: ['deliver', 'scene', 'quick', 'tools'],
     groups: [
       { id: 'guides', label: 'Guides & Safe Areas', kind: 'tiles', section: 'layout', ids: ['g12', 'thirds', 'gpCenter', 'gpGolden', 'gpTv', 'safe', 'gpClear', 'gpTiktok', 'gpReels', 'gpShorts', 'gpStories', 'split2', 'quad', 'wall6'], more: 'layout', fits: ['none'], open: true },
       { id: 'project', label: 'Deliver & Project', kind: 'acts', fits: [], open: true, hero: ['quick:dupComp'], minor: ['quick:revealFolder', 'quick:purge', 'quick:k_trash'],
-        refs: ['quick:dupComp', 'quick:revealProject', 'quick:openPrecomp', 'quick:revealFolder', 'quick:purge', 'quick:k_trash'], lead: [['deliver', 'Every format at once (16:9, 9:16, 1:1, 4:5…)']] }
+        refs: ['quick:dupComp', 'quick:revealProject', 'quick:openPrecomp', 'quick:revealFolder', 'quick:purge', 'quick:k_trash'], lead: [['deliver', 'Every format at once (16:9, 9:16, 1:1, 4:5…)'], ['scene', 'Scene Check: what fits, timeline, quality, storyboard']] }
     ] }
 ];
 // tab ids are prefixed: 'animate' is also the Motion presets library page

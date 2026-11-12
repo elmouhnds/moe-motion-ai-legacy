@@ -125,6 +125,10 @@ Permanent rules for anyone (human or AI) working in this repository.
 - A bar the user drags is a `surface` of `scrub.attach` — never a listener on the bar itself: the shell morphs a bar in place but rebuilds its number, so a listener on the bar reads and writes the number of an old render. Surfaces are delegated (`data-scrub`); the newest render's options win.
 - Every drag goes through `scrub.track` (window listeners, 16 ms clock, a move with `buttons === 0` or a window blur ends and commits, Esc cancels); a canvas with its own drag adds `scrub.guard`. If a control looks draggable (resize cursor), all of it must drag — `tests/smartcontrols.test.js`.
 
+## Scene Check (v0.80, docs/features/SCENE_CHECK.md)
+- The comp is read only on a click (`scene.read`, read-only) and measured only on a second click (`scene.measure`); never in the background, and a read of another comp is never shown. Everything on the page comes from `features/scene/plan.js` (pure, tested) — a finding names the layer and what was read; a heuristic is level `hint`; a suggestion lists its reasons.
+- The storyboard is a schematic from measured boxes and is said to be one — never called a render. Its page is built by `boardHtml` with every comp string escaped and no script.
+
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).
 - Tests run the **real host .jsx** against `tests/mock/ae-mock.js`. That proves logic, not host behaviour. Never describe mock results as After Effects results.

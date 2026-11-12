@@ -2,6 +2,20 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.80.0] — 2026-11-12 — Scene Check
+### Added (owner picked ideas 5 · 18 · 19 · 20; 21 was already in Deliver)
+- **Scene Check** page (Deliver › Scene Check, every style; `views/scene.js`, pure `features/scene/plan.js`).
+  - `scene.read` (read-only, on a click): layers (`layers.describe`), Transform keys + expressions (`keys.snapshot`), markers (new host op `markers.list`).
+  - **What fits** (5): Style Kits scored from what is in the comp, each point with its reason; Open kit / Work in it.
+  - **Motion timeline** (18): one row per layer — its life, keyed spans, markers, expressions, the playhead.
+  - **Quality check** (19): moves under 4 frames, keys between frames, empty text, "comes in, leaves with a cut" (a hint); after Measure: text outside title safe (10 %), shape colours outside the active client's palette.
+  - **Storyboard** (20): scenes from comp markers, else layer markers, else four even moments (said); a schematic frame per scene from measured boxes; saved as a stand-alone page (escaped, no script).
+  - `scene.measure`: After Effects' own measurement (`layers.bounds`, temporary null removed, layer count read back) + shape colours.
+- Self-Test: a **Scene** check (layers, keys and markers read back).
+### Honest notes
+- Idea 21 (a preview before resizing) already exists: Deliver draws before / after diagrams; Scene Check links to it.
+- The storyboard is a schematic of boxes and texts, not rendered frames. Colours are checked on shape fills and strokes only (not text or effects). Title safe is the classic 10 % area, checked at the playhead. Mock + browser preview only.
+
 ## [0.79.1] — 2026-11-12 — Dragging that follows your hand
 ### Fixed (owner: "dragging the bars in Control does not work well — review every drag")
 - **Control's bars**: only the number (≈ 40 × 30 px of a 160 × 173 px bar) answered a drag. The whole bar is the handle now (`scrub.attach({ surface })`): the range over the bar's own size, click sets the level, double-click resets (Duration, Stagger), Shift bigger steps, Ctrl a quarter of the pace. Switches inside a bar and the number while typing keep their clicks; the number's width follows the value while dragging.

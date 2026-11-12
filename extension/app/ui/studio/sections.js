@@ -279,6 +279,7 @@ const SECTIONS = [
     modes: [['Arrange', 'Arrange', 'Lay the selected layers out (grid, ring, spiral, globe…)'], ['Clone', 'Clone', 'One layer → many live copies on a grid (v0.33 Cloner)'], ['Effectors', 'Effectors', 'Change a grid’s items near a moving null: grow, reveal, scatter, step, wave, cascade'], ['Guides', 'Guides', 'Guides and safe areas on the comp'], ['Cells', 'Cells', 'Fit layers into split-screen cells']], tools: (t) => /^grid\./.test(t.id) },
   { id: 'zoom', label: 'Zoom & Focus', icon: 'zoom', kind: 'library', tiles: ZOOM, filters: ['All', 'Zoom', 'Focus', 'Cursor'], tools: (t) => /^(zoom|interact)\./.test(t.id) },
   { id: 'deliver', label: 'Deliver', icon: 'resize', kind: 'view' },
+  { id: 'scene', label: 'Scene Check', icon: 'eye', kind: 'view' }, // v0.80: read the comp once — what fits, motion timeline, quality check, storyboard
   { id: 'compositing', label: 'Compositing', icon: 'layers', kind: 'library', tiles: COMPOSITING, filters: ['All', 'Analyze', 'Color', 'Key', 'Green screen'], tools: (t) => t.category === 'compositing' && !/^glass\./.test(t.id) },
   { id: 'quick', label: 'Quick Bar', icon: 'bolt', kind: 'view' },
   { id: 'select', label: 'Select', icon: 'cursor', kind: 'view' },
@@ -294,7 +295,7 @@ const WORKSPACES = [
   { id: 'ws-animate', label: 'Animate', icon: 'motion', items: ['animate', 'text', 'expressions'] },
   { id: 'ws-design', label: 'Design', icon: 'palette', items: ['kits', 'templates', 'productui', 'shapes', 'backgrounds', 'looks', 'brand'] },
   { id: 'ws-layout', label: 'Layout', icon: 'grid', items: ['layout', 'zoom', 'deliver'] },
-  { id: 'ws-finish', label: 'Finish', icon: 'layers', items: ['compositing'] },
+  { id: 'ws-finish', label: 'Finish', icon: 'layers', items: ['compositing', 'scene'] },
   { id: 'ws-tools', label: 'Utilities', icon: 'tools', items: ['quick', 'select', 'tools'] } // v0.14: was "Tools" (too close to Toolbox)
 ];
 /** v0.7 name for the same grouping. */

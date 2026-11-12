@@ -55,8 +55,26 @@ const CHECKS = [
   // v0.67 (SMART_LAYER.md): layer markers are written and read by After Effects, and marker expressions follow them
   { id: 'markers', label: 'Markers: written and counted by After Effects; Marker In / Out follows them', run: checkMarkers },
   // v0.79 (TUNE_AFTER.md): a snapshot stretched to half its length is rebuilt by After Effects with the same influence
-  { id: 'retime', label: 'Retime: keys at half the length, on frames, the ease kept; rebuilt back exactly', run: checkRetime }
+  { id: 'retime', label: 'Retime: keys at half the length, on frames, the ease kept; rebuilt back exactly', run: checkRetime },
+  // v0.80 (SCENE_CHECK.md): what Scene Check reads — layers, keys and markers — counted by After Effects
+  { id: 'scene', label: 'Scene Check: layers, Transform keys and markers read back', run: checkScene }
 ];
+
+/** v0.80: markers.list finds the marker markers.add wrote; keys.snapshot (by layer) finds the keyed property; nothing is left. */
+async function checkScene(T) {
+  const [a, b] = await T.nulls([[300, 300], [600, 300]], 'ST Scene');
+  await T.host.call('markers.add', { compId: T.compId, label: 'MOE: Self-Test Scene', layers: [a], times: [0.5], comment: 'MOE Scene' });
+  const address = { layerId: b, matchNames: ['ADBE Transform Group', 'ADBE Rotate Z'] };
+  await T.host.call('keys.write', { compId: T.compId, label: 'MOE: Self-Test Scene', items: [{ address, keys: [{ t: 0.2, v: 0 }, { t: 1.2, v: 45 }] }] });
+  const desc = await T.host.call('layers.describe', { compId: T.compId });
+  const marks = await T.host.call('markers.list', { compId: T.compId });
+  const snaps = await T.host.call('keys.snapshot', { compId: T.compId, layerIds: [a, b], group: 'transform' });
+  const mine = (marks.layers.find((x) => x.layerId === a) || { markers: [] }).markers;
+  const keyed = snaps.items.filter((x) => x.address.layerId === b && x.snapshot.length === 2);
+  const rm = await T.host.call('markers.remove', { compId: T.compId, label: 'MOE: Self-Test Scene', layers: [a], times: [0.5], comment: 'MOE Scene' });
+  const ok = desc.layers.length >= 2 && mine.length === 1 && Math.abs(mine[0].t - 0.5) < 0.021 && mine[0].comment === 'MOE Scene' && keyed.length === 1 && rm.layers[0].total === 0;
+  return { ok, detail: `${desc.layers.length} layers described · layer marker read at ${mine.length ? +mine[0].t.toFixed(3) : 'none'} s ("${mine.length ? mine[0].comment : ''}") · comp markers ${marks.comp.length} · keyed Transform properties on the second null ${keyed.length} (want 1) · marker removed, left ${rm.layers[0].total}` };
+}
 
 /** v0.79: keys.snapshot → plan.scale → keys.rebuild, read back by After Effects; then the original rebuilt and compared. */
 async function checkRetime(T) {

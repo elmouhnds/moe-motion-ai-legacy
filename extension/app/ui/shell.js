@@ -26,6 +26,7 @@ const views = {
   text: require('./views/text'),
   brand: require('./views/brand'),
   kits: require('./views/kits'),
+  scene: require('./views/scene'),
   select: require('./views/select'),
   quick: { render: (app) => quickbar.view(app) },
   deliver: require('./views/deliver'),

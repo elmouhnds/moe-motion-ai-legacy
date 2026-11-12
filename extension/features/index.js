@@ -41,6 +41,7 @@ const kit = require('./kit/tools');
 const reader = require('./kit/reader');
 const markers = require('./markers/tools');
 const { delay } = require('./kit/delay');
+const scene = require('./scene/tools'); // v0.80 Scene Check: read the comp, measure scenes
 const retune = require('./retune/tools'); // v0.79 Tune After: retime, copy / paste motion
 
 const TOOLS = [
@@ -60,7 +61,8 @@ const TOOLS = [
   design.insertShape, design.background, design.colorize, template, style,
   curves.easeCurve, curves.pasteEase, transform.anchor, transform.align, transform.clone,
   kit.interp, kit.trimToKeys, kit.parent, kit.stare, kit.vignette, kit.trash, reader.removeRig, markers.beatMarkers, delay,
-  retune.retime, retune.copyMotion, retune.pasteMotion
+  retune.retime, retune.copyMotion, retune.pasteMotion,
+  scene.read, scene.measure
 ];
 
 function registerAll(registry) {
