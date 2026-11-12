@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.87 — Layout plan ✅ (v0.81.0)
+- Bento Home on one screen, Control key jobs, Anchor · Align on demand, one set of names, kits on the Quick Bar. Waiting: the owner's yes for Glass (Layer / Look), the Self-Test report from After Effects, the signing decision.
+
 ## M1.86 — Scene Check ✅ (v0.80.0)
 - Read the comp once: what fits, motion timeline, quality check, storyboard. Next (owner's list): v0.81 layout plan + own Home (10 · 23). Later: rendered storyboard frames, text colours in the brand check, click a timeline row to select the layer.
 

@@ -459,10 +459,26 @@ function readerBody(app) {
 
 /* ---------- v0.30 Motion Control: one block at the top of every style (keys + anchor + align) ---------- */
 /** The Motion Control for the selection, or null when nothing is selected (then the page is about creating). */
+/* v0.81 (LAYOUT_PLAN.md): with keys selected the job is the ease — anchor and align took ~220 px of the first screen.
+   In Bento and Control they wait behind one "Place" button (remembered); MOE has them in its Layer tab, Glass is
+   unchanged (owner: Glass changes only with approved screenshots). */
+const PLACE_KEY = 'mc-place-keys';
+const placeStyles = ['bento', 'control'];
+const layoutOf = (app) => { try { return (app.services.settings.get().ui || {}).layout || 'bento'; } catch (e) { return 'bento'; } };
+/** Is the rail (anchor + align) left out of the Motion Control right now? */
+const placeHidden = (app, kind) => kind === 'keys' && placeStyles.indexOf(layoutOf(app)) >= 0 && !app.services.store.get(PLACE_KEY, false);
+/** The button that brings anchor + align back (null when it does not apply). */
+function placeToggle(app, kind) {
+  if (kind !== 'keys' || placeStyles.indexOf(layoutOf(app)) < 0) return null;
+  const open = !!app.services.store.get(PLACE_KEY, false);
+  return h('button', { class: `btn ghost sm mc-place ${open ? 'on' : ''}`, 'data-key': 'mc-place', 'aria-expanded': String(open), title: open ? 'Hide anchor and align (keys are selected: the ease is the job)' : 'Anchor point, align and distribute — for the layers of these keys',
+    onclick: () => { app.services.store.set(PLACE_KEY, !open); app.render(); } }, icon('anchor', 'xs'), open ? 'Hide anchor · align' : 'Anchor · Align');
+}
 function controlTop(app, kind, parts) {
   const c = app.state.get().ctx;
   if (!c || !c.comp || kind === 'none') return null;
   const kit = require('./views/kit');
+  if (!parts && placeHidden(app, kind)) parts = ['bar'];
   // v0.31: the graph opens when keys are selected; with layers only, the compact strip (curve · Copy / Paste ·
   // anchor · align) keeps every placement tool in ~90 px. Open or fold it yourself: remembered per kind of selection.
   // v0.65 (WORKSPACES.md): the compact Motion Bar by default for every selection — the full graph opens from its Graph
@@ -500,7 +516,7 @@ function controlShows(app, kind) {
   const kit = require('./views/kit');
   const sc = { ctx: `__bar-${kind}`, focus: ['pinned'] };
   // v0.65: with keys selected the Motion Bar shows Easy / Linear / Hold and the common curves even when folded
-  return { rail: true, ease: kind === 'keys' || !kit.isFolded(kit.prefs(app), sc, 'ease') };
+  return { rail: !placeHidden(app, kind), ease: kind === 'keys' || !kit.isFolded(kit.prefs(app), sc, 'ease') };
 }
 
 /** v0.30: the steps that usually follow the last run (MOE puts them under the Motion Control). */
@@ -646,6 +662,6 @@ function menuButton(app, s) {
     onclick: (e) => { const r = e.currentTarget.getBoundingClientRect(), box = require('./quickbar').fixedBox(e.currentTarget.closest('.app') || document.body); app.state.set({ aeMenu: !s.aeMenu, aeMenuAt: { top: Math.round(r.bottom - box.top + 2), right: Math.max(4, Math.round(box.left + box.width - r.right)) } }); } }, icon('menu', 'sm'));
 }
 
-module.exports = { readLayers, readerBody, runsOf, nextStrip, controlTop, controlFull, tabControl, controlShows, shownRefs, tileCols, animMode, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
+module.exports = { placeToggle, placeHidden, PLACE_KEY, readLayers, readerBody, runsOf, nextStrip, controlTop, controlFull, tabControl, controlShows, shownRefs, tileCols, animMode, TABS, TAB_IDS, RECENT, UTIL, ownerOf, isOpen, setOpen, build, tabItems, groupsOf, moveGroup, resetOrder, remember, recentRefs, recentItem,
   // building blocks reused by the v0.24 style proposals (layoutGlass / layoutApple / layoutBento)
   twirl, actButton, keysHint, groupBody, tileStrip, moreLink, groupExtra, subRow, pairControl, linkRow, searchBox, searchResults, panelMenu, menuButton, openTile };

@@ -418,3 +418,49 @@ test('v0.78: a recipe is checked before anything is written; it is a one-click r
   assert.ok(!QB.barIds(one.app).includes(mref), 'a removed recipe leaves the bar');
   R.bind(null);
 });
+
+test('v0.81 layout plan: Bento stages start folded and remember; with keys the Motion Control waits for "Place" in Bento / Control only; Control has the key jobs', () => {
+  const B = require('../extension/app/ui/layoutBento');
+  const AE = require('../extension/app/ui/layoutAE');
+  const fs = require('fs'); const path = require('path');
+  const src = (f) => fs.readFileSync(path.join(__dirname, '../extension/app/ui', f), 'utf8');
+  // folded by default, an explicit choice (old or new) wins
+  const bento = src('layoutBento.js');
+  assert.match(bento, /FOLDED_BY_DEFAULT = \(id\) => \/\^st-\/\.test\(id\)/);
+  assert.match(bento, /hasOwnProperty\.call\(all, id\) \? !!all\[id\] : FOLDED_BY_DEFAULT\(id\)/);
+  // Place: hidden for keys in Bento and Control until asked; never in MOE / Glass; never for layers
+  const mk = (layout, open) => { const mem = { 'mc-place-keys': open }; return { services: { settings: { get: () => ({ ui: { layout } }) }, store: { get: (k, d) => (k in mem && mem[k] !== undefined ? mem[k] : d), set: (k, v) => { mem[k] = v; } } }, render: () => {} }; };
+  assert.equal(AE.placeHidden(mk('bento'), 'keys'), true); assert.equal(AE.placeHidden(mk('control'), 'keys'), true);
+  assert.equal(AE.placeHidden(mk('bento', true), 'keys'), false, 'opened: remembered');
+  assert.equal(AE.placeHidden(mk('glass'), 'keys'), false); assert.equal(AE.placeHidden(mk('moe'), 'keys'), false);
+  assert.equal(AE.placeHidden(mk('bento'), 'layers'), false);
+  assert.equal(AE.placeToggle(mk('glass'), 'keys'), null); assert.equal(AE.placeToggle(mk('bento'), 'layer'), null);
+  // Control's key jobs are registered Quick actions already in Timing › Keyframes & Loops (one tool, two styles)
+  const ctl = src('layoutControl.js');
+  const refs = [...ctl.match(/const KEY_REFS = \[(.*?)\];\n/)[1].matchAll(/'(quick:[a-zA-Z_]+)'/g)].map((m) => m[1]);
+  const A = require('../extension/app/ui/actions');
+  const assist = AE.TABS.find((t) => t.id === 'ae-keys').groups.find((g) => g.id === 'assist');
+  assert.equal(refs.length, 6);
+  refs.forEach((r) => { assert.ok(A.resolve(r), r); assert.ok(assist.refs.includes(r), `${r} is in Keyframes & Loops`); });
+  // one word for one place across the styles
+  const P = require('../extension/app/ui/layoutControlPages');
+  assert.equal(P.PAGES.find((p) => p.id === 'move').label, 'Animate');
+  const W = require('../extension/app/ui/workflow');
+  const tabs = AE.TABS.map((t) => t.label);
+  W.STAGES.forEach((st) => assert.ok(tabs.includes(st.label), `${st.label} is one of MOE's tab names`));
+});
+
+test('v0.81 (idea 23): the Quick Bar is your own Home — it takes whole kits and recipes, and its page lists them', () => {
+  const QB = require('../extension/app/ui/quickbar');
+  const A = require('../extension/app/ui/actions');
+  const mem = {}; let st = { view: 'home' }; const went = [];
+  const app = { services: { store: { get: (k, d) => (k in mem ? mem[k] : d), set: (k, v) => { mem[k] = v; } }, registry: { get: () => ({ params: {} }) } }, render: () => {}, go: (v) => went.push(v), state: { get: () => st, set: (p) => { st = Object.assign({}, st, typeof p === 'function' ? p(st) : p); } }, toast: () => {} };
+  QB.togglePin(app, 'kit:effectors');
+  assert.ok(QB.barIds(app).includes('kit:effectors'));
+  const b = QB.byId('kit:effectors'); assert.ok(b.kit === 'effectors' && b.label === 'Effectors Pro' && b.group === 'Kits');
+  QB.run(app, b); assert.equal(st.kitId, 'effectors'); assert.deepEqual(went, ['kits']);
+  assert.equal(QB.byId('kit:nope'), null);
+  mem['quick-bar'] = ['k_easy', 'kit:nope', 'kit:glass']; assert.deepEqual(QB.barIds(app), ['k_easy', 'kit:glass'], 'a kit that is gone drops off the bar');
+  const a = A.resolve('kit:saas'); assert.ok(a && a.nav && a.ready().ok);
+  assert.ok(A.catalog().filter((x) => x.group === 'Style Kits').length >= 8, 'kits can go on My pie too');
+});

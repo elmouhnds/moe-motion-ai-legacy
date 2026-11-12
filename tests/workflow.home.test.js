@@ -17,8 +17,8 @@ const fx = require('./fixtures/comps');
 
 const memStore = (data = {}) => ({ data, get: (k, f) => (k in data ? JSON.parse(JSON.stringify(data[k])) : f), set: (k, v) => { data[k] = v; }, update: (k, f, fn) => { data[k] = fn(k in data ? data[k] : f); } });
 
-test('stages: Animate · Arrange · Design · Finish · Deliver; every group of the shared organisation exactly once; core before more', () => {
-  assert.deepEqual(W.STAGES.map((s) => s.label), ['Animate', 'Arrange', 'Design', 'Finish', 'Deliver']);
+test('stages: Animate · Layer · Design · Look · Deliver (v0.81: MOE\'s words); every group of the shared organisation exactly once; core before more', () => {
+  assert.deepEqual(W.STAGES.map((s) => s.label), ['Animate', 'Layer', 'Design', 'Look', 'Deliver']);
   const placed = [];
   for (const st of W.STAGES) {
     const gs = W.stageGroups(st);

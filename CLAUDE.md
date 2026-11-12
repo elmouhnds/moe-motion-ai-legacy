@@ -129,6 +129,12 @@ Permanent rules for anyone (human or AI) working in this repository.
 - The comp is read only on a click (`scene.read`, read-only) and measured only on a second click (`scene.measure`); never in the background, and a read of another comp is never shown. Everything on the page comes from `features/scene/plan.js` (pure, tested) — a finding names the layer and what was read; a heuristic is level `hint`; a suggestion lists its reasons.
 - The storyboard is a schematic from measured boxes and is said to be one — never called a render. Its page is built by `boardHtml` with every comp string escaped and no script.
 
+## Layout plan (v0.81, docs/features/LAYOUT_PLAN.md)
+- Bento's Home stays about one screen: a stage starts folded as one row naming its groups (`FOLDED_BY_DEFAULT`); a user's own fold / open always wins. A Power card shows its explanation only on *How*.
+- With keys selected, anchor + align are behind `layoutAE.placeToggle` in Bento and Control; keep `controlShows` in step with what is hidden so nothing becomes unreachable. Glass and MOE do not use it.
+- A place has ONE name in every style: the stages use MOE's tab words (Animate · Layer · Design · Look · Deliver). Glass still says Arrange / Finish (`layoutGlass.GLASS_LABEL`) — remove that map only when the owner approves the screenshots.
+- The user's own Home is the Quick Bar (tools, presets, `recipe:` and `kit:` refs) — never a second personal page.
+
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).
 - Tests run the **real host .jsx** against `tests/mock/ae-mock.js`. That proves logic, not host behaviour. Never describe mock results as After Effects results.

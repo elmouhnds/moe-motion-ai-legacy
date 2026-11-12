@@ -16,7 +16,10 @@ const studio = require('./studio/sections');
 
 // v0.28: the spaces are the workflow stages (app/ui/workflow.js) — Animate · Arrange · Design · Finish · Deliver
 const W = require('./workflow');
-const SPACES = W.STAGES.map((st) => ({ id: `gl-${st.id.slice(3)}`, label: st.label, icon: st.icon, fits: st.fits, title: st.title, stage: st }));
+/* v0.81: the stages are named like MOE's tabs now (Layer, Look). Glass keeps Arrange / Finish until the owner
+   approves the before / after screenshots (CLAUDE.md: Glass changes only with approved screenshots). */
+const GLASS_LABEL = { 'st-arrange': 'Arrange', 'st-finish': 'Finish' };
+const SPACES = W.STAGES.map((st) => ({ id: `gl-${st.id.slice(3)}`, label: GLASS_LABEL[st.id] || st.label, icon: st.icon, fits: st.fits, title: st.title, stage: st }));
 const SPACE_IDS = SPACES.map((x) => x.id);
 const ownerOf = (view) => { const st = W.stageOfView(view); return st ? SPACES.find((sp) => sp.stage === st) : null; };
 
@@ -37,7 +40,7 @@ function nowCard(app, s, kind, below) {
     h('div', { class: 'gl-now-h' }, h('span', { class: 'gl-now-k' }, 'NOW'), h('b', {}, what), h('span', { class: 'gl-now-s' }, sub), h('span', { class: 'spacer' }),
       h('button', { class: 'icon-btn gl-now-fold', 'data-key': 'gl-now-fold', 'aria-expanded': String(!fold), 'aria-label': fold ? 'Show the Now actions' : 'Fold the Now card', title: fold ? 'Show the eight best actions' : 'Fold to one line (more room for the cards)', onclick: () => { app.services.store.set('glass-now-folded', !fold); app.render(); } }, icon('chev', `xs gl-chev ${fold ? '' : 'open'}`))),
     // v0.30: the Motion Control (graph + anchor + align) leads the Now card
-    fold ? null : AE.controlTop(app, kind),
+    fold ? null : AE.controlTop(app, kind, ['bar', 'rail']), // v0.81: Glass is unchanged (the keys-only bar is Bento / Control)
     // folded: the two primary actions stay, as small buttons in the header line
     h('div', { class: `gl-now-acts ${fold ? 'mini' : ''}` }, (fold ? acts.slice(0, 2) : acts).map((a, i) => AE.actButton(app, a, null, fold ? 's' : i < 2 ? 'l' : undefined))),
     // v0.43: "Next" below the actions — it comes and goes without moving them

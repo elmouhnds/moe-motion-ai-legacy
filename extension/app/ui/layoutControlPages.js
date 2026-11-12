@@ -15,7 +15,7 @@ const { h, icon } = require('./dom');
 const studio = require('./studio/sections');
 
 const PAGES = [
-  { id: 'move', label: 'Move', icon: 'motion', hint: 'Motion, timing and wiggle — the squares and the Mix' },
+  { id: 'move', label: 'Animate', icon: 'motion', hint: 'Motion, timing and wiggle — the squares and the Mix' },
   { id: 'text', label: 'Text', icon: 'type', hint: 'Text animations played on your own words, Typewriter, Counter' },
   { id: 'design', label: 'Design', icon: 'palette', hint: 'Backgrounds, palettes and templates' },
   { id: 'look', label: 'Look', icon: 'sparkles', hint: 'Styles, glass, zoom and focus' },

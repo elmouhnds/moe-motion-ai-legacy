@@ -90,7 +90,7 @@ test('Motion Control: one block for keys + anchor + align, at the top of every s
   assert.ok(!AE.TABS.some((t) => t.groups.some((g) => ['ease', 'align', 'anchor'].includes(g.id))));
   const src = (f) => fs.readFileSync(path.join(__dirname, '../extension/app/ui', f), 'utf8');
   assert.match(src('layoutBento.js'), /AE\.controlTop\(app, kind\)/);
-  assert.match(src('layoutGlass.js'), /AE\.controlTop\(app, kind\)/);
+  assert.match(src('layoutGlass.js'), /AE\.controlTop\(app, kind, \['bar', 'rail'\]\)/, 'v0.81: Glass always shows every part (unchanged)');
   assert.match(src('layoutAE.js'), /tabControl\(app, tab, kind\), nextStrip\(app, s\)/);
   const kit = src('views/kit.js');
   assert.match(kit, /h\('div', \{ class: 'kit-graph-row' \}, h\('div', \{ class: 'kit-graph-wrap' \}, graph\(app\)\), rail\(app\)\)/, 'anchor + align sit beside the graph');

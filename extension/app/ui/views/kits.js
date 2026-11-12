@@ -39,9 +39,10 @@ function itemCard(app, s, ref, kit, done) {
 function kitCard(app, k) {
   const pinned = R.focusId(app) === k.id;
   const ready = R.readyCount(app, k);
+  const qb = require('../quickbar'); const onBar = qb.barIds(app).indexOf(`kit:${k.id}`) >= 0;
   return h('button', {
-    class: `sk-card ${pinned ? 'pinned' : ''}`, 'data-key': `kit-c-${k.id}`, style: { '--k1': k.accent[0], '--k2': k.accent[1] }, title: `${k.label} — ${k.tagline}`,
-    onclick: () => app.state.set({ kitId: k.id })
+    class: `sk-card ${pinned ? 'pinned' : ''}`, 'data-key': `kit-c-${k.id}`, style: { '--k1': k.accent[0], '--k2': k.accent[1] }, title: `${k.label} — ${k.tagline}\nShift-click: ${onBar ? 'take off' : 'put on'} the Quick Bar`,
+    onclick: (e) => (e.shiftKey ? qb.togglePin(app, `kit:${k.id}`) : app.state.set({ kitId: k.id }))
   }, h('span', { class: 'sk-card-ic', 'aria-hidden': 'true' }, icon(k.icon, 'lg')),
   pinned ? h('span', { class: 'sk-card-pin' }, 'Working in') : null,
   h('span', { class: 'sk-card-t' }, h('b', {}, k.label), h('span', {}, k.tagline)),

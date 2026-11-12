@@ -57,6 +57,17 @@ function restoreTune(app) {
   for (const k of Object.keys(DEFAULTS)) cc[k] = Object.assign({}, DEFAULTS[k], saved[k] || {}, { on: false });
   app.state.set({ cc });
 }
+const KEY_REFS = [['quick:k_stagger', 'Stagger'], ['quick:reverse', 'Reverse'], ['quick:mirror', 'Mirror'], ['quick:k_retime', 'Retime'], ['quick:k_copyMotion', 'Copy motion'], ['quick:k_pasteMotion', 'Paste motion']];
+/** One-click key jobs for the selected keys (registered Quick actions; readiness from the tool itself). */
+function keyRow(app) {
+  return h('div', { class: 'cc-sq cc-keys', 'data-key': 'cc-keys', role: 'group', 'aria-label': 'Key jobs' }, KEY_REFS.map(([ref, label]) => {
+    const a = A.resolve(ref); if (!a) return null;
+    const rd = a.ready(app);
+    return h('button', { class: `cc-key ${rd.ok ? '' : 'off'}`, 'data-key': `cc-key-${ref}`, 'aria-label': a.label, title: `${a.label}${rd.ok ? '' : ` — ${rd.hint}`}${a.hint ? `\n${a.hint}` : ''}\nRuns now (one Ctrl+Z) — it is not added to the Mix`,
+      onclick: (e) => { if (!rd.ok) app.toast(`${a.label}: ${rd.hint}`, 4500, 'warn'); else a.run(app, e); } }, icon(a.icon || 'bolt', ''), h('span', {}, label));
+  }));
+}
+
 /** v0.74 My mixes: a Mix you use often, saved by name (its squares and numbers). Pure helpers + store. */
 const mixesOf = (app) => (app.services.store.get(MIX_KEY, []) || []).filter((m) => m && m.name && m.cc).slice(0, 12);
 function saveMix(app, name) {
@@ -263,7 +274,7 @@ function libraries(app) {
 function controlCard(app, s, kind) {
   const ctl = kind === 'none' ? null : AE.controlTop(app, kind);
   if (!ctl) return null;
-  if (kind === 'keys') return h('div', { class: 'cc-control open', 'data-key': 'cc-control' }, ctl);
+  if (kind === 'keys') return h('div', { class: 'cc-control open', 'data-key': 'cc-control' }, ctl, h('div', { class: 'cc-place' }, AE.placeToggle(app, kind)));
   const open = !!app.services.store.get('cc-control-open', false);
   return h('div', { class: `cc-control ${open ? 'open' : ''}`, 'data-key': 'cc-control' },
     h('button', { class: 'cc-ctl-h', 'data-key': 'cc-ctl-h', 'aria-expanded': String(open), title: open ? 'Fold the Motion Control' : 'Ease, anchor and align for the selection', onclick: () => { app.services.store.set('cc-control-open', !open); app.render(); } },
@@ -307,6 +318,9 @@ function squares(app, s, kind) {
         h('span', { class: 'cc-seg cc-seg-mini', role: 'radiogroup', 'aria-label': 'Wiggle what' }, WIGGLES.map(([id, label]) => h('button', { class: 'cc-segb', role: 'radio', 'data-key': `cc-wt-${id}`, 'aria-checked': String(wiggleOf(w)[0] === id), title: `Wiggle ${label}`, onclick: () => setCc(app, 'wiggle', { target: id, amp: Math.min(w.amp, WIGGLES.find((x) => x[0] === id)[4]), on: true }) }, label.slice(0, 3)))),
         h('button', { class: `cc-mini-switch ${w.on ? 'on' : ''}`, 'data-key': 'cc-wig-on', role: 'switch', 'aria-checked': String(w.on), 'aria-label': 'Wiggle in the Mix', title: w.on ? 'In the Mix — click to take it out' : `Add Wiggle ${wl} to the Mix`, onclick: () => setCc(app, 'wiggle', { on: !w.on }) }, h('i', {}))) }));
   }
+  // v0.81 (LAYOUT_PLAN.md): with keys selected Control showed two squares and half a screen of nothing — the key
+  // jobs are one click each here (the same Quick actions as Timing › Keyframes & Loops; they run now, not in the Mix)
+  if (kind === 'keys') add.push(keyRow(app));
   if (mods.includes('type')) add.push(wideSquare(app, s, kind, n, 'type', { icon: 'typewriter', label: 'Typewriter', sub: 'letters appear one by one', title: 'Types the text in', page: 'text' }));
   if (mods.includes('beats')) add.push(wideSquare(app, s, kind, n, 'beats', { cls: 'cc-beats', icon: 'xPulse', label: 'Beats', sub: 'markers on the music\'s beats', art: wave(), title: 'A marker on every beat of the comp\'s sound layer (read with After Effects\' Convert Audio to Keyframes)' }));
   return { empty: null, move, add };

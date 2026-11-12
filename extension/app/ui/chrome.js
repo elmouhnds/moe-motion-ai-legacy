@@ -54,7 +54,8 @@ function banner(app, sectionId) {
   const hidden = app.services.store.get('banners-hidden', []);
   if (hidden.includes(sectionId)) return null;
   const c = COPY[sectionId](counts(app));
-  const seen = app.services.store.get('banners-seen', []).includes(sectionId);
+  // v0.81 (LAYOUT_PLAN.md): in Bento a library starts with its tiles — the one-line title; ⓘ still opens the banner
+  const seen = ui.layout === 'bento' || !ui.layout || app.services.store.get('banners-seen', []).includes(sectionId);
   const open = (app.state.get().bannerOpen || {})[sectionId];
   const setOpen = (v) => app.state.set((st) => ({ bannerOpen: Object.assign({}, st.bannerOpen, { [sectionId]: v }) }));
   if (seen && !open) {
@@ -84,6 +85,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['layers', 'A shorter Home, a fuller Control', 'Bento: Home is about one screen — each stage is one row that names its groups (open the ones you use, it is remembered) and a Power card shows its explanation when you press How. With keys selected, anchor and align wait behind one Anchor · Align button (Bento, Control). Control: six key jobs in one row (Stagger, Reverse, Mirror, Retime, Copy / Paste motion) and Libraries wrap instead of running off the edge. The stages are named like the tabs: Animate · Layer · Design · Look · Deliver. The Quick Bar takes whole Style Kits (Shift-click a kit) and its page lists kits and recipes.'],
   ['eye', 'Scene Check', 'Deliver › Scene Check: one click reads the comp (nothing is changed). It says which Style Kit fits and why, draws every layer\'s keyed moves and markers on one small timeline, and checks quality — keys between frames, moves too short to read, empty text. Measure adds text outside title safe, shape colours that are not the client\'s, and a storyboard: one schematic frame per marker, saved as a page.'],
   ['sliders', 'Dragging that follows your hand', 'Control\'s bars: the whole bar is the handle now (it was only the small number) — drag anywhere on it, the level travels as far as your hand; click sets the level, double-click resets, Shift takes bigger steps, Ctrl is fine. Every drag in the panel is tracked on the window, so leaving the control or releasing outside the panel never loses or sticks it; Esc cancels.'],
   ['sliders', 'Tune after you apply', 'What you just applied stays within reach: a strip under the header shows its numbers — drag one and the result is replaced (one Ctrl+Z), no Undo-and-Apply-again. Variations gives up to four takes with real previews (calmer, faster, overshoot, other side). Stagger shows its offsets while you drag. New in Timing › Keyframes & Loops: Copy Motion / Paste Motion (keys, ease, paths and expressions; Position keeps each layer in place) and Retime (faster or slower, ease kept).'],

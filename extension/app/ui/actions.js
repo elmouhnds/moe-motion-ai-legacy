@@ -140,6 +140,7 @@ function resolve(ref) {
     if (!sec) return null;
     return { id: ref, label: sec.label, icon: sec.icon, where: 'Open', nav: true, run: (app) => app.go(rest), ready: () => ({ ok: true }) };
   }
+  if (kind === 'kit') { const k = require('./kits').byId(rest); return k ? { id: ref, label: k.label, icon: k.icon, where: 'Style Kit', nav: true, run: (app) => { app.state.set({ kitId: k.id }); app.go('kits'); }, ready: () => ({ ok: true }) } : null; } // v0.81
   if (kind === 'recipe') return require('./kitRun').action(ref); // v0.78: a kit recipe is a one-click action too
   if (kind === 'brand') return brandAction(ref, rest);
   if (kind === 'cmd') {
@@ -160,6 +161,7 @@ function catalog() {
   for (const sec of studio.SECTIONS.filter((x) => x.kind === 'library')) for (const t of sec.tiles) out.push({ ref: `tile:${sec.id}/${t.id}`, group: sec.label, label: t.label });
   for (const a of require('./quickbar').ACTIONS) out.push({ ref: `quick:${a.id}`, group: 'Quick Bar', label: a.label });
   for (const id of studio.NAV) out.push({ ref: `nav:${id}`, group: 'Open section', label: studio.byId(id).label });
+  for (const k of require('./kits').KITS) out.push({ ref: `kit:${k.id}`, group: 'Style Kits', label: k.label });
   for (const r of require('./kitRun').allRefs()) out.push({ ref: r.ref, group: 'Recipes', label: r.label });
   for (const [id, label] of [['search', 'Search'], ['copilot', 'Assistant'], ['repeat', 'Repeat last']]) out.push({ ref: `cmd:${id}`, group: 'Commands', label });
   for (const [id, label] of [['apply', 'Apply brand'], ['applyComp', 'Brand whole comp'], ['ease', 'Brand ease']]) out.push({ ref: `brand:${id}`, group: 'Brand', label });

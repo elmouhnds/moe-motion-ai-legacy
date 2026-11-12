@@ -38,8 +38,11 @@ function movePin(app, ref, beforeRef) {
   app.services.store.set(PIN_KEY, cur);
   app.render();
 }
-const folded = (app, id) => !!(app.services.store.get(FOLD_KEY, {}) || {})[id];
-function toggleFold(app, id) { const all = Object.assign({}, app.services.store.get(FOLD_KEY, {}) || {}); all[id] = !all[id]; app.services.store.set(FOLD_KEY, all); app.render(); }
+/* v0.81 (docs/features/LAYOUT_PLAN.md): Home was ~5 000 px — seven screens. A stage starts as ONE row that names its
+   groups; you open the ones you work in and that is remembered. What you already folded or opened keeps its state. */
+const FOLDED_BY_DEFAULT = (id) => /^st-/.test(id);
+const folded = (app, id) => { const all = app.services.store.get(FOLD_KEY, {}) || {}; return Object.prototype.hasOwnProperty.call(all, id) ? !!all[id] : FOLDED_BY_DEFAULT(id); };
+function toggleFold(app, id) { const all = Object.assign({}, app.services.store.get(FOLD_KEY, {}) || {}); all[id] = !folded(app, id); app.services.store.set(FOLD_KEY, all); app.render(); }
 
 /** An action as a bento tile. size: '2x1' (primary) | '1x1'. Right-click pins it to NOW. */
 function tile(app, a, size, t, ref, sub) {
@@ -126,7 +129,8 @@ function now(app, s, kind) {
   return h('section', { class: 'b-sec b-now', 'data-key': 'b-now', 'aria-label': 'Now' },
     h('div', { class: 'b-now-h' }, h('span', { class: 'b-kick' }, 'NOW'), h('b', {}, !c ? 'Reading After Effects…' : !c.comp ? 'No active composition' : A.CONTEXT_LABEL[kind]),
       c && c.comp ? h('span', { class: 'b-now-s' }, `${c.comp.name} · ${(c.layers || []).length} selected`) : null,
-      c && c.comp ? formatChip(require('./workflow').formatOf(c.comp)) : null),
+      c && c.comp ? formatChip(require('./workflow').formatOf(c.comp)) : null,
+      nb ? AE.placeToggle(app, kind) : null),
     // v0.29: the anchor point is a one-second action — half the width (2×2 cell), the actions fill the rest;
     // ease (keys) and align (several layers) are real working surfaces and keep the full width
     h('div', { class: 'b-grid' }, block ? wide('now-block', block) : null,
@@ -179,14 +183,17 @@ function powerCard(app, p, kind) {
   const rd = tryA ? tryA.ready(app) : null;
   const fit = p.fits.includes(kind);
   const go = (a) => { W.learn(app.services.store, p.id); a.run(app); };
-  return h('article', { class: `pw-card ${fit ? 'fit' : ''}`, 'data-key': `pw-${p.id}`, 'aria-label': p.title },
+  // v0.81: a card is its name, when to use it and its two buttons; the explanation opens on a click (it took 554 px)
+  const more = !!(app.state.get().pwOpen || {})[p.id];
+  return h('article', { class: `pw-card ${fit ? 'fit' : ''} ${more ? 'open' : 'compact'}`, 'data-key': `pw-${p.id}`, 'aria-label': p.title },
     h('div', { class: 'pw-top' }, h('span', { class: 'pw-ic' }, icon(p.icon, 'lg')), h('b', { class: 'pw-t' }, p.title),
       fit ? h('span', { class: 'ae-fit' }, 'for selection') : null, h('span', { class: 'spacer' }),
       h('button', { class: 'icon-btn pw-got', 'data-key': `pw-got-${p.id}`, 'aria-label': `I know ${p.title} — make it small`, title: 'Got it — show it as a small chip from now on', onclick: () => { W.gotIt(app.services.store, p.id); app.render(); } }, icon('check', 'sm'))),
-    h('p', { class: 'pw-what' }, p.what),
-    h('div', { class: 'pw-meta' }, h('span', {}, h('i', {}, 'When '), p.when), h('span', {}, h('i', {}, 'Needs '), p.needs)),
-    h('ol', { class: 'pw-steps' }, p.steps.map((x) => h('li', {}, x))),
+    more ? h('p', { class: 'pw-what' }, p.what) : null,
+    h('div', { class: 'pw-meta' }, h('span', {}, h('i', {}, 'When '), p.when), more ? h('span', {}, h('i', {}, 'Needs '), p.needs) : null),
+    more ? h('ol', { class: 'pw-steps' }, p.steps.map((x) => h('li', {}, x))) : null,
     h('div', { class: 'pw-acts' },
+      h('button', { class: 'btn ghost sm pw-how', 'data-key': `pw-how-${p.id}`, 'aria-expanded': String(more), title: more ? 'Hide the explanation' : `What ${p.title} does, what it needs, three steps`, onclick: () => app.state.set((x) => ({ pwOpen: Object.assign({}, x.pwOpen, { [p.id]: !more }) })) }, more ? 'Less' : 'How'),
       tryA ? h('button', { class: `btn primary sm ${rd.ok ? '' : 'off'}`, 'data-key': `pw-try-${p.id}`, title: rd.ok ? `${tryA.label} on what you selected` : `${tryA.label} — ${rd.hint}`,
         onclick: () => (rd.ok ? go(tryA) : app.toast(`${tryA.label}: ${rd.hint}`, 4500, 'warn')) }, icon('play', 'sm'), tryA.label) : null,
       open ? h('button', { class: 'btn ghost sm', 'data-key': `pw-open-${p.id}`, title: `Open ${open.label} — every option`, onclick: () => go(open) }, `Open ${open.label}`, icon('chev', 'xs')) : null));
@@ -222,7 +229,7 @@ function stageSection(app, st, kind, skip) {
   return h('section', { class: `b-sec ${f ? 'folded' : ''}`, 'data-key': `bs-${st.id}`, 'aria-label': st.label },
     h('h2', { class: 'b-h' }, h('button', { class: 'b-fold', 'data-key': `fold-${st.id}`, 'aria-expanded': String(!f), title: `${f ? 'Open' : 'Fold'} ${st.label} · Ctrl+${n} jumps here`, onclick: () => toggleFold(app, st.id) },
       icon('chev', 'xs'), icon(st.icon, ''), h('span', {}, st.label), st.fits.includes(kind) ? h('span', { class: 'ae-dot', 'aria-hidden': 'true' }) : null),
-      h('span', { class: 'b-h-n', title: f ? '' : st.title }, f ? `${gs.length} groups folded` : st.title)),
+      h('span', { class: 'b-h-n', title: f ? `${st.title}\nClick the name to open` : st.title }, f ? gs.map((x) => x.group.label).join(' · ') : st.title)),
     f ? null : h('div', { class: 'b-grid' }, core.map(({ tab, group }) => groupTiles(app, tab, group, kind, skip)),
       more.length ? h('button', { class: `b-4 b-more ${mo ? 'on' : ''}`, 'data-key': `more-${st.id}`, 'aria-expanded': String(mo), title: mo ? `Hide the less used groups of ${st.label}` : `Show the less used groups of ${st.label}`, onclick: () => toggleMore(app, st.id) },
         icon('chev', 'xs'), h('span', {}, mo ? `Less in ${st.label}` : `More in ${st.label}`), h('span', { class: 'b-more-n' }, more.map((x) => x.group.label).join(' · '))) : null,

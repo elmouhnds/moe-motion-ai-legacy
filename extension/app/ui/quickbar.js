@@ -40,7 +40,13 @@ function recipeAction(ref) {
   const R = require('./kitRun'); const x = R.byRef(ref);
   return x ? { id: ref, recipe: true, icon: x.kit.icon, label: x.rec.label, group: 'Recipes' } : null;
 }
-const byId = (id) => { if (!id) return null; const m = B.migrate(id); return m.indexOf('recipe:') === 0 ? recipeAction(m) : m.indexOf('tile:') === 0 ? tileAction(m) : ACTIONS.find((a) => a.id === m); };
+/** v0.81: a whole Style Kit on the bar ('kit:<id>') — the button opens its page. */
+function kitAction(ref) {
+  const k = require('./kits').byId(ref.slice(4));
+  return k ? { id: ref, kit: k.id, icon: k.icon, label: k.label, group: 'Kits' } : null;
+}
+const openKit = (app, a) => { app.state.set({ kitId: a.kit }); app.go('kits'); };
+const byId = (id) => { if (!id) return null; const m = B.migrate(id); return m.indexOf('kit:') === 0 ? kitAction(m) : m.indexOf('recipe:') === 0 ? recipeAction(m) : m.indexOf('tile:') === 0 ? tileAction(m) : ACTIONS.find((a) => a.id === m); };
 
 /** The bar's ids (old ids migrated, duplicates and missing ones dropped). */
 function barIds(app) {
@@ -56,6 +62,7 @@ function togglePin(app, id) {
 }
 
 async function run(app, a, e) {
+  if (a.kit) return openKit(app, a);
   if (a.recipe) { const x = require('./kitRun').byRef(a.id, app); return x ? require('./kitRun').runRecipe(app, x.kit, x.rec) : app.toast(`${a.label}: this recipe was removed`, 3500, 'warn'); }
   const tool = app.services.registry.get(a.tool);
   // v0.46: Shift / Alt variants (bar.withMods) — the label says which, so Repeat (F4) repeats the same variant
@@ -75,6 +82,7 @@ function whyFailed(r) {
 }
 
 function openOptions(app, a) {
+  if (a.kit) return openKit(app, a);
   if (a.recipe) { const x = require('./kitRun').byRef(a.id, app); if (x) { app.state.set({ kitId: x.kit.id }); app.go('kits'); } return; } // a recipe's options are its kit page
   const tool = app.services.registry.get(a.tool);
   app.state.set((s) => ({
@@ -89,7 +97,7 @@ function button(app, a, cls = 'qb-btn', slot) {
   // v0.28: the first ten buttons are the Everyday slots — Alt+1…0 runs them (hold Alt to see the numbers)
   const key = slot != null && slot < 10 ? String((slot + 1) % 10) : null;
   return h('button', {
-    class: cls, title: `${a.label}${key ? ` · Alt+${key}` : ''}${a.mods ? `\n${require('../../features/quick/bar').modsHint(a)}` : ''}\nRight-click: ${a.recipe ? 'its kit' : 'options'}`, 'aria-label': a.label, disabled: !!s.running, 'data-slot': key || undefined,
+    class: cls, title: `${a.label}${key ? ` · Alt+${key}` : ''}${a.mods ? `\n${require('../../features/quick/bar').modsHint(a)}` : ''}\nRight-click: ${a.recipe || a.kit ? 'its kit' : 'options'}`, 'aria-label': a.label, disabled: !!s.running, 'data-slot': key || undefined,
     // Alt-click opens the options — except on a button whose Alt is a variant (Select: Alt removes); right-click always does
     onclick: (e) => (e.altKey && !a.mods ? openOptions(app, a) : run(app, a, e)),
     oncontextmenu: (e) => { e.preventDefault(); openOptions(app, a); }
@@ -179,6 +187,11 @@ function view(app) {
       h('div', { class: 'section-h' }, g),
       h('div', { class: 'qt-grid rows pad' }, ACTIONS.filter((a) => a.group === g).map((a) => pinTile(app, a, pinned)))
     ]),
+    // v0.81 (LAYOUT_PLAN.md, idea 23): the bar is your own Home — it also takes whole Style Kits and recipes
+    h('div', { class: 'section-h' }, 'Style Kits'),
+    h('div', { class: 'qt-grid rows pad' }, require('./kits').KITS.map((k) => pinTile(app, kitAction(`kit:${k.id}`), pinned, 'kit'))),
+    h('div', { class: 'section-h' }, 'Recipes'),
+    h('div', { class: 'qt-grid rows pad' }, require('./kitRun').allRefs(app).map((r) => [byId(r.ref), r.kit]).filter(([a]) => a).map(([a, kit]) => pinTile(app, a, pinned, kit))),
     // v0.29: presets live in their library; the bar holds the tile itself (one source, no copies here)
     h('div', { class: 'section-h' }, 'Presets on your bar'),
     (() => {

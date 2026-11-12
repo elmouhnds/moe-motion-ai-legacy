@@ -2,6 +2,18 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.81.0] — 2026-11-12 — A shorter Home, a fuller Control
+### Changed (owner picked ideas 10 · 23)
+- **Bento Home**: 5 070 px → 1 002 px at 740 px wide (5 391 → 1 078 at 420). A stage starts as one row naming its groups (`FOLDED_BY_DEFAULT`; your own folds and opens are kept and win); a Power card is its name, *When* and its buttons — *How* opens what / needs / steps.
+- **Motion Control with keys** (Bento, Control): anchor + align wait behind **Anchor · Align** (`layoutAE.placeToggle`, remembered); `controlShows` follows it so the NOW actions still offer what is hidden. MOE (its Layer tab) and Glass are unchanged.
+- **Control**: a **key jobs** row for selected keys (Stagger, Reverse, Mirror, Retime, Copy motion, Paste motion — the Quick actions of Timing › Keyframes & Loops, run now, not in the Mix); Libraries wrap into rows; the first page is **Animate** (was Move).
+- **One set of names**: the stages are Animate · Layer · Design · Look · Deliver, like MOE's tabs (were Arrange / Finish).
+- **Bento libraries** start with their tiles: the one-line title, the banner only from ⓘ.
+- **Your own Home is the Quick Bar** (idea 23): it takes whole Style Kits (`kit:<id>`, Shift-click a kit card) besides tools, presets and recipes; Quick Bar's page lists Style Kits and Recipes with ★.
+### Not changed, on purpose
+- **Glass**: it keeps Arrange / Finish and its full Motion Control until the owner approves the before / after screenshots.
+- The Quick Bar still shows icons in one run (group captions were not added); no new size audit tool.
+
 ## [0.80.0] — 2026-11-12 — Scene Check
 ### Added (owner picked ideas 5 · 18 · 19 · 20; 21 was already in Deliver)
 - **Scene Check** page (Deliver › Scene Check, every style; `views/scene.js`, pure `features/scene/plan.js`).

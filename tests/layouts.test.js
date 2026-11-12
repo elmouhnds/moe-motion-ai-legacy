@@ -144,7 +144,9 @@ test('style proposals (v0.24): every group has one place in Glass and Bento; ids
   const B = require('../extension/app/ui/layoutBento');
   // Glass (v0.28): the spaces are the five workflow stages, which place every Classic group exactly once
   const W = require('../extension/app/ui/workflow');
-  assert.deepEqual(G.SPACES.map((sp) => sp.label), W.STAGES.map((st) => st.label));
+  // v0.81: the stages use MOE's words (Layer, Look); Glass keeps Arrange / Finish until the owner approves the screenshots
+  assert.deepEqual(G.SPACES.map((sp) => sp.label), ['Animate', 'Arrange', 'Design', 'Finish', 'Deliver']);
+  assert.deepEqual(G.SPACES.map((sp) => sp.stage.id), W.STAGES.map((st) => st.id));
   const covered = W.STAGES.flatMap((st) => st.groups.map(([t, g]) => `${t}/${g}`));
   assert.deepEqual([...covered].sort(), AE.TABS.flatMap((t) => t.groups.map((g) => `${t.id}/${g.id}`)).sort());
   assert.equal(new Set(covered).size, covered.length);
