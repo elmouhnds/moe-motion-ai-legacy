@@ -22,7 +22,8 @@ test('no Quick action is a copy of a library tile or of another Quick action', (
     assert.equal(other, undefined, `${a.id} duplicates ${other && other.id}`);
   }
   // v0.44 (FIND_FAST): + 16 Select filters and 9 text animators — each a distinct call (checked above), not a copy
-  assert.ok(qb.ACTIONS.length <= 70, `Quick actions: ${qb.ACTIONS.length} (were 80 in v0.28, 45 after v0.29 + 25 in v0.44)`);
+  // v0.79 (owner picked Retime, Copy Motion, Paste Motion): three new tools, each its own call
+  assert.ok(qb.ACTIONS.length <= 73, `Quick actions: ${qb.ACTIONS.length} (were 80 in v0.28, 45 after v0.29 + 25 in v0.44 + 3 in v0.79)`);
 });
 
 test('old ids keep working: saved bars, pins, pie and recent refs migrate to the tile (or the kept action)', () => {

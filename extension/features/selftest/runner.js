@@ -53,8 +53,30 @@ const CHECKS = [
   // v0.64 (WAVE4.md): Exploder's Wiggly Selector settings are found by their English names in this After Effects
   { id: 'exploder', label: 'Explode: the Wiggly Selector and its 7 settings, found by name', run: checkExploder },
   // v0.67 (SMART_LAYER.md): layer markers are written and read by After Effects, and marker expressions follow them
-  { id: 'markers', label: 'Markers: written and counted by After Effects; Marker In / Out follows them', run: checkMarkers }
+  { id: 'markers', label: 'Markers: written and counted by After Effects; Marker In / Out follows them', run: checkMarkers },
+  // v0.79 (TUNE_AFTER.md): a snapshot stretched to half its length is rebuilt by After Effects with the same influence
+  { id: 'retime', label: 'Retime: keys at half the length, on frames, the ease kept; rebuilt back exactly', run: checkRetime }
 ];
+
+/** v0.79: keys.snapshot → plan.scale → keys.rebuild, read back by After Effects; then the original rebuilt and compared. */
+async function checkRetime(T) {
+  const P = require('../retune/plan');
+  const [id] = await T.nulls([[300, 300]], 'ST Retime');
+  const address = { layerId: id, matchNames: ['ADBE Transform Group', 'ADBE Rotate Z'] };
+  await T.host.call('keys.write', { compId: T.compId, label: 'MOE: Self-Test Retime', items: [{ address, keys: [{ t: 0.4, v: 0 }, { t: 1.4, v: 90 }] }] });
+  const fd = T.comp.frameDuration || (1 / (T.comp.frameRate || 25));
+  const a = (await T.host.call('keys.snapshot', { compId: T.compId, items: [{ address }] })).items[0].snapshot;
+  const sc = P.scale(a, 0.5, a[0].t, fd);
+  await T.host.call('keys.rebuild', { compId: T.compId, items: [{ address, snapshot: sc.snapshot }] });
+  const b = (await T.host.call('keys.snapshot', { compId: T.compId, items: [{ address }] })).items[0].snapshot;
+  await T.host.call('keys.rebuild', { compId: T.compId, items: [{ address, snapshot: a }] });
+  const c = (await T.host.call('keys.snapshot', { compId: T.compId, items: [{ address }] })).items[0].snapshot;
+  const span = (k) => k[k.length - 1].t - k[0].t;
+  const infl = (k) => (k[0].eo && k[0].eo[0] ? k[0].eo[0].influence : NaN);
+  const onFrames = b.every((k) => Math.abs(k.t / fd - Math.round(k.t / fd)) < 1e-3);
+  const ok = b.length === 2 && Math.abs(span(b) - span(a) / 2) <= fd && onFrames && Math.abs(infl(b) - infl(a)) < 0.5 && c.length === 2 && Math.abs(span(c) - span(a)) < 1e-3 && Math.abs(c[0].t - a[0].t) < 1e-3;
+  return { ok, detail: `length ${+span(a).toFixed(3)} s → ${+span(b).toFixed(3)} s (want ${+(span(a) / 2).toFixed(3)}), on frames ${onFrames ? 'yes' : 'NO'}; out influence ${+infl(a).toFixed(1)} % → ${+infl(b).toFixed(1)} %; rebuilt back to ${+span(c).toFixed(3)} s at ${+c[0].t.toFixed(3)} s` };
+}
 
 /** v0.67: markers.add / markers.remove counted by After Effects itself, and the Marker In / Out expression read back. */
 async function checkMarkers(T) {
@@ -504,6 +526,8 @@ async function runSelfTest(services, opts = {}) {
       const s = Date.now();
       let out;
       try { out = await c.run(T); } catch (e) { out = { status: 'fail', detail: String(e.message || e).slice(0, 400) }; }
+      // v0.79: a check that answers { ok } (Markers did since v0.67) counts as pass / fail — it used to show no status
+      if (out && out.status === undefined) out = Object.assign({ status: out.ok ? 'pass' : 'fail' }, out);
       report.checks.push(Object.assign({ id: c.id, label: c.label, ms: Date.now() - s }, out));
     }
   } finally {

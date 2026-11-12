@@ -39,6 +39,10 @@ const ACTIONS = [
   A('reverse', 'quick.reverseKeys', {}, 'reverse', 'Reverse Keyframes', 'Keys'),
   A('mirror', 'quick.mirrorKeys', { mode: 'mirror' }, 'mirror', 'Mirror Keys at Playhead', 'Keys'),
   A('clone', 'quick.mirrorKeys', { mode: 'clone' }, 'copy', 'Copy Keys at Playhead', 'Keys'),
+  // v0.79 Tune After (docs/features/TUNE_AFTER.md)
+  A('k_retime', 'motion.retime', { percent: 75 }, 'clock', 'Retime Keys (faster)', 'Keys'),
+  A('k_copyMotion', 'motion.copyMotion', {}, 'easeCopy', 'Copy Motion', 'Keys'),
+  A('k_pasteMotion', 'motion.pasteMotion', {}, 'kPaste', 'Paste Motion', 'Keys'),
 
 
   // v0.9 Anchor & Align (Motion-4-style one-clickers)

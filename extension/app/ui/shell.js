@@ -244,6 +244,7 @@ function createApp(root, services, env = {}) {
         p.header,
         p.hideCtx ? null : contextStrip(s), // v0.71: Control's home shows the comp in its own head
         p.top,
+        require('./retune').strip(app, s), // v0.79: tune what just ran — numbers, variations
         require('./kitRun').focusStrip(app, s), // v0.76: the kit you are working in — its next step, on every style's Home
         h('div', { class: 'content' }, p.content),
         p.bottom || null,
@@ -363,6 +364,7 @@ function createApp(root, services, env = {}) {
   app.runTool = async (toolId, args, { resultKey, label } = {}) => {
     const key = resultKey || toolId;
     app.lastStart = { toolId, at: Date.now() }; // v0.44: what the user just started (gridPanel's one-time scroll)
+    const selBefore = ((app.state.get().ctx || {}).layers || []).map((l) => l.id);
     app.state.set({ running: toolId });
     try {
       let r = await services.executor.run(toolId, args, { origin: 'user' });
@@ -377,6 +379,7 @@ function createApp(root, services, env = {}) {
       if ((r.status === 'success' || r.status === 'partial') && repeatable(services.registry.get(toolId))) {
         app.state.set({ last: { toolId, args: JSON.parse(JSON.stringify(args || {})), label: label || services.registry.get(toolId).name, at: Date.now() } });
       }
+      require('./retune').remember(app, toolId, args, label, r, selBefore); // v0.79: the numbers stay within reach after a run
       if (r.status === 'success' && r.summary && r.checkpointId) app.toast(r.summary, 2600, 'ok');
       if (r.status === 'stopped') app.toast(r.summary, 5200, 'warn'); // v0.63: says what is left and how to remove it
       return r;

@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.78: recipes are checked before they run, go on the Quick Bar and pie, and export / import."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.78: الـ Recipes بتتفحص قبل التشغيل، وبتتحط على الـ Quick Bar والـ pie، وبتتصدّر وتتستورد"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.79: tune a result after applying it, Variations, Copy / Paste Motion, Retime keys."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.79: عدّل النتيجة بعد التطبيق، Variations، نسخ ولصق الحركة كاملة، وRetime للمفاتيح"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

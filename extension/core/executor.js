@@ -176,12 +176,13 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
   }
 
   async function restore(checkpointId) {
+    if (running) return { ok: false, errors: ['Another operation is still running'] };
     const cp = checkpoints.find((x) => x.id === checkpointId);
     if (!cp) return { ok: false, errors: ['Checkpoint not found'] };
     if (cp.restored) return { ok: false, errors: ['Checkpoint already restored'] };
     const tool = registry.get(cp.toolId);
     if (!tool || !tool.restore) return { ok: false, errors: ['This tool cannot restore checkpoints'] };
-    const tx = await openTx(`MOE: Restore ${tool.name}`);
+    const tx = !outerTx && (await openTx(`MOE: Restore ${tool.name}`)); // v0.79: inside a batch (Tune) the batch's group holds it
     try {
       const res = await tool.restore({ data: cp.data, host });
       if (tx) await closeTx();

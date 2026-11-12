@@ -115,6 +115,12 @@ Permanent rules for anyone (human or AI) working in this repository.
 - **Smart Kits (v0.76, docs/features/SMART_KITS.md)**: interface ideas may be NEW ones, not only a rearrangement of what exists (owner) — but still made of registered tools. A recipe is 2–4 of its kit's own refs run in order through `kitRun.runRecipe` (readiness before every step, one `executor.batch`, stops honestly); never a combined host call, never a tool the kit does not list. Kits are `look` or `technique`. Progress is session memory (never presented as what the comp holds). The *Working in* strip is opt-in, on Home only. A user's own recipe (v0.77) obeys the same rules through `kits.makeRecipe` (2–4 of the kit's own runnable refs, a unique name) and is never offered when one of its tools no longer resolves; removing one asks first. Since v0.78 a recipe is prechecked (`kitRun.precheck`) and never starts with a step that `needs` something; a tool whose result the next steps act on must be in `PRODUCERS`. A recipe anywhere else is the ref `recipe:<kit>/<id>` — never a copy of its steps. Imported recipes are untrusted data (`importMine`).
 - A brand's motion identity is its own Ease Out / Ease In (`profile.motion.ease`); Brand ease applies it through `motion.smartEase`.
 
+## Tune After (v0.79, docs/features/TUNE_AFTER.md)
+- A result is tuned by restoring ITS checkpoint and running the same tool again, inside one `executor.batch` — never by editing what the tool wrote, never a write while dragging. The strip (`app/ui/retune.js`) belongs to the selection the run was made on and is forgotten after a write it cannot tune.
+- Variations and tunable numbers come only from the tool's own `params` (`retune/plan.js`); a variation must validate against the schema (tested).
+- Retime / Paste Motion rebuild a key snapshot (`keys.snapshot` → `keys.rebuild`) because a snapshot carries spatial tangents and per-key interpolation `keys.write` cannot — the times are snapped by `core/framegrid` in `plan.js`. Position is pasted as a move (offset to the target), never as a place; a clip is untrusted text (`parseClip`: Transform properties only).
+- A Self-Test check may answer `{ ok, detail }`; the runner turns it into pass / fail.
+
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).
 - Tests run the **real host .jsx** against `tests/mock/ae-mock.js`. That proves logic, not host behaviour. Never describe mock results as After Effects results.

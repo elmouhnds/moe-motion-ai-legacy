@@ -28,6 +28,8 @@ test('every check runs in its own comp and passes on the mock; the comp is remov
   assert.equal(bad.length, 0, `failed: ${bad.map((c) => `${c.id}: ${c.detail}`).join(' | ')}`);
   assert.deepEqual(seen, CHECKS.map((c) => c.id), 'every check ran, in order');
   assert.ok(report.checks.every((c) => typeof c.ms === 'number' && c.detail), 'each has a time and a detail');
+  assert.ok(report.checks.every((c) => ['pass', 'fail', 'info', 'skip'].includes(c.status)), 'each has a status (v0.79: Markers and Retime answered { ok } only)');
+  assert.equal(report.checks.length, report.totals.pass + report.totals.fail + report.totals.info + report.totals.skip, 'the totals count every check');
   assert.match(String(report.cleanup.removed), /^MOE Self-Test /, 'the test comp was removed');
   assert.equal(report.cleanup.reopened, true);
   assert.equal(comp._project.activeItem, comp, 'your comp is active again');

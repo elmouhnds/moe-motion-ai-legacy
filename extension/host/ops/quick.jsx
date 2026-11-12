@@ -9,7 +9,7 @@
  *   layers.precompose    LayerCollection.precompose
  *   position.separate    Separate Dimensions keeping each key's temporal influence; speeds split by direction
  *   props.select         select properties by matchName path on layers
- *   keys.snapshot / keys.rebuild / keys.reverse / keys.mirror
+ *   keys.snapshot (read) / keys.rebuild / keys.reverse / keys.mirror
  *   shapes.trim          add (or reuse) a "MOE Trim" Trim Paths operator on a shape layer
  */
 (function (G) {
@@ -298,6 +298,40 @@
                 }
                 return { items: out };
             });
+        }
+    };
+
+    /* v0.79 (docs/features/TUNE_AFTER.md) - read-only: keys exactly as keys.rebuild writes them.
+       args: { compId, items: [{ address }] }             -> { items: [{ address, name, layerName, snapshot, expression }] }
+       args: { compId, layerIds: [id], group: 'transform' } -> the same for every Transform property of those layers
+                                                              that has keys or an expression (Copy Motion). */
+    ops['keys.snapshot'] = {
+        mutates: false,
+        run: function (args) {
+            var comp = U.compById(args.compId), out = [], i, j, r, p, L, tg, ex;
+            function one(prop, layer) {
+                ex = '';
+                try { if (prop.canSetExpression && prop.expressionEnabled) { ex = prop.expression || ''; } } catch (eX) { ex = ''; }
+                return { address: U.addressOf(prop, layer), name: prop.name, matchName: prop.matchName, layerName: layer.name, isSpatial: !!prop.isSpatial,
+                    snapshot: keyable(prop) ? snapKeys(prop) : [], expression: ex, value: keyable(prop) ? ser(prop.value) : null };
+            }
+            if (args.items) {
+                for (i = 0; i < args.items.length; i++) { r = U.resolveProperty(comp, args.items[i].address); out.push(one(r.prop, r.layer)); }
+                return { items: out };
+            }
+            for (i = 0; i < args.layerIds.length; i++) {
+                L = U.findLayer(comp, { layerId: args.layerIds[i] });
+                tg = L.property('ADBE Transform Group');
+                if (!tg) { continue; }
+                for (j = 1; j <= tg.numProperties; j++) {
+                    p = tg.property(j);
+                    try { if (!p.canVaryOverTime) { continue; } } catch (eV) { continue; }
+                    ex = '';
+                    try { if (p.canSetExpression && p.expressionEnabled) { ex = p.expression || ''; } } catch (eY) { ex = ''; }
+                    if (p.numKeys > 0 || ex !== '') { out.push(one(p, L)); }
+                }
+            }
+            return { items: out };
         }
     };
 

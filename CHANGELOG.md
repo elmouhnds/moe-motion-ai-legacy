@@ -2,6 +2,19 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.79.0] — 2026-11-12 — Tune after you apply
+### Added (owner picked ideas 12 · 13 · 14 · 15 · 16)
+- **Tune strip** (`app/ui/retune.js`): after a run, its numbers stay under the header — a change restores that run's checkpoint and runs the tool again inside ONE undo group (`executor.batch`; `restore` now joins an open batch). Only for the selection the run was made on; a later write that cannot be tuned forgets it.
+- **Variations**: up to four takes from the tool's own parameters (`retune/plan.variations`: calmer, faster, overshoot, other side) with the tool's real preview.
+- **Stagger by drag**: the strip draws the offsets live while the number is dragged; one commit on release.
+- **Retime Keys** (`motion.retime`): the selected keyed properties stretched in time around the first key — frames kept, influence kept, speed ÷ factor; read back; Restore exact.
+- **Copy Motion / Paste Motion** (`motion.copyMotion`, `motion.pasteMotion`): a layer's Transform keys with ease, paths and expressions; pasted at the playhead; Position is offset so each layer stays where it is; other dimensions are skipped and said.
+- Host: `keys.snapshot` (read-only). Self-Test: a **Retime** check.
+### Fixed
+- Self-Test: a check that answered `{ ok }` (Markers, since v0.67) had no status and was missing from the totals — it now counts as pass / fail.
+### Honest notes
+- Mock + browser preview only. Run Diagnostics › Self-Test: the new Retime check asks After Effects itself.
+
 ## [0.78.0] — 2026-11-12 — Recipes: checked first, everywhere, shareable
 ### Added (owner picked ideas 8, 4, 7)
 - **Precheck** (`kitRun.precheck`): every step is judged against the selection before the first one runs — `ready`, `needs` (the tool's own hint) or `after` (it acts on what an earlier step makes: `PRODUCERS`). A recipe with a `needs` step does not start (no undo group opened); its card shows the need.

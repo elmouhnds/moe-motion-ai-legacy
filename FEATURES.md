@@ -4,6 +4,8 @@
 
 **Brand from website / PDF** (v0.25.0): Brand › From website / PDF — colours with roles, fonts matched to installed fonts, gradients, tone, motion feel, rules; review then save (docs/features/BRAND_IMPORT.md).
 
+**Tune after you apply** (v0.79.0): the last result's numbers stay within reach (drag = replace, one Ctrl+Z), Variations with real previews, Stagger by drag, Retime Keys, Copy / Paste Motion.
+
 **Recipes everywhere** (v0.78.0): a recipe is checked before it starts and says what it needs; it can sit on the Quick Bar and the pie and is in Ctrl+K; your recipes export and import.
 
 **Your own recipes** (v0.77.0): build a recipe by clicking a kit's tools, name it, run it in one click; Beat Sync and Living Loops technique kits; kit cards show what is ready for the selection.

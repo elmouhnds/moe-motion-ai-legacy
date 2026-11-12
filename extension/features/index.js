@@ -41,6 +41,7 @@ const kit = require('./kit/tools');
 const reader = require('./kit/reader');
 const markers = require('./markers/tools');
 const { delay } = require('./kit/delay');
+const retune = require('./retune/tools'); // v0.79 Tune After: retime, copy / paste motion
 
 const TOOLS = [
   smartEase, stagger, proximity.apply, proximity.centerAnchor, proximity.remove,
@@ -58,7 +59,8 @@ const TOOLS = [
   green.greenPrompt, green.importKey,
   design.insertShape, design.background, design.colorize, template, style,
   curves.easeCurve, curves.pasteEase, transform.anchor, transform.align, transform.clone,
-  kit.interp, kit.trimToKeys, kit.parent, kit.stare, kit.vignette, kit.trash, reader.removeRig, markers.beatMarkers, delay
+  kit.interp, kit.trimToKeys, kit.parent, kit.stare, kit.vignette, kit.trash, reader.removeRig, markers.beatMarkers, delay,
+  retune.retime, retune.copyMotion, retune.pasteMotion
 ];
 
 function registerAll(registry) {

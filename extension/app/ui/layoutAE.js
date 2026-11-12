@@ -49,9 +49,9 @@ const TABS = [
   { id: 'ae-keys', label: 'Timing', icon: 'easeCurve', full: true, title: 'Timing: the full graph (ease, curves, Copy / Paste), keyframes, loops, bake (Animation › Keyframe Assistant)', fits: ['keys'], owns: [],
     groups: [
       { id: 'assist', label: 'Keyframes & Loops', kind: 'acts', fits: ['keys'], open: true, hero: ['quick:k_stagger'], minor: ['quick:k_trimKeys', 'quick:selectSame', 'quick:k_bake'],
-        refs: ['quick:k_stagger', 'quick:reverse', 'quick:mirror', 'quick:clone', 'quick:k_beats', 'quick:k_trimKeys', 'quick:selectSame', 'quick:k_bake'],
+        refs: ['quick:k_stagger', 'quick:reverse', 'quick:mirror', 'quick:clone', 'quick:k_copyMotion', 'quick:k_pasteMotion', 'quick:k_retime', 'quick:k_beats', 'quick:k_trimKeys', 'quick:selectSame', 'quick:k_bake'],
         // v0.43: Reverse / Mirror / Clone are one family — one labelled row, like Loop
-        rows: [['Keys', ['quick:reverse', 'quick:mirror', 'quick:clone'], ['Reverse', 'Mirror', 'Copy']], ['Loop', ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'], ['Cycle', 'Ping-Pong', 'Offset', 'In + Out']]] }
+        rows: [['Keys', ['quick:reverse', 'quick:mirror', 'quick:clone'], ['Reverse', 'Mirror', 'Copy']], ['Motion', ['quick:k_copyMotion', 'quick:k_pasteMotion', 'quick:k_retime'], ['Copy', 'Paste', 'Retime']], ['Loop', ['tile:expressions/x-loopCycle', 'tile:expressions/x-loopPingPong', 'tile:expressions/x-loopOffset', 'tile:expressions/x-loopInOut'], ['Cycle', 'Ping-Pong', 'Offset', 'In + Out']]] }
     ] },
   { id: 'ae-layer', label: 'Layer', icon: 'layers', bar: ['rail'], title: 'Select, transform, parent & link, arrange (Layer menu) — anchor and align are in Motion Control', fits: ['layer', 'layers', 'shapes', 'shapesMany', 'text'], owns: ['layout', 'select'],
     groups: [
