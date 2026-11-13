@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.96 — Remove / Freeze Effector ✅ (v0.90.0)
+- React 3 study item 5 of 8; item 6 was already in MOE. Left: Tracer (7) · an effector on any property (8).
+
 ## M1.95 — Falloff curve + move modes ✅ (v0.89.0)
 - React 3 study items 3 and 4 of 8. Next: remove one effector with bake choices · honeycomb + radial start / end · Tracer · an effector on any property.
 

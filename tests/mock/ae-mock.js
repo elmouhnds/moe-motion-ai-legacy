@@ -292,9 +292,19 @@ class MockProperty {
     k.easeIn = inEase.map((e) => ({ speed: e.speed, influence: e.influence }));
     k.easeOut = out.map((e) => ({ speed: e.speed, influence: e.influence }));
   }
-  get value() { return clone(this._value); }
+  get value() {
+    // A layer parameter points at a LAYER, not at a number: After Effects shows the layer's current index and follows it
+    // when layers are added, removed or reordered (0 = None once its layer is gone). v0.90: the mock kept the raw index,
+    // so a second effector added on top silently re-pointed the first slot.
+    if (this.propertyValueType === PropertyValueType.LAYER_INDEX && this._ref !== undefined) {
+      const layers = this._layer()._comp._layers, i = this._ref ? layers.indexOf(this._ref) : -1;
+      return i < 0 ? 0 : i + 1;
+    }
+    return clone(this._value);
+  }
   setValue(v) {
     if (this.propertyValueType === PropertyValueType.COLOR && (!Array.isArray(v) || v.length !== 4)) throw new Error('After Effects error: color value must have 4 components');
+    if (this.propertyValueType === PropertyValueType.LAYER_INDEX) { const layers = this._layer()._comp._layers; this._ref = v >= 1 && v <= layers.length ? layers[v - 1] : null; }
     this._value = clone(v);
   }
   setValueAtTime(t, v) {

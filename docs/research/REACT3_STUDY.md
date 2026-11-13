@@ -35,7 +35,7 @@ Everything else is in Effect Controls.
 | | React 3 | MOE |
 |---|---|---|
 | Layouts | Grid, Radial, Sphere, Path | the same + Spiral, Sunflower, Points, In Place |
-| Honeycomb, radial start / end | yes | no |
+| Honeycomb, radial start / end | yes | yes — *Row Offset* (the Honeycomb tile = 50 %), *Start Angle* + *Arc* (the Fan tile). Corrected 2026-11-13: the first version of this table said no |
 | Blend between layouts | chain + Influence per repeater | `placeMorph` between two layouts |
 | What an effector drives | any keyframeable property, one per effector | fixed set in one effector: Move, Scale, Rotate, Fade, Colour |
 | Position modes | Relative / Absolute / Attract-Repel | relative only |
@@ -62,7 +62,7 @@ Everything else is in Effect Controls.
 3. Falloff easing (In / Out / Invert).
 4. Attract / Repel and Absolute position.
 5. Remove one effector with the three bake choices (Bake and Trash exist).
-6. Honeycomb + radial start / end.
+6. ~~Honeycomb + radial start / end~~ — already in MOE (see the table).
 7. Tracer.
 8. An effector on any keyframeable property — the largest change; last.
 

@@ -122,6 +122,11 @@ Permanent rules for anyone (human or AI) working in this repository.
 - Quick expressions: `live` defaults to true; a preset's sliders are exactly its own `nums`.
 - Wave, Snap To, Clamp (v0.88, docs/features/WAVE_SNAP_CLAMP.md): `effectors.WAVES` is append-only like `TYPES`; a per-item amount goes in `amounts()` + `TQ` together; anything applied to an effector's finished terms goes in `modify()` and after the spring block of the expression — snap first, then clamp; 0 must mean off and return the terms untouched. Falloff Curve / Move Mode (v0.89, docs/features/FALLOFF_MOVE_MODES.md): `CURVES` and `MOVE_MODES` are append-only menus; the edge curve lives in `edge()` and is used by `weight`, `TQ` and `colourCode` together; a move that depends on where the effector is goes in `termsAt` (needs `src.originAt`) and is measured in the grid null's space in the expression (`G.fromComp`). `expressions.VERSION` is bumped whenever the item expression reads something new (`isCurrent` decides the rewrite).
 
+## Remove / Freeze Effector (v0.90, docs/features/EFFECTOR_REMOVE_FREEZE.md)
+- One verb per tool: Remove (unlink + delete the null, `recovery: 'undo'`), Freeze (keys off, the playhead's values stay, restorable), Bake (the items become keys — `rig.bake`, never a second copy). They act on the selected `MOE Effector N` null, never on the grid.
+- Read every value before the first write (Freeze reads all, then removes keys, then sets values).
+- The test mock's Layer Control follows its layer like After Effects — never compare a slot with a remembered index after layers changed; read it again.
+
 ## Tune After (v0.79, docs/features/TUNE_AFTER.md)
 - A result is tuned by restoring ITS checkpoint and running the same tool again, inside one `executor.batch` — never by editing what the tool wrote, never a write while dragging. The strip (`app/ui/retune.js`) belongs to the selection the run was made on and is forgotten after a write it cannot tune.
 - Variations and tunable numbers come only from the tool's own `params` (`retune/plan.js`); a variation must validate against the schema (tested).

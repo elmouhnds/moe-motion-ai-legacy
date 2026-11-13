@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.90.0] — 2026-11-13 — Remove Effector, Freeze Effector (5 of 8 from the React 3 study)
+- **Remove Effector**: takes one effector away without disturbing the others — unlinked from its grid, its null deleted; the items go back to where the grid and the remaining effectors put them. After Effects' Undo brings it back.
+- **Freeze Effector**: keeps what an effector does at this frame — its keyframes (null + controls) are removed and the values at the playhead stay; it stays linked and editable. Restore brings every key back.
+- Both are tiles in Layout › Effectors and act on the selected effector null, never on the grid.
+- Item 6 of the study (honeycomb, radial start / end) needed no work: MOE already has Row Offset (Honeycomb tile) and Start Angle + Arc (Fan tile). The study's table was wrong there and is corrected.
+- Test mock: a Layer Control now follows its layer like After Effects does (it kept a raw index, which hid how two effectors on one grid behave).
+
 ## [0.89.0] — 2026-11-13 — Falloff curve, Attract / Repel, Absolute (3 and 4 of 8 from the React 3 study)
 - **Falloff curve**: the soft edge of a Sphere, Box or Linear falloff can be Smooth (as before), Linear, Ease in or Ease out. Clone Colours follow the same edge.
 - **Move mode**: *Attract / Repel* — Move X px toward the effector null, never past it, negative pushes away. *Absolute* — the items go to the null (+ Move X / Y), fully where the weight is 1.

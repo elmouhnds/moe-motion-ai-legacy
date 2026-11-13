@@ -143,6 +143,9 @@ const LAYOUT = [
   T('efGather', 'Gather', 'grid.effector', { type: 'plain', falloff: 'sphere', moveMode: 'absolute', scale: 0, softness: 70, falloffCurve: 'easeIn', sweep: true }, { k: 'eff', type: 'plain', falloff: 'sphere', moveMode: 'absolute', softness: 70, falloffCurve: 'easeIn' }, ['Effectors']),
   // v0.87 Controls on demand: an effector arrives with the sliders it uses — this adds the rest (features/grid/effectorControls.js)
   T('efControls', 'More Sliders', 'grid.effectorControls', { group: 'all' }, { k: 'icon', icon: 'sliders' }, ['Effectors']),
+  // v0.90 (React 3 study): take one effector away, or keep what it does at this frame (features/grid/effectorRemove.js)
+  T('efFreeze', 'Freeze Effector', 'grid.effectorFreeze', {}, { k: 'icon', icon: 'lock' }, ['Effectors']),
+  T('efRemove', 'Remove Effector', 'grid.effectorRemove', {}, { k: 'icon', icon: 'trash' }, ['Effectors']),
   T('g12', '12 Columns', 'grid.guides', { columns: 12, rows: 1, gutterX: 24, marginX: 96, marginY: 72 }, { k: 'guides', c: 12, r: 1 }, ['Guides']),
   T('thirds', 'Thirds', 'grid.guides', { columns: 3, rows: 3, gutterX: 0, gutterY: 0, marginX: 0, marginY: 0 }, { k: 'guides', c: 3, r: 3 }, ['Guides']),
   // v0.53 guide presets (features/grid/guidePresets.js): composition lines, broadcast safe, social safe zones, clear

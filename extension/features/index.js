@@ -19,6 +19,7 @@ const adapt = require('./adapt/tools');
 const grid = require('./grid/tools');
 const gridEffector = require('./grid/effectorTool');
 const gridEffectorControls = require('./grid/effectorControls');
+const gridEffectorRemove = require('./grid/effectorRemove');
 const gridColour = require('./grid/colourTool');
 const gridTrail = require('./grid/trailTool');
 const rigBake = require('./bake/bake');
@@ -51,7 +52,7 @@ const TOOLS = [
   text.animate, text.removeAnimation,
   brand.applyColor, brand.applyFont, brand.extractPalette, brandSource.fromSource, brandAll.applyAll,
   select.selectLayers, select.selectStep,
-  grid.build, grid.update, grid.items, grid.remove, grid.guides, grid.guidePreset, grid.placeInCells, gridEffector.effector, gridEffectorControls.controls, gridColour.colour, gridTrail.trail, rigBake.bake,
+  grid.build, grid.update, grid.items, grid.remove, grid.guides, grid.guidePreset, grid.placeInCells, gridEffector.effector, gridEffectorControls.controls, gridEffectorRemove.remove, gridEffectorRemove.freeze, gridColour.colour, gridTrail.trail, rigBake.bake,
   adapt.resize, adapt.suggest,
   exprQuick.quick, expr.apply, expr.validate, expr.inspect, expr.remove, assist,
   quick.reveal, quick.purge, quick.duplicate, quick.flip, quick.parentNull, quick.precompose, quick.separate,

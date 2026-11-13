@@ -250,4 +250,4 @@ const effector = {
   summarize(result, v) { return v.ok ? `${result.name} on ${result.grid.name} (${result.items} items)` : 'Effector added with problems'; }
 };
 
-module.exports = { effector, controlItems, nextName };
+module.exports = { effector, controlItems, nextName, slotItem, ctlAddr };

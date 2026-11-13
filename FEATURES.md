@@ -100,6 +100,8 @@
 
 **Target & Audio Effectors** (v0.36.0): Target turns the clones to face the effector null; Audio drives every move from a soundtrack's loudness (After Effects' Convert Audio to Keyframes, run for you), each clone a little later — tiles Aim, Look Near, Beat Pulse, Beat Wave (docs/features/TARGET_AUDIO_EFFECTORS.md).
 
+**Remove / Freeze Effector** (v0.90.0): take one effector off a grid without touching the others, or keep what it does at this frame (keys removed, values held, restorable). Mock-tested, not yet run in After Effects.
+
 **Falloff curve + Attract / Repel / Absolute** (v0.89.0): choose how an effector's soft edge fades (smooth, linear, ease in, ease out); pull the clones toward the effector null, push them away, or send them to it. Mock-tested, not yet run in After Effects.
 
 **Wave, Snap To, Clamp** (v0.88.0): a Wave effector (sine, triangle, ramp, square) that runs through the clones in order; Snap To rounds moves / rotation / scale to a step; Clamp limits them, spring overshoot included. Mock-tested, not yet run in After Effects.
