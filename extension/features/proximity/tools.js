@@ -9,8 +9,9 @@ for (const [k, f] of Object.entries(X.FEATURES)) {
   FEATURE_PARAMS[k] = { type: 'boolean', label: f.label, default: k === 'scaleUp', grid: true, description: f.threeD ? '3D layers only' : '' };
 }
 
-function controlsSpec(radius) {
-  return X.CONTROLS.map(([name, matchName, param, def]) => ({
+function controlsSpec(radius, names) {
+  const only = names ? new Set(names) : null;
+  return X.CONTROLS.filter(([name]) => !only || only.has(name)).map(([name, matchName, param, def]) => ({
     key: name, matchName, before: [],
     params: [{ id: name, value: name === 'Proximity Radius' ? radius : def, names: [param], suffix: 1, nth: { type: param === 'Color' ? 'COLOR' : 'OneD', n: 1 } }]
   }));
@@ -28,6 +29,7 @@ const apply = {
   params: Object.assign({
     radius: { type: 'number', label: 'Radius', min: 10, max: 4000, step: 10, default: 400, unit: 'px', description: 'Initial Proximity Radius (editable on the effector)' },
     distance3D: { type: 'boolean', label: '3D distance', default: false, advanced: true, description: 'Measure distance in 3D (include Z)' },
+    controls: { type: 'enum', label: 'Controls on the effector', default: 'needed', advanced: true, options: [{ value: 'needed', label: 'Only what it uses' }, { value: 'all', label: 'All' }], description: 'Effect Controls shows only the sliders the chosen reactions read (v0.93). Apply again with another reaction and its slider is added' },
     replace: { type: 'boolean', label: 'Replace existing', default: false, advanced: true, description: 'Overwrite expressions that MOE did not create' }
   }, FEATURE_PARAMS),
   requires: { comp: true, minLayers: 1 },
@@ -84,7 +86,9 @@ const apply = {
       created = await host.call('layers.createNull', { compId: ctx.comp.id, name: prepared.newName, position: [ctx.comp.width / 2, ctx.comp.height / 2], label: 9 });
       effector = { id: created.layerId, name: created.name };
     }
-    const controls = await S.writeEffects(host, ctx, [{ layer: { layerId: effector.id }, items: controlsSpec(args.radius) }], 'MOE: Effector Controls');
+    // v0.93 controls on demand: only the controls the chosen features' expressions read (CONTROLS_ON_DEMAND.md)
+    const ctlNames = args.controls === 'all' ? X.CONTROLS.map((c) => c[0]) : X.needed(prepared.features, { distance3D: args.distance3D });
+    const controls = await S.writeEffects(host, ctx, [{ layer: { layerId: effector.id }, items: controlsSpec(args.radius, ctlNames) }], 'MOE: Effector Controls');
 
     // Effects needed on targets (blur / colour) — created before expressions reference them.
     const fxItems = [];
@@ -110,14 +114,14 @@ const apply = {
       throw e;
     }
     const set = await host.call('expressions.set', { compId: ctx.comp.id, label: 'MOE: Proximity', revertOnError: true, targets: items.map((i) => ({ address: i.address, expression: i.expression, enabled: true })) });
-    return { effector, created, controls, targetFx, set, skipped, count: items.length };
+    return { effector, created, controls, ctlNames, targetFx, set, skipped, count: items.length };
   },
 
   verify({ result }) {
     const checks = [];
     checks.push({ ok: true, label: result.effector.name, detail: result.created ? 'effector created at comp centre' : 'existing effector reused' });
     const ctlCount = result.controls.layers[0].items.length;
-    checks.push({ ok: ctlCount === X.CONTROLS.length, label: `${result.effector.name} › controls`, detail: `${ctlCount} controls in Effect Controls` });
+    checks.push({ ok: ctlCount === result.ctlNames.length, label: `${result.effector.name} › controls`, detail: `${ctlCount} controls in Effect Controls: ${result.ctlNames.join(', ')}` });
     for (const t of result.set.targets) {
       if (t.skipped) { checks.push({ ok: false, label: 'Property', detail: t.skipped }); continue; }
       const ok = !t.after.expressionError && !t.reverted;

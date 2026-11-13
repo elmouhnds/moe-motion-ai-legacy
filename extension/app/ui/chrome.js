@@ -85,6 +85,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['sliders', 'A grid with 8 sliders, not 46', 'A new grid null shows only what it uses: its layout\'s own sliders, Layout, Order and Item Scale — and Build, Morph, Seed or Twist only when you use them. Grid Sliders (Layout › Clone) adds any group later, and the panel adds a slider when you change it. Proximity shows only the sliders of the reactions you chose.'],
   ['target', 'Effectors on any property', 'Select Trim Paths End, Stroke Width, Roundness or any slider on one item of a grid, then Effector on Property (Layout › Effectors): every item gets it, and each effector\'s new Custom slider says how much it adds — with its falloff, type, spring, Snap To and Clamp. Numbers only; one Custom amount per grid.'],
   ['guides', 'Tracer: lines that follow the clones', 'Select a grid and draw lines between its items — one line in order, rows, a full grid, a zig-zag or a hub. The lines are one shape layer and follow the items through effectors and springs. Layout › Clone › Tracer Line / Grid / Zig-zag / Hub.'],
   ['trash', 'Remove or freeze one effector', 'Remove Effector takes one effector off a grid without disturbing the others. Freeze Effector keeps what it does at this frame: its keyframes go, the values stay, and Restore brings them back. Both are in Layout › Effectors — select the effector null.'],

@@ -108,7 +108,7 @@ test('refused before anything is written: a transform property, a colour, a laye
   sel(a.comp, (l) => l === a.G);
   assert.match(await tryIt('nothing'), /Select a property/);
   // the grid's own controls are not an item's property
-  pickProp(a.comp, a.G, fx(a.G, 'Seed')._children[0]);
+  pickProp(a.comp, a.G, fx(a.G, 'Columns')._children[0]);
   assert.match(await tryIt('grid null'), /not an item of a MOE Grid/);
   cards(a.comp).forEach((L) => assert.equal(fx(L, 'Amount')._children[0]._expression || '', '', 'nothing was written'));
   // and a later effector rewrite keeps a wired property on the current version

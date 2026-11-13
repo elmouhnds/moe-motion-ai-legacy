@@ -71,7 +71,7 @@ Not verified: how React behaves in After Effects, its speed, and anything the pa
 ## Status, 2026-11-13
 | # | Item | Version | |
 |---|---|---|---|
-| 1 | Controls on demand | 0.87 | effectors + quick expressions; the grid null (23) and Proximity (13) are NOT trimmed yet |
+| 1 | Controls on demand | 0.87 + 0.93 | effectors and quick expressions (0.87); the grid null 46 → 8 and Proximity (0.93) |
 | 2 | Wave, Snap To, Clamp | 0.88 | |
 | 3 | Falloff easing | 0.89 | four fixed curves, no free bezier |
 | 4 | Attract / Repel, Absolute | 0.89 | 2D |

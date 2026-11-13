@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.93.0] — 2026-11-13 — Controls on demand, part 2: the grid null and Proximity
+- **A new grid null has 8 controls instead of 46.** It carries its own layout's sliders, Layout, Order and Item Scale, and a group only when it is used (Build with *Animate in*, Morph, Seed with a random order, Twist…). Same result as before, tested item by item.
+- The grid remembers the numbers it was built with inside its items' expressions, so a slider that is not on the null still has the right value — including the other layouts' auto sizes when you switch Layout in Effect Controls.
+- **Grid Sliders** (new, Layout › Clone): adds a group of controls later — or all — without moving anything. The panel's Grid Controls adds a control that is not there when you change it.
+- **Proximity** creates only the sliders the chosen reactions read (Scale Up alone: 4 instead of 13).
+- `controls: All` on the Grid tool and on Proximity gives the old full lists. Item expressions are v8.
+
 ## [0.92.0] — 2026-11-13 — Effector on Property (8 of 8 from the React 3 study)
 - **Effector on Property**: let a grid's effectors drive any number property of its items — Trim Paths End, Stroke Width, Roundness, a blur amount, any slider. Select the property on one item; it is wired on every item of the grid. Each effector's new **Custom** slider is the amount, with its falloff, type, spring, Snap To and Clamp.
 - The Effector tool gained *Any property* (the Custom amount); *More Sliders* gained the group *Any property*. A tile in Layout › Effectors.

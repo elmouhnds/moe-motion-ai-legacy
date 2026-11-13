@@ -30,7 +30,9 @@ async function load(app, ctx, grid) {
   const items = kids.map((k) => ({ id: k.id, name: k.name, index: k.index, slot: (X.slotOf(codeOf(k.id)) || { i: 1e6 }).i, v2: X.isV2(codeOf(k.id)) }))
     .filter((x) => x.slot < 1e6).sort((a, b) => a.slot - b.slot);
   const value = {};
-  names.forEach((n, i) => { const it = vals.items[i]; value[n] = it && it.value !== null && !it.error ? Number(it.value) : null; });
+  // v0.93 controls on demand: a control that is not on the null reads as the value the grid was built with (baked in its items' expressions)
+  const dft = (items[0] && (X.factsOf(codeOf(items[0].id)) || {}).defaults) || null;
+  names.forEach((n, i) => { const it = vals.items[i]; value[n] = it && it.value !== null && !it.error ? Number(it.value) : (dft && dft[n] !== undefined ? Number(dft[n]) : null); });
   return { items, value, v2: items.some((x) => x.v2) && value.Layout !== null };
 }
 

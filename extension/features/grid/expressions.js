@@ -65,6 +65,51 @@ function controlsFor(mode) {
   L.MODES.forEach((m) => MODE_CONTROLS[m.id].forEach(add));
   return out;
 }
+/**
+ * v0.93 Controls on demand for the grid null (docs/features/CONTROLS_ON_DEMAND.md): a new grid carries only what its
+ * own settings use — Layout, the chosen layout's own controls, Order and Item Scale, and a group only when it is used.
+ * A control that is not there reads, in every item expression, as the value this grid was built with (`DFT`, baked in
+ * the expression's head) — so nothing changes in the result, and Grid Sliders / the panel can add any of them later.
+ */
+const GRID_GROUPS = {
+  morph: ['Morph To', 'Morph'],
+  order: ['Reverse', 'Seed'],
+  items: ['Scale Step', 'Twist', 'Orient'],
+  random: ['Random Position', 'Random Rotation', 'Random Scale'],
+  build: ['Build', 'Build Stagger', 'Build Order', 'Build Style', 'Build Distance'],
+  falloff: ['Effector', 'Effector Radius', 'Effector Scale', 'Effector Push', 'Effector Rotate', 'Effector Fade']
+};
+const GRID_GROUP_LABEL = { layouts: 'Other layouts', morph: 'Morph', order: 'Reverse · Seed', items: 'Scale step · Twist · Orient', random: 'Random', build: 'Build', falloff: 'Simple effector' };
+const GRID_CORE = ['Layout', 'Order', 'Item Scale'];
+/** The control names (in Effect Controls order) a grid in `mode` with these resolved params uses. use: { morph, build, falloff }. */
+function gridNeeded(mode, p, use = {}) {
+  const on = new Set(GRID_CORE.concat(MODE_CONTROLS[mode].map((c) => c[0])));
+  if (use.morph || p.morph) { GRID_GROUPS.morph.forEach((n) => on.add(n)); if (p.morphTo && MODE_CONTROLS[p.morphTo]) MODE_CONTROLS[p.morphTo].forEach((c) => on.add(c[0])); }
+  if (p.reverse) on.add('Reverse');
+  if (Number(p.order) === 4 || p.randomPosition || p.randomRotation || p.randomScale || (p.seed !== undefined && Number(p.seed) !== 1)) on.add('Seed');
+  if (p.scaleStep) on.add('Scale Step'); if (p.twist) on.add('Twist'); if (Number(p.orient || 1) !== 1) on.add('Orient');
+  if (p.randomPosition) on.add('Random Position'); if (p.randomRotation) on.add('Random Rotation'); if (p.randomScale) on.add('Random Scale');
+  if (use.build || (p.build !== undefined && Number(p.build) !== 100)) GRID_GROUPS.build.forEach((n) => on.add(n));
+  if (use.falloff) GRID_GROUPS.falloff.forEach((n) => on.add(n));
+  return controlsFor(mode).map((c) => c[0]).filter((n) => on.has(n));
+}
+/** The names of one group ('layouts' = every other layout's controls, 'all' = everything). */
+function gridGroupNames(group, mode) {
+  if (group === 'all') return controlsFor(mode || 'rect').map((c) => c[0]);
+  if (group === 'layouts') { const mine = new Set(MODE_CONTROLS[mode || 'rect'].map((c) => c[0])); return Object.values(MODE_CONTROLS).flat().map((c) => c[0]).filter((n, i, a) => !mine.has(n) && a.indexOf(n) === i); }
+  return (GRID_GROUPS[group] || []).slice();
+}
+/** name → number for every non-layer control: what a control that is not on the null reads as (from the grid's resolved params). */
+function gridDefaults(p) {
+  const out = {};
+  for (const [name, kind, def] of allControls()) {
+    if (kind === 'layer') continue;
+    let v = p && KEY[name] !== undefined && p[KEY[name]] !== undefined ? p[KEY[name]] : def;
+    if (kind === 'checkbox') v = v ? 1 : 0;
+    out[name] = Number.isFinite(Number(v)) ? Number(v) : Number(def) || 0;
+  }
+  return out;
+}
 /** Every control name any MOE grid (old or new) may carry, with its kind. */
 function allControls() {
   const seen = new Set(), out = [];
@@ -257,12 +302,15 @@ function layBody(pathAccess, pathClosed) {
  * opts: { gridName, pathAccess, pathClosed, home: [x, y] (position in the null's space at build) }
  */
 /** The shared head of every item expression: the item's place in the grid, its build, the effectors (leaves x, y, z, sc, rot, op, ex, ey, ecu…). */
-function headOf(i, n, { gridName, pathAccess = null, pathClosed = false, home = [0, 0] }) {
+function headOf(i, n, { gridName, pathAccess = null, pathClosed = false, home = [0, 0], defaults = null }) {
   const hx = Math.round(home[0] * 1000) / 1000, hy = Math.round(home[1] * 1000) / 1000;
   return [
     `${TAG} · ${esc(gridName)} · v${VERSION}`,
     `var G = thisComp.layer("${esc(gridName)}");`,
-    'function c(nm) { return G.effect(nm)(1).value; }',
+    // v0.93: a control that is not on the null reads as the value this grid was built with (looked up once per evaluation)
+    `var DFT = ${JSON.stringify(defaults || gridDefaults(null))};`,
+    'var HC = {};',
+    'function c(nm) { if (HC[nm] === undefined) { try { G.effect(nm)(1); HC[nm] = 1; } catch (eHc) { HC[nm] = 0; } } return HC[nm] == 1 ? G.effect(nm)(1).value : DFT[nm]; }',
     'function ic(nm) { try { return thisLayer.effect(nm)(1).value; } catch (eI) { return 0; } }',
     PRNG,
     `var i = ${i}, n = ${n}, seed = c("Seed"), H = [${hx}, ${hy}];`,
@@ -323,8 +371,8 @@ function buildAll(i, n, facts) {
 }
 
 /** Is this a v0.19 (all-layouts) grid expression? */
-/** The item expression's version: 2 all layouts (v0.19) · 3 reads effectors (v0.33) · 4 optional controls (v0.87) · 5 Wave, Snap To, Clamp (v0.88) · 6 falloff curve, move modes (v0.89) · 7 the custom channel (v0.92). */
-const VERSION = 7;
+/** The item expression's version: 2 all layouts (v0.19) · 3 reads effectors (v0.33) · 4 optional controls (v0.87) · 5 Wave, Snap To, Clamp (v0.88) · 6 falloff curve, move modes (v0.89) · 7 the custom channel (v0.92) · 8 the grid null's own controls are optional (v0.93). */
+const VERSION = 8;
 const versionOf = (code) => { const m = / · v(\d+)\n/.exec(String(code || '')); return m ? Number(m[1]) : 0; };
 const isV2 = (code) => versionOf(code) >= 2;
 /** v0.33: does the expression read MOE Effectors (Effector 2 / 3 slots)? */
@@ -339,7 +387,10 @@ function factsOf(code) {
   const s = String(code || '').replace(/\/\*MOE-LINK:\d+\*\//g, ''); const slot = slotOf(s); const h = /H = \[(-?[\d.e-]+), (-?[\d.e-]+)\]/.exec(s); const g = /var G = thisComp\.layer\("((?:[^"\\]|\\.)*)"\);/.exec(s);
   const pa = /try \{ acc = (.+?); \} catch \(eA\)/.exec(s);
   if (!slot || !h || !g) return null;
-  return { i: slot.i, n: slot.n, home: [Number(h[1]), Number(h[2])], gridName: g[1].replace(/\\(.)/g, '$1'), pathAccess: pa ? pa[1] : null, pathClosed: /Math\.abs\(span\) >= 99\.999 \? n : n - 1/.test(s) };
+  let defaults = null;
+  const dm = /\nvar DFT = (\{[^\n]*\});\n/.exec(s);
+  if (dm) { try { defaults = JSON.parse(dm[1]); } catch (eD) { defaults = null; } }
+  return { i: slot.i, n: slot.n, home: [Number(h[1]), Number(h[2])], gridName: g[1].replace(/\\(.)/g, '$1'), pathAccess: pa ? pa[1] : null, pathClosed: /Math\.abs\(span\) >= 99\.999 \? n : n - 1/.test(s), defaults };
 }
 /** Read / change the item slot baked into a grid expression (`var i = 3, n = 8`). */
 function slotOf(code) { const m = /var i = (\d+), n = (\d+)/.exec(String(code || '')); return m ? { i: Number(m[1]), n: Number(m[2]) } : null; }
@@ -353,8 +404,9 @@ const PROP_ADDR = {
 };
 
 /** effects.ensure items for the grid null's controls with values from params. */
-function controlItems(mode, params, layerIndexOf = () => 0) {
-  return controlsFor(mode).map(([name, kind, def]) => {
+function controlItems(mode, params, layerIndexOf = () => 0, names = null) {
+  const only = names ? new Set(names) : null;
+  return controlsFor(mode).filter(([name]) => !only || only.has(name)).map(([name, kind, def]) => {
     const K = KIND[kind];
     let value = params[KEY[name]] !== undefined ? params[KEY[name]] : def;
     if (kind === 'checkbox') value = value ? 1 : 0;
@@ -369,4 +421,4 @@ function controlAddress(layerId, name) {
   return { layerId, matchNames: ['ADBE Effect Parade', `name:${name}`, `name:${KIND[kind ? kind[1] : 'slider'].param}`] };
 }
 
-module.exports = { TAG, MODE_CONTROLS, COMMON_CONTROLS, HEAD_CONTROLS, LEGACY_CONTROLS, ITEM_FX, MODE_MENU, KIND, KEY, NAME_OF, controlsFor, allControls, defaultParams, build, buildAll, buildCustom, customDims, CUSTOM_MARK, headOf, isV2, isV3, isV4, isCurrent, VERSION, versionOf, factsOf, slotOf, withSlot, PROP_ADDR, controlItems, controlAddress };
+module.exports = { TAG, MODE_CONTROLS, COMMON_CONTROLS, HEAD_CONTROLS, LEGACY_CONTROLS, ITEM_FX, MODE_MENU, KIND, KEY, NAME_OF, controlsFor, GRID_GROUPS, GRID_GROUP_LABEL, GRID_CORE, gridNeeded, gridGroupNames, gridDefaults, allControls, defaultParams, build, buildAll, buildCustom, customDims, CUSTOM_MARK, headOf, isV2, isV3, isV4, isCurrent, VERSION, versionOf, factsOf, slotOf, withSlot, PROP_ADDR, controlItems, controlAddress };

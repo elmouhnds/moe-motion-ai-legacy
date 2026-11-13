@@ -125,4 +125,14 @@ function build(effector, features, { threeD = false, distance3D = false } = {}) 
   return { expressions: out, errors, skipped };
 }
 
-module.exports = { TAG, CONTROLS, FEATURES, EXCLUSIVE, PROP_ADDR, build };
+/**
+ * v0.93 Controls on demand (docs/features/CONTROLS_ON_DEMAND.md): the control names (in Effect Controls order) the
+ * expressions of these features actually read — taken from the generated code itself, so it can never drift from it.
+ */
+function needed(features, opts = {}) {
+  const b = build('E', features, { threeD: true, distance3D: !!opts.distance3D });
+  const text = Object.values(b.expressions || {}).join('\n');
+  return CONTROLS.map((c) => c[0]).filter((n) => text.indexOf(`E.effect("${n}")`) >= 0);
+}
+
+module.exports = { TAG, CONTROLS, FEATURES, EXCLUSIVE, PROP_ADDR, build, needed };

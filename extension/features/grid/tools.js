@@ -122,7 +122,8 @@ const build = {
     stagger: { type: 'number', label: 'Stagger', min: 0, max: 100, step: 1, default: 60, unit: '%', showIf: (a) => a.animateIn },
     effector: { type: 'layer', label: 'Effector', advanced: true, description: 'Optional layer (e.g. a null) that scales / pushes nearby items' },
     centerAnchors: { type: 'boolean', label: 'Center anchors', default: true, advanced: true, description: 'Centre each item’s anchor on its content first (keyframed anchors are left alone)' },
-    replace: { type: 'boolean', label: 'Replace existing', default: false, advanced: true, description: 'Overwrite expressions MOE did not create' }
+    replace: { type: 'boolean', label: 'Replace existing', default: false, advanced: true, description: 'Overwrite expressions MOE did not create' },
+    controls: { type: 'enum', label: 'Controls on the null', default: 'needed', advanced: true, options: [{ value: 'needed', label: 'Only what it uses' }, { value: 'all', label: 'All' }], description: 'Effect Controls shows only the sliders this grid uses (v0.93) — its layout, Order and Item Scale, and a group when you use it. Grid Sliders or the panel add the rest' }
   },
   requires: { comp: true, minLayers: 1 },
   permissions: ['modify.layers', 'modify.effects', 'modify.expressions'],
@@ -246,12 +247,15 @@ const build = {
     // Layer controls take layer indices — read them after the null was added.
     const desc = await host.call('layers.describe', { compId: comp.id });
     const idxOf = (oldIndex) => { const cl = ctx.compLayers.find((l) => l.index === oldIndex); const d = cl && desc.layers.find((x) => x.id === cl.id); return d ? d.index : 0; };
+    // v0.93 controls on demand: only what this grid's settings use (CONTROLS_ON_DEMAND.md); the rest read as DFT in the expressions
+    const ctlNames = args.controls === 'all' ? X.gridGroupNames('all', args.mode) : X.gridNeeded(args.mode, params, { morph: !!params.morphTo, build: !!args.animateIn, falloff: !!args.effector });
+    const gridDefaults = X.gridDefaults(params);
     const controls = await host.call('effects.ensure', {
       compId: comp.id, label: 'MOE: Grid Controls',
-      layers: [{ layer: { layerId: created.layerId }, items: X.controlItems(args.mode, params, (name) => (name === 'Path Layer' ? idxOf(args.pathLayer) : name === 'Effector' && args.effector ? idxOf(args.effector) : 0)) }]
+      layers: [{ layer: { layerId: created.layerId }, items: X.controlItems(args.mode, params, (name) => (name === 'Path Layer' ? idxOf(args.pathLayer) : name === 'Effector' && args.effector ? idxOf(args.effector) : 0), ctlNames) }]
     });
     for (const [name, list, value] of [['Layout', X.MODE_MENU, params.layoutIdx], ['Morph To', X.MODE_MENU, params.morphToIdx], ['Orient', L.ORIENTS, params.orient], ['Order', L.ORDERS, params.order], ['Build Order', L.BUILD_ORDERS, params.buildOrder], ['Build Style', L.BUILD_STYLES, params.buildStyle]]) {
-      await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: name, items: list, value });
+      if (ctlNames.includes(name)) await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: name, items: list, value });
     }
     const targets = [];
     items.forEach((l) => { for (const prop of Object.keys(X.PROP_ADDR)) targets.push({ layer: l, prop, address: { layerId: l.id, matchNames: X.PROP_ADDR[prop] } }); });
@@ -273,7 +277,7 @@ const build = {
     const homes = await host.call('props.values', { compId: comp.id, time: comp.time, items: items.map((l) => ({ address: { layerId: l.id, matchNames: X.PROP_ADDR.position } })) });
     items.forEach((l, i) => {
       const hv = homes.items[i].value || [0, 0];
-      const code = X.buildAll(i, items.length, { gridName: prepared.name, pathAccess: path && path.access, pathClosed: path && path.closed, home: [hv[0], hv[1]] });
+      const code = X.buildAll(i, items.length, { gridName: prepared.name, pathAccess: path && path.access, pathClosed: path && path.closed, home: [hv[0], hv[1]], defaults: gridDefaults });
       targets.filter((t) => t.layer === l).forEach((t) => { t.expression = code[t.prop]; });
     });
     const set = await host.call('expressions.set', { compId: comp.id, label: 'MOE: Grid', revertOnError: true, targets: targets.map((t) => ({ address: t.address, expression: t.expression, enabled: true })) });
@@ -307,7 +311,7 @@ const build = {
   verify({ result }) {
     const checks = [];
     const nCtl = result.controls.layers[0].items.length;
-    checks.push({ ok: true, label: result.name, detail: `grid null with ${nCtl} controls (Effect Controls)` });
+    checks.push({ ok: nCtl > 0, label: result.name, detail: `grid null with ${nCtl} controls (Effect Controls) — only what this grid uses; Grid Sliders adds the rest` });
     const bad = result.set.targets.filter((t) => t.skipped || t.reverted || t.after.expressionError);
     checks.push({ ok: bad.length === 0, label: 'Expressions', detail: bad.length ? `${bad.length} failed: ${bad.slice(0, 3).map((t) => `${t.layerName} › ${t.name}: ${t.after ? t.after.expressionError : t.skipped}`).join('; ')}` : `${result.set.targets.length} live expressions, no engine errors` });
     checks.push({ ok: result.parented.layers.every((l) => l.after === result.nullId), label: 'Parenting', detail: `${result.parented.layers.length} item(s) follow ${result.name}` });
@@ -383,7 +387,7 @@ const update = {
   permissions: ['modify.effects'],
   recovery: 'undo+checkpoint',
   ai: { callable: true, hint: 'Tweak an existing MOE Grid (select its null). values is JSON keyed by control name: Layout (1 Grid, 2 Radial, 3 Spiral, 4 Sunflower, 5 Path, 6 Sphere), Morph To, Morph (0-100), Orient (1-3), Columns, Spacing X/Y, Row Offset, Radius, Arc, Twist, Item Scale, Scale Step, Random Position/Rotation/Scale, Seed, Build, Build Stagger, Build Distance, Effector Radius/Scale/Push/Rotate/Fade…' },
-  uses: { hostOps: ['props.setValues'], network: false },
+  uses: { hostOps: ['props.values', 'props.setValues', 'effects.ensure', 'effects.setMenu', 'effects.restore'], network: false },
   compatibility: { minAE: '25.0' },
   ui: { primaryLabel: 'Apply' },
   prepare(args, ctx) {
@@ -398,16 +402,31 @@ const update = {
     return { ok: true, grid: g, values, preview: { summary: `${g.name}: ${Object.entries(values).map(([k, v]) => `${k} ${v}`).join(' · ')}`, items: [] } };
   },
   async execute({ ctx, prepared, host }) {
-    return host.call('props.setValues', { compId: ctx.comp.id, label: 'MOE: Grid Controls', items: Object.entries(prepared.values).map(([k, v]) => ({ address: X.controlAddress(prepared.grid.id, k), value: Number(v) })) });
+    const comp = ctx.comp, gid = prepared.grid.id, names = Object.keys(prepared.values);
+    // v0.93 controls on demand: a control that is not on the null yet is added with its new value; one that is there is set
+    const have = await host.call('props.values', { compId: comp.id, time: comp.time, items: names.map((k) => ({ address: X.controlAddress(gid, k) })) });
+    const there = names.filter((k, i) => !have.items[i].error), missing = names.filter((k, i) => !!have.items[i].error);
+    const set = there.length ? await host.call('props.setValues', { compId: comp.id, label: 'MOE: Grid Controls', items: there.map((k) => ({ address: X.controlAddress(gid, k), value: Number(prepared.values[k]) })) }) : { items: [] };
+    let fx = null;
+    if (missing.length) {
+      const kinds = new Map(X.allControls().map((c) => [c[0], c]));
+      fx = await host.call('effects.ensure', { compId: comp.id, label: 'MOE: Grid Controls', layers: [{ layer: { layerId: gid }, items: missing.map((k) => { const K = X.KIND[kinds.get(k)[1]]; return { key: k, matchName: K.matchName, before: [], params: [{ id: k, value: Number(prepared.values[k]), names: [K.param], suffix: 1, nth: { type: K.type, n: 1 } }] }; }) }] });
+      for (const k of missing) { const c = kinds.get(k); if (c[1] === 'menu') await host.call('effects.setMenu', { compId: comp.id, layerId: gid, effectKey: k, items: c[3], value: Number(prepared.values[k]) }); }
+    }
+    const after = await host.call('props.values', { compId: comp.id, time: comp.time, items: names.map((k) => ({ address: X.controlAddress(gid, k) })) });
+    return { items: set.items, set, fx, added: missing, names, after };
   },
   verify({ result, prepared }) {
-    const want = Object.values(prepared.values).map(Number);
-    const checks = result.items.map((it, i) => ({ ok: !it.skipped && Math.abs(it.after - want[i]) < 1e-6, label: Object.keys(prepared.values)[i], detail: it.skipped ? it.skipped : `${it.before} → ${it.after}${it.atTime !== null ? ' (keyframe at current time)' : ''}` }));
+    const checks = result.names.map((k, i) => { const r = result.after.items[i], want = Number(prepared.values[k]), it = result.set.items.find((x) => x.name !== undefined && result.names.filter((n) => !result.added.includes(n))[result.set.items.indexOf(x)] === k); return { ok: !r.error && Math.abs(Number(r.value) - want) < 1e-6 && !(it && it.skipped), label: k, detail: r.error ? r.error : result.added.includes(k) ? `added to the null at ${want}` : it && it.skipped ? it.skipped : `${it ? it.before : '?'} → ${r.value}${it && it.atTime !== null ? ' (keyframe at current time)' : ''}` }; });
     return { ok: checks.every((c) => c.ok), checks };
   },
-  checkpoint({ result, ctx }) { return { compId: ctx.comp.id, items: result.items.filter((i) => !i.skipped).map((i) => ({ address: i.address, value: i.before })) }; },
-  async restore({ data, host }) { return host.call('props.setValues', { compId: data.compId, label: 'MOE: Restore Grid', items: data.items }); },
-  summarize(result) { return `${result.items.length} grid control(s) updated`; }
+  checkpoint({ result, ctx }) { return { compId: ctx.comp.id, items: result.set.items.filter((i) => !i.skipped).map((i) => ({ address: i.address, value: i.before })), fx: result.fx ? require('../compositing/shared').effectsCheckpoint(result.fx, ctx) : null }; },
+  async restore({ data, host }) {
+    if (data.items.length) await host.call('props.setValues', { compId: data.compId, label: 'MOE: Restore Grid', items: data.items });
+    if (data.fx) await require('../compositing/shared').restoreEffects({ data: data.fx, host });
+    return { ok: true };
+  },
+  summarize(result) { return `${result.names.length} grid control(s) updated${result.added.length ? ` (${result.added.length} added to the null)` : ''}`; }
 };
 
 /* ---------- v0.19 items: order + per-item tweaks ---------- */

@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.92: effectors on any property; Tracer (0.91); Remove / Freeze effector (0.90); Attract / Repel (0.89); Wave, Snap, Clamp (0.88)."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.92: effectors على أي خاصية، و Tracer (0.91)، ومسح أو تجميد effector (0.90)، و Attract / Repel (0.89)، و Wave و Snap و Clamp (0.88)"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.93: a grid shows 8 sliders instead of 46; effectors on any property (0.92); Tracer (0.91); Wave, Snap, Clamp (0.88)."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.93: الـ grid بيظهر 8 سلايدرز بدل 46، و effectors على أي خاصية (0.92)، و Tracer (0.91)، و Wave و Snap و Clamp (0.88)"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

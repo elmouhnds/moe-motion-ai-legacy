@@ -208,7 +208,10 @@ test('Proximity: effector + controls created, combined expressions per property,
   const eff = comp._layers.find((l) => l.name === 'MOE Effector 1');
   assert.ok(eff && eff.nullLayer);
   const fxNames = eff._parade._children.map((e) => e.name);
-  assert.deepEqual(fxNames, X.CONTROLS.map((c) => c[0]));
+  // v0.93 controls on demand: only what these five reactions read — 8 of the 13
+  assert.deepEqual(fxNames, ['Proximity Radius', 'Falloff', 'Invert', 'Scale Amount', 'Push Amount', 'Offset Y', 'Opacity Amount', 'Blur Amount']);
+  assert.deepEqual(X.needed({ scaleUp: true }), ['Proximity Radius', 'Falloff', 'Invert', 'Scale Amount']);
+  assert.equal(X.needed(Object.fromEntries(Object.keys(X.FEATURES).map((k) => [k, !['scaleDown', 'pullToward'].includes(k)]))).length <= X.CONTROLS.length, true);
   assert.equal(eff._parade._children[0].property(1).value, 600);
   const dot = comp._layers.find((l) => l.name === 'Dot 1');
   const tr = dot.property('ADBE Transform Group');
