@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.90: Remove or Freeze one effector; Attract / Repel, falloff curve (0.89); Wave, Snap, Clamp (0.88)."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.90: مسح أو تجميد effector واحد، و Attract / Repel ومنحنى falloff (0.89)، و Wave و Snap و Clamp (0.88)"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.91: Tracer - lines that follow the clones; Remove / Freeze one effector (0.90); Attract / Repel (0.89)."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.91: Tracer - خطوط بتتحرك مع النسخ، ومسح أو تجميد effector واحد (0.90)، و Attract / Repel (0.89)"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

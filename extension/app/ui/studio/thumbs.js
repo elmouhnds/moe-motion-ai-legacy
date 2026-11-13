@@ -243,6 +243,21 @@ const DRAW = {
     }
     c.globalAlpha = 1;
   },
+  /* v0.91: a tracer over a small grid whose items a wave moves — the lines come from the real plan (features/grid/tracer.js) */
+  tracer(c, W, H, th, t) {
+    const TR = require('../../../features/grid/tracer'), EF = require('../../../features/grid/effectors');
+    const cols = 5, rows = 3, sx = 44, sy = 40, k = Math.min(W / 260, H / 160);
+    const rest = [];
+    for (let i = 0; i < cols * rows; i++) rest.push({ name: String(i), p: [((i % cols) - (cols - 1) / 2) * sx, (Math.floor(i / cols) - (rows - 1) / 2) * sy] });
+    const ls = TR.lines(th.mode, rest, { closed: false });
+    const at = rest.map((it, i) => [it.p[0], it.p[1] + 9 * EF.waveAt(1, i / 6 - 0.4 * t)]);
+    c.save(); c.translate(W / 2, H / 2); c.scale(k, k);
+    c.strokeStyle = ACC; c.lineWidth = 1.6; c.lineJoin = 'round'; c.lineCap = 'round'; c.globalAlpha = 0.85;
+    for (const l of ls) { c.beginPath(); l.names.forEach((nm, j) => { const p = at[Number(nm)]; if (j) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); if (l.closed) c.closePath(); c.stroke(); }
+    c.globalAlpha = 1; c.fillStyle = FG;
+    for (const p of at) { c.beginPath(); c.arc(p[0], p[1], 4.2, 0, Math.PI * 2); c.fill(); }
+    c.restore();
+  },
   /* v0.33: an effector passing over a grid of cards (the real maths: features/grid/effectors.js) */
   eff(c, W, H, th, t) {
     const EF = require('../../../features/grid/effectors');

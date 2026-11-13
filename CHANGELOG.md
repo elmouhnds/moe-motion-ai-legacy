@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.91.0] — 2026-11-13 — Tracer (7 of 8 from the React 3 study)
+- **Tracer**: lines between a grid's items that follow them — through effectors, springs and the grid's own controls. In order (optionally closed), Rows, Grid (rows + columns), Zig-zag, Hub. One shape layer, `MOE Tracer · <grid>`; width, colour, opacity; behind the items by default. Run it again and it replaces itself.
+- Four tiles in Layout › Clone: Tracer Line, Tracer Grid, Tracer Zig-zag, Tracer Hub (their previews draw the real plan).
+- Rows and columns are found from where the items are, so it works with any layout, order and a honeycomb offset.
+- Host: `props.values` returns a path value as its points. Test mock: `createPath`.
+
 ## [0.90.0] — 2026-11-13 — Remove Effector, Freeze Effector (5 of 8 from the React 3 study)
 - **Remove Effector**: takes one effector away without disturbing the others — unlinked from its grid, its null deleted; the items go back to where the grid and the remaining effectors put them. After Effects' Undo brings it back.
 - **Freeze Effector**: keeps what an effector does at this frame — its keyframes (null + controls) are removed and the values at the playhead stay; it stays linked and editable. Restore brings every key back.

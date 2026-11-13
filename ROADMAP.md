@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.97 — Tracer ✅ (v0.91.0)
+- React 3 study item 7 of 8. Left: an effector on any keyframeable property (8) — the largest; and trimming the grid null's and Proximity's controls (from item 1).
+
 ## M1.96 — Remove / Freeze Effector ✅ (v0.90.0)
 - React 3 study item 5 of 8; item 6 was already in MOE. Left: Tracer (7) · an effector on any property (8).
 

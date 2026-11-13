@@ -24,6 +24,12 @@
     function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
     function plain(v) {
         if (v && typeof v === 'object' && v.length !== undefined) { var a = [], i; for (i = 0; i < v.length; i++) { a.push(num(v[i])); } return a; }
+        /* v0.91: a path value (Shape object: vertices, closed - After Effects Scripting Guide) is returned as its points */
+        if (v && typeof v === 'object' && v.vertices !== undefined) {
+            var pts = [], j;
+            for (j = 0; j < v.vertices.length; j++) { pts.push([num(v.vertices[j][0]), num(v.vertices[j][1])]); }
+            return { vertices: pts, closed: v.closed ? 1 : 0 };
+        }
         return typeof v === 'boolean' ? (v ? 1 : 0) : num(v);
     }
 

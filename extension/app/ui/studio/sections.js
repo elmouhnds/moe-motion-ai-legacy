@@ -108,6 +108,11 @@ const LAYOUT = [
   T('trailEcho', 'Echo Trail', 'grid.trail', { copies: 8, delay: 2, fade: 12, scaleStep: 0, rotateStep: 0 }, { k: 'trail', copies: 8, delay: 2, fade: 12, scaleStep: 0 }, ['Clone']),
   T('trailGhost', 'Ghost Trail', 'grid.trail', { copies: 12, delay: 1, fade: 8, scaleStep: 4, rotateStep: 0 }, { k: 'trail', copies: 12, delay: 1, fade: 8, scaleStep: 4 }, ['Clone']),
   T('trailSpin', 'Spin Trail', 'grid.trail', { copies: 8, delay: 3, fade: 15, scaleStep: 0, rotateStep: 15 }, { k: 'trail', copies: 8, delay: 3, fade: 15, scaleStep: 0, rotateStep: 15 }, ['Clone']),
+  // v0.91 (React 3 study): lines between a grid's items that follow them (features/grid/tracer.js)
+  T('trOrder', 'Tracer Line', 'grid.tracer', { mode: 'order' }, { k: 'tracer', mode: 'order' }, ['Clone']),
+  T('trGrid', 'Tracer Grid', 'grid.tracer', { mode: 'grid' }, { k: 'tracer', mode: 'grid' }, ['Clone']),
+  T('trZig', 'Tracer Zig-zag', 'grid.tracer', { mode: 'zigzag' }, { k: 'tracer', mode: 'zigzag' }, ['Clone']),
+  T('trHub', 'Tracer Hub', 'grid.tracer', { mode: 'hub' }, { k: 'tracer', mode: 'hub' }, ['Clone']),
   // v0.33 Effectors: a null that changes the grid's items near it (select the grid null or an item)
   T('efPush', 'Grow', 'grid.effector', { type: 'plain', falloff: 'sphere', scale: 80, softness: 70, sweep: true }, { k: 'eff', type: 'plain', falloff: 'sphere', scale: 80 }, ['Effectors']),
   T('efReveal', 'Reveal', 'grid.effector', { type: 'plain', falloff: 'linear', scale: -100, invert: true, sweep: true }, { k: 'eff', type: 'plain', falloff: 'linear', scale: -100, invert: true }, ['Effectors']),

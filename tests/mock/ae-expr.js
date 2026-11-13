@@ -211,6 +211,8 @@ function evaluate(prop, t, extra = {}) {
     effect: thisLayer.effect, transform: thisLayer.transform, toComp: thisLayer.toComp, fromComp: thisLayer.fromComp,
     hasParent: thisLayer.hasParent, mask: thisLayer.mask, content: thisLayer.content, sourceRectAtTime: thisLayer.sourceRectAtTime,
     width: layer.width, height: layer.height, inPoint: layer.inPoint, outPoint: layer.outPoint,
+    // v0.91: createPath(points, inTangents, outTangents, isClosed) — After Effects expression reference, Path Property
+    createPath: (points = [[0, 0], [100, 0], [100, 100], [0, 100]], inTangents = [], outTangents = [], isClosed = true) => ({ vertices: points.map((p) => [unwrap(p)[0], unwrap(p)[1]]), inTangents: points.map((p, i) => (inTangents[i] ? inTangents[i].slice(0, 2) : [0, 0])), outTangents: points.map((p, i) => (outTangents[i] ? outTangents[i].slice(0, 2) : [0, 0])), closed: !!isClosed }),
     // v0.66: the layer's markers as After Effects exposes them to expressions (test layers carry _markers: [times])
     marker: markerOf(layer)
   });
