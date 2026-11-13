@@ -67,3 +67,16 @@ Everything else is in Effect Controls.
 8. An effector on any keyframeable property — the largest change; last.
 
 Not verified: how React behaves in After Effects, its speed, and anything the page does not say.
+
+## Status, 2026-11-13
+| # | Item | Version | |
+|---|---|---|---|
+| 1 | Controls on demand | 0.87 | effectors + quick expressions; the grid null (23) and Proximity (13) are NOT trimmed yet |
+| 2 | Wave, Snap To, Clamp | 0.88 | |
+| 3 | Falloff easing | 0.89 | four fixed curves, no free bezier |
+| 4 | Attract / Repel, Absolute | 0.89 | 2D |
+| 5 | Remove one effector | 0.90 | Remove · Freeze · (Bake already existed) |
+| 6 | Honeycomb, radial start / end | — | already in MOE; this study was wrong |
+| 7 | Tracer | 0.91 | |
+| 8 | An effector on any property | 0.92 | one Custom channel per grid, numbers only |
+Everything is tested on the mock only. None of it has been run in After Effects.

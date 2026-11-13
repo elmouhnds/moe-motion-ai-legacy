@@ -108,9 +108,11 @@ const CONTROLS = [
   ['Max Scale', 'slider', 0],
   // v0.89: the shape of the falloff's soft edge, and what Move X / Y mean
   ['Falloff Curve', 'menu', 1, CURVES.map((c) => c.menu)],
-  ['Move Mode', 'menu', 1, MOVE_MODES.map((m) => m.menu)]
+  ['Move Mode', 'menu', 1, MOVE_MODES.map((m) => m.menu)],
+  // v0.92: a sixth channel — the amount this effector adds to ANY property wired with Effector on Property (in that property's own units)
+  ['Custom', 'slider', 0]
 ];
-const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix', Spring: 'spring', Frequency: 'frequency', Decay: 'decay', 'Audio Layer': 'audioLayer', 'Audio Max': 'audioMax', 'Field Layer': 'fieldLayer', 'Field Speed': 'fieldSpeed', 'Wave Shape': 'waveShape', 'Wave Length': 'waveLength', 'Wave Speed': 'waveSpeed', 'Wave Offset': 'waveOffset', 'Snap Move': 'snapMove', 'Snap Rotate': 'snapRotate', 'Snap Scale': 'snapScale', 'Max Move': 'maxMove', 'Max Rotate': 'maxRotate', 'Max Scale': 'maxScale', 'Falloff Curve': 'falloffCurve', 'Move Mode': 'moveMode' };
+const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix', Spring: 'spring', Frequency: 'frequency', Decay: 'decay', 'Audio Layer': 'audioLayer', 'Audio Max': 'audioMax', 'Field Layer': 'fieldLayer', 'Field Speed': 'fieldSpeed', 'Wave Shape': 'waveShape', 'Wave Length': 'waveLength', 'Wave Speed': 'waveSpeed', 'Wave Offset': 'waveOffset', 'Snap Move': 'snapMove', 'Snap Rotate': 'snapRotate', 'Snap Scale': 'snapScale', 'Max Move': 'maxMove', 'Max Rotate': 'maxRotate', 'Max Scale': 'maxScale', 'Falloff Curve': 'falloffCurve', 'Move Mode': 'moveMode', Custom: 'custom' };
 
 /**
  * v0.87 Controls on demand (docs/features/CONTROLS_ON_DEMAND.md — owner: "only the sliders that matter for the
@@ -135,9 +137,10 @@ const GROUPS = {
   wave: ['Wave Shape', 'Wave Length', 'Wave Speed', 'Wave Offset'],
   snap: ['Snap Move', 'Snap Rotate', 'Snap Scale'],
   clamp: ['Max Move', 'Max Rotate', 'Max Scale'],
-  ease: ['Falloff Curve']
+  ease: ['Falloff Curve'],
+  custom: ['Custom']
 };
-const GROUP_LABEL = { moves: 'Moves', random: 'Random · Noise · Delay', colour: 'Colour', spring: 'Spring', audio: 'Audio', field: 'Field', wave: 'Wave', snap: 'Snap To', clamp: 'Clamp', ease: 'Falloff curve' };
+const GROUP_LABEL = { moves: 'Moves', random: 'Random · Noise · Delay', colour: 'Colour', spring: 'Spring', audio: 'Audio', field: 'Field', wave: 'Wave', snap: 'Snap To', clamp: 'Clamp', ease: 'Falloff curve', custom: 'Any property' };
 /** The control names (in Effect Controls order) an effector with these values uses. `v` = valuesOf(args). */
 function needed(v) {
   const tp = Math.round(v.type), fo = Math.round(v.falloff), on = new Set(GROUPS.core);
@@ -151,6 +154,7 @@ function needed(v) {
   if (fo === 6) on.add('Field Layer');
   if (fo === 5) on.add('Field Speed');
   if (tp === 8) GROUPS.wave.forEach((n) => on.add(n));
+  if (v.custom) on.add('Custom');
   if (Math.round(v.falloffCurve || 1) !== 1) on.add('Falloff Curve');
   if (Math.round(v.moveMode || 1) !== 1) { on.add('Move Mode'); if (Math.round(v.moveMode) === 2) on.add('Move X'); }
   if (v.snapMove > 0) on.add('Snap Move'); if (v.snapRotate > 0) on.add('Snap Rotate'); if (v.snapScale > 0) on.add('Snap Scale');
@@ -221,7 +225,7 @@ function modify(V, R) {
   if (mM > 0) { const d = Math.sqrt(f0 * f0 + f1 * f1); if (d > mM) { f0 = f0 * mM / d; f1 = f1 * mM / d; } }
   if (mS > 0) f2 = clamp(f2, -mS, mS);
   if (mR > 0) f3 = clamp(f3, -mR, mR);
-  return [f0, f1, f2, f3, R[4]];
+  return [f0, f1, f2, f3].concat(R.slice(4)); // Fade and the custom channel are left alone
 }
 
 /** Rec. 709 luma of an [r, g, b, a] sample, times its alpha (Image field). */
@@ -259,16 +263,16 @@ function weight(e, lx, ly, f) {
 function amounts(e, { i, k, n, x, y, time }) {
   const tp = Math.round(e.type);
   // Random: a well-mixed hash per item and channel (a seeded LCG gives near-equal first values for nearby items)
-  if (tp === 2) { const sd = e.seed * 3.117 + 1.1; return [0, 1, 2, 3, 4].map((c) => hs(i * 1.731 + c * 17.13 + 0.5, sd)); }
-  if (tp === 3) { const s = n > 1 ? k / (n - 1) : 0; return [s, s, s, s, s]; }
+  if (tp === 2) { const sd = e.seed * 3.117 + 1.1; return [0, 1, 2, 3, 4, 5].map((c) => hs(i * 1.731 + c * 17.13 + 0.5, sd)); }
+  if (tp === 3) { const s = n > 1 ? k / (n - 1) : 0; return [s, s, s, s, s, s]; }
   if (tp === 4) {
     const f = e.noiseScale / 1000, sp = e.noiseSpeed / 100 * time;
     const v = vnoise(x * f + sp, y * f + e.seed * 17.3);
-    return [v, vnoise(x * f + 31.7 + sp, y * f + e.seed * 17.3), v, v, v];
+    return [v, vnoise(x * f + 31.7 + sp, y * f + e.seed * 17.3), v, v, v, v];
   }
   // v0.88 Wave: the phase runs along the order (k) and back in time, so the wave travels toward higher items
-  if (tp === 8) { const wv = waveAt(e.waveShape || 1, k / Math.max(e.waveLength || 6, 0.001) - (e.waveSpeed === undefined ? 0.5 : e.waveSpeed) * (time || 0) + (e.waveOffset || 0) / 100); return [wv, wv, wv, wv, wv]; }
-  return [1, 1, 1, 1, 1];
+  if (tp === 8) { const wv = waveAt(e.waveShape || 1, k / Math.max(e.waveLength || 6, 0.001) - (e.waveSpeed === undefined ? 0.5 : e.waveSpeed) * (time || 0) + (e.waveOffset || 0) / 100); return [wv, wv, wv, wv, wv, wv]; }
+  return [1, 1, 1, 1, 1, 1];
 }
 
 /**
@@ -277,19 +281,20 @@ function amounts(e, { i, k, n, x, y, time }) {
  * For Delay the caller passes the effector's values read at time − k × Delay frames.
  */
 function apply(effs, item) {
-  let dx = 0, dy = 0, scaleMul = 1, rot = 0, opMul = 1;
+  let dx = 0, dy = 0, scaleMul = 1, rot = 0, opMul = 1, custom = 0;
   for (const e of effs) {
     const [lx, ly] = e.toLocal(item.cx, item.cy);
     const w = weight(e.values, lx, ly);
     if (w <= 0) continue;
     const v = e.values, m = amounts(v, item);
-    const R = modify(v, [v.moveX * m[0] * w, v.moveY * m[1] * w, v.scale / 100 * m[2] * w, v.rotate * m[3] * w, v.fade / 100 * m[4] * w]);
+    const R = modify(v, [v.moveX * m[0] * w, v.moveY * m[1] * w, v.scale / 100 * m[2] * w, v.rotate * m[3] * w, v.fade / 100 * m[4] * w, (v.custom || 0) * m[5] * w]);
+    custom += R[5];
     dx += R[0]; dy += R[1];
     scaleMul *= Math.max(0, 1 + R[2]);
     rot += R[3];
     opMul *= clamp(1 - R[4], 0, 1);
   }
-  return { dx, dy, scaleMul, rot, opMul };
+  return { dx, dy, scaleMul, rot, opMul, custom };
 }
 
 /** A 2D effector's space: position, anchor, rotation (°), scale (%). */
@@ -339,49 +344,49 @@ function termsAt(src, item, tq, now) {
   const V = src.at(now), Q = tq === now ? V : src.at(tq);
   const c = item.compAt(tq), l = src.toLocal(tq)(c[0], c[1]);
   const w = weight(Object.assign({}, V, { size: Q.size, softness: Q.softness, strength: Q.strength }), l[0], l[1], { t: tq, luma: src.lumaAt ? src.lumaAt(c[0], c[1], tq) : 0 });
-  if (w <= 0) return [0, 0, 0, 0, 0];
+  if (w <= 0) return [0, 0, 0, 0, 0, 0];
   const tp = Math.round(V.type);
   const M = tp === 5 ? src.at(tq - item.k * V.delay * item.fd) : Q;
   if (tp === 6) {
     const o = src.originAt(tq), aim = wrap180(Math.atan2(o[1] - c[1], o[0] - c[0]) * 180 / Math.PI + M.rotate - item.baseRotAt(tq));
-    return [M.moveX * w, M.moveY * w, M.scale / 100 * w, aim * w, M.fade / 100 * w];
+    return [M.moveX * w, M.moveY * w, M.scale / 100 * w, aim * w, M.fade / 100 * w, (M.custom || 0) * w];
   }
   let m = amounts(V, { i: item.i, k: item.k, n: item.n, x: item.x, y: item.y, time: tq });
   // (the move modes below use the amounts m, so they follow Random / Step / Noise / Wave / Audio too)
-  if (tp === 7) { const a = clamp((src.audioAt ? src.audioAt(tq - item.k * V.delay * item.fd) : 0) / Math.max(V.audioMax, 0.001), 0, 1); m = [a, a, a, a, a]; }
+  if (tp === 7) { const a = clamp((src.audioAt ? src.audioAt(tq - item.k * V.delay * item.fd) : 0) / Math.max(V.audioMax, 0.001), 0, 1); m = [a, a, a, a, a, a]; }
   // v0.89 Move Mode: 2 Attract / Repel (Move X px toward the effector, never past it) · 3 Absolute (go to the effector + Move X / Y).
   // The reference measures in comp space; the expression measures in the grid null's own space (G.fromComp) — the same
   // for a null that is not rotated or scaled, which is what the tests build.
   const mm = Math.round(V.moveMode || 1);
   if (mm === 2 || mm === 3) {
-    const o = src.originAt(tq), gx = o[0] - c[0], gy = o[1] - c[1], sc = M.scale / 100 * m[2] * w, ro = M.rotate * m[3] * w, fa = M.fade / 100 * m[4] * w;
-    if (mm === 2) { const ds = Math.sqrt(gx * gx + gy * gy); let pl = M.moveX * m[0] * w; if (pl > ds) pl = ds; return [ds > 0.001 ? gx / ds * pl : 0, ds > 0.001 ? gy / ds * pl : 0, sc, ro, fa]; }
+    const o = src.originAt(tq), gx = o[0] - c[0], gy = o[1] - c[1], sc = M.scale / 100 * m[2] * w, ro = M.rotate * m[3] * w, fa = M.fade / 100 * m[4] * w, cu = (M.custom || 0) * m[5] * w;
+    if (mm === 2) { const ds = Math.sqrt(gx * gx + gy * gy); let pl = M.moveX * m[0] * w; if (pl > ds) pl = ds; return [ds > 0.001 ? gx / ds * pl : 0, ds > 0.001 ? gy / ds * pl : 0, sc, ro, fa, cu]; }
     const ab = m[0] * w;
-    return [(gx + M.moveX) * ab, (gy + M.moveY) * ab, sc, ro, fa];
+    return [(gx + M.moveX) * ab, (gy + M.moveY) * ab, sc, ro, fa, cu];
   }
-  return [M.moveX * m[0] * w, M.moveY * m[1] * w, M.scale / 100 * m[2] * w, M.rotate * m[3] * w, M.fade / 100 * m[4] * w];
+  return [M.moveX * m[0] * w, M.moveY * m[1] * w, M.scale / 100 * m[2] * w, M.rotate * m[3] * w, M.fade / 100 * m[4] * w, (M.custom || 0) * m[5] * w];
 }
 /** termsAt with the spring (when the effector has Spring > 0). */
 function springTerms(src, item, now) {
   const V = src.at(now), e0 = termsAt(src, item, now, now), sp = Math.max(0, (V.spring || 0) / 100);
   if (!(sp > 0)) return e0;
-  const { N, D } = springWindow(V.decay, item.fd), acc = [0, 0, 0, 0, 0];
+  const { N, D } = springWindow(V.decay, item.fd), acc = [0, 0, 0, 0, 0, 0];
   let prev = e0;
   for (let j = 0; j < N; j++) {
     const nx = termsAt(src, item, now - (j + 1) * D, now), S = stepResponse((j + 0.5) * D, V.frequency, V.decay);
-    for (let c = 0; c < 5; c++) acc[c] += (prev[c] - nx[c]) * S;
+    for (let c = 0; c < 6; c++) acc[c] += (prev[c] - nx[c]) * S;
     prev = nx;
   }
   return e0.map((v, c) => v + sp * (prev[c] + acc[c] - v));
 }
 /** Every effector (in slot order) on one item at time now → { dx, dy, scaleMul, rot, opMul } (spring included). */
 function applyAt(srcs, item, now) {
-  let dx = 0, dy = 0, scaleMul = 1, rot = 0, opMul = 1;
+  let dx = 0, dy = 0, scaleMul = 1, rot = 0, opMul = 1, custom = 0;
   for (const src of srcs) {
     const R = modify(src.at(now), springTerms(src, item, now));
-    dx += R[0]; dy += R[1]; scaleMul *= Math.max(0, 1 + R[2]); rot += R[3]; opMul *= clamp(1 - R[4], 0, 1);
+    dx += R[0]; dy += R[1]; scaleMul *= Math.max(0, 1 + R[2]); rot += R[3]; opMul *= clamp(1 - R[4], 0, 1); custom += R[5] || 0;
   }
-  return { dx, dy, scaleMul, rot, opMul };
+  return { dx, dy, scaleMul, rot, opMul, custom };
 }
 
 /* ---------- the expression (mirrors the maths above) ---------- */
@@ -392,7 +397,7 @@ function applyAt(srcs, item, now) {
  */
 function code() {
   return [
-    'var ex = 0, ey = 0, es = 1, er = 0, eop = 1;',
+    'var ex = 0, ey = 0, es = 1, er = 0, eop = 1, ecu = 0;',
     'function sm(u) { return u * u * (3 - 2 * u); }',
     'function hs(a, b) { var s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return (s - Math.floor(s)) * 2 - 1; }',
     'function vn(px, py) { var x0 = Math.floor(px), y0 = Math.floor(py), ux = sm(px - x0), uy = sm(py - y0), a = hs(x0, y0), b = hs(x0 + 1, y0), c2 = hs(x0, y0 + 1), d = hs(x0 + 1, y0 + 1); return a + (b - a) * ux + (c2 - a) * uy + (a - b - c2 + d) * ux * uy; }',
@@ -401,9 +406,9 @@ function code() {
     // v0.87: a control that is not on the null reads as its default (looked up once per effector, not per sample)
     '  var H = {};',
     '  function ev(nm, tt, df) { if (H[nm] === undefined) { try { EL.effect(nm)(1); H[nm] = 1; } catch (eH) { H[nm] = 0; } } return H[nm] == 1 ? EL.effect(nm)(1).valueAtTime(tt) : df; }',
-    '  var fo = Math.round(ev("Falloff", time, 1)), inv = ev("Invert", time, 0) == 1, dl = ev("Delay", time, 3), sd0 = ev("Seed", time, 1), nf = ev("Noise Scale", time, 100) / 1000, nsp = ev("Noise Speed", time, 50) / 100, m0 = [1, 1, 1, 1, 1];',
-    '  if (tp == 2) { var s2 = sd0 * 3.117 + 1.1, ia = i * 1.731; m0 = [hs(ia + 0.5, s2), hs(ia + 17.63, s2), hs(ia + 34.76, s2), hs(ia + 51.89, s2), hs(ia + 69.02, s2)]; }',
-    '  else if (tp == 3) { var sv = n > 1 ? k / (n - 1) : 0; m0 = [sv, sv, sv, sv, sv]; }',
+    '  var fo = Math.round(ev("Falloff", time, 1)), inv = ev("Invert", time, 0) == 1, dl = ev("Delay", time, 3), sd0 = ev("Seed", time, 1), nf = ev("Noise Scale", time, 100) / 1000, nsp = ev("Noise Speed", time, 50) / 100, m0 = [1, 1, 1, 1, 1, 1];',
+    '  if (tp == 2) { var s2 = sd0 * 3.117 + 1.1, ia = i * 1.731; m0 = [hs(ia + 0.5, s2), hs(ia + 17.63, s2), hs(ia + 34.76, s2), hs(ia + 51.89, s2), hs(ia + 69.02, s2), hs(ia + 86.15, s2)]; }',
+    '  else if (tp == 3) { var sv = n > 1 ? k / (n - 1) : 0; m0 = [sv, sv, sv, sv, sv, sv]; }',
     // v0.36 Audio: the amplitude layer linked on the effector (made by Convert Audio to Keyframes)
     // v0.38 fields: the noise field's speed, the Image field's layer
     '  var fsp = 0, FL = null; if (fo == 5) { fsp = ev("Field Speed", time, 50) / 100; } if (fo == 6) { try { FL = EL.effect("Field Layer")(1); } catch (eFl) { FL = null; } }',
@@ -425,32 +430,32 @@ function code() {
     '    }',
     '    if (inv) { w = 1 - w; }',
     '    w = w * ev("Strength", tq, 100) / 100;',
-    '    if (w <= 0) { return [0, 0, 0, 0, 0]; }',
+    '    if (w <= 0) { return [0, 0, 0, 0, 0, 0]; }',
     '    var tt = tp == 5 ? tq - k * dl * thisComp.frameDuration : tq, m = m0;',
     // v0.36 Target: turn the short way toward the effector (Rotate = aim offset; 0° = the item's +X axis)
-    '    if (tp == 6) { var EO = EL.toComp(EL.anchorPoint.valueAtTime(tq), tq), am = Math.atan2(EO[1] - IP[1], EO[0] - IP[0]) * 180 / Math.PI + ev("Rotate", tq, 0) - (rot + G.transform.rotation.valueAtTime(tq)); am = am - 360 * Math.floor((am + 180) / 360); return [ev("Move X", tq, 0) * w, ev("Move Y", tq, 0) * w, ev("Scale", tq, 0) / 100 * w, am * w, ev("Fade", tq, 0) / 100 * w]; }',
-    '    if (tp == 7) { var av = 0; if (AU) { try { av = AU.effect("Both Channels")(1).valueAtTime(tq - k * dl * thisComp.frameDuration); } catch (eAv) { av = 0; } } av = Math.min(Math.max(av / amx, 0), 1); m = [av, av, av, av, av]; }',
-    '    if (tp == 4) { var ns = nsp * tq, sd = sd0 * 17.3, nv = vn(x * nf + ns, y * nf + sd); m = [nv, vn(x * nf + 31.7 + ns, y * nf + sd), nv, nv, nv]; }',
-    '    if (tp == 8) { var wph = k / wln - wsp * tq + wof, wfr = wph - Math.floor(wph), wv = wsh == 2 ? 1 - 4 * Math.abs(wfr - 0.5) : (wsh == 3 ? 2 * wfr - 1 : (wsh == 4 ? 1 - 2 * wfr : (wsh == 5 ? (wfr < 0.5 ? 1 : -1) : Math.sin(2 * Math.PI * wph)))); m = [wv, wv, wv, wv, wv]; }',
+    '    if (tp == 6) { var EO = EL.toComp(EL.anchorPoint.valueAtTime(tq), tq), am = Math.atan2(EO[1] - IP[1], EO[0] - IP[0]) * 180 / Math.PI + ev("Rotate", tq, 0) - (rot + G.transform.rotation.valueAtTime(tq)); am = am - 360 * Math.floor((am + 180) / 360); return [ev("Move X", tq, 0) * w, ev("Move Y", tq, 0) * w, ev("Scale", tq, 0) / 100 * w, am * w, ev("Fade", tq, 0) / 100 * w, ev("Custom", tq, 0) * w]; }',
+    '    if (tp == 7) { var av = 0; if (AU) { try { av = AU.effect("Both Channels")(1).valueAtTime(tq - k * dl * thisComp.frameDuration); } catch (eAv) { av = 0; } } av = Math.min(Math.max(av / amx, 0), 1); m = [av, av, av, av, av, av]; }',
+    '    if (tp == 4) { var ns = nsp * tq, sd = sd0 * 17.3, nv = vn(x * nf + ns, y * nf + sd); m = [nv, vn(x * nf + 31.7 + ns, y * nf + sd), nv, nv, nv, nv]; }',
+    '    if (tp == 8) { var wph = k / wln - wsp * tq + wof, wfr = wph - Math.floor(wph), wv = wsh == 2 ? 1 - 4 * Math.abs(wfr - 0.5) : (wsh == 3 ? 2 * wfr - 1 : (wsh == 4 ? 1 - 2 * wfr : (wsh == 5 ? (wfr < 0.5 ? 1 : -1) : Math.sin(2 * Math.PI * wph)))); m = [wv, wv, wv, wv, wv, wv]; }',
     '    if (mvm == 2 || mvm == 3) {',
-    '      var EO2 = EL.toComp(EL.anchorPoint.valueAtTime(tq), tq), GO = G.fromComp([EO2[0], EO2[1]], tq), gdx = GO[0] - (x + jx), gdy = GO[1] - (y + jy + dy), msc = ev("Scale", tt, 0) / 100 * m[2] * w, mro = ev("Rotate", tt, 0) * m[3] * w, mfa = ev("Fade", tt, 0) / 100 * m[4] * w;',
-    '      if (mvm == 2) { var gds = Math.sqrt(gdx * gdx + gdy * gdy), gpl = ev("Move X", tt, 0) * m[0] * w; if (gpl > gds) { gpl = gds; } return [gds > 0.001 ? gdx / gds * gpl : 0, gds > 0.001 ? gdy / gds * gpl : 0, msc, mro, mfa]; }',
-    '      var gab = m[0] * w; return [(gdx + ev("Move X", tt, 0)) * gab, (gdy + ev("Move Y", tt, 0)) * gab, msc, mro, mfa];',
+    '      var EO2 = EL.toComp(EL.anchorPoint.valueAtTime(tq), tq), GO = G.fromComp([EO2[0], EO2[1]], tq), gdx = GO[0] - (x + jx), gdy = GO[1] - (y + jy + dy), msc = ev("Scale", tt, 0) / 100 * m[2] * w, mro = ev("Rotate", tt, 0) * m[3] * w, mfa = ev("Fade", tt, 0) / 100 * m[4] * w, mcu = ev("Custom", tt, 0) * m[5] * w;',
+    '      if (mvm == 2) { var gds = Math.sqrt(gdx * gdx + gdy * gdy), gpl = ev("Move X", tt, 0) * m[0] * w; if (gpl > gds) { gpl = gds; } return [gds > 0.001 ? gdx / gds * gpl : 0, gds > 0.001 ? gdy / gds * gpl : 0, msc, mro, mfa, mcu]; }',
+    '      var gab = m[0] * w; return [(gdx + ev("Move X", tt, 0)) * gab, (gdy + ev("Move Y", tt, 0)) * gab, msc, mro, mfa, mcu];',
     '    }',
-    '    return [ev("Move X", tt, 0) * m[0] * w, ev("Move Y", tt, 0) * m[1] * w, ev("Scale", tt, 0) / 100 * m[2] * w, ev("Rotate", tt, 0) * m[3] * w, ev("Fade", tt, 0) / 100 * m[4] * w];',
+    '    return [ev("Move X", tt, 0) * m[0] * w, ev("Move Y", tt, 0) * m[1] * w, ev("Scale", tt, 0) / 100 * m[2] * w, ev("Rotate", tt, 0) * m[3] * w, ev("Fade", tt, 0) / 100 * m[4] * w, ev("Custom", tt, 0) * m[5] * w];',
     '  }',
     '  var R = TQ(time), sp = 0, fq = 0, dc = 5;',
     // v0.35 Spring / Inertia (effectors made before v0.35 have no Spring control → off)
     '  sp = Math.max(0, ev("Spring", time, 0) / 100); fq = ev("Frequency", time, 2.5); dc = ev("Decay", time, 5);',
     '  if (sp > 0) {',
-    `    var sg = Math.max(dc, ${SPRING.minDecay}), Wn = Math.min(${SPRING.maxWindow}, ${SPRING.settle} / sg), Nn = Math.max(1, Math.min(${SPRING.maxSamples}, Math.ceil(Wn / thisComp.frameDuration - 1e-9))), Dn = Wn / Nn, om = 2 * Math.PI * fq, pv = R, ac = [0, 0, 0, 0, 0], jn, cn;`,
+    `    var sg = Math.max(dc, ${SPRING.minDecay}), Wn = Math.min(${SPRING.maxWindow}, ${SPRING.settle} / sg), Nn = Math.max(1, Math.min(${SPRING.maxSamples}, Math.ceil(Wn / thisComp.frameDuration - 1e-9))), Dn = Wn / Nn, om = 2 * Math.PI * fq, pv = R, ac = [0, 0, 0, 0, 0, 0], jn, cn;`,
     '    for (jn = 0; jn < Nn; jn++) {',
     '      var nx = TQ(time - (jn + 1) * Dn), tau = (jn + 0.5) * Dn, dk = Math.exp(-sg * tau);',
     '      var Sr = fq <= 0.01 ? 1 - dk * (1 + sg * tau) : 1 - dk * (Math.cos(om * tau) + sg / om * Math.sin(om * tau));',
-    '      for (cn = 0; cn < 5; cn++) { ac[cn] += (pv[cn] - nx[cn]) * Sr; }',
+    '      for (cn = 0; cn < 6; cn++) { ac[cn] += (pv[cn] - nx[cn]) * Sr; }',
     '      pv = nx;',
     '    }',
-    '    var R2 = []; for (cn = 0; cn < 5; cn++) { R2.push(R[cn] + sp * (pv[cn] + ac[cn] - R[cn])); } R = R2;',
+    '    var R2 = []; for (cn = 0; cn < 6; cn++) { R2.push(R[cn] + sp * (pv[cn] + ac[cn] - R[cn])); } R = R2;',
     '  }',
     // v0.88 Snap To, then Clamp — after the spring (features/grid/effectors.js modify)
     '  var snm = ev("Snap Move", time, 0), snr = ev("Snap Rotate", time, 0), sns = ev("Snap Scale", time, 0) / 100, mxm = ev("Max Move", time, 0), mxr = ev("Max Rotate", time, 0), mxs = ev("Max Scale", time, 0) / 100;',
@@ -459,12 +464,14 @@ function code() {
     '    if (mxm > 0) { var fdm = Math.sqrt(f0 * f0 + f1 * f1); if (fdm > mxm) { f0 = f0 * mxm / fdm; f1 = f1 * mxm / fdm; } }',
     '    if (mxs > 0) { f2 = Math.min(Math.max(f2, -mxs), mxs); }',
     '    if (mxr > 0) { f3 = Math.min(Math.max(f3, -mxr), mxr); }',
-    '    R = [f0, f1, f2, f3, R[4]];',
+    '    R = [f0, f1, f2, f3, R[4], R[5]];',
     '  }',
     '  ex += R[0]; ey += R[1];',
     '  es *= Math.max(0, 1 + R[2]);',
     '  er += R[3];',
     '  eop *= Math.min(Math.max(1 - R[4], 0), 1);',
+    // v0.92: the custom channel — what Effector on Property adds to the property it is written on
+    '  ecu += R[5];',
     '}',
     `var eqi; for (eqi = 0; eqi < ${SLOTS.length}; eqi++) { var EQ = null; try { EQ = G.effect(eqi == 0 ? "Effector" : "Effector " + (eqi + 1))(1); } catch (eS) { EQ = null; } if (EQ) { EFX(EQ); } }`
   ].join('\n');

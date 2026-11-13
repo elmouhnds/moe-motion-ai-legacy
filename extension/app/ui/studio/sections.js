@@ -148,6 +148,8 @@ const LAYOUT = [
   T('efGather', 'Gather', 'grid.effector', { type: 'plain', falloff: 'sphere', moveMode: 'absolute', scale: 0, softness: 70, falloffCurve: 'easeIn', sweep: true }, { k: 'eff', type: 'plain', falloff: 'sphere', moveMode: 'absolute', softness: 70, falloffCurve: 'easeIn' }, ['Effectors']),
   // v0.87 Controls on demand: an effector arrives with the sliders it uses — this adds the rest (features/grid/effectorControls.js)
   T('efControls', 'More Sliders', 'grid.effectorControls', { group: 'all' }, { k: 'icon', icon: 'sliders' }, ['Effectors']),
+  // v0.92 (React 3 study): the effectors drive any number property of the items (features/grid/effectProperty.js)
+  T('efProperty', 'Effector on Property', 'grid.effectProperty', { amount: 50 }, { k: 'icon', icon: 'target' }, ['Effectors']),
   // v0.90 (React 3 study): take one effector away, or keep what it does at this frame (features/grid/effectorRemove.js)
   T('efFreeze', 'Freeze Effector', 'grid.effectorFreeze', {}, { k: 'icon', icon: 'lock' }, ['Effectors']),
   T('efRemove', 'Remove Effector', 'grid.effectorRemove', {}, { k: 'icon', icon: 'trash' }, ['Effectors']),

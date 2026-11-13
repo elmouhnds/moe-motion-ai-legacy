@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.98 — Effector on Property ✅ (v0.92.0)
+- React 3 study item 8 of 8 — the study is done (docs/research/REACT3_STUDY.md › Status). Open from it: trim the grid null's 23 controls and Proximity's 13 the same way as the effector; a Custom channel per property; all eight need a run in After Effects.
+
 ## M1.97 — Tracer ✅ (v0.91.0)
 - React 3 study item 7 of 8. Left: an effector on any keyframeable property (8) — the largest; and trimming the grid null's and Proximity's controls (from item 1).
 

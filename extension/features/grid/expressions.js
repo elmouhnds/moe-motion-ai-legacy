@@ -256,9 +256,10 @@ function layBody(pathAccess, pathClosed) {
  * The four expressions for item i of n (v0.19).
  * opts: { gridName, pathAccess, pathClosed, home: [x, y] (position in the null's space at build) }
  */
-function buildAll(i, n, { gridName, pathAccess = null, pathClosed = false, home = [0, 0] }) {
+/** The shared head of every item expression: the item's place in the grid, its build, the effectors (leaves x, y, z, sc, rot, op, ex, ey, ecu…). */
+function headOf(i, n, { gridName, pathAccess = null, pathClosed = false, home = [0, 0] }) {
   const hx = Math.round(home[0] * 1000) / 1000, hy = Math.round(home[1] * 1000) / 1000;
-  const head = [
+  return [
     `${TAG} · ${esc(gridName)} · v${VERSION}`,
     `var G = thisComp.layer("${esc(gridName)}");`,
     'function c(nm) { return G.effect(nm)(1).value; }',
@@ -298,6 +299,20 @@ function buildAll(i, n, { gridName, pathAccess = null, pathClosed = false, home 
     EF.code(),
     'sc *= es; rot += er; op *= eop;'
   ].join('\n');
+}
+const CUSTOM_MARK = '// MOE Grid custom';
+/**
+ * v0.92 Effector on Property: the expression for ANY numeric property of item i — its own value plus what the grid's
+ * effectors give on their Custom channel (`ecu`, in the property's own units). dims = 1, 2 or 3.
+ */
+function buildCustom(i, n, facts, dims) {
+  const d = Math.min(3, Math.max(1, Math.round(dims) || 1));
+  return `${headOf(i, n, facts)}\n${CUSTOM_MARK} ${d}\n${d === 1 ? 'value + ecu;' : `add(value, [${Array.from({ length: d }, () => 'ecu').join(', ')}]);`}`;
+}
+/** 1–3 when the code is a custom-property expression (to rewrite it on an upgrade), else 0. */
+const customDims = (code) => { const m = /\n\/\/ MOE Grid custom (\d)\n/.exec(String(code || '')); return m ? Number(m[1]) : 0; };
+function buildAll(i, n, facts) {
+  const head = headOf(i, n, facts);
   return {
     // + (value - H): move an item by hand and it keeps that nudge (and its own Position keys play on top)
     position: `${head}\nvar ep = ew * c("Effector Push"), px = x + jx + ed[0] * ep + ex + (value[0] - H[0]), py = y + jy + dy + ed[1] * ep + ey + (value[1] - H[1]);\nvalue.length > 2 ? [px, py, z + value[2]] : [px, py];`,
@@ -308,8 +323,8 @@ function buildAll(i, n, { gridName, pathAccess = null, pathClosed = false, home 
 }
 
 /** Is this a v0.19 (all-layouts) grid expression? */
-/** The item expression's version: 2 all layouts (v0.19) · 3 reads effectors (v0.33) · 4 optional controls (v0.87) · 5 Wave, Snap To, Clamp (v0.88) · 6 falloff curve, move modes (v0.89). */
-const VERSION = 6;
+/** The item expression's version: 2 all layouts (v0.19) · 3 reads effectors (v0.33) · 4 optional controls (v0.87) · 5 Wave, Snap To, Clamp (v0.88) · 6 falloff curve, move modes (v0.89) · 7 the custom channel (v0.92). */
+const VERSION = 7;
 const versionOf = (code) => { const m = / · v(\d+)\n/.exec(String(code || '')); return m ? Number(m[1]) : 0; };
 const isV2 = (code) => versionOf(code) >= 2;
 /** v0.33: does the expression read MOE Effectors (Effector 2 / 3 slots)? */
@@ -354,4 +369,4 @@ function controlAddress(layerId, name) {
   return { layerId, matchNames: ['ADBE Effect Parade', `name:${name}`, `name:${KIND[kind ? kind[1] : 'slider'].param}`] };
 }
 
-module.exports = { TAG, MODE_CONTROLS, COMMON_CONTROLS, HEAD_CONTROLS, LEGACY_CONTROLS, ITEM_FX, MODE_MENU, KIND, KEY, NAME_OF, controlsFor, allControls, defaultParams, build, buildAll, isV2, isV3, isV4, isCurrent, VERSION, versionOf, factsOf, slotOf, withSlot, PROP_ADDR, controlItems, controlAddress };
+module.exports = { TAG, MODE_CONTROLS, COMMON_CONTROLS, HEAD_CONTROLS, LEGACY_CONTROLS, ITEM_FX, MODE_MENU, KIND, KEY, NAME_OF, controlsFor, allControls, defaultParams, build, buildAll, buildCustom, customDims, CUSTOM_MARK, headOf, isV2, isV3, isV4, isCurrent, VERSION, versionOf, factsOf, slotOf, withSlot, PROP_ADDR, controlItems, controlAddress };

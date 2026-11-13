@@ -888,7 +888,8 @@ class CompItem {
       if (n instanceof MockProperty) { if (n._selected) out.push(n); return; }
       (n._children || []).forEach(walk);
     };
-    this.selectedLayers.forEach((l) => walk(l._group));
+    // v0.92: effect parameters and mask properties can be selected too (CompItem.selectedProperties covers every property of the layer)
+    this.selectedLayers.forEach((l) => [l._group, l._parade, l._masks].filter(Boolean).forEach(walk));
     return out;
   }
 }

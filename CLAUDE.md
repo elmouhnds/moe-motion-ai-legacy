@@ -127,6 +127,11 @@ Permanent rules for anyone (human or AI) working in this repository.
 - Read every value before the first write (Freeze reads all, then removes keys, then sets values).
 - The test mock's Layer Control follows its layer like After Effects — never compare a slot with a remembered index after layers changed; read it again.
 
+## Effector on Property (v0.92, docs/features/EFFECTOR_ANY_PROPERTY.md)
+- An effector's terms are SIX: [dx, dy, scale, rotate, fade, custom]. Anything that builds, sums or loops over them (`amounts`, `termsAt`, `springTerms`, `modify`, `TQ`, the spring loop in the expression) handles all six — `modify` keeps everything after the fourth untouched.
+- A property other than Position / Scale / Rotation / Opacity is wired only through `expressions.buildCustom` (the shared `headOf` + `value + ecu`), carries the `// MOE Grid custom <dims>` mark, and is rewritten with the items in `grid.effector` (`customDims`). Numbers only; refuse colours, paths, text and a property with the user's own expression before writing.
+- Never add a second way to drive a property from effectors (no per-property rule list, no copy of the head).
+
 ## Tracer (v0.91, docs/features/TRACER.md)
 - A tracer is ONE shape layer `MOE Tracer · <grid>` whose paths are expressions (`createPath` of each item's `toComp(anchorPoint)` brought in with `fromComp`), tagged `// MOE Tracer` and written through `expressions.set` (link ids). The layer sits at the comp's origin — never move it in code that assumes otherwise.
 - Which items a line joins comes only from `grid/tracer.js lines()` (pure, from measured positions — never from the Columns control or the order); stay within `LIMITS`; refuse duplicate item names before making anything.

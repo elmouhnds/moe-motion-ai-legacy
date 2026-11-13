@@ -85,6 +85,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['target', 'Effectors on any property', 'Select Trim Paths End, Stroke Width, Roundness or any slider on one item of a grid, then Effector on Property (Layout › Effectors): every item gets it, and each effector\'s new Custom slider says how much it adds — with its falloff, type, spring, Snap To and Clamp. Numbers only; one Custom amount per grid.'],
   ['guides', 'Tracer: lines that follow the clones', 'Select a grid and draw lines between its items — one line in order, rows, a full grid, a zig-zag or a hub. The lines are one shape layer and follow the items through effectors and springs. Layout › Clone › Tracer Line / Grid / Zig-zag / Hub.'],
   ['trash', 'Remove or freeze one effector', 'Remove Effector takes one effector off a grid without disturbing the others. Freeze Effector keeps what it does at this frame: its keyframes go, the values stay, and Restore brings them back. Both are in Layout › Effectors — select the effector null.'],
   ['target', 'Magnet, Repel, Gather — and a falloff curve', 'Move mode on an effector: Attract / Repel pulls the clones toward the effector null (never past it) or pushes them away; Absolute sends them to it. Falloff curve chooses how the soft edge fades — smooth, linear, ease in or ease out — for the moves and for Clone Colours.'],

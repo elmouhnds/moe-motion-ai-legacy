@@ -100,6 +100,8 @@
 
 **Target & Audio Effectors** (v0.36.0): Target turns the clones to face the effector null; Audio drives every move from a soundtrack's loudness (After Effects' Convert Audio to Keyframes, run for you), each clone a little later — tiles Aim, Look Near, Beat Pulse, Beat Wave (docs/features/TARGET_AUDIO_EFFECTORS.md).
 
+**Effector on Property** (v0.92.0): effectors can drive any number property of a grid's items (Trim Paths End, Stroke Width, Roundness, a slider…) through a new Custom channel — select the property on one item and it is wired on all. Mock-tested, not yet run in After Effects.
+
 **Tracer** (v0.91.0): lines between a grid's clones that follow them through effectors and springs — in order, rows, grid, zig-zag or hub — on one shape layer. Mock-tested, not yet run in After Effects.
 
 **Remove / Freeze Effector** (v0.90.0): take one effector off a grid without touching the others, or keep what it does at this frame (keys removed, values held, restorable). Mock-tested, not yet run in After Effects.

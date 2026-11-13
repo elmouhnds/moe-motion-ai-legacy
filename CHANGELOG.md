@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.92.0] — 2026-11-13 — Effector on Property (8 of 8 from the React 3 study)
+- **Effector on Property**: let a grid's effectors drive any number property of its items — Trim Paths End, Stroke Width, Roundness, a blur amount, any slider. Select the property on one item; it is wired on every item of the grid. Each effector's new **Custom** slider is the amount, with its falloff, type, spring, Snap To and Clamp.
+- The Effector tool gained *Any property* (the Custom amount); *More Sliders* gained the group *Any property*. A tile in Layout › Effectors.
+- Item expressions are v7 (a sixth, custom channel); wired properties are rewritten with the items on an upgrade.
+- Limits, said plainly: one Custom channel per grid, numbers only (no colours), relative only.
+- Test mock: selected effect parameters are part of the selection, as in After Effects.
+
 ## [0.91.0] — 2026-11-13 — Tracer (7 of 8 from the React 3 study)
 - **Tracer**: lines between a grid's items that follow them — through effectors, springs and the grid's own controls. In order (optionally closed), Rows, Grid (rows + columns), Zig-zag, Hub. One shape layer, `MOE Tracer · <grid>`; width, colour, opacity; behind the items by default. Run it again and it replaces itself.
 - Four tiles in Layout › Clone: Tracer Line, Tracer Grid, Tracer Zig-zag, Tracer Hub (their previews draw the real plan).

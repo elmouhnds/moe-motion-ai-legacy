@@ -67,6 +67,7 @@ const effector = {
     delay: { type: 'number', label: 'Delay', min: 0, max: 60, step: 0.5, default: 3, unit: 'frames', description: 'Per item, in the grid order. The moves are keyframed to rest in 0.6 s from the playhead (re-key them freely) and every item plays them this much later', showIf: (a) => a.type === 'delay' },
     noiseScale: { type: 'number', label: 'Noise size', min: 1, max: 2000, step: 1, default: 100, description: 'Bigger = finer waves', showIf: (a) => a.type === 'noise' },
     noiseSpeed: { type: 'number', label: 'Noise speed', min: -1000, max: 1000, step: 1, default: 50, showIf: (a) => a.type === 'noise' },
+    custom: { type: 'number', label: 'Any property', min: -100000, max: 100000, step: 1, default: 0, advanced: true, description: 'What this effector adds to a property wired with Effector on Property (Trim Paths End, Stroke Width, Roundness, a slider…) — in that property\'s own units. 0 = nothing' },
     colour: { type: 'string', label: 'Colour', default: '#FF6A4D', maxLength: 7, format: 'color', description: 'The colour the items in reach blend toward (needs Clone Colours on the grid)', showIf: (a) => a.colourMix > 0 },
     colourMix: { type: 'number', label: 'Colour mix', min: 0, max: 100, step: 1, default: 0, unit: '%', description: '0 = no colour change · 100 = the items in reach take the colour fully (v0.34, with Clone Colours)' },
     spring: { type: 'number', label: 'Spring', min: 0, max: 200, step: 1, default: 0, unit: '%', description: '0 = the items follow the effector at once · 100 = they follow through a damped spring (overshoot and settle) — v0.35' },
@@ -111,7 +112,7 @@ const effector = {
     if (!grid) return { ok: false, error: 'Select a MOE Grid (its null or one of its items) — or build one with Clone / Arrange first' };
     const name = nextName(ctx);
     const t = EF.TYPES.find((x) => x.id === args.type), f = EF.FALLOFFS.find((x) => x.id === args.falloff);
-    const moves = [args.moveX && `move ${args.moveX}, ${args.moveY || 0} px`, !args.moveX && args.moveY && `move Y ${args.moveY} px`, args.scale && `scale ${args.scale > 0 ? '+' : ''}${args.scale} %`, args.rotate && `rotate ${args.rotate}°`, args.fade && `fade ${args.fade} %`, args.colourMix > 0 && `colour ${args.colour} at ${args.colourMix} %`].filter(Boolean);
+    const moves = [args.moveX && `move ${args.moveX}, ${args.moveY || 0} px`, !args.moveX && args.moveY && `move Y ${args.moveY} px`, args.scale && `scale ${args.scale > 0 ? '+' : ''}${args.scale} %`, args.rotate && `rotate ${args.rotate}°`, args.fade && `fade ${args.fade} %`, args.custom && `+${args.custom} on wired properties`, args.colourMix > 0 && `colour ${args.colour} at ${args.colourMix} %`].filter(Boolean);
     if (args.moveMode === 'attract' && !args.moveX) return { ok: false, error: 'Attract / Repel uses Move X as the pull in px — set it (negative pushes away)' };
     if (args.type !== 'target' && args.moveMode === 'attract') { moves.splice(0, moves[0] && /^move /.test(moves[0]) ? 1 : 0); moves.unshift(`${args.moveX > 0 ? 'pull' : 'push'} ${Math.abs(args.moveX)} px ${args.moveX > 0 ? 'toward' : 'away from'} ${name}`); }
     if (args.type !== 'target' && args.moveMode === 'absolute') { moves.splice(0, moves[0] && /^move /.test(moves[0]) ? 1 : 0); moves.unshift(`the items go to ${name}${args.moveX || args.moveY ? ` + ${args.moveX || 0}, ${args.moveY || 0} px` : ''}`); }
@@ -187,6 +188,9 @@ const effector = {
       if (!X.isV2(c.code) || X.isCurrent(c.code)) continue;
       const f = X.factsOf(c.code);
       if (!f) continue;
+      // v0.92: a property wired with Effector on Property is rewritten too (its dims are marked in its code)
+      const cd = X.customDims(c.code);
+      if (cd) { targets.push({ address: c.address, expression: X.buildCustom(f.i, f.n, f, cd), enabled: true }); continue; }
       const prop = Object.keys(X.PROP_ADDR).find((p) => X.PROP_ADDR[p][1] === c.address.matchNames[c.address.matchNames.length - 1]);
       if (!prop) continue;
       targets.push({ address: c.address, expression: X.buildAll(f.i, f.n, f)[prop], enabled: true });
