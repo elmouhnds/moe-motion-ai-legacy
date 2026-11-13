@@ -570,6 +570,39 @@ const DRAW = {
     c.restore();
   },
   /**
+   * v0.95 (MATTE_REVEAL.md): Matte Reveal — the tool's own plan (`mattePlan.build`) on a card the tile's size, the
+   * cells drawn with the values the keys give at this moment and used as a clip: what After Effects' alpha matte shows.
+   */
+  matte(c, W, H, th, t) {
+    const MP = require('../../../features/reveal/mattePlan');
+    const a = Object.assign({ style: th.style || 'wipe', dir: 'in', duration: 0.8, ease: 'smooth' }, th.args || {});
+    const box = [W * 0.12, H * 0.18, W * 0.76, H * 0.64];
+    // the cells live in a 1000-wide layer space (a bar count or a radius means the same as on a real card)
+    const k = 1000 / box[2], rect = [0, 0, 1000, box[3] * k];
+    const p = MP.build(Object.assign({}, a, { radius: (a.radius === undefined ? 24 : a.radius) * 2 }), rect);
+    const lt = planOf(th, t).at(p.end), v = MP.valuesAt(p, lt);
+    c.fillStyle = '#2f3740'; c.fillRect(0, 0, W, H);
+    c.strokeStyle = 'rgba(230,230,230,0.18)'; c.setLineDash && c.setLineDash([3, 3]); rrect(c, box[0], box[1], box[2], box[3], 6); c.stroke(); c.setLineDash && c.setLineDash([]);
+    c.save();
+    c.beginPath();
+    p.cells.forEach((cell, i) => {
+      const s = v[i].scale || [100, 100];
+      if (Math.abs(s[0]) < 0.01 || Math.abs(s[1]) < 0.01) return;
+      const P = v[i].position || cell.position, r = v[i].roundness === undefined ? cell.roundness : v[i].roundness;
+      c.save();
+      c.translate(box[0] + P[0] / k, box[1] + P[1] / k); c.rotate((cell.rotation || 0) * Math.PI / 180);
+      c.scale(s[0] / 100 / k, s[1] / 100 / k); c.translate(-cell.anchor[0], -cell.anchor[1]);
+      const w = cell.size[0], h = cell.size[1];
+      if (cell.kind === 'ellipse') { c.moveTo(w / 2, 0); c.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2); } else if (r > 0) { const q = Math.min(r, w / 2, h / 2), x = -w / 2, y = -h / 2; c.moveTo(x + q, y); c.arcTo(x + w, y, x + w, y + h, q); c.arcTo(x + w, y + h, x, y + h, q); c.arcTo(x, y + h, x, y, q); c.arcTo(x, y, x + w, y, q); c.closePath(); } else c.rect(-w / 2, -h / 2, w, h);
+      c.restore();
+    });
+    c.clip();
+    c.fillStyle = 'rgba(230,230,230,0.16)'; rrect(c, box[0], box[1], box[2], box[3], 6); c.fill();
+    c.fillStyle = ACC; rrect(c, W * 0.18, H * 0.28, W * 0.34, H * 0.1, 3); c.fill();
+    c.fillStyle = 'rgba(230,230,230,0.35)'; [0.48, 0.6].forEach((y, i) => { rrect(c, W * 0.18, H * y, W * (0.6 - i * 0.18), H * 0.06, 2); c.fill(); });
+    c.restore();
+  },
+  /**
    * v0.60: UI Reveal — a small page measured into boxes, ranked by the tool's own screenOrder (reading order, right to
    * left, or from the centre), each piece playing Quick Animate's keys (+ fade + blur) one Stagger after the other.
    */

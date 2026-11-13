@@ -142,4 +142,85 @@
             });
         }
     };
+    /* v0.95 Matte Reveal (docs/features/MATTE_REVEAL.md).
+     * layers.rects: read-only. For each layer: its content box in its own layer space (AVLayer.sourceRectAtTime,
+     * extents false), 3D switch, its current track matte layer (AE 23+: Layer.trackMatteLayer), in / out points.
+     * args: { compId, layerIds: [id] (max 300), time } -> { layers: [{ layerId, name, rect: [l, t, w, h], threeD,
+     *          matte: { layerId, name } | null, inPoint, outPoint }] } */
+    ops['layers.rects'] = {
+        mutates: false,
+        run: function (args) {
+            var comp = U.compById(args.compId), out = [], i, L, r, m, t;
+            if (!args.layerIds || args.layerIds.length > 300) { U.fail('BAD_ARGS', 'Give 1 to 300 layers.'); }
+            t = args.time !== undefined && args.time !== null ? num(args.time) : comp.time;
+            for (i = 0; i < args.layerIds.length; i++) {
+                L = U.findLayer(comp, { layerId: args.layerIds[i] });
+                r = null;
+                try { r = L.sourceRectAtTime(t, false); } catch (e) { r = null; }
+                m = null;
+                try { if (L.trackMatteLayer) { m = { layerId: L.trackMatteLayer.id, name: L.trackMatteLayer.name }; } } catch (e2) { m = null; }
+                out.push({ layerId: L.id, name: L.name, rect: r ? [num(r.left), num(r.top), num(r.width), num(r.height)] : null,
+                    threeD: !!L.threeDLayer, matte: m, inPoint: L.inPoint, outPoint: L.outPoint });
+            }
+            return { layers: out };
+        }
+    };
+
+    /* shapes.matte: ONE shape layer of white cells (one group per cell: rectangle or ellipse + fill), placed right above
+     * the target, given the target's in / out points, its own transform at identity and parented to the target with
+     * setParentWithJump (which keeps those values) - so every cell's group Position is a point of the target's layer
+     * space and the matte follows the target. Setting it as a track matte is layers.setMatte (a separate step of the
+     * same plan). On any failure the new layer is removed.
+     * args: { compId, targetId, name (starts "MOE Matte"), label, cells: [{ name, kind: rect|ellipse, size: [w, h],
+     *          roundness, anchor: [x, y], position: [x, y], rotation, scale: [sx, sy] }] (max 200) }
+     * -> { layerId, name, index, cells, parentId } */
+    ops['shapes.matte'] = {
+        mutates: true,
+        run: function (args) {
+            var comp = U.compById(args.compId), T = U.findLayer(comp, { layerId: args.targetId });
+            if (!args.name || String(args.name).substring(0, 9) !== 'MOE Matte') { U.fail('BAD_ARGS', 'A matte layer is named "MOE Matte ...".'); }
+            if (!args.cells || !args.cells.length || args.cells.length > 200) { U.fail('BAD_ARGS', 'Give 1 to 200 cells.'); }
+            return U.withUndo('MOE: Matte', function () {
+                var L = comp.layers.addShape(), ok = false, missing = [], i, c, gi, item, tg, cell, root;
+                var contents = function () { return L.property('ADBE Root Vectors Group').property(gi).property('ADBE Vectors Group'); };
+                try {
+                    L.name = args.name;
+                    if (args.label !== undefined) { L.label = args.label; }
+                    for (i = 0; i < args.cells.length; i++) {
+                        cell = args.cells[i];
+                        root = L.property('ADBE Root Vectors Group');
+                        gi = root.addProperty('ADBE Vector Group').propertyIndex;
+                        L.property('ADBE Root Vectors Group').property(gi).name = cell.name || ('Cell ' + (i + 1));
+                        if (cell.kind === 'ellipse') {
+                            item = contents().addProperty('ADBE Vector Shape - Ellipse').propertyIndex;
+                            setProp(contents().property(item), 'ADBE Vector Ellipse Size', [num(cell.size[0]), num(cell.size[1])], missing);
+                        } else {
+                            item = contents().addProperty('ADBE Vector Shape - Rect').propertyIndex;
+                            setProp(contents().property(item), 'ADBE Vector Rect Size', [num(cell.size[0]), num(cell.size[1])], missing);
+                            setProp(contents().property(item), 'ADBE Vector Rect Roundness', num(cell.roundness), missing);
+                        }
+                        item = contents().addProperty('ADBE Vector Graphic - Fill').propertyIndex;
+                        setProp(contents().property(item), 'ADBE Vector Fill Color', [1, 1, 1, 1], missing);
+                        tg = L.property('ADBE Root Vectors Group').property(gi).property('ADBE Vector Transform Group');
+                        setProp(tg, 'ADBE Vector Anchor', [num(cell.anchor[0]), num(cell.anchor[1])], missing);
+                        setProp(tg, 'ADBE Vector Position', [num(cell.position[0]), num(cell.position[1])], missing);
+                        setProp(tg, 'ADBE Vector Scale', cell.scale ? [num(cell.scale[0]), num(cell.scale[1])] : [100, 100], missing);
+                        setProp(tg, 'ADBE Vector Rotation', num(cell.rotation), missing);
+                    }
+                    if (missing.length) { U.fail('PROPERTY_MISSING', 'Shape properties not found: ' + missing.join(', ')); }
+                    c = L.property('ADBE Transform Group');
+                    c.property('ADBE Anchor Point').setValue([0, 0]);
+                    c.property('ADBE Position').setValue([0, 0]);
+                    L.inPoint = T.inPoint;
+                    L.outPoint = T.outPoint;
+                    L.moveBefore(T);
+                    L.setParentWithJump(T);
+                    ok = true;
+                } finally {
+                    if (!ok) { try { L.remove(); } catch (eRm) { /* already gone */ } }
+                }
+                return { layerId: L.id, name: L.name, index: L.index, cells: args.cells.length, parentId: L.parent ? L.parent.id : null };
+            });
+        }
+    };
 }($.global));

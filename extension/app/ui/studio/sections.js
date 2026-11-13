@@ -46,6 +46,23 @@ const ANIMATE = [
   ...[['wipeInL', 'Wipe In →', { from: 'left', dir: 'in' }], ['wipeInR', 'Wipe In ←', { from: 'right', dir: 'in' }], ['wipeInB', 'Wipe In ↑', { from: 'bottom', dir: 'in' }], ['wipeInD', 'Wipe In ↘', { from: 'topLeft', dir: 'in' }],
     ['wipeOutL', 'Wipe Out →', { from: 'left', dir: 'out' }], ['wipeOutR', 'Wipe Out ←', { from: 'right', dir: 'out' }]]
     .map(([id, label, a]) => Object.assign(T(id, label, 'quick.wipe', Object.assign({ duration: 0.8, feather: 60, ease: 'smooth' }, a), { k: 'wipe', from: a.from, dir: a.dir }, [a.dir === 'in' ? 'In' : 'Out', 'Wipe'], 'NEW'), { hint: `${a.dir === 'in' ? 'Reveals' : 'Hides'} the layer with a soft-edged wipe (After Effects' Linear Wipe)` })),
+  // v0.95 (MATTE_REVEAL.md): an alpha track matte per layer (a MOE matte shape layer that follows it), nine styles
+  ...[['mtWipe', 'Matte Wipe →', { style: 'wipe', from: 'left' }, 'One straight edge sweeps across — the layer shows through an alpha matte'],
+    ['mtDiag', 'Matte Diagonal ↘', { style: 'wipe', from: 'topLeft', duration: 0.9 }, 'A diagonal edge sweeps from the top-left corner'],
+    ['mtCorner', 'Matte Corner', { style: 'corner', corner: 'topLeft' }, 'The layer grows out of its top-left corner'],
+    ['mtSplit', 'Matte Split ↔', { style: 'split', axis: 'h', ease: 'expo' }, 'Opens from the middle line outward, like doors'],
+    ['mtIris', 'Iris Reveal', { style: 'iris', ease: 'expo', duration: 0.9 }, 'A circle opens from the centre'],
+    ['mtCard', 'Card Reveal', { style: 'card', radius: 24, ease: 'expo', duration: 0.9 }, 'A round pill grows into a rounded card — a SaaS favourite'],
+    ['mtBlinds', 'Blinds Reveal', { style: 'blinds', axis: 'h', count: 6, cascade: 0.5, duration: 1 }, 'Bars wipe in one after the other'],
+    ['mtBlindsV', 'Vertical Blinds', { style: 'blinds', axis: 'v', count: 8, cascade: 0.6, alternate: true, duration: 1 }, 'Vertical bars, alternate sides'],
+    ['mtStripes', 'Stripes Reveal', { style: 'stripes', axis: 'h', count: 5, cascade: 0.4, ease: 'expo', duration: 1 }, 'Bars slide in from alternate sides'],
+    ['mtShutter', 'Shutter Reveal', { style: 'shutter', axis: 'v', count: 8, cascade: 0.3, duration: 0.9 }, 'Slats open from their own centres'],
+    ['mtPixels', 'Pixel Reveal', { style: 'pixels', cols: 10, order: 'random', cascade: 0.75, duration: 1.1 }, 'A grid of blocks pops in, at random'],
+    ['mtPixelSweep', 'Pixel Sweep', { style: 'pixels', cols: 12, order: 'diagonal', cascade: 0.7, duration: 1.1 }, 'Blocks pop in along the diagonal'],
+    ['mtWipeOut', 'Matte Wipe Out', { style: 'wipe', from: 'left', dir: 'out' }, 'Hides the layer behind a sweeping edge'],
+    ['mtIrisOut', 'Iris Close', { style: 'iris', dir: 'out', ease: 'expo' }, 'A circle closes on the centre'],
+    ['mtPixelsOut', 'Pixel Hide', { style: 'pixels', cols: 10, order: 'random', cascade: 0.75, dir: 'out', duration: 1 }, 'Blocks disappear at random']]
+    .map(([id, label, a, hint]) => { const args = Object.assign({ dir: 'in', duration: 0.8, ease: 'smooth' }, a); return Object.assign(T(id, label, 'reveal.matte', args, { k: 'matte', style: args.style, dir: args.dir }, [args.dir === 'in' ? 'In' : 'Out', 'Matte'], 'NEW'), { hint }); }),
   T('slideFadeIn', 'Slide + Fade In', 'quick.animate', { kind: 'moveRL', dir: 'in', distance: 140, fade: true, ease: 'expo', duration: 0.7 }, { k: 'move', dx: 0.5, dy: 0, dir: 'in' }, ['In', 'Slide', 'Fade'], 'IN'),
   T('dropFade', 'Drop + Fade', 'quick.animate', { kind: 'moveTB', dir: 'in', distance: 80, fade: true, overshoot: true, duration: 0.7 }, { k: 'move', dx: 0, dy: -0.3, dir: 'in' }, ['In', 'Slide', 'Fade'], 'IN'),
   T('zoomFadeIn', 'Zoom Fade In', 'quick.animate', { kind: 'scale', dir: 'in', away: 130, fade: true, ease: 'expo', duration: 0.7 }, { k: 'scale', dir: 'in' }, ['In', 'Scale', 'Fade'], 'IN'),
@@ -284,7 +301,7 @@ const SECTIONS = [
   { id: 'kit', label: 'Toolbox', icon: 'kExcite', kind: 'view' },
   // v0.32 modes: In / Out / Draw On / Proximity are what the moves are for — one set at a time. The ease tiles
   // live in the Motion Control (graph + curve presets); they still resolve (Quick Bar, search) and show when searched.
-  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Blur', 'Wipe', 'Depth', 'Trim', 'Ease', 'Keys', 'Proximity'],
+  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Blur', 'Wipe', 'Matte', 'Depth', 'Trim', 'Ease', 'Keys', 'Proximity'],
     modes: [['In', 'In', 'The layer arrives'], ['Out', 'Out', 'The layer leaves'], ['Shake', 'Shake', 'An impact that settles back (real keys)'], ['Trim', 'Draw On', 'Trim paths for shape lines'], ['Proximity', 'Proximity', 'Layers react to a moving point']],
     elsewhere: [['kit', 'Ease', 'Ease presets and the speed graph are in Motion Control']], tools: (t) => t.category === 'motion' && !/^(zoom|interact)\./.test(t.id) && t.id !== 'motion.easeCurve' && t.id !== 'motion.pasteEase' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },

@@ -52,6 +52,8 @@ const CHECKS = [
   { id: 'relink', label: 'Rename a Grid null: Relink keeps every item where it was', run: checkRelink },
   // v0.63 (WIPE_CAROUSEL.md): the wipe's direction measured from pixels, not assumed from the manual
   { id: 'wipe', label: 'Wipe Reveal "from the left" reveals the left side first (pixels)', run: checkWipe },
+  // v0.95 (MATTE_REVEAL.md): the matte wiring and the cells' values as After Effects evaluates them, half-way through
+  { id: 'matte', label: 'Matte Reveal (Pixels): alpha matte set, half-way share = mattePlan, one Ctrl+Z', run: checkMatte },
   // v0.64 (WAVE4.md): Exploder's Wiggly Selector settings are found by their English names in this After Effects
   { id: 'exploder', label: 'Explode: the Wiggly Selector and its 7 settings, found by name', run: checkExploder },
   // v0.67 (SMART_LAYER.md): layer markers are written and read by After Effects, and marker expressions follow them
@@ -491,6 +493,28 @@ async function checkWipe(T) {
   if (spread < 0.05) return { status: 'info', detail: `half-way through, the four columns read the same alpha (${a.map(r2).join(' / ')}) — nothing to compare here · undo ${u.back ? 'ok' : 'left layers'}` };
   const ok = a[0] > a[3] && u.back;
   return { status: ok ? 'pass' : 'fail', detail: `half-way through, alpha left → right ${a.map(r2).join(' / ')}${ok ? ' — revealed from the left' : ' — the wipe runs the other way'} · undo ${u.back ? 'ok' : 'left layers'}`, numbers: { alpha: a } };
+}
+
+async function checkMatte(T) {
+  const MP = require('../reveal/mattePlan');
+  const { ADDR } = require('../reveal/matteTool');
+  const before = (await T.layerIds()).length;
+  const solid = await T.host.call('layers.createSolid', { compId: T.compId, name: 'ST Matte', color: [1, 1, 1] });
+  await T.select([solid.layerId]);
+  const args = { style: 'pixels', cols: 6, order: 'diagonal', cascade: 0.6, dir: 'in', duration: 1, ease: 'linear', soft: 0, stagger: 0 };
+  const r = await T.run('reveal.matte', args);
+  const L = r.result.layers[0];
+  const info = (await T.host.call('layers.rects', { compId: T.compId, layerIds: [solid.layerId] })).layers[0];
+  const wired = !!(info.matte && info.matte.layerId === L.matteId);
+  const p = MP.build(args, info.rect);
+  const mid = L.t0 + p.end / 2;
+  const got = (await T.host.call('props.values', { compId: T.compId, items: p.cells.map((c) => ({ address: ADDR.scale(L.matteId, c.name), time: mid })) })).items.map((x) => ({ scale: x.value }));
+  const shown = MP.coverage(p, got.map((g, i) => Object.assign({ position: p.cells[i].position }, g)), info.rect);
+  const want = MP.coverage(p, MP.valuesAt(p, p.end / 2), info.rect);
+  const u = await T.undo(r, before + 1);
+  await T.host.call('layers.remove', { compId: T.compId, layerIds: [solid.layerId], onlyNamed: 'ST ' });
+  const ok = wired && Math.abs(shown - want) < 0.03 && u.back;
+  return { status: ok ? 'pass' : 'fail', detail: `${wired ? `track matte = ${L.matteName}` : 'the track matte is NOT the MOE matte'}; half-way After Effects shows ${Math.round(shown * 100)}% of the layer (plan ${Math.round(want * 100)}%), ${p.cells.length} cells · Restore ${u.back ? 'ok' : 'left layers'}`, numbers: { shown, want } };
 }
 
 async function checkExploder(T) {

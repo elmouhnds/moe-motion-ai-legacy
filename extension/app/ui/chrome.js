@@ -85,6 +85,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['layers', 'Matte Reveal — nine styles', 'Select layers, pick Motion › Matte: each layer gets its own alpha track matte (a MOE Matte layer that follows it) and appears through a Wipe in any direction, a Corner, Split, Iris, a Card that grows from a pill, Blinds, Stripes, Shutter or Pixels. In and Out, cascade, soft edge. One Ctrl+Z; Restore removes the mattes.'],
   ['undo', 'One Ctrl+Z per production', 'Titles, lower thirds and product UI now arrive in their own comp, as one layer at the playhead — and one Ctrl+Z takes back the whole thing. Backgrounds, animations, expressions, glass, zoom, carousel, click and proximity are one undo step each too (Grid Build: two). Restore is one step.'],
   ['sliders', 'A grid with 8 sliders, not 46', 'A new grid null shows only what it uses: its layout\'s own sliders, Layout, Order and Item Scale — and Build, Morph, Seed or Twist only when you use them. Grid Sliders (Layout › Clone) adds any group later, and the panel adds a slider when you change it. Proximity shows only the sliders of the reactions you chose.'],
   ['target', 'Effectors on any property', 'Select Trim Paths End, Stroke Width, Roundness or any slider on one item of a grid, then Effector on Property (Layout › Effectors): every item gets it, and each effector\'s new Custom slider says how much it adds — with its falloff, type, spring, Snap To and Clamp. Numbers only; one Custom amount per grid.'],

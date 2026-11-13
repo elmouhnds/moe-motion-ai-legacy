@@ -11,12 +11,14 @@ const KITS = [
     tagline: 'Product UI that clicks, reveals and zooms — the launch-video look',
     recipes: [
       { id: 'clickPunch', label: 'Click & Punch', hint: 'A cursor click on the layer, then the camera punches in', refs: ['tile:productui/ui-click', 'tile:zoom/punch'] },
-      { id: 'riseSpot', label: 'Rise & Spotlight', hint: 'The layer rises in, then the spotlight finds it', refs: ['tile:animate/riseFade', 'tile:zoom/spot'] }
+      { id: 'riseSpot', label: 'Rise & Spotlight', hint: 'The layer rises in, then the spotlight finds it', refs: ['tile:animate/riseFade', 'tile:zoom/spot'] },
+      { id: 'cardClick', label: 'Card & Click', hint: 'The card opens through its matte, then a cursor clicks it', refs: ['tile:animate/mtCard', 'tile:productui/ui-click'] }
     ],
     steps: [
       { label: '1 · Backdrop', refs: ['tile:backgrounds/bg-productNight', 'tile:backgrounds/bg-studioLight', 'tile:backgrounds/bg-auroraProduct', 'tile:backgrounds/bg-graphite'] },
       { label: '2 · Build the UI', refs: ['tile:productui/ui-button', 'tile:productui/ui-search', 'tile:productui/ui-toggle', 'tile:productui/ui-task', 'tile:productui/ui-notify', 'tile:productui/ui-stat', 'tile:productui/ui-chat', 'tile:productui/ui-progress'] },
       { label: '3 · Bring it in', refs: ['tile:productui/ui-reveal', 'tile:productui/ui-revealCenter', 'tile:animate/riseFade', 'tile:animate/wipeInL', 'tile:animate/depthIn', 'tile:layout/carousel'] },
+      { label: '3b · Matte reveals', refs: ['tile:animate/mtCard', 'tile:animate/mtIris', 'tile:animate/mtPixels', 'tile:animate/mtBlinds', 'tile:animate/mtStripes', 'tile:animate/mtShutter', 'tile:animate/mtDiag', 'tile:animate/mtSplit'] },
       { label: '4 · Interact', refs: ['tile:productui/ui-click', 'tile:productui/ui-tap', 'tile:zoom/cursorArrow', 'tile:zoom/cursorHand', 'tile:zoom/clickLayers'] },
       { label: '5 · Camera', refs: ['tile:zoom/punch', 'tile:zoom/smooth', 'tile:zoom/spot', 'tile:zoom/detail'] }
     ]

@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.95.0] — 2026-11-13 — Matte Reveal: alpha-matte reveals in nine styles
+- **Matte Reveal** (Motion › Matte, SaaS kit): each selected layer gets its own alpha track matte — a `MOE Matte · <layer>` shape layer that follows the layer — and is revealed or hidden in one of nine styles: Wipe (8 directions incl. diagonals), Corner, Split, Iris, Card (pill → card), Blinds, Stripes, Shutter, Pixels. Cascade, cell order (in order / reverse / centre / random / diagonal), soft edge, stagger between layers.
+- 15 new tiles with live previews of the real plan; a SaaS recipe *Card & Click*.
+- One Ctrl+Z; Restore removes the mattes in one step. A layer with your own track matte is skipped and named; 3D layers are skipped.
+- New host ops: `layers.rects` (read only) and `shapes.matte`. New Self-Test check `matte`.
+
 ## [0.94.0] — 2026-11-13 — One Ctrl+Z per production; productions in their own comp
 - **Fixed: Ctrl+Z took a production apart step by step.** After Effects closes an undo group when each script call returns, so the v0.61 "one group per run" never held: every write was its own step. Corrected: one host call is one undo group, and a tool sends all its writes as ONE call (`tx.run`, built with `core/host/plan.js`).
 - **210 of 226 library tiles are now one Ctrl+Z** (was 45, mock audit `tools/audit-undo.js`). Grid Build is 2 (Center Anchor, then the grid — was 11). Restore is one step too.

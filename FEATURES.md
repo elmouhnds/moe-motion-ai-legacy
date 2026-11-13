@@ -100,6 +100,8 @@
 
 **Target & Audio Effectors** (v0.36.0): Target turns the clones to face the effector null; Audio drives every move from a soundtrack's loudness (After Effects' Convert Audio to Keyframes, run for you), each clone a little later — tiles Aim, Look Near, Beat Pulse, Beat Wave (docs/features/TARGET_AUDIO_EFFECTORS.md).
 
+**Matte Reveal** (v0.95.0): reveal or hide layers through their own alpha track matte in nine styles — Wipe, Corner, Split, Iris, Card, Blinds, Stripes, Shutter, Pixels — one Ctrl+Z, the matte follows the layer. Mock-tested, not yet run in After Effects.
+
 **One Ctrl+Z** (v0.94.0): a production is one undo step — titles, lower thirds and product UI arrive in their own comp as one layer; backgrounds, animations, expressions, glass, zoom, carousel, click and proximity are one step each (Grid Build: two). Mock-tested, not yet run in After Effects.
 
 **Lean grids** (v0.93.0): a new grid null shows 8 controls instead of 46 and a Proximity effector only what its reactions use; *Grid Sliders* adds any group later without moving anything. Mock-tested, not yet run in After Effects.

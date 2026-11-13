@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.94: one Ctrl+Z undoes a whole production; titles and product UI arrive in their own comp; a grid shows 8 sliders (0.93)."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.94: Ctrl+Z واحدة بتلغي الإنتاج كله، والعناوين والـ product UI بتنزل في كومب خاص بيها، والـ grid بيظهر 8 سلايدرز (0.93)"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.95: Matte Reveal - alpha-matte reveals in nine styles; one Ctrl+Z per production (0.94)."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.95: Matte Reveal - ريفيل بالـ alpha matte في 9 ستايلات، و Ctrl+Z واحدة لكل إنتاج (0.94)"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"
