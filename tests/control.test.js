@@ -67,7 +67,9 @@ test('one Apply runs the Mix in order through the executor (each verified), then
   for (const L1 of comp._layers) {
     const T = L1.property('ADBE Transform Group');
     assert.ok(T.property('ADBE Scale').numKeys >= 2, `${L1.name}: Pop In wrote Scale keys`);
-    assert.match(T.property('ADBE Position').expression, /wiggle\(2, 12\)/, `${L1.name}: wiggle on Position`);
+    // v0.87: the numbers arrive on the expression's own Slider Controls
+    assert.match(T.property('ADBE Position').expression, /wiggle\(effect\("MOE Wiggle Frequency"\)\(1\)\.value, effect\("MOE Wiggle Amount"\)\(1\)\.value\)/, `${L1.name}: wiggle on Position`);
+    assert.equal(L1._parade._children.find((f) => f.name === 'MOE Wiggle Amount')._children[0].value, 12, `${L1.name}: Amount slider`);
   }
   assert.equal(C.ccOf(st).move.on, false, 'switched off after it ran');
   assert.equal(C.ccOf(st).wiggle.amp, 12, 'the numbers stay');
@@ -215,7 +217,8 @@ test('v0.75: one Apply = ONE undo group for the whole Mix (tx.begin / tx.end onc
   assert.equal(calls.filter((c) => c === 'tx.end').length, 1);
   assert.ok(calls.indexOf('tx.end') > calls.lastIndexOf('expressions.set'), 'the group closes after the last write');
   assert.equal(services.executor.history(5).filter((x) => x.status === 'success').length, 2, 'each run in History');
-  assert.match(comp._layers[0].property('ADBE Transform Group').property('ADBE Position').expression, /wiggle\(2, 5\)/);
+  assert.match(comp._layers[0].property('ADBE Transform Group').property('ADBE Position').expression, /wiggle\(effect\("MOE Wiggle Frequency"\)/);
+  assert.equal(comp._layers[0]._parade._children.find((f) => f.name === 'MOE Wiggle Amount')._children[0].value, 5);
   // a nested batch joins the open group; a failing run still closes it
   calls.length = 0;
   await services.executor.batch('outer', async () => { await services.executor.batch('inner', async () => {}); throw Object.assign(new Error('x'), {}); }).catch(() => {});

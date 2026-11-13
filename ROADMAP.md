@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M1.93 — Controls on demand ✅ (v0.87.0)
+- React 3 study item 1 of 8. Next, in order: Wave / Snap To / Clamp · falloff easing · Attract-Repel + Absolute · remove one effector with bake choices · honeycomb + radial start / end · Tracer · an effector on any property. Open: trim the grid null and Proximity the same way.
+
 ## M1.92 — Assistant window ✅ (v0.86.0)
 - AI on the button; the window says what it sees and splits Do / Ask. Waiting: the Self-Test report from After Effects, the signing decision.
 

@@ -132,6 +132,8 @@ const LAYOUT = [
   T('efFlicker', 'Noise Flicker', 'grid.effector', { type: 'plain', falloff: 'noise', size: 0, softness: 0, scale: 0, fade: 100, fieldSpeed: 200 }, { k: 'eff', type: 'plain', falloff: 'noise', softness: 0, fade: 100, fieldSpeed: 200 }, ['Effectors']),
   T('efImage', 'Image Grow', 'grid.effector', { type: 'plain', falloff: 'image', scale: 100 }, { k: 'eff', type: 'plain', falloff: 'image', scale: 45 }, ['Effectors']),
   T('efImageReveal', 'Image Reveal', 'grid.effector', { type: 'plain', falloff: 'image', invert: true, scale: -100 }, { k: 'eff', type: 'plain', falloff: 'image', invert: true, scale: -100 }, ['Effectors']),
+  // v0.87 Controls on demand: an effector arrives with the sliders it uses — this adds the rest (features/grid/effectorControls.js)
+  T('efControls', 'More Sliders', 'grid.effectorControls', { group: 'all' }, { k: 'icon', icon: 'sliders' }, ['Effectors']),
   T('g12', '12 Columns', 'grid.guides', { columns: 12, rows: 1, gutterX: 24, marginX: 96, marginY: 72 }, { k: 'guides', c: 12, r: 1 }, ['Guides']),
   T('thirds', 'Thirds', 'grid.guides', { columns: 3, rows: 3, gutterX: 0, gutterY: 0, marginX: 0, marginY: 0 }, { k: 'guides', c: 3, r: 3 }, ['Guides']),
   // v0.53 guide presets (features/grid/guidePresets.js): composition lines, broadcast safe, social safe zones, clear

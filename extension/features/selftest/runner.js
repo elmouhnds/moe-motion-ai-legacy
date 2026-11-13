@@ -208,7 +208,8 @@ async function checkEffector(T, args, channel, offsets, extraSrc) {
   const effId = r.result.effectorId;
   const t0 = T.comp.time;
   const names = EF.CONTROLS.filter(([, kind]) => kind !== 'layer' && kind !== 'color').map(([n, kind]) => [n, { slider: 'Slider', angle: 'Angle', checkbox: 'Checkbox', menu: 'Menu' }[kind]]);
-  const readValues = async (t) => { const v = {}; const got = await T.values(t, names.map(([n, p]) => ctlAddr(effId, n, p))); names.forEach(([n], i) => { v[EF.KEY[n]] = got[i].value; }); v.invert = v.invert === 1; v.colour = [1, 1, 1, 1]; return v; };
+  // v0.87: a control that is not on the null (controls on demand) reads as its default, as in the item expression
+  const readValues = async (t) => { const v = EF.defaults(); const got = await T.values(t, names.map(([n, p]) => ctlAddr(effId, n, p))); names.forEach(([n], i) => { if (!got[i].error && got[i].value !== undefined && got[i].value !== null) v[EF.KEY[n]] = got[i].value; }); v.invert = v.invert === 1; v.colour = [1, 1, 1, 1]; return v; };
   // the effector's values and position along its path (sampled for the spring's look-back)
   const effPos = async (t) => (await T.positions([effId], t))[0];
   const gp = (await T.positions([g.gridId], t0))[0];

@@ -14,7 +14,7 @@ const tp = (L, mn) => L.property('ADBE Transform Group').property(mn);
 const at = (L, mn, t) => tp(L, mn).valueAtTime(t, false);
 const cards = (comp) => comp._layers.filter((l) => /^Card/.test(l.name));
 const fx = (L, name) => L._parade._children.find((f) => f.name === name);
-const ctl = (L, name) => fx(L, name)._children[0];
+const ctl = (L, name) => (fx(L, name) ? fx(L, name)._children[0] : { valueAtTime: () => { const d = EF.defaults()[EF.KEY[name]]; return d === false ? 0 : d; }, missing: true });
 const near = (a, b, tol) => Math.abs(a - b) <= tol;
 const MAP = (u) => Math.min(Math.max(u * 4, 0), 1); // the Field layer: black on the left, brighter to the right
 
@@ -32,7 +32,7 @@ async function gridWith(n = 9, extra = []) {
 }
 function expected(comp, G, E, base, t, lumaAt) {
   const src = {
-    at: (tt) => { const v = {}; for (const [name, kind] of EF.CONTROLS) if (fx(E, name) && kind !== 'layer') v[EF.KEY[name]] = ctl(E, name).valueAtTime(tt, false); v.invert = v.invert === 1; return v; },
+    at: (tt) => { const v = EF.defaults(); for (const [name, kind] of EF.CONTROLS) if (fx(E, name) && kind !== 'layer') v[EF.KEY[name]] = ctl(E, name).valueAtTime(tt, false); v.invert = v.invert === 1; return v; },
     toLocal: (tt) => EF.localFn({ position: Array.from(at(E, 'ADBE Position', tt)), rotation: at(E, 'ADBE Rotate Z', tt), scale: Array.from(at(E, 'ADBE Scale', tt)) }),
     lumaAt
   };
@@ -63,7 +63,7 @@ test('Image field: the brightness of a layer under each item is its weight (pick
   const map = { name: 'Logo Map', width: 1920, height: 1080, source: { kind: 'solid' }, pixels: (u) => { const v = MAP(u); return [v, v, v, 1]; }, transform: TA({ pos: [960, 540], anchor: [960, 540] }), rect: { left: 0, top: 0, width: 1920, height: 1080 } };
   const { services, comp, G, base } = await gridWith(9, [map]);
   comp._layers.forEach((l) => { l.selected = l === G || l.name === 'Logo Map'; });
-  const r = await services.executor.run('grid.effector', { type: 'plain', falloff: 'image', scale: 100 });
+  const r = await services.executor.run('grid.effector', { type: 'plain', falloff: 'image', scale: 100, controls: 'all' });
   assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
   assert.ok(r.verification.checks.some((c) => c.label === 'Field' && c.ok && /Logo Map/.test(c.detail)), 'linked to Logo Map');
   const E = comp._layers.find((l) => l.name === 'MOE Effector 1');

@@ -13,7 +13,7 @@ const X = require('../extension/features/grid/expressions');
 
 const tp = (L, mn) => L.property('ADBE Transform Group').property(mn);
 const cards = (comp) => comp._layers.filter((l) => /^Card/.test(l.name));
-const ctl = (L, name) => L._parade._children.find((f) => f.name === name)._children[0];
+const ctl = (L, name) => { const f = L._parade._children.find((x) => x.name === name); return f ? f._children[0] : { valueAtTime: () => { const d = EF.defaults()[EF.KEY[name]]; return d === false ? 0 : d; }, missing: true }; };
 const at = (L, mn, t) => tp(L, mn).valueAtTime(t, false);
 const select = (comp, pred) => comp._layers.forEach((l) => { l.selected = pred(l); });
 
@@ -112,7 +112,7 @@ test('Random, Step, Noise and Box: each item gets its own share — mock AE equa
 
 test('Delay: keyframe the effector once — every item plays it Delay frames later, in order', async () => {
   const { services, comp, G, base } = await gridWith(6, { columns: 3 });
-  const r = await services.executor.run('grid.effector', { type: 'delay', falloff: 'all', delay: 5, moveY: 0, scale: 50 });
+  const r = await services.executor.run('grid.effector', { type: 'delay', falloff: 'all', delay: 5, moveY: 0, scale: 50, controls: 'all' });
   assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
   const E = comp._layers.find((l) => l.name === 'MOE Effector 1');
   const my = ctl(E, 'Move Y');
@@ -148,7 +148,7 @@ test('Cloner: one layer → N copies on the grid (sources cycle); restore remove
   assert.notEqual(one.status, 'success');
 
   // an item expression from v0.19–v0.32 (v2) is rewritten as v3 when an effector is added: same slot, home, grid
-  const old = X.buildAll(2, 6, { gridName: 'MOE Grid 4', home: [12, -7] }).position.replace(' · v3\n', ' · v2\n');
+  const old = X.buildAll(2, 6, { gridName: 'MOE Grid 4', home: [12, -7] }).position.replace(' · v4\n', ' · v2\n');
   const f = X.factsOf(old);
   assert.deepEqual([f.i, f.n, f.home, f.gridName], [2, 6, [12, -7], 'MOE Grid 4']);
   assert.ok(X.isV2(old) && !X.isV3(old) && X.isV3(X.buildAll(f.i, f.n, f).position));

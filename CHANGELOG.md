@@ -2,6 +2,14 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.87.0] — 2026-11-13 — Controls on demand (1 of 8 from the React 3 study)
+- **A new effector shows only the sliders it uses.** Before: 24 controls on every MOE Effector. Now: the six core ones, the moves that actually move, and a group (Random / Noise / Delay, Colour, Spring, Audio, Field) only when its setting is on — a plain Scale effector has 7.
+- **Effector Controls** (new tool, Layout › Effectors › *More Sliders*): adds one group or all of them to the selected effector later. Only missing controls are added, with the values already in use, so nothing moves; Restore removes exactly what was added.
+- **Quick expressions arrive with their own sliders**: *Live controls* is on by default (Wiggle → Frequency + Amount in Effect Controls). The *Sliders* switch on the Expressions group still turns it off.
+- Grid item expressions are **v4**: a control that is not on the null reads as its default, so 7 controls and 24 give the same result (tested item by item). A grid built earlier is rewritten in place when an effector is added.
+- Fixed: rewriting an older grid's item expressions had silently stopped working since v0.62 (the stored `MOE-LINK` id hid the facts from `factsOf`).
+- Not trimmed yet: the grid null (23 controls) and Proximity (13).
+
 ## [0.86.0] — 2026-11-12 — The Assistant: AI on the button, an organised window
 - The button carries the word **AI** under its mark (owner).
 - The window is organised top to bottom: **what it sees** (selection · comp · format · client) → **Suggested now** → an opening line for the selection → one list at a time, **Do it for me** (a plan you approve first) or **Ask a question** (new prompts per selection, `workflow.ASK`) → the text box with key hints.

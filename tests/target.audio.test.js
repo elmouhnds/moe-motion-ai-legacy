@@ -14,7 +14,7 @@ const tp = (L, mn) => L.property('ADBE Transform Group').property(mn);
 const at = (L, mn, t) => tp(L, mn).valueAtTime(t, false);
 const cards = (comp) => comp._layers.filter((l) => /^Card/.test(l.name));
 const fx = (L, name) => L._parade._children.find((f) => f.name === name);
-const ctl = (L, name) => fx(L, name)._children[0];
+const ctl = (L, name) => (fx(L, name) ? fx(L, name)._children[0] : { valueAtTime: () => { const d = EF.defaults()[EF.KEY[name]]; return d === false ? 0 : d; }, missing: true });
 const near = (a, b, tol) => Math.abs(a - b) <= tol;
 const BEAT = (t) => Math.round((1 + 9 * Math.max(0, Math.sin(t * Math.PI * 4))) * 100) / 100; // two beats a second
 
@@ -35,7 +35,7 @@ async function gridWith(n = 9, extraLayers = []) {
 function expected(comp, G, E, base, rot0, t, A) {
   const has = (nm) => !!fx(E, nm);
   const src = {
-    at: (tt) => { const v = {}; for (const [name, kind] of EF.CONTROLS) if (has(name) && kind !== 'layer') v[EF.KEY[name]] = ctl(E, name).valueAtTime(tt, false); v.invert = v.invert === 1; return v; },
+    at: (tt) => { const v = EF.defaults(); for (const [name, kind] of EF.CONTROLS) if (has(name) && kind !== 'layer') v[EF.KEY[name]] = ctl(E, name).valueAtTime(tt, false); v.invert = v.invert === 1; return v; },
     toLocal: (tt) => EF.localFn({ position: Array.from(at(E, 'ADBE Position', tt)), rotation: at(E, 'ADBE Rotate Z', tt), scale: Array.from(at(E, 'ADBE Scale', tt)) }),
     originAt: (tt) => Array.from(at(E, 'ADBE Position', tt)),
     audioAt: (tt) => (A ? ctl(A, 'Both Channels').valueAtTime(tt, false) : 0)

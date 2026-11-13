@@ -26,8 +26,9 @@ function nextName(ctx) {
 }
 
 /** effects.ensure items for the effector null's controls. */
-function controlItems(values) {
-  return EF.CONTROLS.map(([name, kind, def]) => {
+function controlItems(values, names) {
+  const only = names ? new Set(names) : null;
+  return EF.CONTROLS.filter(([name]) => !only || only.has(name)).map(([name, kind, def]) => {
     const K = X.KIND[kind];
     let value = values[EF.KEY[name]] !== undefined ? values[EF.KEY[name]] : def;
     if (kind === 'checkbox') value = value ? 1 : 0;
@@ -73,6 +74,7 @@ const effector = {
     decay: { type: 'number', label: 'Decay', min: 2, max: 30, step: 0.5, default: 5, description: 'How fast it settles — higher = shorter', showIf: (a) => a.spring > 0 },
     sweep: { type: 'boolean', label: 'Sweep across', default: false, description: 'Keyframe the effector travelling across the grid in 2 s (Sphere / Box / Linear / Noise Field — or a Target the items follow)', showIf: (a) => (a.falloff !== 'all' && a.falloff !== 'image') || a.type === 'target' },
     audioLayerId: { type: 'integer', label: 'Sound layer', min: 0, max: 1e9, default: 0, hidden: true, description: '0 = the first layer with audio in the comp (not in the grid)' },
+    controls: { type: 'enum', label: 'Controls on the null', default: 'needed', advanced: true, options: [{ value: 'needed', label: 'Only what it uses' }, { value: 'all', label: 'All' }], description: 'Effect Controls shows only the sliders this effector uses (v0.87). Effector Controls adds a group later — Moves, Random, Colour, Spring, Audio, Field' },
     gridId: { type: 'integer', label: 'Grid', min: 0, max: 1e9, default: 0, hidden: true }
   },
   requires: { comp: true },
@@ -101,7 +103,7 @@ const effector = {
       ok: true, grid, name, fieldLayer: args.fieldLayer || 0,
       preview: {
         summary: `${name}: ${t.label} · ${f.label} on ${grid.name}`,
-        items: [moves.join(' · '), ...(args.falloff === 'image' ? [`Weight = the brightness of ${((ctx.compLayers || []).find((l) => l.index === args.fieldLayer) || {}).name || 'the Field layer'} under each item`] : args.falloff === 'noise' ? ['Weight = a noise field drifting through the grid (Size = patch size)'] : []), args.type === 'audio' ? 'Reads the loudness of the first layer with sound (After Effects’ Convert Audio to Keyframes → a MOE Audio layer at the bottom)' : args.type === 'delay' ? `${args.delay} frames later per item — keyframe the effector's moves` : t.hint, args.spring > 0 ? (args.frequency > 0.01 ? `Spring ${args.spring} %: ${args.frequency} Hz, decay ${args.decay} — the items overshoot and settle` : `Inertia ${args.spring} %: decay ${args.decay} — the items lag and ease in`) : null, args.sweep ? 'Sweeps across the grid in 2 s (keyframed)' : 'Move, rotate or scale the null to animate it', 'Every control stays live on the null (Effect Controls)'].filter(Boolean)
+        items: [moves.join(' · '), ...(args.falloff === 'image' ? [`Weight = the brightness of ${((ctx.compLayers || []).find((l) => l.index === args.fieldLayer) || {}).name || 'the Field layer'} under each item`] : args.falloff === 'noise' ? ['Weight = a noise field drifting through the grid (Size = patch size)'] : []), args.type === 'audio' ? 'Reads the loudness of the first layer with sound (After Effects’ Convert Audio to Keyframes → a MOE Audio layer at the bottom)' : args.type === 'delay' ? `${args.delay} frames later per item — keyframe the effector's moves` : t.hint, args.spring > 0 ? (args.frequency > 0.01 ? `Spring ${args.spring} %: ${args.frequency} Hz, decay ${args.decay} — the items overshoot and settle` : `Inertia ${args.spring} %: decay ${args.decay} — the items lag and ease in`) : null, args.sweep ? 'Sweeps across the grid in 2 s (keyframed)' : 'Move, rotate or scale the null to animate it', args.controls === 'all' ? `All ${EF.CONTROLS.length} controls on the null (Effect Controls)` : `${EF.needed(EF.valuesOf(Object.assign({}, args, { size: args.size || 1 }))).length} controls on the null — only what this effector uses`].filter(Boolean)
       }
     };
   },
@@ -141,7 +143,8 @@ const effector = {
       if (audio) values.audioLayer = (d0.layers.find((l) => l.id === audio.layerId) || {}).index || 0;
       if (fieldId) values.fieldLayer = (d0.layers.find((l) => l.id === fieldId) || {}).index || 0;
     }
-    const controls = await host.call('effects.ensure', { compId: comp.id, label: 'MOE: Effector Controls', layers: [{ layer: { layerId: created.layerId }, items: controlItems(values) }] });
+    const names = args.controls === 'all' ? EF.groupNames('all') : EF.needed(values);
+    const controls = await host.call('effects.ensure', { compId: comp.id, label: 'MOE: Effector Controls', layers: [{ layer: { layerId: created.layerId }, items: controlItems(values, names) }] });
     await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Effector Type', items: EF.TYPES.map((t) => t.menu), value: values.type });
     await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Falloff', items: EF.FALLOFFS.map((f) => f.menu), value: values.falloff });
     // 3. link it to the first free slot of the grid
@@ -156,10 +159,11 @@ const effector = {
     }
     const slot = EF.SLOTS[freeAt];
     const linked = await host.call('effects.ensure', { compId: comp.id, label: 'MOE: Link Effector', layers: [{ layer: { layerId: grid.id }, items: [slotItem(slot, effIndex)] }] });
-    // 4. items read effectors: rewrite older (v0.19–v0.32) item expressions as v0.33 ones — same item, home and path
+    // 4. items read effectors: rewrite older item expressions (v0.19–v0.86) as the current one — same item, home and path.
+    // v0.87: only a v4 expression reads a control that is not on the null as its default, so v3 items are rewritten too
     const targets = [];
     for (const c of codes) {
-      if (!X.isV2(c.code) || X.isV3(c.code)) continue;
+      if (!X.isV2(c.code) || X.isV4(c.code)) continue;
       const f = X.factsOf(c.code);
       if (!f) continue;
       const prop = Object.keys(X.PROP_ADDR).find((p) => X.PROP_ADDR[p][1] === c.address.matchNames[c.address.matchNames.length - 1]);
@@ -183,12 +187,12 @@ const effector = {
     const at = args.sweep ? comp.time + 1 : comp.time;
     const read = await host.call('props.values', { compId: comp.id, time: at, items: kids.map((l) => ({ address: { layerId: l.id, matchNames: POS } })) });
     const slotRead = await host.call('props.values', { compId: comp.id, time: comp.time, items: [{ address: ctlAddr(grid.id, slot, 'layer') }].concat(audio ? [{ address: ctlAddr(created.layerId, 'Audio Layer', 'layer') }] : []).concat(fieldId ? [{ address: ctlAddr(created.layerId, 'Field Layer', 'layer') }] : []) });
-    return { audio, audioIndex: values.audioLayer || 0, field: fieldId ? { index: values.fieldLayer, name: ((ctx.compLayers || []).find((l) => l.id === fieldId) || {}).name } : null, name: prepared.name, effectorId: created.layerId, effIndex, grid: { id: grid.id, name: grid.name }, slot, slotBefore: slotsNow.items[freeAt].error ? null : (slotsNow.items[freeAt].value || 0), controls, linked, set, keys, delayKeys, read, slotRead, items: kids.length };
+    return { audio, audioIndex: values.audioLayer || 0, field: fieldId ? { index: values.fieldLayer, name: ((ctx.compLayers || []).find((l) => l.id === fieldId) || {}).name } : null, name: prepared.name, effectorId: created.layerId, effIndex, grid: { id: grid.id, name: grid.name }, slot, slotBefore: slotsNow.items[freeAt].error ? null : (slotsNow.items[freeAt].value || 0), controls, linked, set, keys, delayKeys, read, slotRead, items: kids.length, controlNames: names };
   },
 
   verify({ result }) {
     const checks = [];
-    checks.push({ ok: result.controls.layers[0].items.length === EF.CONTROLS.length, label: result.name, detail: `${EF.CONTROLS.length} live controls on the null (Effect Controls)` });
+    checks.push({ ok: result.controls.layers[0].items.length === result.controlNames.length, label: result.name, detail: `${result.controlNames.length} live controls on the null: ${result.controlNames.join(', ')}` });
     checks.push({ ok: result.slotRead.items[0].value === result.effIndex, label: 'Linked', detail: `${result.grid.name} › ${result.slot} → ${result.name}` });
     const bad = result.set.targets.filter((t) => t.skipped || t.reverted || (t.after && t.after.expressionError));
     checks.push({ ok: bad.length === 0, label: 'Items read effectors', detail: bad.length ? `${bad.length} failed: ${bad[0].after ? bad[0].after.expressionError : bad[0].skipped}` : (result.set.targets.length ? `${result.set.targets.length} expressions updated in place` : 'already up to date') });

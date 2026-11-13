@@ -15,7 +15,7 @@ const tp = (L, mn) => L.property('ADBE Transform Group').property(mn);
 const at = (L, mn, t) => tp(L, mn).valueAtTime(t, false);
 const cards = (comp) => comp._layers.filter((l) => /^Card/.test(l.name));
 const fx = (L, name) => L._parade._children.find((f) => f.name === name);
-const ctl = (L, name) => fx(L, name)._children[0];
+const ctl = (L, name) => (fx(L, name) ? fx(L, name)._children[0] : { valueAtTime: () => { const d = EF.defaults()[EF.KEY[name]]; return d === false ? 0 : d; }, missing: true });
 const near = (a, b, tol) => Math.abs(a - b) <= tol;
 
 async function gridWith(n = 9) {
@@ -31,7 +31,7 @@ async function gridWith(n = 9) {
 function expected(comp, G, E, base, t) {
   const has = (nm) => !!fx(E, nm);
   const src = {
-    at: (tt) => { const v = {}; for (const [name] of EF.CONTROLS) if (has(name)) v[EF.KEY[name]] = ctl(E, name).valueAtTime(tt, false); v.invert = v.invert === 1; return v; },
+    at: (tt) => { const v = EF.defaults(); for (const [name] of EF.CONTROLS) if (has(name)) v[EF.KEY[name]] = ctl(E, name).valueAtTime(tt, false); v.invert = v.invert === 1; return v; },
     toLocal: (tt) => EF.localFn({ position: Array.from(at(E, 'ADBE Position', tt)), rotation: at(E, 'ADBE Rotate Z', tt), scale: Array.from(at(E, 'ADBE Scale', tt)) })
   };
   return base.map((b, i) => EF.applyAt([src], { i, k: i, n: base.length, x: b[0], y: b[1], fd: comp.frameDuration, compAt: (tt) => { const gp = at(G, 'ADBE Position', tt); return [gp[0] + b[0], gp[1] + b[1]]; } }, t));
@@ -124,7 +124,7 @@ test('Effectors made before v0.35 (no Spring controls) and Spring 0 behave exact
   const L0 = legacy(T + 1);
   now.forEach((v, i) => assert.ok(near(v[0], 100 * L0[i].scaleMul, 0.05) && near(v[1], L0[i].rot, 0.05), `Spring 0 = v0.33 maths, item ${i}`));
   // drop the three v0.35 controls, as on an effector made by v0.33 / v0.34 → same values, no expression error
-  for (const nm of ['Spring', 'Frequency', 'Decay']) { const p = E._parade; p._children.splice(p._children.indexOf(fx(E, nm)), 1); }
+  for (const nm of ['Spring', 'Frequency', 'Decay']) { const p = E._parade; if (fx(E, nm)) p._children.splice(p._children.indexOf(fx(E, nm)), 1); }
   cards(comp).forEach((L, i) => {
     assert.ok(near(at(L, 'ADBE Scale', T + 1)[0], now[i][0], 1e-6) && near(at(L, 'ADBE Position', T + 1)[0], now[i][2], 1e-6), `old effector, item ${i}`);
   });

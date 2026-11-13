@@ -60,9 +60,9 @@ test('Hover cards: one-click buttons map to their tool and numbers; the card is 
 test('Layer Reader: lists what MOE did (presets read back with their numbers), removes ONE item and nothing else', async () => {
   const { services, comp } = await createTestServices(studioComp([keyedBox('Box')], { comp: { time: 0 } }));
   const L = comp._layers[0];
-  assert.equal((await services.executor.run('expressions.quick', { preset: 'wiggle', freq: 3, amp: 12 })).status, 'success');
+  assert.equal((await services.executor.run('expressions.quick', { preset: 'wiggle', freq: 3, amp: 12, live: false })).status, 'success');
   tp(L, 'ADBE Position')._selected = false;
-  assert.equal((await services.executor.run('expressions.quick', { preset: 'markerInOut', secs: 0.3 })).status, 'success');
+  assert.equal((await services.executor.run('expressions.quick', { preset: 'markerInOut', secs: 0.3, live: false })).status, 'success');
   tp(L, 'ADBE Rotate Z').expression = 'value + 5; // mine';
   const scan = await services.host.call('rigs.find', { compId: comp.id, layers: [L.id] });
   const rows = RD.describe(scan.layers[0]);

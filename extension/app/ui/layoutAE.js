@@ -259,8 +259,9 @@ function tileCols(n) {
   return { c, cw };
 }
 /** Expressions with "Sliders" on: the numbers go on Slider Controls (what the old Excite / Jump rigs did). */
-const liveOn = (app) => !!app.services.store.get('ae-x-live', false);
-const withLive = (app, g, t) => (g.live && liveOn(app) ? Object.assign({}, t, { args: Object.assign({}, t.args, { live: true }) }) : t);
+// v0.87 (controls on demand): on unless the user turned it off — an expression arrives with its own few sliders
+const liveOn = (app) => !!app.services.store.get('ae-x-live', true);
+const withLive = (app, g, t) => (g.live ? Object.assign({}, t, { args: Object.assign({}, t.args, { live: liveOn(app) }) }) : t);
 function tileStrip(app, g, tab, idsOverride) {
   const lib = require('./studio/library');
   const sec = studio.byId(g.section);
@@ -297,7 +298,7 @@ function compactTiles(app, g, tab, sec, tiles) {
 function groupExtra(app, g) {
   const on = liveOn(app);
   const live = g.live ? h('button', { class: `ae-more ae-live ${on ? 'on' : ''}`, 'data-key': `live-${g.id}`, 'aria-pressed': String(on),
-    title: on ? 'Sliders on: the numbers go on Slider Controls you can animate (Excite / Jump rigs)' : 'Sliders off: plain expressions — turn on to get Slider Controls',
+    title: on ? 'Sliders on: each expression puts its own numbers on Slider Controls in Effect Controls (editable, keyframeable). Click for plain expressions' : 'Sliders off: plain expressions with the numbers in the code — turn on to get Slider Controls',
     onclick: (e) => { e.stopPropagation(); app.services.store.set('ae-x-live', !on); app.render(); } }, icon('sliders', 'xs'), 'Sliders') : null;
   return live || g.more ? [live, g.more ? moreLink(app, g) : null] : null;
 }

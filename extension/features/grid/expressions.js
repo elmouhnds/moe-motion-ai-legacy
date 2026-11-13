@@ -259,7 +259,7 @@ function layBody(pathAccess, pathClosed) {
 function buildAll(i, n, { gridName, pathAccess = null, pathClosed = false, home = [0, 0] }) {
   const hx = Math.round(home[0] * 1000) / 1000, hy = Math.round(home[1] * 1000) / 1000;
   const head = [
-    `${TAG} · ${esc(gridName)} · v3`,
+    `${TAG} · ${esc(gridName)} · v4`,
     `var G = thisComp.layer("${esc(gridName)}");`,
     'function c(nm) { return G.effect(nm)(1).value; }',
     'function ic(nm) { try { return thisLayer.effect(nm)(1).value; } catch (eI) { return 0; } }',
@@ -308,12 +308,15 @@ function buildAll(i, n, { gridName, pathAccess = null, pathClosed = false, home 
 }
 
 /** Is this a v0.19 (all-layouts) grid expression? */
-const isV2 = (code) => / · v[23]\n/.test(String(code || ''));
+const isV2 = (code) => / · v[234]\n/.test(String(code || ''));
 /** v0.33: does the expression read MOE Effectors (Effector 2 / 3 slots)? */
-const isV3 = (code) => / · v3\n/.test(String(code || ''));
-/** The build-time facts baked into a v2 / v3 item expression (to rewrite it as v3 without changing the item). */
+const isV3 = (code) => / · v[34]\n/.test(String(code || ''));
+/** v0.87: does the expression read an effector control that is not there as its default (controls on demand)? */
+const isV4 = (code) => / · v4\n/.test(String(code || ''));
+/** The build-time facts baked into a v2 / v3 / v4 item expression (to rewrite it as the current one without changing the item). */
 function factsOf(code) {
-  const s = String(code || ''); const slot = slotOf(s); const h = /H = \[(-?[\d.e-]+), (-?[\d.e-]+)\]/.exec(s); const g = /var G = thisComp\.layer\("((?:[^"\\]|\\.)*)"\);/.exec(s);
+  // v0.87: the host stores `thisComp.layer(/*MOE-LINK:id*/"Name")` (LINKS.md) — read the code without the ids; expressions.set adds them again
+  const s = String(code || '').replace(/\/\*MOE-LINK:\d+\*\//g, ''); const slot = slotOf(s); const h = /H = \[(-?[\d.e-]+), (-?[\d.e-]+)\]/.exec(s); const g = /var G = thisComp\.layer\("((?:[^"\\]|\\.)*)"\);/.exec(s);
   const pa = /try \{ acc = (.+?); \} catch \(eA\)/.exec(s);
   if (!slot || !h || !g) return null;
   return { i: slot.i, n: slot.n, home: [Number(h[1]), Number(h[2])], gridName: g[1].replace(/\\(.)/g, '$1'), pathAccess: pa ? pa[1] : null, pathClosed: /Math\.abs\(span\) >= 99\.999 \? n : n - 1/.test(s) };
@@ -346,4 +349,4 @@ function controlAddress(layerId, name) {
   return { layerId, matchNames: ['ADBE Effect Parade', `name:${name}`, `name:${KIND[kind ? kind[1] : 'slider'].param}`] };
 }
 
-module.exports = { TAG, MODE_CONTROLS, COMMON_CONTROLS, HEAD_CONTROLS, LEGACY_CONTROLS, ITEM_FX, MODE_MENU, KIND, KEY, NAME_OF, controlsFor, allControls, defaultParams, build, buildAll, isV2, isV3, factsOf, slotOf, withSlot, PROP_ADDR, controlItems, controlAddress };
+module.exports = { TAG, MODE_CONTROLS, COMMON_CONTROLS, HEAD_CONTROLS, LEGACY_CONTROLS, ITEM_FX, MODE_MENU, KIND, KEY, NAME_OF, controlsFor, allControls, defaultParams, build, buildAll, isV2, isV3, isV4, factsOf, slotOf, withSlot, PROP_ADDR, controlItems, controlAddress };

@@ -28,7 +28,7 @@ grid. Tiles: **Clone Grid 5×5** (with a build-in) · **Clone Row** · **Clone R
 **Clone Sunflower** (with a build-in) · **Clone Globe**. Restore removes the copies.
 
 ### Effectors (`grid.effector`)
-An effector is its own null, **MOE Effector N**, with 15 live controls in Effect Controls:
+An effector is its own null, **MOE Effector N**. Since v0.87 it arrives with only the controls it uses (docs/features/CONTROLS_ON_DEMAND.md); the full list, which *More Sliders* can add, is:
 
 | Group | Controls |
 |---|---|

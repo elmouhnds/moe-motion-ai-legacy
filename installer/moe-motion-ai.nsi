@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.86: the Assistant button says AI and its window is organised - what it sees, Do it for me / Ask a question."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.86: زرار المساعد مكتوب عليه AI ونافذته منظمة - شايف إيه، نفذلي / اسأل"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.87: effectors and expressions show only the sliders they use; More Sliders adds the rest."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.87: الـ effectors والـ expressions بتظهر السلايدرز اللي بتستخدمها بس، وMore Sliders يضيف الباقي"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

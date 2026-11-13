@@ -163,7 +163,7 @@ const params = {
   pxs: { type: 'number', label: 'Pixels/sec', min: -5000, max: 5000, step: 1, default: 40, showIf: (a) => 'pxs' in PRESETS[a.preset].nums },
   delay: { type: 'number', label: 'Delay per layer', min: 0, max: 5, step: 0.01, default: 0.08, unit: 's', showIf: (a) => 'delay' in PRESETS[a.preset].nums },
   seed: { type: 'integer', label: 'Seed', min: 0, max: 9999, default: 1, showIf: (a) => 'seed' in PRESETS[a.preset].nums },
-  live: { type: 'boolean', label: 'Live controls', default: false, description: 'Put the numbers on Slider Controls (editable / keyframeable)' },
+  live: { type: 'boolean', label: 'Live controls', default: true, description: 'The expression\'s own numbers go on Slider Controls in Effect Controls — editable and keyframeable after Apply (v0.87: on by default). Off = the numbers are written in the code' },
   replace: { type: 'boolean', label: 'Replace existing', default: false, advanced: true }
 };
 

@@ -15,7 +15,7 @@ const tp = (L, mn) => L.property('ADBE Transform Group').property(mn);
 const cards = (comp) => comp._layers.filter((l) => /^Card/.test(l.name));
 const fxOf = (L, name) => L._parade._children.find((f) => f.name === name);
 const fill = (L) => fxOf(L, EF.COLOUR_FX)._children.find((p) => p.name === 'Color');
-const ctl = (L, name) => fxOf(L, name)._children[0];
+const ctl = (L, name) => (fxOf(L, name) ? fxOf(L, name)._children[0] : { valueAtTime: () => { const d = EF.defaults()[EF.KEY[name]]; return d === false ? 0 : d; }, missing: true });
 const select = (comp, name) => comp._layers.forEach((l) => { l.selected = l.name === name; });
 const close = (a, b, tol = 0.002) => [0, 1, 2].every((k) => Math.abs(a[k] - b[k]) <= tol);
 

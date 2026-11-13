@@ -73,6 +73,44 @@ const CONTROLS = [
 ];
 const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix', Spring: 'spring', Frequency: 'frequency', Decay: 'decay', 'Audio Layer': 'audioLayer', 'Audio Max': 'audioMax', 'Field Layer': 'fieldLayer', 'Field Speed': 'fieldSpeed' };
 
+/**
+ * v0.87 Controls on demand (docs/features/CONTROLS_ON_DEMAND.md — owner: "only the sliders that matter for the
+ * move, not every variable"). A new effector null gets only the controls its own settings use; a control that is
+ * not there reads as its default in the item expression (`ev(name, t, default)`), so nothing changes in the result.
+ *   core    always: Effector Type, Falloff, Size, Softness, Strength, Invert (Clone Colour expressions read them)
+ *   moves   Move X / Move Y / Scale / Rotate / Fade — the ones this effector moves (Target always has Rotate)
+ *   random  Seed (Random, Noise, Noise Field) · Noise Scale, Noise Speed (Noise) · Delay (Delay, Audio)
+ *   colour  Colour, Colour Mix   spring  Spring, Frequency, Decay   audio  Audio Layer, Audio Max
+ *   field   Field Layer (Image) · Field Speed (Noise Field)
+ * GROUPS is also the list the Effector Controls tool offers to add later.
+ */
+const GROUPS = {
+  core: ['Effector Type', 'Falloff', 'Size', 'Softness', 'Strength', 'Invert'],
+  moves: ['Move X', 'Move Y', 'Scale', 'Rotate', 'Fade'],
+  random: ['Seed', 'Delay', 'Noise Scale', 'Noise Speed'],
+  colour: ['Colour', 'Colour Mix'],
+  spring: ['Spring', 'Frequency', 'Decay'],
+  audio: ['Audio Layer', 'Audio Max'],
+  field: ['Field Layer', 'Field Speed']
+};
+const GROUP_LABEL = { moves: 'Moves', random: 'Random · Noise · Delay', colour: 'Colour', spring: 'Spring', audio: 'Audio', field: 'Field' };
+/** The control names (in Effect Controls order) an effector with these values uses. `v` = valuesOf(args). */
+function needed(v) {
+  const tp = Math.round(v.type), fo = Math.round(v.falloff), on = new Set(GROUPS.core);
+  if (v.moveX) on.add('Move X'); if (v.moveY) on.add('Move Y'); if (v.scale) on.add('Scale'); if (v.rotate || tp === 6) on.add('Rotate'); if (v.fade) on.add('Fade');
+  if (tp === 2 || tp === 4 || fo === 5) on.add('Seed');
+  if (tp === 4) { on.add('Noise Scale'); on.add('Noise Speed'); }
+  if (tp === 5 || tp === 7) on.add('Delay');
+  if (v.colourMix > 0) GROUPS.colour.forEach((n) => on.add(n));
+  if (v.spring > 0) GROUPS.spring.forEach((n) => on.add(n));
+  if (tp === 7) GROUPS.audio.forEach((n) => on.add(n));
+  if (fo === 6) on.add('Field Layer');
+  if (fo === 5) on.add('Field Speed');
+  return CONTROLS.map((c) => c[0]).filter((n) => on.has(n));
+}
+/** The names of one group, or of every control ('all'). */
+function groupNames(group) { return group === 'all' ? CONTROLS.map((c) => c[0]) : (GROUPS[group] || []).slice(); }
+
 /** Default effector values (type / falloff as menu indices 1-based). */
 function defaults() {
   const p = {};
@@ -268,18 +306,20 @@ function code() {
     'function vn(px, py) { var x0 = Math.floor(px), y0 = Math.floor(py), ux = sm(px - x0), uy = sm(py - y0), a = hs(x0, y0), b = hs(x0 + 1, y0), c2 = hs(x0, y0 + 1), d = hs(x0 + 1, y0 + 1); return a + (b - a) * ux + (c2 - a) * uy + (a - b - c2 + d) * ux * uy; }',
     'function EFX(EL) {',
     '  var tp = 0; try { tp = Math.round(EL.effect("Effector Type")(1).value); } catch (eT) { return; }',
-    '  function ev(nm, tt) { return EL.effect(nm)(1).valueAtTime(tt); }',
-    '  var fo = Math.round(ev("Falloff", time)), inv = ev("Invert", time) == 1, dl = ev("Delay", time), sd0 = ev("Seed", time), nf = ev("Noise Scale", time) / 1000, nsp = ev("Noise Speed", time) / 100, m0 = [1, 1, 1, 1, 1];',
+    // v0.87: a control that is not on the null reads as its default (looked up once per effector, not per sample)
+    '  var H = {};',
+    '  function ev(nm, tt, df) { if (H[nm] === undefined) { try { EL.effect(nm)(1); H[nm] = 1; } catch (eH) { H[nm] = 0; } } return H[nm] == 1 ? EL.effect(nm)(1).valueAtTime(tt) : df; }',
+    '  var fo = Math.round(ev("Falloff", time, 1)), inv = ev("Invert", time, 0) == 1, dl = ev("Delay", time, 3), sd0 = ev("Seed", time, 1), nf = ev("Noise Scale", time, 100) / 1000, nsp = ev("Noise Speed", time, 50) / 100, m0 = [1, 1, 1, 1, 1];',
     '  if (tp == 2) { var s2 = sd0 * 3.117 + 1.1, ia = i * 1.731; m0 = [hs(ia + 0.5, s2), hs(ia + 17.63, s2), hs(ia + 34.76, s2), hs(ia + 51.89, s2), hs(ia + 69.02, s2)]; }',
     '  else if (tp == 3) { var sv = n > 1 ? k / (n - 1) : 0; m0 = [sv, sv, sv, sv, sv]; }',
     // v0.36 Audio: the amplitude layer linked on the effector (made by Convert Audio to Keyframes)
     // v0.38 fields: the noise field's speed, the Image field's layer
-    '  var fsp = 0, FL = null; if (fo == 5) { try { fsp = ev("Field Speed", time) / 100; } catch (eFs) { fsp = 0; } } if (fo == 6) { try { FL = EL.effect("Field Layer")(1); } catch (eFl) { FL = null; } }',
-    '  var AU = null, amx = 1; if (tp == 7) { try { AU = EL.effect("Audio Layer")(1); amx = Math.max(ev("Audio Max", time), 0.001); } catch (eAu) { AU = null; } }',
+    '  var fsp = 0, FL = null; if (fo == 5) { fsp = ev("Field Speed", time, 50) / 100; } if (fo == 6) { try { FL = EL.effect("Field Layer")(1); } catch (eFl) { FL = null; } }',
+    '  var AU = null, amx = 1; if (tp == 7) { try { AU = EL.effect("Audio Layer")(1); } catch (eAu) { AU = null; } amx = Math.max(ev("Audio Max", time, 1), 0.001); }',
     // the effector's raw terms at time tq: [dx, dy, scale, rotate, fade] (features/grid/effectors.js termsAt)
     '  function TQ(tq) {',
     '    var IP = G.toComp([x + jx, y + jy + dy, z], tq), L0 = sub(EL.fromComp([IP[0], IP[1]], tq), EL.anchorPoint.valueAtTime(tq)), lx = L0[0], ly = L0[1];',
-    '    var sz = Math.max(ev("Size", tq), 0.001), sf = Math.min(Math.max(ev("Softness", tq) / 100, 0), 1), w;',
+    '    var sz = Math.max(ev("Size", tq, 300), 0.001), sf = Math.min(Math.max(ev("Softness", tq, 50) / 100, 0), 1), w;',
     '    if (fo == 4) { w = 1; } else if (fo == 5) { var nu = (vn(lx / sz + sd0 * 13.7, ly / sz + fsp * tq) + 1) / 2, hf = Math.max(sf, 0.001) / 2; w = sm(Math.min(Math.max((nu - 0.5 + hf) / (2 * hf), 0), 1)); }',
     '    else if (fo == 6) { w = 0; if (FL) { var smp = FL.sampleImage(FL.fromComp([IP[0], IP[1]], tq), [2, 2], true, tq); w = Math.min(Math.max((0.2126 * smp[0] + 0.7152 * smp[1] + 0.0722 * smp[2]) * smp[3], 0), 1); } }',
     '    else if (fo == 2) { w = sm(Math.min(Math.max(0.5 - lx / sz, 0), 1)); } else {',
@@ -287,18 +327,18 @@ function code() {
     '      w = dE <= inr ? 1 : (dE >= sz ? 0 : sm((sz - dE) / Math.max(sz - inr, 0.001)));',
     '    }',
     '    if (inv) { w = 1 - w; }',
-    '    w = w * ev("Strength", tq) / 100;',
+    '    w = w * ev("Strength", tq, 100) / 100;',
     '    if (w <= 0) { return [0, 0, 0, 0, 0]; }',
     '    var tt = tp == 5 ? tq - k * dl * thisComp.frameDuration : tq, m = m0;',
     // v0.36 Target: turn the short way toward the effector (Rotate = aim offset; 0° = the item's +X axis)
-    '    if (tp == 6) { var EO = EL.toComp(EL.anchorPoint.valueAtTime(tq), tq), am = Math.atan2(EO[1] - IP[1], EO[0] - IP[0]) * 180 / Math.PI + ev("Rotate", tq) - (rot + G.transform.rotation.valueAtTime(tq)); am = am - 360 * Math.floor((am + 180) / 360); return [ev("Move X", tq) * w, ev("Move Y", tq) * w, ev("Scale", tq) / 100 * w, am * w, ev("Fade", tq) / 100 * w]; }',
+    '    if (tp == 6) { var EO = EL.toComp(EL.anchorPoint.valueAtTime(tq), tq), am = Math.atan2(EO[1] - IP[1], EO[0] - IP[0]) * 180 / Math.PI + ev("Rotate", tq, 0) - (rot + G.transform.rotation.valueAtTime(tq)); am = am - 360 * Math.floor((am + 180) / 360); return [ev("Move X", tq, 0) * w, ev("Move Y", tq, 0) * w, ev("Scale", tq, 0) / 100 * w, am * w, ev("Fade", tq, 0) / 100 * w]; }',
     '    if (tp == 7) { var av = 0; if (AU) { try { av = AU.effect("Both Channels")(1).valueAtTime(tq - k * dl * thisComp.frameDuration); } catch (eAv) { av = 0; } } av = Math.min(Math.max(av / amx, 0), 1); m = [av, av, av, av, av]; }',
     '    if (tp == 4) { var ns = nsp * tq, sd = sd0 * 17.3, nv = vn(x * nf + ns, y * nf + sd); m = [nv, vn(x * nf + 31.7 + ns, y * nf + sd), nv, nv, nv]; }',
-    '    return [ev("Move X", tt) * m[0] * w, ev("Move Y", tt) * m[1] * w, ev("Scale", tt) / 100 * m[2] * w, ev("Rotate", tt) * m[3] * w, ev("Fade", tt) / 100 * m[4] * w];',
+    '    return [ev("Move X", tt, 0) * m[0] * w, ev("Move Y", tt, 0) * m[1] * w, ev("Scale", tt, 0) / 100 * m[2] * w, ev("Rotate", tt, 0) * m[3] * w, ev("Fade", tt, 0) / 100 * m[4] * w];',
     '  }',
     '  var R = TQ(time), sp = 0, fq = 0, dc = 5;',
     // v0.35 Spring / Inertia (effectors made before v0.35 have no Spring control → off)
-    '  try { sp = Math.max(0, ev("Spring", time) / 100); fq = ev("Frequency", time); dc = ev("Decay", time); } catch (eSp) { sp = 0; }',
+    '  sp = Math.max(0, ev("Spring", time, 0) / 100); fq = ev("Frequency", time, 2.5); dc = ev("Decay", time, 5);',
     '  if (sp > 0) {',
     `    var sg = Math.max(dc, ${SPRING.minDecay}), Wn = Math.min(${SPRING.maxWindow}, ${SPRING.settle} / sg), Nn = Math.max(1, Math.min(${SPRING.maxSamples}, Math.ceil(Wn / thisComp.frameDuration - 1e-9))), Dn = Wn / Nn, om = 2 * Math.PI * fq, pv = R, ac = [0, 0, 0, 0, 0], jn, cn;`,
     '    for (jn = 0; jn < Nn; jn++) {',
@@ -388,6 +428,6 @@ function colourCode(i, n, gridName) {
   ].join('\n');
 }
 
-module.exports = { TYPES, FALLOFFS, SLOTS, NAME, CONTROLS, KEY, defaults, valuesOf, rgba, weight, amounts, apply, localFn, vnoise, hs, PR, code,
+module.exports = { TYPES, FALLOFFS, SLOTS, NAME, CONTROLS, KEY, GROUPS, GROUP_LABEL, needed, groupNames, defaults, valuesOf, rgba, weight, amounts, apply, localFn, vnoise, hs, PR, code,
   SPRING, stepResponse, springWindow, termsAt, springTerms, applyAt, wrap180, luma,
   COLOUR_MODES, COLOUR_CONTROLS, COLOUR_FX, COLOUR_TAG, paletteColour, colourWithEffectors, colourCode };
