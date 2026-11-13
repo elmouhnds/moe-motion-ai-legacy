@@ -308,8 +308,8 @@ function buildAll(i, n, { gridName, pathAccess = null, pathClosed = false, home 
 }
 
 /** Is this a v0.19 (all-layouts) grid expression? */
-/** The item expression's version: 2 all layouts (v0.19) · 3 reads effectors (v0.33) · 4 optional controls (v0.87) · 5 Wave, Snap To, Clamp (v0.88). */
-const VERSION = 5;
+/** The item expression's version: 2 all layouts (v0.19) · 3 reads effectors (v0.33) · 4 optional controls (v0.87) · 5 Wave, Snap To, Clamp (v0.88) · 6 falloff curve, move modes (v0.89). */
+const VERSION = 6;
 const versionOf = (code) => { const m = / · v(\d+)\n/.exec(String(code || '')); return m ? Number(m[1]) : 0; };
 const isV2 = (code) => versionOf(code) >= 2;
 /** v0.33: does the expression read MOE Effectors (Effector 2 / 3 slots)? */

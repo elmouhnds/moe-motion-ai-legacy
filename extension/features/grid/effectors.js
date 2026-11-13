@@ -30,6 +30,19 @@ const TYPES = [
   // v0.88 (React 3 study): a wave that runs through the items in their order
   { id: 'wave', menu: 'Wave', label: 'Wave', hint: 'A wave runs through the items in order — sine, triangle, ramp or square; it travels with Wave Speed' }
 ];
+/** v0.89 How the falloff's soft edge runs from 0 to 1 (menu index stored in AE — append only). Smooth is the curve every effector had. */
+const CURVES = [
+  { id: 'smooth', menu: 'Smooth', label: 'Smooth' },
+  { id: 'linear', menu: 'Linear', label: 'Linear' },
+  { id: 'easeIn', menu: 'Ease In', label: 'Ease in' },
+  { id: 'easeOut', menu: 'Ease Out', label: 'Ease out' }
+];
+/** v0.89 What Move X / Move Y mean (append only). */
+const MOVE_MODES = [
+  { id: 'relative', menu: 'Relative', label: 'Relative', hint: 'Move X / Y px from where the item is' },
+  { id: 'attract', menu: 'Attract / Repel', label: 'Attract / Repel', hint: 'Move X px toward the effector null (never past it) — negative pushes away' },
+  { id: 'absolute', menu: 'Absolute', label: 'Absolute', hint: 'The items go to the effector null (+ Move X / Y) — fully where the weight is 1' }
+];
 /** v0.88 Wave shapes (menu index stored in AE — append only). */
 const WAVES = [
   { id: 'sine', menu: 'Sine', label: 'Sine' },
@@ -92,9 +105,12 @@ const CONTROLS = [
   // v0.88 Clamp: never more than this, whatever the other settings (and the spring) do (0 = off)
   ['Max Move', 'slider', 0],
   ['Max Rotate', 'slider', 0],
-  ['Max Scale', 'slider', 0]
+  ['Max Scale', 'slider', 0],
+  // v0.89: the shape of the falloff's soft edge, and what Move X / Y mean
+  ['Falloff Curve', 'menu', 1, CURVES.map((c) => c.menu)],
+  ['Move Mode', 'menu', 1, MOVE_MODES.map((m) => m.menu)]
 ];
-const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix', Spring: 'spring', Frequency: 'frequency', Decay: 'decay', 'Audio Layer': 'audioLayer', 'Audio Max': 'audioMax', 'Field Layer': 'fieldLayer', 'Field Speed': 'fieldSpeed', 'Wave Shape': 'waveShape', 'Wave Length': 'waveLength', 'Wave Speed': 'waveSpeed', 'Wave Offset': 'waveOffset', 'Snap Move': 'snapMove', 'Snap Rotate': 'snapRotate', 'Snap Scale': 'snapScale', 'Max Move': 'maxMove', 'Max Rotate': 'maxRotate', 'Max Scale': 'maxScale' };
+const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix', Spring: 'spring', Frequency: 'frequency', Decay: 'decay', 'Audio Layer': 'audioLayer', 'Audio Max': 'audioMax', 'Field Layer': 'fieldLayer', 'Field Speed': 'fieldSpeed', 'Wave Shape': 'waveShape', 'Wave Length': 'waveLength', 'Wave Speed': 'waveSpeed', 'Wave Offset': 'waveOffset', 'Snap Move': 'snapMove', 'Snap Rotate': 'snapRotate', 'Snap Scale': 'snapScale', 'Max Move': 'maxMove', 'Max Rotate': 'maxRotate', 'Max Scale': 'maxScale', 'Falloff Curve': 'falloffCurve', 'Move Mode': 'moveMode' };
 
 /**
  * v0.87 Controls on demand (docs/features/CONTROLS_ON_DEMAND.md — owner: "only the sliders that matter for the
@@ -110,7 +126,7 @@ const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softnes
  */
 const GROUPS = {
   core: ['Effector Type', 'Falloff', 'Size', 'Softness', 'Strength', 'Invert'],
-  moves: ['Move X', 'Move Y', 'Scale', 'Rotate', 'Fade'],
+  moves: ['Move Mode', 'Move X', 'Move Y', 'Scale', 'Rotate', 'Fade'],
   random: ['Seed', 'Delay', 'Noise Scale', 'Noise Speed'],
   colour: ['Colour', 'Colour Mix'],
   spring: ['Spring', 'Frequency', 'Decay'],
@@ -118,9 +134,10 @@ const GROUPS = {
   field: ['Field Layer', 'Field Speed'],
   wave: ['Wave Shape', 'Wave Length', 'Wave Speed', 'Wave Offset'],
   snap: ['Snap Move', 'Snap Rotate', 'Snap Scale'],
-  clamp: ['Max Move', 'Max Rotate', 'Max Scale']
+  clamp: ['Max Move', 'Max Rotate', 'Max Scale'],
+  ease: ['Falloff Curve']
 };
-const GROUP_LABEL = { moves: 'Moves', random: 'Random · Noise · Delay', colour: 'Colour', spring: 'Spring', audio: 'Audio', field: 'Field', wave: 'Wave', snap: 'Snap To', clamp: 'Clamp' };
+const GROUP_LABEL = { moves: 'Moves', random: 'Random · Noise · Delay', colour: 'Colour', spring: 'Spring', audio: 'Audio', field: 'Field', wave: 'Wave', snap: 'Snap To', clamp: 'Clamp', ease: 'Falloff curve' };
 /** The control names (in Effect Controls order) an effector with these values uses. `v` = valuesOf(args). */
 function needed(v) {
   const tp = Math.round(v.type), fo = Math.round(v.falloff), on = new Set(GROUPS.core);
@@ -134,6 +151,8 @@ function needed(v) {
   if (fo === 6) on.add('Field Layer');
   if (fo === 5) on.add('Field Speed');
   if (tp === 8) GROUPS.wave.forEach((n) => on.add(n));
+  if (Math.round(v.falloffCurve || 1) !== 1) on.add('Falloff Curve');
+  if (Math.round(v.moveMode || 1) !== 1) { on.add('Move Mode'); if (Math.round(v.moveMode) === 2) on.add('Move X'); }
   if (v.snapMove > 0) on.add('Snap Move'); if (v.snapRotate > 0) on.add('Snap Rotate'); if (v.snapScale > 0) on.add('Snap Scale');
   if (v.maxMove > 0) on.add('Max Move'); if (v.maxRotate > 0) on.add('Max Rotate'); if (v.maxScale > 0) on.add('Max Scale');
   return CONTROLS.map((c) => c[0]).filter((n) => on.has(n));
@@ -160,6 +179,8 @@ function valuesOf(args) {
   const p = Object.assign(defaults(), args || {});
   if (typeof p.type === 'string') p.type = Math.max(1, TYPES.findIndex((t) => t.id === p.type) + 1);
   if (typeof p.falloff === 'string') p.falloff = Math.max(1, FALLOFFS.findIndex((f) => f.id === p.falloff) + 1);
+  if (typeof p.falloffCurve === 'string') p.falloffCurve = Math.max(1, CURVES.findIndex((c) => c.id === p.falloffCurve) + 1);
+  if (typeof p.moveMode === 'string') p.moveMode = Math.max(1, MOVE_MODES.findIndex((m) => m.id === p.moveMode) + 1);
   if (typeof p.waveShape === 'string') p.waveShape = Math.max(1, WAVES.findIndex((w) => w.id === p.waveShape) + 1);
   p.colour = rgba(p.colour);
   return p;
@@ -211,19 +232,21 @@ const luma = (c) => (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) * (c[3] === 
  *   Noise Field: n = value noise at (lx / Size + Seed × 13.7, ly / Size + Field Speed / 100 × t), 0..1; Softness
  *   is the width of the edge around 0.5 (0 = hard cells). Image: the brightness (0..1). Both then Invert / Strength.
  */
+/** v0.89 The falloff's edge, u 0..1 → 0..1: 1 smooth (smoothstep) · 2 linear · 3 ease in (stays low, then rises) · 4 ease out. */
+function edge(curve, u) { const cv = Math.round(curve || 1); return cv === 2 ? u : cv === 3 ? u * u : cv === 4 ? 1 - (1 - u) * (1 - u) : smooth(u); }
 function weight(e, lx, ly, f) {
-  const fo = Math.round(e.falloff), sz = Math.max(e.size, 0.001), sf = clamp(e.softness / 100, 0, 1);
+  const fo = Math.round(e.falloff), sz = Math.max(e.size, 0.001), sf = clamp(e.softness / 100, 0, 1), cv = e.falloffCurve;
   let w;
   if (fo === 4) w = 1;
   else if (fo === 5) {
     const t = f && f.t !== undefined ? f.t : 0, nu = (vnoise(lx / sz + (e.seed || 0) * 13.7, ly / sz + (e.fieldSpeed || 0) / 100 * t) + 1) / 2, hf = Math.max(sf, 0.001) / 2;
     w = smooth(clamp((nu - 0.5 + hf) / (2 * hf), 0, 1));
   } else if (fo === 6) w = clamp(f && f.luma !== undefined ? f.luma : 0, 0, 1);
-  else if (fo === 2) w = smooth(clamp(0.5 - lx / sz, 0, 1)); // a soft edge Size px wide: full to the left, none to the right
+  else if (fo === 2) w = edge(cv, clamp(0.5 - lx / sz, 0, 1)); // a soft edge Size px wide: full to the left, none to the right
   else {
     const d = fo === 3 ? Math.max(Math.abs(lx), Math.abs(ly)) : Math.sqrt(lx * lx + ly * ly);
     const inner = sz * (1 - sf);
-    w = d <= inner ? 1 : d >= sz ? 0 : smooth((sz - d) / Math.max(sz - inner, 0.001));
+    w = d <= inner ? 1 : d >= sz ? 0 : edge(cv, (sz - d) / Math.max(sz - inner, 0.001));
   }
   if (e.invert) w = 1 - w;
   return w * e.strength / 100;
@@ -324,7 +347,18 @@ function termsAt(src, item, tq, now) {
     return [M.moveX * w, M.moveY * w, M.scale / 100 * w, aim * w, M.fade / 100 * w];
   }
   let m = amounts(V, { i: item.i, k: item.k, n: item.n, x: item.x, y: item.y, time: tq });
+  // (the move modes below use the amounts m, so they follow Random / Step / Noise / Wave / Audio too)
   if (tp === 7) { const a = clamp((src.audioAt ? src.audioAt(tq - item.k * V.delay * item.fd) : 0) / Math.max(V.audioMax, 0.001), 0, 1); m = [a, a, a, a, a]; }
+  // v0.89 Move Mode: 2 Attract / Repel (Move X px toward the effector, never past it) · 3 Absolute (go to the effector + Move X / Y).
+  // The reference measures in comp space; the expression measures in the grid null's own space (G.fromComp) — the same
+  // for a null that is not rotated or scaled, which is what the tests build.
+  const mm = Math.round(V.moveMode || 1);
+  if (mm === 2 || mm === 3) {
+    const o = src.originAt(tq), gx = o[0] - c[0], gy = o[1] - c[1], sc = M.scale / 100 * m[2] * w, ro = M.rotate * m[3] * w, fa = M.fade / 100 * m[4] * w;
+    if (mm === 2) { const ds = Math.sqrt(gx * gx + gy * gy); let pl = M.moveX * m[0] * w; if (pl > ds) pl = ds; return [ds > 0.001 ? gx / ds * pl : 0, ds > 0.001 ? gy / ds * pl : 0, sc, ro, fa]; }
+    const ab = m[0] * w;
+    return [(gx + M.moveX) * ab, (gy + M.moveY) * ab, sc, ro, fa];
+  }
   return [M.moveX * m[0] * w, M.moveY * m[1] * w, M.scale / 100 * m[2] * w, M.rotate * m[3] * w, M.fade / 100 * m[4] * w];
 }
 /** termsAt with the spring (when the effector has Spring > 0). */
@@ -374,6 +408,9 @@ function code() {
     // v0.38 fields: the noise field's speed, the Image field's layer
     '  var fsp = 0, FL = null; if (fo == 5) { fsp = ev("Field Speed", time, 50) / 100; } if (fo == 6) { try { FL = EL.effect("Field Layer")(1); } catch (eFl) { FL = null; } }',
     // v0.88 Wave (read now, like the other type settings)
+    // v0.89: the falloff's edge curve and the move mode (read now)
+    '  var fcv = Math.round(ev("Falloff Curve", time, 1)), mvm = Math.round(ev("Move Mode", time, 1));',
+    '  function fe(u) { return fcv == 2 ? u : (fcv == 3 ? u * u : (fcv == 4 ? 1 - (1 - u) * (1 - u) : sm(u))); }',
     '  var wsh = 1, wln = 6, wsp = 0.5, wof = 0; if (tp == 8) { wsh = Math.round(ev("Wave Shape", time, 1)); wln = Math.max(ev("Wave Length", time, 6), 0.001); wsp = ev("Wave Speed", time, 0.5); wof = ev("Wave Offset", time, 0) / 100; }',
     '  var AU = null, amx = 1; if (tp == 7) { try { AU = EL.effect("Audio Layer")(1); } catch (eAu) { AU = null; } amx = Math.max(ev("Audio Max", time, 1), 0.001); }',
     // the effector's raw terms at time tq: [dx, dy, scale, rotate, fade] (features/grid/effectors.js termsAt)
@@ -382,9 +419,9 @@ function code() {
     '    var sz = Math.max(ev("Size", tq, 300), 0.001), sf = Math.min(Math.max(ev("Softness", tq, 50) / 100, 0), 1), w;',
     '    if (fo == 4) { w = 1; } else if (fo == 5) { var nu = (vn(lx / sz + sd0 * 13.7, ly / sz + fsp * tq) + 1) / 2, hf = Math.max(sf, 0.001) / 2; w = sm(Math.min(Math.max((nu - 0.5 + hf) / (2 * hf), 0), 1)); }',
     '    else if (fo == 6) { w = 0; if (FL) { var smp = FL.sampleImage(FL.fromComp([IP[0], IP[1]], tq), [2, 2], true, tq); w = Math.min(Math.max((0.2126 * smp[0] + 0.7152 * smp[1] + 0.0722 * smp[2]) * smp[3], 0), 1); } }',
-    '    else if (fo == 2) { w = sm(Math.min(Math.max(0.5 - lx / sz, 0), 1)); } else {',
+    '    else if (fo == 2) { w = fe(Math.min(Math.max(0.5 - lx / sz, 0), 1)); } else {',
     '      var dE = fo == 3 ? Math.max(Math.abs(lx), Math.abs(ly)) : Math.sqrt(lx * lx + ly * ly), inr = sz * (1 - sf);',
-    '      w = dE <= inr ? 1 : (dE >= sz ? 0 : sm((sz - dE) / Math.max(sz - inr, 0.001)));',
+    '      w = dE <= inr ? 1 : (dE >= sz ? 0 : fe((sz - dE) / Math.max(sz - inr, 0.001)));',
     '    }',
     '    if (inv) { w = 1 - w; }',
     '    w = w * ev("Strength", tq, 100) / 100;',
@@ -395,6 +432,11 @@ function code() {
     '    if (tp == 7) { var av = 0; if (AU) { try { av = AU.effect("Both Channels")(1).valueAtTime(tq - k * dl * thisComp.frameDuration); } catch (eAv) { av = 0; } } av = Math.min(Math.max(av / amx, 0), 1); m = [av, av, av, av, av]; }',
     '    if (tp == 4) { var ns = nsp * tq, sd = sd0 * 17.3, nv = vn(x * nf + ns, y * nf + sd); m = [nv, vn(x * nf + 31.7 + ns, y * nf + sd), nv, nv, nv]; }',
     '    if (tp == 8) { var wph = k / wln - wsp * tq + wof, wfr = wph - Math.floor(wph), wv = wsh == 2 ? 1 - 4 * Math.abs(wfr - 0.5) : (wsh == 3 ? 2 * wfr - 1 : (wsh == 4 ? 1 - 2 * wfr : (wsh == 5 ? (wfr < 0.5 ? 1 : -1) : Math.sin(2 * Math.PI * wph)))); m = [wv, wv, wv, wv, wv]; }',
+    '    if (mvm == 2 || mvm == 3) {',
+    '      var EO2 = EL.toComp(EL.anchorPoint.valueAtTime(tq), tq), GO = G.fromComp([EO2[0], EO2[1]], tq), gdx = GO[0] - (x + jx), gdy = GO[1] - (y + jy + dy), msc = ev("Scale", tt, 0) / 100 * m[2] * w, mro = ev("Rotate", tt, 0) * m[3] * w, mfa = ev("Fade", tt, 0) / 100 * m[4] * w;',
+    '      if (mvm == 2) { var gds = Math.sqrt(gdx * gdx + gdy * gdy), gpl = ev("Move X", tt, 0) * m[0] * w; if (gpl > gds) { gpl = gds; } return [gds > 0.001 ? gdx / gds * gpl : 0, gds > 0.001 ? gdy / gds * gpl : 0, msc, mro, mfa]; }',
+    '      var gab = m[0] * w; return [(gdx + ev("Move X", tt, 0)) * gab, (gdy + ev("Move Y", tt, 0)) * gab, msc, mro, mfa];',
+    '    }',
     '    return [ev("Move X", tt, 0) * m[0] * w, ev("Move Y", tt, 0) * m[1] * w, ev("Scale", tt, 0) / 100 * m[2] * w, ev("Rotate", tt, 0) * m[3] * w, ev("Fade", tt, 0) / 100 * m[4] * w];',
     '  }',
     '  var R = TQ(time), sp = 0, fq = 0, dc = 5;',
@@ -482,13 +524,15 @@ function colourCode(i, n, gridName) {
     '  if (mxv <= 0) { continue; }',
     '  var L0 = sub(EL.fromComp([IP[0], IP[1]]), EL.anchorPoint), lx = L0[0], ly = L0[1];',
     '  var fo = Math.round(EL.effect("Falloff")(1).value), sz = Math.max(EL.effect("Size")(1).value, 0.001), sf = Math.min(Math.max(EL.effect("Softness")(1).value / 100, 0), 1), w;',
+    // v0.89: the same edge curve as the moves (effectors without the control: Smooth)
+    '  var fcv = 1; try { fcv = Math.round(EL.effect("Falloff Curve")(1).value); } catch (eFc) { fcv = 1; }',
     '  if (fo == 4) { w = 1; }',
     // v0.38 fields (same maths as the moves; read now)
     '  else if (fo == 5) { var fsp = 0, sd0 = 0; try { fsp = EL.effect("Field Speed")(1).value / 100; sd0 = EL.effect("Seed")(1).value; } catch (eF5) { } var nu = (vn(lx / sz + sd0 * 13.7, ly / sz + fsp * time) + 1) / 2, hf = Math.max(sf, 0.001) / 2; w = sm(Math.min(Math.max((nu - 0.5 + hf) / (2 * hf), 0), 1)); }',
     '  else if (fo == 6) { w = 0; var FL = null; try { FL = EL.effect("Field Layer")(1); } catch (eF6) { FL = null; } if (FL) { var smp = FL.sampleImage(FL.fromComp([IP[0], IP[1]]), [2, 2], true, time); w = Math.min(Math.max((0.2126 * smp[0] + 0.7152 * smp[1] + 0.0722 * smp[2]) * smp[3], 0), 1); } }',
-    '  else if (fo == 2) { w = sm(Math.min(Math.max(0.5 - lx / sz, 0), 1)); } else {',
+    '  else if (fo == 2) { var u2 = Math.min(Math.max(0.5 - lx / sz, 0), 1); w = fcv == 2 ? u2 : (fcv == 3 ? u2 * u2 : (fcv == 4 ? 1 - (1 - u2) * (1 - u2) : sm(u2))); } else {',
     '    var dE = fo == 3 ? Math.max(Math.abs(lx), Math.abs(ly)) : Math.sqrt(lx * lx + ly * ly), inr = sz * (1 - sf);',
-    '    w = dE <= inr ? 1 : (dE >= sz ? 0 : sm((sz - dE) / Math.max(sz - inr, 0.001)));',
+    '    if (dE <= inr) { w = 1; } else if (dE >= sz) { w = 0; } else { var u3 = (sz - dE) / Math.max(sz - inr, 0.001); w = fcv == 2 ? u3 : (fcv == 3 ? u3 * u3 : (fcv == 4 ? 1 - (1 - u3) * (1 - u3) : sm(u3))); }',
     '  }',
     '  if (EL.effect("Invert")(1).value == 1) { w = 1 - w; }',
     '  w = w * EL.effect("Strength")(1).value / 100;',
@@ -498,6 +542,6 @@ function colourCode(i, n, gridName) {
   ].join('\n');
 }
 
-module.exports = { WAVES, waveAt, modify, TYPES, FALLOFFS, SLOTS, NAME, CONTROLS, KEY, GROUPS, GROUP_LABEL, needed, groupNames, defaults, valuesOf, rgba, weight, amounts, apply, localFn, vnoise, hs, PR, code,
+module.exports = { CURVES, MOVE_MODES, edge, WAVES, waveAt, modify, TYPES, FALLOFFS, SLOTS, NAME, CONTROLS, KEY, GROUPS, GROUP_LABEL, needed, groupNames, defaults, valuesOf, rgba, weight, amounts, apply, localFn, vnoise, hs, PR, code,
   SPRING, stepResponse, springWindow, termsAt, springTerms, applyAt, wrap180, luma,
   COLOUR_MODES, COLOUR_CONTROLS, COLOUR_FX, COLOUR_TAG, paletteColour, colourWithEffectors, colourCode };

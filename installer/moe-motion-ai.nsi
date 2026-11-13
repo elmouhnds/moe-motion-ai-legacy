@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.88: Wave effector, Snap To and Clamp; effectors show only the sliders they use (0.87)."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.88: Wave effector و Snap To و Clamp، والسلايدرز حسب الاستخدام (0.87)"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.89: Attract / Repel and Absolute moves, a falloff curve; Wave, Snap To, Clamp (0.88)."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.89: Attract / Repel و Absolute ومنحنى للـ falloff، و Wave و Snap To و Clamp (0.88)"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

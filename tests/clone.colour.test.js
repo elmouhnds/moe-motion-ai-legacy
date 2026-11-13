@@ -48,7 +48,8 @@ test('Cycle, Gradient and Random: every item\'s colour equals the reference; the
 });
 
 test('Effector Colour Mix tints only what its falloff reaches (sphere with a soft edge, linear sweep); reference = mock', async () => {
-  for (const args of [{ falloff: 'sphere', size: 220, softness: 60 }, { falloff: 'linear', size: 200, sweep: true }]) {
+  // v0.89: the third and fourth cases check that the colour's edge follows the Falloff Curve like the moves do
+  for (const args of [{ falloff: 'sphere', size: 220, softness: 60 }, { falloff: 'linear', size: 200, sweep: true }, { falloff: 'sphere', size: 260, softness: 100, falloffCurve: 'easeIn', sweep: true }, { falloff: 'linear', size: 220, falloffCurve: 'easeOut', sweep: true }]) {
     const { services, comp } = await grid(9);
     assert.equal((await services.executor.run('grid.colour', { mode: 'gradient', palette: 'tomato' })).status, 'success');
     select(comp, 'MOE Grid 1');
@@ -66,7 +67,7 @@ test('Effector Colour Mix tints only what its falloff reaches (sphere with a sof
         assert.ok(close(fill(L).valueAtTime(t, false), want), `${args.falloff} t ${t} item ${i}: ${fill(L).valueAtTime(t, false)} vs ${want}`);
       });
     }
-    if (args.falloff === 'sphere') {
+    if (args.falloff === 'sphere' && !args.falloffCurve) {
       const mid = fill(cards(comp)[4]).valueAtTime(comp.time, false), corner = fill(cards(comp)[0]).valueAtTime(comp.time, false);
       const base = EF.paletteColour(2, pal, 4, 9, 1), base0 = EF.paletteColour(2, pal, 0, 9, 1);
       assert.ok(close(mid, [base[0] + (1 - base[0]) * 0.8, base[1] + (1 - base[1]) * 0.8, base[2] + (1 - base[2]) * 0.8]), 'the centre item takes 80 % white');

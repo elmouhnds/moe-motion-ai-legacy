@@ -46,7 +46,7 @@ const effector = {
   group: 'Grid',
   name: 'Effector',
   description: 'Add a MOE Effector to a grid or cloner: a null that moves, scales, turns or fades the items near it — Plain, Random, Step, Noise, Delay or Wave (sine, triangle, ramp, square — it travels through the items), with a Sphere, Linear, Box or Everywhere falloff. Spring makes the items follow it with overshoot (or a smooth Inertia lag). Target turns the items to face the null; Audio drives the moves from a soundtrack. Move, rotate or scale the null to animate it; up to three per grid.',
-  keywords: ['effector', 'mograph', 'cloner', 'falloff', 'field', 'random', 'step', 'noise', 'delay', 'wave', 'reveal', 'proximity', 'mcloner', 'c4d', 'spring', 'inertia', 'bounce', 'jelly', 'overshoot', 'lag', 'target', 'look at', 'aim', 'face', 'audio', 'music', 'beat', 'sound', 'equalizer', 'sine', 'ripple', 'snap', 'clamp', 'limit', 'field', 'noise field', 'image', 'luma', 'map', 'logo'],
+  keywords: ['effector', 'mograph', 'cloner', 'falloff', 'field', 'random', 'step', 'noise', 'delay', 'wave', 'reveal', 'proximity', 'mcloner', 'c4d', 'spring', 'inertia', 'bounce', 'jelly', 'overshoot', 'lag', 'target', 'look at', 'aim', 'face', 'audio', 'music', 'beat', 'sound', 'equalizer', 'sine', 'ripple', 'snap', 'clamp', 'limit', 'attract', 'repel', 'magnet', 'push', 'pull', 'absolute', 'gather', 'ease', 'field', 'noise field', 'image', 'luma', 'map', 'logo'],
   icon: 'target',
   params: {
     type: { type: 'enum', label: 'Type', default: 'plain', options: TYPE_OPTIONS, description: EF.TYPES.map((t) => `${t.label}: ${t.hint}`).join(' · ') },
@@ -72,6 +72,9 @@ const effector = {
     spring: { type: 'number', label: 'Spring', min: 0, max: 200, step: 1, default: 0, unit: '%', description: '0 = the items follow the effector at once · 100 = they follow through a damped spring (overshoot and settle) — v0.35' },
     frequency: { type: 'number', label: 'Frequency', min: 0, max: 10, step: 0.1, default: 2.5, unit: 'Hz', description: 'Bounces per second · 0 = Inertia (a smooth lag, no overshoot)', showIf: (a) => a.spring > 0 },
     decay: { type: 'number', label: 'Decay', min: 2, max: 30, step: 0.5, default: 5, description: 'How fast it settles — higher = shorter', showIf: (a) => a.spring > 0 },
+    // v0.89: the falloff's edge and what the moves mean
+    falloffCurve: { type: 'enum', label: 'Falloff curve', default: 'smooth', options: EF.CURVES.map((c) => ({ value: c.id, label: c.label })), advanced: true, description: 'How the soft edge fades: Smooth (as before) · Linear · Ease in (thin edge, sudden core) · Ease out (wide, gentle edge)', showIf: (a) => a.falloff === 'sphere' || a.falloff === 'box' || a.falloff === 'linear' },
+    moveMode: { type: 'enum', label: 'Move mode', default: 'relative', options: EF.MOVE_MODES.map((m) => ({ value: m.id, label: m.label })), description: EF.MOVE_MODES.map((m) => `${m.label}: ${m.hint}`).join(' · '), showIf: (a) => a.type !== 'target' },
     // v0.88 Wave
     waveShape: { type: 'enum', label: 'Wave shape', default: 'sine', options: EF.WAVES.map((w) => ({ value: w.id, label: w.label })), showIf: (a) => a.type === 'wave' },
     waveLength: { type: 'number', label: 'Wave length', min: 0.1, max: 1000, step: 0.1, default: 6, unit: 'items', description: 'How many items one wave spans, in the grid order', showIf: (a) => a.type === 'wave' },
@@ -92,7 +95,7 @@ const effector = {
   requires: { comp: true },
   permissions: ['modify.layers', 'modify.effects', 'modify.expressions'],
   recovery: 'undo+checkpoint',
-  ai: { callable: true, hint: 'Add a MoGraph-style effector to an existing MOE Grid / cloner (select the grid null or its items). type plain|random|step|noise|delay|target|audio|wave (wave: waveShape sine|triangle|rampUp|rampDown|square, waveLength items, waveSpeed waves/s; snapMove/snapRotate/snapScale round the result, maxMove/maxRotate/maxScale clamp it; target: items face the null, rotate = aim offset; audio: needs a layer with sound in the comp), falloff sphere|linear|box|all, moveX/moveY px, scale %, rotate deg, fade %. sweep animates it across. spring 0-200 % (100 = full spring), frequency Hz (0 = inertia lag), decay 2-30.' },
+  ai: { callable: true, hint: 'Add a MoGraph-style effector to an existing MOE Grid / cloner (select the grid null or its items). type plain|random|step|noise|delay|target|audio|wave (wave: waveShape sine|triangle|rampUp|rampDown|square, waveLength items, waveSpeed waves/s; snapMove/snapRotate/snapScale round the result, maxMove/maxRotate/maxScale clamp it; moveMode relative|attract|absolute — attract: moveX px toward the null (negative = away), absolute: items go to the null; falloffCurve smooth|linear|easeIn|easeOut; target: items face the null, rotate = aim offset; audio: needs a layer with sound in the comp), falloff sphere|linear|box|all, moveX/moveY px, scale %, rotate deg, fade %. sweep animates it across. spring 0-200 % (100 = full spring), frequency Hz (0 = inertia lag), decay 2-30.' },
   uses: { hostOps: ['layers.describe', 'audio.amplitude', 'layers.createNull', 'effects.ensure', 'effects.setMenu', 'props.values', 'proximity.scan', 'expressions.peek', 'expressions.set', 'keys.write', 'layers.remove'], network: false },
   compatibility: { minAE: '25.0' },
   ui: { primaryLabel: 'Add Effector' },
@@ -109,6 +112,9 @@ const effector = {
     const name = nextName(ctx);
     const t = EF.TYPES.find((x) => x.id === args.type), f = EF.FALLOFFS.find((x) => x.id === args.falloff);
     const moves = [args.moveX && `move ${args.moveX}, ${args.moveY || 0} px`, !args.moveX && args.moveY && `move Y ${args.moveY} px`, args.scale && `scale ${args.scale > 0 ? '+' : ''}${args.scale} %`, args.rotate && `rotate ${args.rotate}°`, args.fade && `fade ${args.fade} %`, args.colourMix > 0 && `colour ${args.colour} at ${args.colourMix} %`].filter(Boolean);
+    if (args.moveMode === 'attract' && !args.moveX) return { ok: false, error: 'Attract / Repel uses Move X as the pull in px — set it (negative pushes away)' };
+    if (args.type !== 'target' && args.moveMode === 'attract') { moves.splice(0, moves[0] && /^move /.test(moves[0]) ? 1 : 0); moves.unshift(`${args.moveX > 0 ? 'pull' : 'push'} ${Math.abs(args.moveX)} px ${args.moveX > 0 ? 'toward' : 'away from'} ${name}`); }
+    if (args.type !== 'target' && args.moveMode === 'absolute') { moves.splice(0, moves[0] && /^move /.test(moves[0]) ? 1 : 0); moves.unshift(`the items go to ${name}${args.moveX || args.moveY ? ` + ${args.moveX || 0}, ${args.moveY || 0} px` : ''}`); }
     if (!moves.length && args.type !== 'target') return { ok: false, error: 'Give the effector something to do: Move, Scale, Rotate, Fade or Colour' };
     if (args.type === 'target') moves.unshift(`the items turn to face ${name}${args.rotate ? ` (aim offset ${args.rotate}°)` : ''}`);
     return {
@@ -159,6 +165,8 @@ const effector = {
     const controls = await host.call('effects.ensure', { compId: comp.id, label: 'MOE: Effector Controls', layers: [{ layer: { layerId: created.layerId }, items: controlItems(values, names) }] });
     await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Effector Type', items: EF.TYPES.map((t) => t.menu), value: values.type });
     await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Falloff', items: EF.FALLOFFS.map((f) => f.menu), value: values.falloff });
+    if (names.includes('Falloff Curve')) await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Falloff Curve', items: EF.CURVES.map((c) => c.menu), value: values.falloffCurve });
+    if (names.includes('Move Mode')) await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Move Mode', items: EF.MOVE_MODES.map((m) => m.menu), value: values.moveMode });
     if (names.includes('Wave Shape')) await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Wave Shape', items: EF.WAVES.map((w) => w.menu), value: values.waveShape });
     // 3. link it to the first free slot of the grid
     const desc2 = await host.call('layers.describe', { compId: comp.id });

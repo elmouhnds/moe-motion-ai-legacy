@@ -31,6 +31,7 @@ const CHECKS = [
   { id: 'effector', label: 'Effector (sphere sweep): scales = effectors.js', run: (T) => checkEffector(T, { type: 'plain', falloff: 'sphere', size: 200, softness: 50, scale: 60, sweep: true }, 'scale', [0, 0.7, 1.4, 2]) },
   { id: 'spring', label: 'Spring: overshoot = effectors.js', run: (T) => checkEffector(T, { type: 'plain', falloff: 'sphere', size: 200, softness: 50, scale: 60, spring: 100, frequency: 3, decay: 5, sweep: true }, 'scale', [0.6, 1.2, 2.1, 2.4]) },
   { id: 'wave', label: 'Wave + Clamp: scales = effectors.js', run: (T) => checkEffector(T, { type: 'wave', falloff: 'all', scale: 60, waveShape: 'triangle', waveLength: 4, waveSpeed: 0.5, maxScale: 40 }, 'scale', [0, 0.5, 1.3]) },
+  { id: 'falloffCurve', label: 'Ease-in falloff: scales = effectors.js', run: (T) => checkEffector(T, { type: 'plain', falloff: 'sphere', size: 260, softness: 90, scale: 60, falloffCurve: 'easeIn', sweep: true }, 'scale', [0.5, 1, 1.5]) },
   { id: 'target', label: 'Target: items face the null', run: (T) => checkEffector(T, { type: 'target', falloff: 'all', scale: 0, sweep: true }, 'rot', [0.5, 1.5]) },
   { id: 'noise', label: 'Noise Field: scales = effectors.js', run: (T) => checkEffector(T, { type: 'plain', falloff: 'noise', size: 160, softness: 40, scale: 80, fieldSpeed: 60 }, 'scale', [0, 1.5]) },
   { id: 'image', label: 'Image field: sampleImage of a Gradient Ramp', run: checkImage },

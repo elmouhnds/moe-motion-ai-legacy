@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.89.0] — 2026-11-13 — Falloff curve, Attract / Repel, Absolute (3 and 4 of 8 from the React 3 study)
+- **Falloff curve**: the soft edge of a Sphere, Box or Linear falloff can be Smooth (as before), Linear, Ease in or Ease out. Clone Colours follow the same edge.
+- **Move mode**: *Attract / Repel* — Move X px toward the effector null, never past it, negative pushes away. *Absolute* — the items go to the null (+ Move X / Y), fully where the weight is 1.
+- Three new tiles in Layout › Effectors: Magnet, Repel, Gather. *More Sliders › Moves* now includes Move Mode; a new group *Falloff curve*.
+- Item expressions are v6; older grids are rewritten in place when an effector is added.
+
 ## [0.88.0] — 2026-11-13 — Wave, Snap To, Clamp (2 of 8 from the React 3 study)
 - **Wave**: a new Effector Type — a sine, triangle, ramp-up, ramp-down or square wave that runs through the items in their order. Wave Length (items), Wave Speed (waves per second), Wave Offset (keyframe it to drive the wave by hand).
 - **Snap To**: Snap Move / Snap Rotate / Snap Scale round what an effector gives each item to the nearest step (Snap Rotate 45 → 0°, 45°, 90°…).
