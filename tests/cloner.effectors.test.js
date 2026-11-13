@@ -148,7 +148,7 @@ test('Cloner: one layer → N copies on the grid (sources cycle); restore remove
   assert.notEqual(one.status, 'success');
 
   // an item expression from v0.19–v0.32 (v2) is rewritten as v3 when an effector is added: same slot, home, grid
-  const old = X.buildAll(2, 6, { gridName: 'MOE Grid 4', home: [12, -7] }).position.replace(' · v4\n', ' · v2\n');
+  const old = X.buildAll(2, 6, { gridName: 'MOE Grid 4', home: [12, -7] }).position.replace(` · v${X.VERSION}\n`, ' · v2\n');
   const f = X.factsOf(old);
   assert.deepEqual([f.i, f.n, f.home, f.gridName], [2, 6, [12, -7], 'MOE Grid 4']);
   assert.ok(X.isV2(old) && !X.isV3(old) && X.isV3(X.buildAll(f.i, f.n, f).position));

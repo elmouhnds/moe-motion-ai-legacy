@@ -45,8 +45,8 @@ const effector = {
   category: 'layout',
   group: 'Grid',
   name: 'Effector',
-  description: 'Add a MOE Effector to a grid or cloner: a null that moves, scales, turns or fades the items near it — Plain, Random, Step, Noise or Delay, with a Sphere, Linear, Box or Everywhere falloff. Spring makes the items follow it with overshoot (or a smooth Inertia lag). Target turns the items to face the null; Audio drives the moves from a soundtrack. Move, rotate or scale the null to animate it; up to three per grid.',
-  keywords: ['effector', 'mograph', 'cloner', 'falloff', 'field', 'random', 'step', 'noise', 'delay', 'wave', 'reveal', 'proximity', 'mcloner', 'c4d', 'spring', 'inertia', 'bounce', 'jelly', 'overshoot', 'lag', 'target', 'look at', 'aim', 'face', 'audio', 'music', 'beat', 'sound', 'equalizer', 'field', 'noise field', 'image', 'luma', 'map', 'logo'],
+  description: 'Add a MOE Effector to a grid or cloner: a null that moves, scales, turns or fades the items near it — Plain, Random, Step, Noise, Delay or Wave (sine, triangle, ramp, square — it travels through the items), with a Sphere, Linear, Box or Everywhere falloff. Spring makes the items follow it with overshoot (or a smooth Inertia lag). Target turns the items to face the null; Audio drives the moves from a soundtrack. Move, rotate or scale the null to animate it; up to three per grid.',
+  keywords: ['effector', 'mograph', 'cloner', 'falloff', 'field', 'random', 'step', 'noise', 'delay', 'wave', 'reveal', 'proximity', 'mcloner', 'c4d', 'spring', 'inertia', 'bounce', 'jelly', 'overshoot', 'lag', 'target', 'look at', 'aim', 'face', 'audio', 'music', 'beat', 'sound', 'equalizer', 'sine', 'ripple', 'snap', 'clamp', 'limit', 'field', 'noise field', 'image', 'luma', 'map', 'logo'],
   icon: 'target',
   params: {
     type: { type: 'enum', label: 'Type', default: 'plain', options: TYPE_OPTIONS, description: EF.TYPES.map((t) => `${t.label}: ${t.hint}`).join(' · ') },
@@ -72,6 +72,18 @@ const effector = {
     spring: { type: 'number', label: 'Spring', min: 0, max: 200, step: 1, default: 0, unit: '%', description: '0 = the items follow the effector at once · 100 = they follow through a damped spring (overshoot and settle) — v0.35' },
     frequency: { type: 'number', label: 'Frequency', min: 0, max: 10, step: 0.1, default: 2.5, unit: 'Hz', description: 'Bounces per second · 0 = Inertia (a smooth lag, no overshoot)', showIf: (a) => a.spring > 0 },
     decay: { type: 'number', label: 'Decay', min: 2, max: 30, step: 0.5, default: 5, description: 'How fast it settles — higher = shorter', showIf: (a) => a.spring > 0 },
+    // v0.88 Wave
+    waveShape: { type: 'enum', label: 'Wave shape', default: 'sine', options: EF.WAVES.map((w) => ({ value: w.id, label: w.label })), showIf: (a) => a.type === 'wave' },
+    waveLength: { type: 'number', label: 'Wave length', min: 0.1, max: 1000, step: 0.1, default: 6, unit: 'items', description: 'How many items one wave spans, in the grid order', showIf: (a) => a.type === 'wave' },
+    waveSpeed: { type: 'number', label: 'Wave speed', min: -20, max: 20, step: 0.05, default: 0.5, unit: 'waves/s', description: '0 = a still wave · negative = it runs the other way', showIf: (a) => a.type === 'wave' },
+    waveOffset: { type: 'number', label: 'Wave offset', min: -1000, max: 1000, step: 1, default: 0, unit: '%', description: 'Shift the wave by a part of its length — keyframe it to drive the wave by hand', showIf: (a) => a.type === 'wave' },
+    // v0.88 Snap To / Clamp (0 = off)
+    snapMove: { type: 'number', label: 'Snap move', min: 0, max: 2000, step: 1, default: 0, unit: 'px', advanced: true, description: 'Round each item\'s move to the nearest step (0 = off)' },
+    snapRotate: { type: 'number', label: 'Snap rotate', min: 0, max: 360, step: 1, default: 0, unit: '°', advanced: true, description: '45 = the items only ever sit at 0°, 45°, 90°… (0 = off)' },
+    snapScale: { type: 'number', label: 'Snap scale', min: 0, max: 500, step: 1, default: 0, unit: '%', advanced: true, description: 'Round the scale change to the nearest step (0 = off)' },
+    maxMove: { type: 'number', label: 'Max move', min: 0, max: 10000, step: 1, default: 0, unit: 'px', advanced: true, description: 'Clamp: an item never moves further than this, spring overshoot included (0 = off)' },
+    maxRotate: { type: 'number', label: 'Max rotate', min: 0, max: 3600, step: 1, default: 0, unit: '°', advanced: true, description: 'Clamp: never turns more than this either way (0 = off)' },
+    maxScale: { type: 'number', label: 'Max scale', min: 0, max: 1000, step: 1, default: 0, unit: '%', advanced: true, description: 'Clamp: never scales by more than this either way (0 = off)' },
     sweep: { type: 'boolean', label: 'Sweep across', default: false, description: 'Keyframe the effector travelling across the grid in 2 s (Sphere / Box / Linear / Noise Field — or a Target the items follow)', showIf: (a) => (a.falloff !== 'all' && a.falloff !== 'image') || a.type === 'target' },
     audioLayerId: { type: 'integer', label: 'Sound layer', min: 0, max: 1e9, default: 0, hidden: true, description: '0 = the first layer with audio in the comp (not in the grid)' },
     controls: { type: 'enum', label: 'Controls on the null', default: 'needed', advanced: true, options: [{ value: 'needed', label: 'Only what it uses' }, { value: 'all', label: 'All' }], description: 'Effect Controls shows only the sliders this effector uses (v0.87). Effector Controls adds a group later — Moves, Random, Colour, Spring, Audio, Field' },
@@ -80,7 +92,7 @@ const effector = {
   requires: { comp: true },
   permissions: ['modify.layers', 'modify.effects', 'modify.expressions'],
   recovery: 'undo+checkpoint',
-  ai: { callable: true, hint: 'Add a MoGraph-style effector to an existing MOE Grid / cloner (select the grid null or its items). type plain|random|step|noise|delay|target|audio (target: items face the null, rotate = aim offset; audio: needs a layer with sound in the comp), falloff sphere|linear|box|all, moveX/moveY px, scale %, rotate deg, fade %. sweep animates it across. spring 0-200 % (100 = full spring), frequency Hz (0 = inertia lag), decay 2-30.' },
+  ai: { callable: true, hint: 'Add a MoGraph-style effector to an existing MOE Grid / cloner (select the grid null or its items). type plain|random|step|noise|delay|target|audio|wave (wave: waveShape sine|triangle|rampUp|rampDown|square, waveLength items, waveSpeed waves/s; snapMove/snapRotate/snapScale round the result, maxMove/maxRotate/maxScale clamp it; target: items face the null, rotate = aim offset; audio: needs a layer with sound in the comp), falloff sphere|linear|box|all, moveX/moveY px, scale %, rotate deg, fade %. sweep animates it across. spring 0-200 % (100 = full spring), frequency Hz (0 = inertia lag), decay 2-30.' },
   uses: { hostOps: ['layers.describe', 'audio.amplitude', 'layers.createNull', 'effects.ensure', 'effects.setMenu', 'props.values', 'proximity.scan', 'expressions.peek', 'expressions.set', 'keys.write', 'layers.remove'], network: false },
   compatibility: { minAE: '25.0' },
   ui: { primaryLabel: 'Add Effector' },
@@ -103,7 +115,7 @@ const effector = {
       ok: true, grid, name, fieldLayer: args.fieldLayer || 0,
       preview: {
         summary: `${name}: ${t.label} · ${f.label} on ${grid.name}`,
-        items: [moves.join(' · '), ...(args.falloff === 'image' ? [`Weight = the brightness of ${((ctx.compLayers || []).find((l) => l.index === args.fieldLayer) || {}).name || 'the Field layer'} under each item`] : args.falloff === 'noise' ? ['Weight = a noise field drifting through the grid (Size = patch size)'] : []), args.type === 'audio' ? 'Reads the loudness of the first layer with sound (After Effects’ Convert Audio to Keyframes → a MOE Audio layer at the bottom)' : args.type === 'delay' ? `${args.delay} frames later per item — keyframe the effector's moves` : t.hint, args.spring > 0 ? (args.frequency > 0.01 ? `Spring ${args.spring} %: ${args.frequency} Hz, decay ${args.decay} — the items overshoot and settle` : `Inertia ${args.spring} %: decay ${args.decay} — the items lag and ease in`) : null, args.sweep ? 'Sweeps across the grid in 2 s (keyframed)' : 'Move, rotate or scale the null to animate it', args.controls === 'all' ? `All ${EF.CONTROLS.length} controls on the null (Effect Controls)` : `${EF.needed(EF.valuesOf(Object.assign({}, args, { size: args.size || 1 }))).length} controls on the null — only what this effector uses`].filter(Boolean)
+        items: [moves.join(' · '), ...(args.falloff === 'image' ? [`Weight = the brightness of ${((ctx.compLayers || []).find((l) => l.index === args.fieldLayer) || {}).name || 'the Field layer'} under each item`] : args.falloff === 'noise' ? ['Weight = a noise field drifting through the grid (Size = patch size)'] : []), args.type === 'wave' ? `A ${(EF.WAVES.find((w) => w.id === args.waveShape) || EF.WAVES[0]).label.toLowerCase()} wave ${args.waveLength} items long${args.waveSpeed ? `, ${Math.abs(args.waveSpeed)} per second` : ', still'}` : args.type === 'audio' ? 'Reads the loudness of the first layer with sound (After Effects’ Convert Audio to Keyframes → a MOE Audio layer at the bottom)' : args.type === 'delay' ? `${args.delay} frames later per item — keyframe the effector's moves` : t.hint, args.spring > 0 ? (args.frequency > 0.01 ? `Spring ${args.spring} %: ${args.frequency} Hz, decay ${args.decay} — the items overshoot and settle` : `Inertia ${args.spring} %: decay ${args.decay} — the items lag and ease in`) : null, args.sweep ? 'Sweeps across the grid in 2 s (keyframed)' : 'Move, rotate or scale the null to animate it', args.controls === 'all' ? `All ${EF.CONTROLS.length} controls on the null (Effect Controls)` : `${EF.needed(EF.valuesOf(Object.assign({}, args, { size: args.size || 1 }))).length} controls on the null — only what this effector uses`].filter(Boolean)
       }
     };
   },
@@ -147,6 +159,7 @@ const effector = {
     const controls = await host.call('effects.ensure', { compId: comp.id, label: 'MOE: Effector Controls', layers: [{ layer: { layerId: created.layerId }, items: controlItems(values, names) }] });
     await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Effector Type', items: EF.TYPES.map((t) => t.menu), value: values.type });
     await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Falloff', items: EF.FALLOFFS.map((f) => f.menu), value: values.falloff });
+    if (names.includes('Wave Shape')) await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: 'Wave Shape', items: EF.WAVES.map((w) => w.menu), value: values.waveShape });
     // 3. link it to the first free slot of the grid
     const desc2 = await host.call('layers.describe', { compId: comp.id });
     const effIndex = (desc2.layers.find((l) => l.id === created.layerId) || {}).index;
@@ -160,10 +173,10 @@ const effector = {
     const slot = EF.SLOTS[freeAt];
     const linked = await host.call('effects.ensure', { compId: comp.id, label: 'MOE: Link Effector', layers: [{ layer: { layerId: grid.id }, items: [slotItem(slot, effIndex)] }] });
     // 4. items read effectors: rewrite older item expressions (v0.19–v0.86) as the current one — same item, home and path.
-    // v0.87: only a v4 expression reads a control that is not on the null as its default, so v3 items are rewritten too
+    // v0.87: only a v4+ expression reads a control that is not on the null as its default; v0.88: only v5 knows Wave, Snap To and Clamp
     const targets = [];
     for (const c of codes) {
-      if (!X.isV2(c.code) || X.isV4(c.code)) continue;
+      if (!X.isV2(c.code) || X.isCurrent(c.code)) continue;
       const f = X.factsOf(c.code);
       if (!f) continue;
       const prop = Object.keys(X.PROP_ADDR).find((p) => X.PROP_ADDR[p][1] === c.address.matchNames[c.address.matchNames.length - 1]);

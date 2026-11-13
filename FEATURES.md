@@ -100,6 +100,8 @@
 
 **Target & Audio Effectors** (v0.36.0): Target turns the clones to face the effector null; Audio drives every move from a soundtrack's loudness (After Effects' Convert Audio to Keyframes, run for you), each clone a little later — tiles Aim, Look Near, Beat Pulse, Beat Wave (docs/features/TARGET_AUDIO_EFFECTORS.md).
 
+**Wave, Snap To, Clamp** (v0.88.0): a Wave effector (sine, triangle, ramp, square) that runs through the clones in order; Snap To rounds moves / rotation / scale to a step; Clamp limits them, spring overshoot included. Mock-tested, not yet run in After Effects.
+
 **Controls on demand** (v0.87.0): an effector shows in Effect Controls only the sliders it uses (7 instead of 24 for a Scale effector); *More Sliders* adds a group later without moving anything; quick expressions arrive with their own sliders. Mock-tested, not yet run in After Effects.
 
 **Spring / Inertia Effector** (v0.35.0): effectors move the clones through a damped spring — overshoot and settle, or a smooth Inertia lag at Frequency 0 — live on the effector null (Spring %, Frequency, Decay); tiles Spring Grow, Jelly, Inertia, Bounce Up (docs/features/SPRING_EFFECTOR.md).

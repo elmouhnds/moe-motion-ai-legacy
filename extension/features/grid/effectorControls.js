@@ -23,7 +23,7 @@ const controls = {
   category: 'layout',
   group: 'Grid',
   name: 'Effector Controls',
-  description: 'Add more sliders to a MOE Effector in Effect Controls. An effector arrives with only the controls it uses; this adds a group when you want it — Moves (Move X / Y, Scale, Rotate, Fade), Random · Noise · Delay, Colour, Spring, Audio, Field — or all of them. Only missing controls are added, with the values the effector was already using, so nothing moves.',
+  description: 'Add more sliders to a MOE Effector in Effect Controls. An effector arrives with only the controls it uses; this adds a group when you want it — Moves (Move X / Y, Scale, Rotate, Fade), Random · Noise · Delay, Colour, Spring, Audio, Field, Wave, Snap To, Clamp — or all of them. Only missing controls are added, with the values the effector was already using, so nothing moves.',
   keywords: ['effector', 'controls', 'sliders', 'effect controls', 'more', 'show all', 'spring', 'colour', 'noise', 'seed', 'moves'],
   icon: 'sliders',
   params: {
@@ -33,7 +33,7 @@ const controls = {
   permissions: ['modify.effects'],
   recovery: 'undo+checkpoint',
   ai: { callable: true, hint: 'Adds missing slider groups to the selected MOE Effector null(s). group all|moves|random|colour|spring|audio|field. It never changes a control that is already there.' },
-  uses: { hostOps: ['props.values', 'effects.ensure', 'effects.restore'], network: false },
+  uses: { hostOps: ['props.values', 'effects.ensure', 'effects.setMenu', 'effects.restore'], network: false },
   compatibility: { minAE: '25.0' },
   ui: { primaryLabel: 'Add Controls', lockedOk: false },
 
@@ -61,6 +61,8 @@ const controls = {
     const todo = plan.filter((p) => p.missing.length);
     const defaults = EF.defaults();
     const fx = todo.length ? await host.call('effects.ensure', { compId: comp.id, label: 'MOE: Effector Controls', layers: todo.map((p) => ({ layer: { layerId: p.layer.id }, items: controlItems(defaults, p.missing) })) }) : null;
+    // a menu control needs its items (the first one is chosen — the default)
+    for (const p of todo) if (p.missing.includes('Wave Shape')) await host.call('effects.setMenu', { compId: comp.id, layerId: p.layer.id, effectKey: 'Wave Shape', items: EF.WAVES.map((w) => w.menu), value: 1 });
     // read back: every control of the group answers now
     const read = await host.call('props.values', { compId: comp.id, time: comp.time, items });
     return { fx, plan: plan.map((p) => ({ id: p.layer.id, name: p.layer.name, added: p.missing })), read, names };

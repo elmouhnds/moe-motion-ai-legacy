@@ -259,7 +259,7 @@ function layBody(pathAccess, pathClosed) {
 function buildAll(i, n, { gridName, pathAccess = null, pathClosed = false, home = [0, 0] }) {
   const hx = Math.round(home[0] * 1000) / 1000, hy = Math.round(home[1] * 1000) / 1000;
   const head = [
-    `${TAG} · ${esc(gridName)} · v4`,
+    `${TAG} · ${esc(gridName)} · v${VERSION}`,
     `var G = thisComp.layer("${esc(gridName)}");`,
     'function c(nm) { return G.effect(nm)(1).value; }',
     'function ic(nm) { try { return thisLayer.effect(nm)(1).value; } catch (eI) { return 0; } }',
@@ -308,11 +308,16 @@ function buildAll(i, n, { gridName, pathAccess = null, pathClosed = false, home 
 }
 
 /** Is this a v0.19 (all-layouts) grid expression? */
-const isV2 = (code) => / · v[234]\n/.test(String(code || ''));
+/** The item expression's version: 2 all layouts (v0.19) · 3 reads effectors (v0.33) · 4 optional controls (v0.87) · 5 Wave, Snap To, Clamp (v0.88). */
+const VERSION = 5;
+const versionOf = (code) => { const m = / · v(\d+)\n/.exec(String(code || '')); return m ? Number(m[1]) : 0; };
+const isV2 = (code) => versionOf(code) >= 2;
 /** v0.33: does the expression read MOE Effectors (Effector 2 / 3 slots)? */
-const isV3 = (code) => / · v[34]\n/.test(String(code || ''));
+const isV3 = (code) => versionOf(code) >= 3;
 /** v0.87: does the expression read an effector control that is not there as its default (controls on demand)? */
-const isV4 = (code) => / · v4\n/.test(String(code || ''));
+const isV4 = (code) => versionOf(code) >= 4;
+/** Is it the expression this version writes? Anything older is rewritten in place when an effector is added. */
+const isCurrent = (code) => versionOf(code) === VERSION;
 /** The build-time facts baked into a v2 / v3 / v4 item expression (to rewrite it as the current one without changing the item). */
 function factsOf(code) {
   // v0.87: the host stores `thisComp.layer(/*MOE-LINK:id*/"Name")` (LINKS.md) — read the code without the ids; expressions.set adds them again
@@ -349,4 +354,4 @@ function controlAddress(layerId, name) {
   return { layerId, matchNames: ['ADBE Effect Parade', `name:${name}`, `name:${KIND[kind ? kind[1] : 'slider'].param}`] };
 }
 
-module.exports = { TAG, MODE_CONTROLS, COMMON_CONTROLS, HEAD_CONTROLS, LEGACY_CONTROLS, ITEM_FX, MODE_MENU, KIND, KEY, NAME_OF, controlsFor, allControls, defaultParams, build, buildAll, isV2, isV3, isV4, factsOf, slotOf, withSlot, PROP_ADDR, controlItems, controlAddress };
+module.exports = { TAG, MODE_CONTROLS, COMMON_CONTROLS, HEAD_CONTROLS, LEGACY_CONTROLS, ITEM_FX, MODE_MENU, KIND, KEY, NAME_OF, controlsFor, allControls, defaultParams, build, buildAll, isV2, isV3, isV4, isCurrent, VERSION, versionOf, factsOf, slotOf, withSlot, PROP_ADDR, controlItems, controlAddress };

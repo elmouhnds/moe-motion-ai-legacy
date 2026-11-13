@@ -85,6 +85,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['target', 'Wave, Snap To, Clamp', 'A Wave effector runs a sine, triangle, ramp or square wave through the clones in their order (Ripple, Square Pulse, Saw Fade in Layout › Effectors). Snap To rounds what an effector gives — Snap Turn keeps every item on a 45° step. Clamp sets a limit that holds even through a spring\'s overshoot.'],
   ['sliders', 'Only the sliders that matter', 'A new effector shows in Effect Controls only what it uses — a Scale effector has 7 controls instead of 24. More Sliders (Layout › Effectors) adds a group later: Moves, Random, Colour, Spring, Audio, Field — nothing moves when you add them. Quick expressions now arrive with their own sliders (Wiggle: Frequency and Amount).'],
   ['sparkles', 'The Assistant: AI on the button, an organised window', 'The button now says AI. Its window starts with what it sees (your selection, the comp, its format, the client), then the suggestion for it, then one list at a time — Do it for me (a plan you approve first) or Ask a question — with prompts written for what you selected. After an answer it says whether it came from Claude or from the offline tool search.'],
   ['sparkles', 'A new Assistant button', 'A dark tile with a lit rim and its own mark — a speech bubble holding a spark — in every style\'s own shape. The rim turns once when a suggestion arrives and keeps turning while it thinks. The last row of a page now scrolls clear of it.'],

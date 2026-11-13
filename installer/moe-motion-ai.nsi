@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.87: effectors and expressions show only the sliders they use; More Sliders adds the rest."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.87: الـ effectors والـ expressions بتظهر السلايدرز اللي بتستخدمها بس، وMore Sliders يضيف الباقي"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.88: Wave effector, Snap To and Clamp; effectors show only the sliders they use (0.87)."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.88: Wave effector و Snap To و Clamp، والسلايدرز حسب الاستخدام (0.87)"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

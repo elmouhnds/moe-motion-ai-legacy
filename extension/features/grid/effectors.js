@@ -26,7 +26,17 @@ const TYPES = [
   { id: 'delay', menu: 'Delay', label: 'Delay', hint: 'Keyframe the effector — each item plays it a little later' },
   // v0.36
   { id: 'target', menu: 'Target', label: 'Target', hint: 'The items turn to face the effector null (Rotate = aim offset)' },
-  { id: 'audio', menu: 'Audio', label: 'Audio', hint: 'The moves follow a soundtrack’s loudness — each item a little later (Delay)' }
+  { id: 'audio', menu: 'Audio', label: 'Audio', hint: 'The moves follow a soundtrack’s loudness — each item a little later (Delay)' },
+  // v0.88 (React 3 study): a wave that runs through the items in their order
+  { id: 'wave', menu: 'Wave', label: 'Wave', hint: 'A wave runs through the items in order — sine, triangle, ramp or square; it travels with Wave Speed' }
+];
+/** v0.88 Wave shapes (menu index stored in AE — append only). */
+const WAVES = [
+  { id: 'sine', menu: 'Sine', label: 'Sine' },
+  { id: 'triangle', menu: 'Triangle', label: 'Triangle' },
+  { id: 'rampUp', menu: 'Ramp Up', label: 'Ramp up' },
+  { id: 'rampDown', menu: 'Ramp Down', label: 'Ramp down' },
+  { id: 'square', menu: 'Square', label: 'Square' }
 ];
 const FALLOFFS = [
   { id: 'sphere', menu: 'Sphere', label: 'Sphere' },
@@ -69,9 +79,22 @@ const CONTROLS = [
   ['Audio Max', 'slider', 1],
   // v0.38 Field falloffs: the layer whose brightness is the weight (Image) and how fast the noise field evolves
   ['Field Layer', 'layer', 0],
-  ['Field Speed', 'slider', 50]
+  ['Field Speed', 'slider', 50],
+  // v0.88 Wave: its shape, how many items one wave spans, how many waves pass per second, a phase offset (% of a wave)
+  ['Wave Shape', 'menu', 1, WAVES.map((w) => w.menu)],
+  ['Wave Length', 'slider', 6],
+  ['Wave Speed', 'slider', 0.5],
+  ['Wave Offset', 'slider', 0],
+  // v0.88 Snap To: round what the effector gives each item to the nearest step (0 = off) — px, degrees, % of scale
+  ['Snap Move', 'slider', 0],
+  ['Snap Rotate', 'slider', 0],
+  ['Snap Scale', 'slider', 0],
+  // v0.88 Clamp: never more than this, whatever the other settings (and the spring) do (0 = off)
+  ['Max Move', 'slider', 0],
+  ['Max Rotate', 'slider', 0],
+  ['Max Scale', 'slider', 0]
 ];
-const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix', Spring: 'spring', Frequency: 'frequency', Decay: 'decay', 'Audio Layer': 'audioLayer', 'Audio Max': 'audioMax', 'Field Layer': 'fieldLayer', 'Field Speed': 'fieldSpeed' };
+const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softness: 'softness', Strength: 'strength', Invert: 'invert', 'Move X': 'moveX', 'Move Y': 'moveY', Scale: 'scale', Rotate: 'rotate', Fade: 'fade', Seed: 'seed', Delay: 'delay', 'Noise Scale': 'noiseScale', 'Noise Speed': 'noiseSpeed', Colour: 'colour', 'Colour Mix': 'colourMix', Spring: 'spring', Frequency: 'frequency', Decay: 'decay', 'Audio Layer': 'audioLayer', 'Audio Max': 'audioMax', 'Field Layer': 'fieldLayer', 'Field Speed': 'fieldSpeed', 'Wave Shape': 'waveShape', 'Wave Length': 'waveLength', 'Wave Speed': 'waveSpeed', 'Wave Offset': 'waveOffset', 'Snap Move': 'snapMove', 'Snap Rotate': 'snapRotate', 'Snap Scale': 'snapScale', 'Max Move': 'maxMove', 'Max Rotate': 'maxRotate', 'Max Scale': 'maxScale' };
 
 /**
  * v0.87 Controls on demand (docs/features/CONTROLS_ON_DEMAND.md — owner: "only the sliders that matter for the
@@ -82,6 +105,7 @@ const KEY = { 'Effector Type': 'type', Falloff: 'falloff', Size: 'size', Softnes
  *   random  Seed (Random, Noise, Noise Field) · Noise Scale, Noise Speed (Noise) · Delay (Delay, Audio)
  *   colour  Colour, Colour Mix   spring  Spring, Frequency, Decay   audio  Audio Layer, Audio Max
  *   field   Field Layer (Image) · Field Speed (Noise Field)
+ *   wave    Wave Shape, Length, Speed, Offset (Wave)   snap / clamp  each one that is not 0
  * GROUPS is also the list the Effector Controls tool offers to add later.
  */
 const GROUPS = {
@@ -91,9 +115,12 @@ const GROUPS = {
   colour: ['Colour', 'Colour Mix'],
   spring: ['Spring', 'Frequency', 'Decay'],
   audio: ['Audio Layer', 'Audio Max'],
-  field: ['Field Layer', 'Field Speed']
+  field: ['Field Layer', 'Field Speed'],
+  wave: ['Wave Shape', 'Wave Length', 'Wave Speed', 'Wave Offset'],
+  snap: ['Snap Move', 'Snap Rotate', 'Snap Scale'],
+  clamp: ['Max Move', 'Max Rotate', 'Max Scale']
 };
-const GROUP_LABEL = { moves: 'Moves', random: 'Random · Noise · Delay', colour: 'Colour', spring: 'Spring', audio: 'Audio', field: 'Field' };
+const GROUP_LABEL = { moves: 'Moves', random: 'Random · Noise · Delay', colour: 'Colour', spring: 'Spring', audio: 'Audio', field: 'Field', wave: 'Wave', snap: 'Snap To', clamp: 'Clamp' };
 /** The control names (in Effect Controls order) an effector with these values uses. `v` = valuesOf(args). */
 function needed(v) {
   const tp = Math.round(v.type), fo = Math.round(v.falloff), on = new Set(GROUPS.core);
@@ -106,6 +133,9 @@ function needed(v) {
   if (tp === 7) GROUPS.audio.forEach((n) => on.add(n));
   if (fo === 6) on.add('Field Layer');
   if (fo === 5) on.add('Field Speed');
+  if (tp === 8) GROUPS.wave.forEach((n) => on.add(n));
+  if (v.snapMove > 0) on.add('Snap Move'); if (v.snapRotate > 0) on.add('Snap Rotate'); if (v.snapScale > 0) on.add('Snap Scale');
+  if (v.maxMove > 0) on.add('Max Move'); if (v.maxRotate > 0) on.add('Max Rotate'); if (v.maxScale > 0) on.add('Max Scale');
   return CONTROLS.map((c) => c[0]).filter((n) => on.has(n));
 }
 /** The names of one group, or of every control ('all'). */
@@ -130,6 +160,7 @@ function valuesOf(args) {
   const p = Object.assign(defaults(), args || {});
   if (typeof p.type === 'string') p.type = Math.max(1, TYPES.findIndex((t) => t.id === p.type) + 1);
   if (typeof p.falloff === 'string') p.falloff = Math.max(1, FALLOFFS.findIndex((f) => f.id === p.falloff) + 1);
+  if (typeof p.waveShape === 'string') p.waveShape = Math.max(1, WAVES.findIndex((w) => w.id === p.waveShape) + 1);
   p.colour = rgba(p.colour);
   return p;
 }
@@ -146,6 +177,30 @@ function vnoise(x, y) {
   const x0 = Math.floor(x), y0 = Math.floor(y), fx = x - x0, fy = y - y0, ux = smooth(fx), uy = smooth(fy);
   const a = hs(x0, y0), b = hs(x0 + 1, y0), c = hs(x0, y0 + 1), d = hs(x0 + 1, y0 + 1);
   return a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy;
+}
+
+/** v0.88 One wave, −1..1, at phase ph (1 = one whole wave). shape: 1 sine · 2 triangle · 3 ramp up · 4 ramp down · 5 square. */
+function waveAt(shape, ph) {
+  const sh = Math.round(shape), f = ph - Math.floor(ph);
+  if (sh === 2) return 1 - 4 * Math.abs(f - 0.5);
+  if (sh === 3) return 2 * f - 1;
+  if (sh === 4) return 1 - 2 * f;
+  if (sh === 5) return f < 0.5 ? 1 : -1;
+  return Math.sin(2 * Math.PI * ph);
+}
+/**
+ * v0.88 Snap To, then Clamp, on one effector's terms [dx, dy, scale (×1), rotate °, fade] — after the spring, so the
+ * limits hold whatever the other settings do. Snap rounds to the nearest step; Max Move limits the distance (the
+ * direction is kept), Max Rotate / Max Scale limit each way. 0 = off. Fade is left alone.
+ */
+function modify(V, R) {
+  const sM = V.snapMove || 0, sR = V.snapRotate || 0, sS = (V.snapScale || 0) / 100, mM = V.maxMove || 0, mR = V.maxRotate || 0, mS = (V.maxScale || 0) / 100;
+  if (!(sM > 0 || sR > 0 || sS > 0 || mM > 0 || mR > 0 || mS > 0)) return R;
+  let f0 = sM > 0 ? Math.round(R[0] / sM) * sM : R[0], f1 = sM > 0 ? Math.round(R[1] / sM) * sM : R[1], f2 = sS > 0 ? Math.round(R[2] / sS) * sS : R[2], f3 = sR > 0 ? Math.round(R[3] / sR) * sR : R[3];
+  if (mM > 0) { const d = Math.sqrt(f0 * f0 + f1 * f1); if (d > mM) { f0 = f0 * mM / d; f1 = f1 * mM / d; } }
+  if (mS > 0) f2 = clamp(f2, -mS, mS);
+  if (mR > 0) f3 = clamp(f3, -mR, mR);
+  return [f0, f1, f2, f3, R[4]];
 }
 
 /** Rec. 709 luma of an [r, g, b, a] sample, times its alpha (Image field). */
@@ -188,6 +243,8 @@ function amounts(e, { i, k, n, x, y, time }) {
     const v = vnoise(x * f + sp, y * f + e.seed * 17.3);
     return [v, vnoise(x * f + 31.7 + sp, y * f + e.seed * 17.3), v, v, v];
   }
+  // v0.88 Wave: the phase runs along the order (k) and back in time, so the wave travels toward higher items
+  if (tp === 8) { const wv = waveAt(e.waveShape || 1, k / Math.max(e.waveLength || 6, 0.001) - (e.waveSpeed === undefined ? 0.5 : e.waveSpeed) * (time || 0) + (e.waveOffset || 0) / 100); return [wv, wv, wv, wv, wv]; }
   return [1, 1, 1, 1, 1];
 }
 
@@ -203,10 +260,11 @@ function apply(effs, item) {
     const w = weight(e.values, lx, ly);
     if (w <= 0) continue;
     const v = e.values, m = amounts(v, item);
-    dx += v.moveX * m[0] * w; dy += v.moveY * m[1] * w;
-    scaleMul *= Math.max(0, 1 + v.scale / 100 * m[2] * w);
-    rot += v.rotate * m[3] * w;
-    opMul *= clamp(1 - v.fade / 100 * m[4] * w, 0, 1);
+    const R = modify(v, [v.moveX * m[0] * w, v.moveY * m[1] * w, v.scale / 100 * m[2] * w, v.rotate * m[3] * w, v.fade / 100 * m[4] * w]);
+    dx += R[0]; dy += R[1];
+    scaleMul *= Math.max(0, 1 + R[2]);
+    rot += R[3];
+    opMul *= clamp(1 - R[4], 0, 1);
   }
   return { dx, dy, scaleMul, rot, opMul };
 }
@@ -286,7 +344,7 @@ function springTerms(src, item, now) {
 function applyAt(srcs, item, now) {
   let dx = 0, dy = 0, scaleMul = 1, rot = 0, opMul = 1;
   for (const src of srcs) {
-    const R = springTerms(src, item, now);
+    const R = modify(src.at(now), springTerms(src, item, now));
     dx += R[0]; dy += R[1]; scaleMul *= Math.max(0, 1 + R[2]); rot += R[3]; opMul *= clamp(1 - R[4], 0, 1);
   }
   return { dx, dy, scaleMul, rot, opMul };
@@ -315,6 +373,8 @@ function code() {
     // v0.36 Audio: the amplitude layer linked on the effector (made by Convert Audio to Keyframes)
     // v0.38 fields: the noise field's speed, the Image field's layer
     '  var fsp = 0, FL = null; if (fo == 5) { fsp = ev("Field Speed", time, 50) / 100; } if (fo == 6) { try { FL = EL.effect("Field Layer")(1); } catch (eFl) { FL = null; } }',
+    // v0.88 Wave (read now, like the other type settings)
+    '  var wsh = 1, wln = 6, wsp = 0.5, wof = 0; if (tp == 8) { wsh = Math.round(ev("Wave Shape", time, 1)); wln = Math.max(ev("Wave Length", time, 6), 0.001); wsp = ev("Wave Speed", time, 0.5); wof = ev("Wave Offset", time, 0) / 100; }',
     '  var AU = null, amx = 1; if (tp == 7) { try { AU = EL.effect("Audio Layer")(1); } catch (eAu) { AU = null; } amx = Math.max(ev("Audio Max", time, 1), 0.001); }',
     // the effector's raw terms at time tq: [dx, dy, scale, rotate, fade] (features/grid/effectors.js termsAt)
     '  function TQ(tq) {',
@@ -334,6 +394,7 @@ function code() {
     '    if (tp == 6) { var EO = EL.toComp(EL.anchorPoint.valueAtTime(tq), tq), am = Math.atan2(EO[1] - IP[1], EO[0] - IP[0]) * 180 / Math.PI + ev("Rotate", tq, 0) - (rot + G.transform.rotation.valueAtTime(tq)); am = am - 360 * Math.floor((am + 180) / 360); return [ev("Move X", tq, 0) * w, ev("Move Y", tq, 0) * w, ev("Scale", tq, 0) / 100 * w, am * w, ev("Fade", tq, 0) / 100 * w]; }',
     '    if (tp == 7) { var av = 0; if (AU) { try { av = AU.effect("Both Channels")(1).valueAtTime(tq - k * dl * thisComp.frameDuration); } catch (eAv) { av = 0; } } av = Math.min(Math.max(av / amx, 0), 1); m = [av, av, av, av, av]; }',
     '    if (tp == 4) { var ns = nsp * tq, sd = sd0 * 17.3, nv = vn(x * nf + ns, y * nf + sd); m = [nv, vn(x * nf + 31.7 + ns, y * nf + sd), nv, nv, nv]; }',
+    '    if (tp == 8) { var wph = k / wln - wsp * tq + wof, wfr = wph - Math.floor(wph), wv = wsh == 2 ? 1 - 4 * Math.abs(wfr - 0.5) : (wsh == 3 ? 2 * wfr - 1 : (wsh == 4 ? 1 - 2 * wfr : (wsh == 5 ? (wfr < 0.5 ? 1 : -1) : Math.sin(2 * Math.PI * wph)))); m = [wv, wv, wv, wv, wv]; }',
     '    return [ev("Move X", tt, 0) * m[0] * w, ev("Move Y", tt, 0) * m[1] * w, ev("Scale", tt, 0) / 100 * m[2] * w, ev("Rotate", tt, 0) * m[3] * w, ev("Fade", tt, 0) / 100 * m[4] * w];',
     '  }',
     '  var R = TQ(time), sp = 0, fq = 0, dc = 5;',
@@ -348,6 +409,15 @@ function code() {
     '      pv = nx;',
     '    }',
     '    var R2 = []; for (cn = 0; cn < 5; cn++) { R2.push(R[cn] + sp * (pv[cn] + ac[cn] - R[cn])); } R = R2;',
+    '  }',
+    // v0.88 Snap To, then Clamp — after the spring (features/grid/effectors.js modify)
+    '  var snm = ev("Snap Move", time, 0), snr = ev("Snap Rotate", time, 0), sns = ev("Snap Scale", time, 0) / 100, mxm = ev("Max Move", time, 0), mxr = ev("Max Rotate", time, 0), mxs = ev("Max Scale", time, 0) / 100;',
+    '  if (snm > 0 || snr > 0 || sns > 0 || mxm > 0 || mxr > 0 || mxs > 0) {',
+    '    var f0 = snm > 0 ? Math.round(R[0] / snm) * snm : R[0], f1 = snm > 0 ? Math.round(R[1] / snm) * snm : R[1], f2 = sns > 0 ? Math.round(R[2] / sns) * sns : R[2], f3 = snr > 0 ? Math.round(R[3] / snr) * snr : R[3];',
+    '    if (mxm > 0) { var fdm = Math.sqrt(f0 * f0 + f1 * f1); if (fdm > mxm) { f0 = f0 * mxm / fdm; f1 = f1 * mxm / fdm; } }',
+    '    if (mxs > 0) { f2 = Math.min(Math.max(f2, -mxs), mxs); }',
+    '    if (mxr > 0) { f3 = Math.min(Math.max(f3, -mxr), mxr); }',
+    '    R = [f0, f1, f2, f3, R[4]];',
     '  }',
     '  ex += R[0]; ey += R[1];',
     '  es *= Math.max(0, 1 + R[2]);',
@@ -428,6 +498,6 @@ function colourCode(i, n, gridName) {
   ].join('\n');
 }
 
-module.exports = { TYPES, FALLOFFS, SLOTS, NAME, CONTROLS, KEY, GROUPS, GROUP_LABEL, needed, groupNames, defaults, valuesOf, rgba, weight, amounts, apply, localFn, vnoise, hs, PR, code,
+module.exports = { WAVES, waveAt, modify, TYPES, FALLOFFS, SLOTS, NAME, CONTROLS, KEY, GROUPS, GROUP_LABEL, needed, groupNames, defaults, valuesOf, rgba, weight, amounts, apply, localFn, vnoise, hs, PR, code,
   SPRING, stepResponse, springWindow, termsAt, springTerms, applyAt, wrap180, luma,
   COLOUR_MODES, COLOUR_CONTROLS, COLOUR_FX, COLOUR_TAG, paletteColour, colourWithEffectors, colourCode };

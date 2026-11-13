@@ -2,6 +2,13 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.88.0] — 2026-11-13 — Wave, Snap To, Clamp (2 of 8 from the React 3 study)
+- **Wave**: a new Effector Type — a sine, triangle, ramp-up, ramp-down or square wave that runs through the items in their order. Wave Length (items), Wave Speed (waves per second), Wave Offset (keyframe it to drive the wave by hand).
+- **Snap To**: Snap Move / Snap Rotate / Snap Scale round what an effector gives each item to the nearest step (Snap Rotate 45 → 0°, 45°, 90°…).
+- **Clamp**: Max Move / Max Rotate / Max Scale — never more than this, spring overshoot included.
+- Four new tiles in Layout › Effectors: Ripple, Square Pulse, Saw Fade, Snap Turn. *More Sliders* gained the groups Wave, Snap To, Clamp.
+- These sliders appear on the null only when used (v0.87 rule). Item expressions are v5; older grids are rewritten in place when an effector is added.
+
 ## [0.87.0] — 2026-11-13 — Controls on demand (1 of 8 from the React 3 study)
 - **A new effector shows only the sliders it uses.** Before: 24 controls on every MOE Effector. Now: the six core ones, the moves that actually move, and a group (Random / Noise / Delay, Colour, Spring, Audio, Field) only when its setting is on — a plain Scale effector has 7.
 - **Effector Controls** (new tool, Layout › Effectors › *More Sliders*): adds one group or all of them to the selected effector later. Only missing controls are added, with the values already in use, so nothing moves; Restore removes exactly what was added.

@@ -87,13 +87,13 @@ test('a grid built before v0.87 (v3 items) is rewritten when an effector is adde
   // make the items look like v0.86 ones: the v3 tag and the old unguarded reads
   for (const L of cards(a.comp)) for (const mn of ['ADBE Position', 'ADBE Scale', 'ADBE Rotate Z', 'ADBE Opacity']) {
     const p = L.property('ADBE Transform Group').property(mn);
-    if (p.expression) p.expression = p.expression.replace(' · v4\n', ' · v3\n');
+    if (p.expression) p.expression = p.expression.replace(` · v${X.VERSION}\n`, ' · v3\n');
   }
   const code0 = cards(a.comp)[0].property('ADBE Transform Group').property('ADBE Position').expression;
-  assert.ok(X.isV3(code0) && !X.isV4(code0) && X.factsOf(code0), 'the stored code (with its MOE-LINK id) is readable');
+  assert.ok(X.isV3(code0) && !X.isCurrent(code0) && X.factsOf(code0), 'the stored code (with its MOE-LINK id) is readable');
   const r = await a.services.executor.run('grid.effector', { type: 'plain', falloff: 'all', moveX: 10 });
   assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
-  assert.ok(cards(a.comp).every((L) => X.isV4(L.property('ADBE Transform Group').property('ADBE Position').expression)), 'every item is v4 now');
+  assert.ok(cards(a.comp).every((L) => X.isCurrent(L.property('ADBE Transform Group').property('ADBE Position').expression)), 'every item is the current version now');
   await a.services.executor.restore(r.checkpointId);
   assert.equal(cards(a.comp)[0].property('ADBE Transform Group').property('ADBE Position').expression, code0, 'Restore puts the old expression back');
 });

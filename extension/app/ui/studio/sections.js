@@ -132,6 +132,11 @@ const LAYOUT = [
   T('efFlicker', 'Noise Flicker', 'grid.effector', { type: 'plain', falloff: 'noise', size: 0, softness: 0, scale: 0, fade: 100, fieldSpeed: 200 }, { k: 'eff', type: 'plain', falloff: 'noise', softness: 0, fade: 100, fieldSpeed: 200 }, ['Effectors']),
   T('efImage', 'Image Grow', 'grid.effector', { type: 'plain', falloff: 'image', scale: 100 }, { k: 'eff', type: 'plain', falloff: 'image', scale: 45 }, ['Effectors']),
   T('efImageReveal', 'Image Reveal', 'grid.effector', { type: 'plain', falloff: 'image', invert: true, scale: -100 }, { k: 'eff', type: 'plain', falloff: 'image', invert: true, scale: -100 }, ['Effectors']),
+  // v0.88 (React 3 study): Wave effectors, Snap To and Clamp (features/grid/effectors.js waveAt / modify)
+  T('efRipple', 'Ripple', 'grid.effector', { type: 'wave', falloff: 'all', moveY: 40, scale: 0, waveShape: 'sine', waveLength: 6, waveSpeed: 0.6 }, { k: 'eff', type: 'wave', falloff: 'all', moveY: 12, waveShape: 'sine', waveLength: 7, waveSpeed: 0.6 }, ['Effectors']),
+  T('efPulseSteps', 'Square Pulse', 'grid.effector', { type: 'wave', falloff: 'all', scale: 40, waveShape: 'square', waveLength: 4, waveSpeed: 0.5 }, { k: 'eff', type: 'wave', falloff: 'all', scale: 30, waveShape: 'square', waveLength: 4, waveSpeed: 0.5 }, ['Effectors']),
+  T('efSawFade', 'Saw Fade', 'grid.effector', { type: 'wave', falloff: 'all', scale: 0, fade: 45, waveShape: 'rampDown', waveLength: 7, waveSpeed: 0.7 }, { k: 'eff', type: 'wave', falloff: 'all', fade: 45, waveShape: 'rampDown', waveLength: 7, waveSpeed: 0.7 }, ['Effectors']),
+  T('efSnapTurn', 'Snap Turn', 'grid.effector', { type: 'noise', falloff: 'all', rotate: 180, scale: 0, snapRotate: 45, noiseScale: 150, noiseSpeed: 60 }, { k: 'eff', type: 'noise', falloff: 'all', rotate: 180, snapRotate: 45, noiseScale: 150, noiseSpeed: 60 }, ['Effectors']),
   // v0.87 Controls on demand: an effector arrives with the sliders it uses — this adds the rest (features/grid/effectorControls.js)
   T('efControls', 'More Sliders', 'grid.effectorControls', { group: 'all' }, { k: 'icon', icon: 'sliders' }, ['Effectors']),
   T('g12', '12 Columns', 'grid.guides', { columns: 12, rows: 1, gutterX: 24, marginX: 96, marginY: 72 }, { k: 'guides', c: 12, r: 1 }, ['Guides']),

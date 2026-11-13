@@ -256,7 +256,7 @@ const DRAW = {
     for (let i = 0; i < n; i++) {
       const col = i % cols, row = Math.floor(i / cols), x = (col - (cols - 1) / 2) * sx, y = (row - (rows - 1) / 2) * sy;
       // v0.36: Target items face the effector; Audio follows a two-beat-a-second pulse (the real maths: applyAt)
-      const live = th.spring || th.type === 'target' || th.type === 'audio' || th.falloff === 'noise' || th.falloff === 'image';
+      const live = th.spring || th.type === 'target' || th.type === 'audio' || th.type === 'wave' || th.type === 'noise' && th.snapRotate || th.falloff === 'noise' || th.falloff === 'image';
       const r = live
         ? EF.applyAt([{ at: () => Object.assign({}, base, { audioMax: 1 }), toLocal: (tt) => { const e = exAt(tt); return (px, py) => [px - e, py]; }, originAt: (tt) => [exAt(tt), 0], audioAt: (tt) => Math.pow(Math.max(0, Math.sin(tt * Math.PI * 4)), 3), lumaAt: (cx, cy, tt) => { const bx = Math.sin(tt * 0.9) * 70, d = Math.hypot(cx - bx, cy) / 70; return Math.max(0, 1 - d * d); } }], { i, k: i, n, x, y, compAt: () => [x, y], fd: 1 / 30, baseRotAt: () => 0 }, t)
         : EF.apply([{ values: at(t - i * 0.05), toLocal }], { i, k: i, n, x, y, cx: x, cy: y, time: t });
