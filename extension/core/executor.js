@@ -61,18 +61,17 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
 
   /** A tool writes when any of its permissions changes the project (modify.*). */
   const writes = LOCK.writes;
-  /** Open / close the run's undo group. A host without tx ops (older build) still runs, one group per op. */
-  async function openTx(label) {
-    if (getSettings().engine && getSettings().engine.oneUndo === false) return false;
-    try { await host.call('tx.begin', { label }); return true; } catch (e) { logger.warn('exec', 'tx.begin unavailable', { message: e.message }); return false; }
-  }
-  async function closeTx() {
-    try { await host.call('tx.end', {}); } catch (e) { logger.error('exec', 'tx.end failed', { message: e.message }); }
-  }
+  /*
+   * v0.94 (docs/features/ONE_UNDO.md): the v0.61 run-wide undo group is gone. After Effects closes an undo group when
+   * the script that opened it returns, so a group opened by one panel call never held the next calls — and while the
+   * host thought one was open, those calls opened none at all: every action became its own undo step. Now each host
+   * call is one undo group, and a tool that wants ONE Ctrl+Z sends its writes as one call (core/host/plan.js → tx.run).
+   */
+  const openTx = async () => false;
+  const closeTx = async () => {};
   /**
-   * v0.75 (owner: one Apply = one Ctrl+Z): several runs inside ONE After Effects undo group. Each run still validates,
-   * verifies, checkpoints and has its own History / Restore; only the undo group is shared. Always closed (finally).
-   * Nested calls join the open group. A host without tx ops runs each tool as before.
+   * Several runs under one label (Mix, recipes, Tune). v0.94: each run is its own undo step — a group cannot span
+   * panel calls (see openTx above). Kept so callers stay the same.
    */
   let outerTx = null;
   async function batch(label, fn) {

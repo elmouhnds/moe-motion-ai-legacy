@@ -8,6 +8,7 @@
  */
 const PLAN = require('./animatePlan');
 const S = require('../compositing/shared');
+const { plan: PLAN1 } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 const FG = require('../../core/framegrid');
 const ADDR = (id, mn) => ({ layerId: id, matchNames: ['ADBE Transform Group', mn] });
 const EASES = Object.entries(require('../zoom/math').EASES).map(([value, x]) => ({ value, label: x.label })).concat([{ value: 'linear', label: 'Linear' }]);
@@ -59,13 +60,23 @@ const depth = {
       rank = PLAN.screenOrder(uids.map((id) => { const b = m.layers.find((x) => x.layerId === id); return b && b.boxes[0] ? b.boxes[0] : [0, 0, 0, 0]; }), args.order);
     }
     const flat = use.filter((l) => !D(l.id).threeD);
-    const made3D = flat.length ? await host.call('layers.setAttrs', { compId: comp.id, label: 'MOE: Depth Reveal', items: flat.map((l) => ({ layerId: l.id, threeDLayer: true })) }) : null;
     const t0s = uids.map((_, i) => FG.snap(comp.time + rank[i] * (args.stagger || 0), fd));
     // own values at each layer's start frame, in ONE read: Position (or Z Position when separated) and Opacity
+    // v0.94 (docs/features/ONE_UNDO.md): read BEFORE any write, so the 3D switch, the blur and the keys are ONE host
+    // call (one Ctrl+Z). A 2D layer has no Z yet: its Z is 0 once it is made 3D (a 2D Position is padded with 0).
     const sep = (id) => !D(id).transform || !D(id).transform.position;
+    const isFlat = (id) => !D(id).threeD;
     const reads = [];
-    uids.forEach((id, i) => { reads.push({ address: ADDR(id, sep(id) ? 'ADBE Position_2' : 'ADBE Position'), time: t0s[i] }, { address: ADDR(id, 'ADBE Opacity'), time: t0s[i] }); });
-    const vals = (await host.call('props.values', { compId: comp.id, items: reads })).items.map((r) => r.value);
+    uids.forEach((id, i) => {
+      if (!(sep(id) && isFlat(id))) reads.push({ address: ADDR(id, sep(id) ? 'ADBE Position_2' : 'ADBE Position'), time: t0s[i] });
+      reads.push({ address: ADDR(id, 'ADBE Opacity'), time: t0s[i] });
+    });
+    const got = (await host.call('props.values', { compId: comp.id, items: reads })).items.map((r) => r.value);
+    const vals = [];
+    let gi = 0;
+    uids.forEach((id) => { vals.push(sep(id) && isFlat(id) ? 0 : got[gi++]); vals.push(got[gi++]); });
+    const P = PLAN1(host, 'MOE: Depth Reveal');
+    const made3DRef = flat.length ? P.add('layers.setAttrs', { compId: comp.id, label: 'MOE: Depth Reveal', items: flat.map((l) => ({ layerId: l.id, threeDLayer: true })) }) : null;
     const z = plan(args), items = [];
     uids.forEach((id, i) => {
       const own = vals[2 * i], op = vals[2 * i + 1], t0 = t0s[i];
@@ -74,13 +85,15 @@ const depth = {
       else { const p = own.length > 2 ? own : own.concat([0]); items.push({ address: ADDR(id, 'ADBE Position'), keys: z.map((k) => at(Object.assign({}, k, { v: [p[0], p[1], p[2] + k.v] }))), spatialLinear: true }); }
       if (args.fade) { const f = PLAN.fade(Object.assign({ kind: 'move', fade: true }, args), { opacity: op }); if (f) items.push({ address: ADDR(id, 'ADBE Opacity'), keys: f.keys.map(at) }); }
     });
-    let fx = null;
+    let fxRef = null;
     const bl = PLAN.blur(args);
     if (bl) {
-      fx = await S.writeEffects(host, ctx, uids.map((id) => ({ layer: { layerId: id }, items: [{ key: 'MOE Blur', matchName: 'ADBE Gaussian Blur 2', before: [], params: [{ id: 'Repeat Edge Pixels', value: 1, names: ['Repeat Edge Pixels'] }] }] })), 'MOE: Blur');
+      fxRef = P.add('effects.ensure', { compId: comp.id, label: 'MOE: Blur', layers: uids.map((id) => ({ layer: { layerId: id }, items: [{ key: 'MOE Blur', matchName: 'ADBE Gaussian Blur 2', before: [], params: [{ id: 'Repeat Edge Pixels', value: 1, names: ['Repeat Edge Pixels'] }] }] })) });
       uids.forEach((id, i) => items.push({ address: { layerId: id, matchNames: ['ADBE Effect Parade', 'name:MOE Blur', 'name:Blurriness'] }, keys: bl.keys.map((k) => Object.assign({}, k, { t: k.t + t0s[i] })) }));
     }
-    const keys = await host.call('keys.write', { compId: comp.id, label: 'MOE: Depth Reveal', items });
+    const keysRef = P.add('keys.write', { compId: comp.id, label: 'MOE: Depth Reveal', items });
+    await P.commit();
+    const keys = keysRef.value(), fx = fxRef ? fxRef.value() : null, made3D = made3DRef ? made3DRef.value() : null;
     return { keys, fx, made3D, skipped, n: uids.length };
   },
   verify({ result }) {

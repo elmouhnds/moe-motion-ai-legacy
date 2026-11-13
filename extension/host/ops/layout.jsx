@@ -456,7 +456,8 @@
     ops['props.values'] = {
         mutates: false,
         run: function (args) {
-            var comp = U.compById(args.compId), out = [], i, r, t = args.time === undefined ? comp.time : num(args.time);
+            /* v0.94: read-only, so a comp MOE made (a template's own comp) may be read by id with any: true */
+            var comp = args.any ? compAny(args.compId) : U.compById(args.compId), out = [], i, r, t = args.time === undefined ? comp.time : num(args.time);
             for (i = 0; i < args.items.length; i++) {
                 /* v0.61: an item may carry its own time, so many reads cost one round trip */
                 try { r = U.resolveProperty(comp, args.items[i].address); out.push({ value: plain(r.prop.valueAtTime(args.items[i].time === undefined ? t : num(args.items[i].time), false)), error: String(r.prop.expressionError || ''), numKeys: r.prop.numKeys || 0 }); }

@@ -911,7 +911,8 @@ function markSelected(comp, fixture) {
  * `readFile(path)` returns file text; `evalCode(text)` evaluates it in the target global scope.
  */
 function installAE(target, fixture, { readFile, evalCode }) {
-  const undo = { depth: 0, groups: [] };
+  // v0.94: entries = what Edit › Undo would list — one per top-level group (After Effects closes a group when its script ends; see harness)
+  const undo = { depth: 0, groups: [], entries: [], autoClosed: 0 };
   const project = fixture ? { file: null, dirty: true, activeItem: null, bitsPerChannel: fixture.bitsPerChannel || 16, expressionEngine: 'javascript-1.0', _items: [], selection: [] } : null;
   if (project) {
     Object.defineProperty(project, 'numItems', { get() { return project._items.length; } });
@@ -971,7 +972,7 @@ function installAE(target, fixture, { readFile, evalCode }) {
       },
       effects: Object.keys(EFFECTS).map((mn) => ({ displayName: mn.replace(/^ADBE /, ''), matchName: mn, category: 'Mock' })).concat((fixture && fixture.extraEffects) || []),
       preferences: { getPrefAsString() { throw new Error('After Effects error: preference not found'); } },
-      beginUndoGroup(label) { undo.depth++; undo.groups.push(label); },
+      beginUndoGroup(label) { if (undo.depth === 0) undo.entries.push(label); undo.depth++; undo.groups.push(label); },
       purge(target) { (app0.purged = app0.purged || []).push(target); },
       findMenuCommandId(name) { return { 'Reveal Layer Source in Project': 2517, 'Convert Audio to Keyframes': 3065 }[name] || 0; },
       executeCommand(id) {
@@ -990,7 +991,7 @@ function installAE(target, fixture, { readFile, evalCode }) {
           }
         }
       },
-      endUndoGroup() { undo.depth--; }
+      endUndoGroup() { undo.depth = Math.max(0, undo.depth - 1); }
     },
     $: {
       global: target, os: 'MockOS', version: 'mock',

@@ -13,6 +13,7 @@
  * Restore removes the cursor layer and exactly the keys written on the targets.
  */
 const P = require('./clickPlan');
+const { plan: PLAN1 } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 const ADDR = (id, mn) => ({ layerId: id, matchNames: ['ADBE Transform Group', mn] });
 const keyRestore = (items) => items.map((it) => ({ address: it.address, times: it.written.map((w) => w.t), restore: it.replaced }));
 const hexToRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
@@ -109,16 +110,21 @@ const click = {
     while (used.has(`MOE Cursor ${n}`)) n++;
     const col = hexToRgb(args.color);
     const outline = (col[0] + col[1] + col[2]) / 3 > 0.5 ? [0, 0, 0] : [1, 1, 1];
-    const made = await host.call('shapes.cursor', { compId: comp.id, name: `MOE Cursor ${n}`, kind: args.kind, size: args.size, color: col, outline, position: pl.pos[0].v, inPoint: Math.max(0, pl.start), outPoint: pl.end + 0.05, label: 'MOE: Click on Layer' });
-    const cur = [{ address: made.addresses.position, keys: pl.pos, spatialLinear: true }, { address: made.addresses.opacity, keys: pl.opacity }, { address: made.addresses.scale, keys: pl.scale }];
-    if (args.ripple) cur.push({ address: made.addresses.ringScale, keys: pl.ringS }, { address: made.addresses.ringOpacity, keys: pl.ringO });
-    let keys;
+    // v0.94 (docs/features/ONE_UNDO.md): the cursor and every key in ONE host call — one Ctrl+Z
+    const TX = PLAN1(host, 'MOE: Click on Layer');
+    const madeRef = TX.add('shapes.cursor', { compId: comp.id, name: `MOE Cursor ${n}`, kind: args.kind, size: args.size, color: col, outline, position: pl.pos[0].v, inPoint: Math.max(0, pl.start), outPoint: pl.end + 0.05, label: 'MOE: Click on Layer' });
+    const A = (k) => madeRef.at('addresses', k);
+    const cur = [{ address: A('position'), keys: pl.pos, spatialLinear: true }, { address: A('opacity'), keys: pl.opacity }, { address: A('scale'), keys: pl.scale }];
+    if (args.ripple) cur.push({ address: A('ringScale'), keys: pl.ringS }, { address: A('ringOpacity'), keys: pl.ringO });
+    const keysRef = TX.add('keys.write', { compId: comp.id, label: 'MOE: Click on Layer', items: cur.concat(items) });
     try {
-      keys = await host.call('keys.write', { compId: comp.id, label: 'MOE: Click on Layer', items: cur.concat(items) });
+      await TX.commit();
     } catch (e) {
-      await host.call('layers.remove', { compId: comp.id, layerIds: [made.layerId], onlyNamed: 'MOE Cursor' }); // nothing half-made stays
+      const m = madeRef.value();
+      if (m && m.layerId) await host.call('layers.remove', { compId: comp.id, layerIds: [m.layerId], onlyNamed: 'MOE Cursor' }); // nothing half-made stays
       throw e;
     }
+    const made = madeRef.value(), keys = keysRef.value();
     // read back: where After Effects puts the cursor at each click
     const back = (await host.call('props.values', { compId: comp.id, items: clicks.map((c) => ({ address: made.addresses.position, time: c.t })) })).items.map((r) => r.value);
     return { made, keys, press: pl.press, clicks: clicks.map((c, i) => ({ layerId: c.layerId, name: c.name, t: c.t, p: c.p, got: back[i] })), targetItems: keys.items.slice(cur.length), skipped, notes };

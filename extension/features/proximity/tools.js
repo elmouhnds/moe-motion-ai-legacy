@@ -1,6 +1,7 @@
 'use strict';
 /** Proximity tools (ProximityPro-style): effector null + distance-driven expressions. */
 const X = require('./expressions');
+const { plan: PLAN1 } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 const S = require('../compositing/shared');
 
 const EFFECTOR = /^MOE Effector \d+$/;
@@ -80,40 +81,50 @@ const apply = {
   },
 
   async execute({ args, ctx, prepared, host }) {
-    let effector = prepared.effector;
-    let created = null;
-    if (!effector) {
-      created = await host.call('layers.createNull', { compId: ctx.comp.id, name: prepared.newName, position: [ctx.comp.width / 2, ctx.comp.height / 2], label: 9 });
-      effector = { id: created.layerId, name: created.name };
-    }
-    // v0.93 controls on demand: only the controls the chosen features' expressions read (CONTROLS_ON_DEMAND.md)
-    const ctlNames = args.controls === 'all' ? X.CONTROLS.map((c) => c[0]) : X.needed(prepared.features, { distance3D: args.distance3D });
-    const controls = await S.writeEffects(host, ctx, [{ layer: { layerId: effector.id }, items: controlsSpec(args.radius, ctlNames) }], 'MOE: Effector Controls');
-
-    // Effects needed on targets (blur / colour) — created before expressions reference them.
-    const fxItems = [];
-    if (prepared.features.blur) fxItems.push({ key: 'MOE Prox Blur', matchName: 'ADBE Gaussian Blur 2', before: [], params: [] });
-    if (prepared.features.colorShift) fxItems.push({ key: 'MOE Prox Color', matchName: 'ADBE Tint', before: [], params: [] });
-    const targetFx = fxItems.length ? await S.writeEffects(host, ctx, prepared.usable.filter((l) => l.type !== 'null').map((l) => ({ layer: { layerId: l.id }, items: fxItems })), 'MOE: Proximity Effects') : null;
-
+    // v0.94 (docs/features/ONE_UNDO.md): read first (changes nothing) and refuse a conflict before any write; then the
+    // effector null, its controls, the target effects and every expression in ONE host call — one Ctrl+Z.
+    const effName = prepared.effector ? prepared.effector.name : prepared.newName;
     const items = [];
     const skipped = [];
     for (const l of prepared.usable) {
-      const b = X.build(effector.name, prepared.features, { threeD: l.threeD, distance3D: args.distance3D });
+      const b = X.build(effName, prepared.features, { threeD: l.threeD, distance3D: args.distance3D });
       for (const [prop, code] of Object.entries(b.expressions)) {
         if ((prop === 'blur' || prop === 'color') && l.type === 'null') continue;
         items.push({ layer: l, prop, address: { layerId: l.id, matchNames: X.PROP_ADDR[prop] }, expression: code });
       }
       if (b.skipped.length) skipped.push(`${l.name}: ${b.skipped.map((k) => X.FEATURES[k].label).join(', ')} (2D layer)`);
     }
-    const peek = await host.call('expressions.peek', { compId: ctx.comp.id, items: items.map((i) => ({ address: i.address })) });
-    const conflicts = items.filter((it, i) => peek.items[i].expression && !peek.items[i].expression.startsWith(X.TAG));
+    // blur / colour live on MOE's own effects (made in this run, or tagged by an earlier one) — only the rest can be the user's
+    const own = items.filter((i) => i.prop !== 'blur' && i.prop !== 'color');
+    const peek = own.length ? await host.call('expressions.peek', { compId: ctx.comp.id, items: own.map((i) => ({ address: i.address })) }) : { items: [] };
+    const conflicts = own.filter((it, i) => peek.items[i].expression && !peek.items[i].expression.startsWith(X.TAG));
     if (conflicts.length && !args.replace) {
       const e = new Error(`These properties already have your own expressions: ${conflicts.map((c) => `${c.layer.name} › ${c.prop}`).join(', ')}. Turn on "Replace existing" to overwrite (restorable).`);
       e.code = 'EXPRESSION_CONFLICT';
       throw e;
     }
-    const set = await host.call('expressions.set', { compId: ctx.comp.id, label: 'MOE: Proximity', revertOnError: true, targets: items.map((i) => ({ address: i.address, expression: i.expression, enabled: true })) });
+    const T = PLAN1(host, 'MOE: Proximity');
+    const createdRef = prepared.effector ? null : T.add('layers.createNull', { compId: ctx.comp.id, name: prepared.newName, position: [ctx.comp.width / 2, ctx.comp.height / 2], label: 9 });
+    const effId = prepared.effector ? prepared.effector.id : createdRef.at('layerId');
+    // v0.93 controls on demand: only the controls the chosen features' expressions read (CONTROLS_ON_DEMAND.md)
+    const ctlNames = args.controls === 'all' ? X.CONTROLS.map((c) => c[0]) : X.needed(prepared.features, { distance3D: args.distance3D });
+    const controlsRef = T.add('effects.ensure', { compId: ctx.comp.id, label: 'MOE: Effector Controls', layers: [{ layer: { layerId: effId }, items: controlsSpec(args.radius, ctlNames) }] });
+    // Effects needed on targets (blur / colour) — created before expressions reference them.
+    const fxItems = [];
+    if (prepared.features.blur) fxItems.push({ key: 'MOE Prox Blur', matchName: 'ADBE Gaussian Blur 2', before: [], params: [] });
+    if (prepared.features.colorShift) fxItems.push({ key: 'MOE Prox Color', matchName: 'ADBE Tint', before: [], params: [] });
+    const targetFxRef = fxItems.length ? T.add('effects.ensure', { compId: ctx.comp.id, label: 'MOE: Proximity Effects', layers: prepared.usable.filter((l) => l.type !== 'null').map((l) => ({ layer: { layerId: l.id }, items: fxItems })) }) : null;
+    const setRef = T.add('expressions.set', { compId: ctx.comp.id, label: 'MOE: Proximity', revertOnError: true, targets: items.map((i) => ({ address: i.address, expression: i.expression, enabled: true })) });
+    try {
+      await T.commit();
+    } catch (e) {
+      const c = createdRef && createdRef.value();
+      if (c && c.layerId) await host.call('layers.remove', { compId: ctx.comp.id, layerIds: [c.layerId], onlyNamed: 'MOE Effector' });
+      throw e;
+    }
+    const created = createdRef ? createdRef.value() : null;
+    const effector = prepared.effector || { id: created.layerId, name: created.name };
+    const controls = controlsRef.value(), targetFx = targetFxRef ? targetFxRef.value() : null, set = setRef.value();
     return { effector, created, controls, ctlNames, targetFx, set, skipped, count: items.length };
   },
 

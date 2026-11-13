@@ -9,6 +9,7 @@
  *                with click pulse, ripple ring and fade-out
  */
 const Z = require('./math');
+const { plan: PLAN1 } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 const { hexToRgb } = require('../brand/brands');
 
 const RIG = 'MOE Zoom';
@@ -116,34 +117,57 @@ const focus = {
       if (!args.level) z = Math.max(1.1, Math.min(10, 0.72 * Math.min(W / Math.max(b[2] - b[0], 1), H / Math.max(b[3] - b[1], 1))));
     }
     z = Math.max(1, Math.min(10, z));
-    const rigInfo = await ensureRig(host, ctx, args.motionBlur !== false);
-    const A = ADDR(rigInfo.rig.id);
+    // v0.94 (docs/features/ONE_UNDO.md): read the rig's current values first (changes nothing), then the rig, its
+    // effect, the zoom keys and the spotlight in ONE host call — one Ctrl+Z.
+    const found = findRig(ctx);
     const total = args.inDur + (args.zoomOut ? args.hold + args.outDur : 0);
     const t0 = Math.max(0, args.endAtPlayhead ? ctx.comp.time - total : ctx.comp.time);
     let start = null;
-    if (!rigInfo.created) {
-      const cur = await host.call('props.values', { compId: ctx.comp.id, time: t0, items: [{ address: A.anchor }, { address: A.position }, { address: A.scale }] });
-      if (cur.items.every((i) => i.value)) start = { anchor: cur.items[0].value, position: cur.items[1].value, scale: cur.items[2].value };
+    if (found) {
+      const A0 = ADDR(found.id);
+      // the rig may have lost its effect — then there is nothing to start from (ensure puts it back below)
+      const cur = await host.call('props.values', { compId: ctx.comp.id, time: t0, items: [{ address: A0.anchor }, { address: A0.position }, { address: A0.scale }] }).catch(() => null);
+      if (cur && cur.items.every((i) => i.value)) start = { anchor: cur.items[0].value, position: cur.items[1].value, scale: cur.items[2].value };
     }
     const p = Z.plan(f, z, W, H, { t: ctx.comp.time, inDur: args.inDur, hold: args.hold, outDur: args.outDur, endAtPlayhead: args.endAtPlayhead, zoomOut: args.zoomOut, ease: args.ease, mode: args.mode, start });
-    const keys = await host.call('keys.write', { compId: ctx.comp.id, label: 'MOE: Focus Zoom', items: [
-      { address: A.anchor, keys: asKeys(p, 'anchor'), spatialLinear: true },
-      { address: A.position, keys: asKeys(p, 'position'), spatialLinear: true },
-      { address: A.scale, keys: asKeys(p, 'scale') }
+    const T = PLAN1(host, 'MOE: Focus Zoom');
+    const createdRef = found ? null : T.add('layers.createAdjustment', { compId: ctx.comp.id, name: RIG, label: 2, comment: 'MOE Zoom rig — zooms everything below it' });
+    const rigId = found ? found.id : createdRef.at('layerId');
+    const fxRef = T.add('effects.ensure', { compId: ctx.comp.id, label: 'MOE: Zoom Rig', layers: [{ layer: { layerId: rigId }, items: RIG_ITEMS(args.motionBlur !== false) }] });
+    const AR = ADDR(rigId);
+    const keysRef = T.add('keys.write', { compId: ctx.comp.id, label: 'MOE: Focus Zoom', items: [
+      { address: AR.anchor, keys: asKeys(p, 'anchor'), spatialLinear: true },
+      { address: AR.position, keys: asKeys(p, 'position'), spatialLinear: true },
+      { address: AR.scale, keys: asKeys(p, 'scale') }
     ] });
-    let spot = null;
+    let spotRefs = null;
     if (args.spotlight > 0) {
       const used = new Set((ctx.compLayers || []).map((l) => l.name));
       let n = 1;
       while (used.has(`MOE Spotlight ${n}`)) n++;
-      spot = await host.call('layers.createSolid', { compId: ctx.comp.id, name: `MOE Spotlight ${n}`, color: [0, 0, 0], below: rigInfo.rig.id, label: 2, inPoint: p.span[0], outPoint: Math.max(p.span[1], p.span[0] + args.inDur) + 0.05 });
+      const solid = T.add('layers.createSolid', { compId: ctx.comp.id, name: `MOE Spotlight ${n}`, color: [0, 0, 0], below: rigId, label: 2, inPoint: p.span[0], outPoint: Math.max(p.span[1], p.span[0] + args.inDur) + 0.05 });
       const r = Math.min(W, H) / (2 * z) * 0.9;
-      spot.mask = await host.call('masks.ellipse', { compId: ctx.comp.id, layerId: spot.layerId, name: 'Focus', center: f, size: [r * 2, r * 2], feather: r * 0.6, inverted: true });
+      const mask = T.add('masks.ellipse', { compId: ctx.comp.id, layerId: solid.at('layerId'), name: 'Focus', center: f, size: [r * 2, r * 2], feather: r * 0.6, inverted: true });
       const o = args.spotlight;
       const ok = [{ t: p.keys[0].t, v: 0 }, { t: p.keys[1].t, v: o }];
       if (args.zoomOut) ok.push({ t: p.keys[2].t, v: o }, { t: p.keys[3].t, v: 0 });
-      spot.keys = await host.call('keys.write', { compId: ctx.comp.id, label: 'MOE: Spotlight', items: [{ address: { layerId: spot.layerId, matchNames: ['ADBE Transform Group', 'ADBE Opacity'] }, keys: ok.map((k) => Object.assign(k, { easeIn: { speed: 0, influence: 60 }, easeOut: { speed: 0, influence: 60 } })) }] });
+      const sk = T.add('keys.write', { compId: ctx.comp.id, label: 'MOE: Spotlight', items: [{ address: { layerId: solid.at('layerId'), matchNames: ['ADBE Transform Group', 'ADBE Opacity'] }, keys: ok.map((k) => Object.assign(k, { easeIn: { speed: 0, influence: 60 }, easeOut: { speed: 0, influence: 60 } })) }] });
+      spotRefs = { solid, mask, sk };
     }
+    try {
+      await T.commit();
+    } catch (e) {
+      // nothing half-made stays: the layers this run made go away (keys on a reused rig stay in the same undo step)
+      const ids = [spotRefs && spotRefs.solid.value(), createdRef && createdRef.value()].filter((x) => x && x.layerId).map((x) => x.layerId);
+      if (ids.length) await host.call('layers.remove', { compId: ctx.comp.id, layerIds: ids, onlyNamed: 'MOE ' }).catch(() => {});
+      throw e;
+    }
+    const created = createdRef ? createdRef.value() : null;
+    const rigInfo = { rig: found || { id: created.layerId, name: RIG }, created, fx: fxRef.value() };
+    const A = ADDR(rigInfo.rig.id);
+    const keys = keysRef.value();
+    let spot = null;
+    if (spotRefs) { spot = spotRefs.solid.value(); spot.mask = spotRefs.mask.value(); spot.keys = spotRefs.sk.value(); }
     // v0.61: read back at the zoomed key as After Effects wrote it (on the comp's frame grid), not at the plan's time
     const zoomedAt = keys.items[0] && keys.items[0].written[1] ? keys.items[0].written[1].t : p.keys[1].t;
     const check = await host.call('props.values', { compId: ctx.comp.id, time: zoomedAt, items: [{ address: A.anchor }, { address: A.position }, { address: A.scale }] });
@@ -176,9 +200,11 @@ const focus = {
   },
 
   async restore({ data, host }) {
-    if (data.spot) await host.call('layers.remove', { compId: data.compId, layerIds: [data.spot], onlyNamed: 'MOE Spotlight' });
-    if (data.createdRig) return host.call('layers.remove', { compId: data.compId, layerIds: [data.createdRig], onlyNamed: RIG });
-    return host.call('keys.remove', { compId: data.compId, items: data.keys });
+    const T = PLAN1(host, 'MOE: Restore');
+    if (data.spot) T.add('layers.remove', { compId: data.compId, layerIds: [data.spot], onlyNamed: 'MOE Spotlight' });
+    const last = data.createdRig ? T.add('layers.remove', { compId: data.compId, layerIds: [data.createdRig], onlyNamed: RIG }) : T.add('keys.remove', { compId: data.compId, items: data.keys });
+    await T.commit();
+    return last.value();
   },
 
   summarize(result, v) { return v.ok ? `Zoom ${Math.round(result.level * 100)}% · ${result.plan.span[0].toFixed(2)}–${result.plan.span[1].toFixed(2)}s` : 'Zoom finished with problems'; }

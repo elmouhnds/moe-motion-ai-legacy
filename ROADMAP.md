@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M2.00 — One Ctrl+Z per production ✅ (v0.94.0)
+- One host call = one undo group; plans (`tx.run`) for every production; templates in their own comp. 210 / 226 tiles one step (mock). Open: Grid Build's Center Anchor step; a run in After Effects.
+
 ## M1.99 — Controls on demand, part 2 ✅ (v0.93.0)
 - The grid null (46 → 8) and Proximity (13 → what is read). Open: a Custom channel per property; everything from 0.87 on needs a run in After Effects.
 

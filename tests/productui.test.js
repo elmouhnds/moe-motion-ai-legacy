@@ -18,7 +18,7 @@ function find(node, mn) { if (!node) return null; if (node.matchName === mn) ret
 const fillOf = (L) => find(L.property('ADBE Root Vectors Group'), 'ADBE Vector Fill Color').value.slice(0, 3); // RGB (After Effects adds alpha)
 async function build(args) {
   const { services, comp } = await createTestServices(studioComp([], { comp: { time: 1 } }));
-  const r = await services.executor.run('design.template', args);
+  const r = await services.executor.run('design.template', Object.assign({ container: 'layers' }, args));
   return { services, comp, r };
 }
 const idx = (comp, n) => comp._layers.indexOf(byName(comp, n)); // 0 = top of the timeline
@@ -75,9 +75,9 @@ test('Light / Dark and the brand: card colours by look; an active client replace
   const { services, comp } = await createTestServices(studioComp([], { comp: { time: 1 } }));
   const saved = services.brands.save({ name: 'Nile & Co.', colors: [{ name: 'Nile Green', hex: '#0E7C66', role: 'primary' }, { name: 'Ink', hex: '#1F2421', role: 'text' }], fonts: { extra: [] } });
   require('../extension/features/brand/kit').setActive(services.store, saved.brand.id);
-  await services.executor.run('design.template', { template: 'uiButton', accent: '#0A84FF' });
+  await services.executor.run('design.template', { container: 'layers', template: 'uiButton', accent: '#0A84FF' });
   assert.ok(near(fillOf(byName(comp, 'MOE Template 1 · Button')), [0x0e / 255, 0x7c / 255, 0x66 / 255], 0.002), 'the brand replaced the kit blue');
-  await services.executor.run('design.template', { template: 'uiButton', accent: '#FF00AA', useBrand: true });
+  await services.executor.run('design.template', { container: 'layers', template: 'uiButton', accent: '#FF00AA', useBrand: true });
   assert.ok(near(fillOf(byName(comp, 'MOE Template 2 · Button')), [1, 0, 0xaa / 255], 0.002), 'a colour you chose is kept');
 });
 

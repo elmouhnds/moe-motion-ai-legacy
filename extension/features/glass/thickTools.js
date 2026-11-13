@@ -4,6 +4,7 @@
  * glass.thickLook switches the look of an existing one (controls only, stays animatable).
  */
 const { hexToRgb } = require('../brand/brands');
+const { plan: PLAN1 } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 const T = require('./thick');
 
 const SKIP_TYPES = ['camera', 'light', 'null', 'adjustment'];
@@ -75,7 +76,10 @@ const thick = {
   async execute({ args, ctx, prepared, host }) {
     const comp = ctx.comp;
     const values = T.thickValues(args.look, args.tint);
-    const setups = [];
+    // v0.94 (docs/features/ONE_UNDO.md): every group's map, layers, effects, links and mattes in ONE host call — one
+    // Ctrl+Z. The new layers' ids reach the later steps by reference.
+    const TX = PLAN1(host, 'MOE: Thick Glass');
+    const pending = [];
     for (let gi = 0; gi < prepared.groups.length; gi++) {
       const srcs = prepared.groups[gi];
       const name = prepared.glassNames[gi];
@@ -83,26 +87,24 @@ const thick = {
       const inPoint = Math.min(...srcs.map((s) => s.inPoint));
       const outPoint = Math.max(...srcs.map((s) => s.outPoint));
       const made = [];
-      let mapLayerId = null;
-      try {
-        const map = await host.call('glass.map', { compId: comp.id, name: `${name} Map`, above: top.id, label: 14, comment: `${T.TAG} map of ${srcs.map((s) => s.name).join(', ')}`,
+        const map = TX.add('glass.map', { compId: comp.id, name: `${name} Map`, above: top.id, label: 14, comment: `${T.TAG} map of ${srcs.map((s) => s.name).join(', ')}`,
           items: srcs.map((s) => { const m = T.mapTransform(comp.name, s.name); return { sourceId: s.id, base: m.base, transform: m }; }) });
-        mapLayerId = map.mapLayerId;
-        const add = async (op, a) => { const r = await host.call(op, Object.assign({ compId: comp.id, inPoint, outPoint, label: 14 }, a)); made.push(r.layerId); return r; };
-        const glass = await add('layers.createAdjustment', { name, above: mapLayerId, comment: `${T.TAG} thick of ${srcs.map((s) => s.name).join(', ')}` });
+        const mapLayerId = map.at('mapLayerId');
+        const add = (op, a) => { const r = TX.add(op, Object.assign({ compId: comp.id, inPoint, outPoint, label: 14 }, a)); made.push(r.at('layerId')); return { layerId: r.at('layerId') }; };
+        const glass = add('layers.createAdjustment', { name, above: mapLayerId, comment: `${T.TAG} thick of ${srcs.map((s) => s.name).join(', ')}` });
         const parts = {};
         let topId = glass.layerId;
         if (args.prism) {
-          parts.prismR = await add('layers.createAdjustment', { name: `${name} Prism R`, above: topId }); topId = parts.prismR.layerId;
-          parts.prismB = await add('layers.createAdjustment', { name: `${name} Prism B`, above: topId }); topId = parts.prismB.layerId;
+          parts.prismR = add('layers.createAdjustment', { name: `${name} Prism R`, above: topId }); topId = parts.prismR.layerId;
+          parts.prismB = add('layers.createAdjustment', { name: `${name} Prism B`, above: topId }); topId = parts.prismB.layerId;
         }
-        if (args.reflection) { parts.reflect = await add('layers.createSolid', { name: `${name} Reflect`, color: [0.5, 0.5, 0.5], above: topId }); topId = parts.reflect.layerId; }
-        if (args.highlights) { parts.highlights = await add('layers.createSolid', { name: `${name} Highlights`, color: [0, 0, 0], above: topId }); topId = parts.highlights.layerId; }
+        if (args.reflection) { parts.reflect = add('layers.createSolid', { name: `${name} Reflect`, color: [0.5, 0.5, 0.5], above: topId }); topId = parts.reflect.layerId; }
+        if (args.highlights) { parts.highlights = add('layers.createSolid', { name: `${name} Highlights`, color: [0, 0, 0], above: topId }); topId = parts.highlights.layerId; }
         const shadows = [], caustics = [];
         for (let i = 0; i < srcs.length; i++) {
           const sfx = srcs.length > 1 ? ` ${i + 1}` : '';
-          if (args.shadow) { const r = await host.call('layers.duplicateLinked', { compId: comp.id, sourceId: srcs[i].id, name: `${name} Shadow${sfx}`, place: 'below', label: 14 }); made.push(r.layerId); shadows.push({ id: r.layerId, src: srcs[i] }); }
-          if (args.caustics) { const r = await host.call('layers.duplicateLinked', { compId: comp.id, sourceId: srcs[i].id, name: `${name} Caustic${sfx}`, place: 'below', label: 14 }); made.push(r.layerId); caustics.push({ id: r.layerId, src: srcs[i] }); }
+          if (args.shadow) { const r0 = TX.add('layers.duplicateLinked', { compId: comp.id, sourceId: srcs[i].id, name: `${name} Shadow${sfx}`, place: 'below', label: 14 }); const r = { layerId: r0.at('layerId') }; made.push(r.layerId); shadows.push({ id: r.layerId, src: srcs[i] }); }
+          if (args.caustics) { const r0 = TX.add('layers.duplicateLinked', { compId: comp.id, sourceId: srcs[i].id, name: `${name} Caustic${sfx}`, place: 'below', label: 14 }); const r = { layerId: r0.at('layerId') }; made.push(r.layerId); caustics.push({ id: r.layerId, src: srcs[i] }); }
         }
 
         const fxLayers = [{ layer: { layerId: glass.layerId }, items: [
@@ -133,7 +135,7 @@ const thick = {
           { key: 'MOE Glass Fill', matchName: 'ADBE Fill', before: [], params: [] },
           { key: 'MOE Glass Choke', matchName: 'ADBE Simple Choker', before: [], params: [] },
           { key: 'MOE Glass Blur', matchName: 'ADBE Gaussian Blur 2', before: [], params: [v('Repeat Edge Pixels', 0)] }] });
-        const fx = await host.call('effects.ensure', { compId: comp.id, label: 'MOE: Thick Glass Effects', layers: fxLayers });
+        const fx = TX.add('effects.ensure', { compId: comp.id, label: 'MOE: Thick Glass Effects', layers: fxLayers });
 
         const X = T.thickExpressions(name, srcs.map((s) => s.name));
         const targets = [];
@@ -173,29 +175,30 @@ const thick = {
           linkT(s.id, 'ADBE Opacity', X.causticOpacity(s.src.name)); link(s.id, 'MOE Glass Fill', 'Color', X.lightColor);
           link(s.id, 'MOE Glass Choke', 'Choke Matte', X.causticChoke); link(s.id, 'MOE Glass Blur', 'Blurriness', X.causticBlur); linkT(s.id, 'ADBE Position', X.causticOffset);
         }
-        const set = await host.call('expressions.set', { compId: comp.id, label: 'MOE: Thick Glass', revertOnError: true, targets: targets.map((t) => Object.assign(t, { enabled: true })) });
+        const set = TX.add('expressions.set', { compId: comp.id, label: 'MOE: Thick Glass', revertOnError: true, targets: targets.map((t) => Object.assign(t, { enabled: true })) });
 
         const matted = [glass.layerId].concat(['prismR', 'prismB', 'reflect', 'highlights'].filter((k) => parts[k]).map((k) => parts[k].layerId));
-        const matte = await host.call('layers.setMatte', { compId: comp.id, items: matted.map((id) => ({ layerId: id, matteId: mapLayerId, type: 'alpha' })) });
+        const matte = TX.add('layers.setMatte', { compId: comp.id, items: matted.map((id) => ({ layerId: id, matteId: mapLayerId, type: 'alpha' })) });
         const attrs = srcs.map((s) => ({ layerId: s.id, enabled: false }));
         if (parts.prismR) attrs.push({ layerId: parts.prismR.layerId, blendingMode: 'lighten' }, { layerId: parts.prismB.layerId, blendingMode: 'lighten' });
         if (parts.highlights) attrs.push({ layerId: parts.highlights.layerId, blendingMode: 'screen' });
         for (const s of caustics) attrs.push({ layerId: s.id, blendingMode: 'add' });
-        const hide = await host.call('layers.setAttrs', { compId: comp.id, label: 'MOE: Thick Glass', items: attrs });
-        setups.push({ name, sources: srcs.map((s) => ({ id: s.id, name: s.name })), map, glassId: glass.layerId, matted, fx, set, matte, hide, made });
-      } catch (e) {
-        if (made.length) await host.call('layers.remove', { compId: comp.id, layerIds: made, onlyNamed: 'MOE Glass' }).catch(() => {});
-        if (mapLayerId) await host.call('glass.removeMap', { compId: comp.id, mapLayerIds: [mapLayerId] }).catch(() => {});
-        await host.call('layers.setAttrs', { compId: comp.id, items: srcs.map((s) => ({ layerId: s.id, enabled: true })) }).catch(() => {});
-        // Roll back the setups already finished in this run, then report.
-        for (const s of setups) {
-          await host.call('layers.remove', { compId: comp.id, layerIds: s.made, onlyNamed: 'MOE Glass' }).catch(() => {});
-          await host.call('glass.removeMap', { compId: comp.id, mapLayerIds: [s.map.mapLayerId] }).catch(() => {});
-          await host.call('layers.setAttrs', { compId: comp.id, items: s.sources.map((x) => ({ layerId: x.id, enabled: true })) }).catch(() => {});
-        }
-        throw e;
-      }
+        const hide = TX.add('layers.setAttrs', { compId: comp.id, label: 'MOE: Thick Glass', items: attrs });
+        pending.push({ name, sources: srcs.map((s) => ({ id: s.id, name: s.name })), map, glassId: glass.layerId, matted, fx, set, matte, hide, made });
     }
+    const val = (x) => (x && typeof x.value === 'function' ? x.value() : x);
+    try {
+      await TX.commit();
+    } catch (e) {
+      // nothing half-made stays: the layers and maps this run made go, the sources are shown again
+      const ids = [], maps = [];
+      for (const p of pending) { for (const m of p.made) { const id = val(m); if (id !== undefined && id !== null) ids.push(id); } const mv = p.map.value(); if (mv && mv.mapLayerId) maps.push(mv.mapLayerId); }
+      if (ids.length) await host.call('layers.remove', { compId: comp.id, layerIds: ids, onlyNamed: 'MOE Glass' }).catch(() => {});
+      if (maps.length) await host.call('glass.removeMap', { compId: comp.id, mapLayerIds: maps }).catch(() => {});
+      await host.call('layers.setAttrs', { compId: comp.id, items: [].concat(...pending.map((p) => p.sources.map((x) => ({ layerId: x.id, enabled: true })))) }).catch(() => {});
+      throw e;
+    }
+    const setups = pending.map((p) => ({ name: p.name, sources: p.sources, map: p.map.value(), glassId: val(p.glassId), matted: p.matted.map(val), fx: p.fx.value(), set: p.set.value(), matte: p.matte.value(), hide: p.hide.value(), made: p.made.map(val) }));
     return { setups, look: args.look };
   },
 
@@ -224,11 +227,13 @@ const thick = {
   },
 
   async restore({ data, host }) {
+    const TX = PLAN1(host, 'MOE: Restore Thick Glass');
     for (const s of data.setups) {
-      await host.call('layers.remove', { compId: data.compId, layerIds: s.made, onlyNamed: 'MOE Glass' });
-      await host.call('glass.removeMap', { compId: data.compId, mapLayerIds: [s.map] });
-      await host.call('layers.setAttrs', { compId: data.compId, label: 'MOE: Restore Thick Glass', items: s.sources.map((id) => ({ layerId: id, enabled: true })) });
+      TX.add('layers.remove', { compId: data.compId, layerIds: s.made, onlyNamed: 'MOE Glass' });
+      TX.add('glass.removeMap', { compId: data.compId, mapLayerIds: [s.map] });
+      TX.add('layers.setAttrs', { compId: data.compId, label: 'MOE: Restore Thick Glass', items: s.sources.map((id) => ({ layerId: id, enabled: true })) });
     }
+    await TX.commit();
     return { ok: true };
   },
 

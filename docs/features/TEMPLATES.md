@@ -94,3 +94,6 @@ A long name or a long quote used to run off the edge. Now each line has a **safe
   - the previews use the same plan; the library is on the Design tab and stage.
 - v0.52 Auto-fit (`tests/templates.test.js`, 12): a long Title Card title measures ≤ its safe width on the mock with a smaller font (never under 40 %), and the result lists it; the underline follows the fitted width; a short title keeps 120 px; a long Arabic quote fits and the quote mark keeps 220 px; `fitSize` cases; the preview uses the same formula.
 - **AE Self-Test:** two new checks, *Template: Lower Third* and *Template: Arabic Lower Third*. Each builds a template in the test comp, reads After Effects' own measured text widths and positions, compares them with `templates.js`, then undoes. On the mock: 0 px.
+
+## v0.94 — own comp, one Ctrl+Z
+A template (and every product UI piece, which is one) is built in its own comp `MOE Template N` and placed in the active comp as ONE layer at the playhead; one Ctrl+Z removes it, and Restore removes the layer and the comp (only if nothing else uses it). The first apply measures the texts in a temporary comp (`text.measure`, one undo step that changes nothing). `container: Layers` keeps the old loose layers in the active comp. See docs/features/ONE_UNDO.md.

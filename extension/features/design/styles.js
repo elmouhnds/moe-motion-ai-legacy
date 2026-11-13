@@ -7,6 +7,7 @@
  * box (sourceRectAtTime), so it crosses any layer of any size, once every `every` seconds from the playhead.
  */
 const S = require('../compositing/shared');
+const { plan: PLAN1 } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 
 const STYLES = {
   softShadow: { label: 'Soft Shadow', hint: 'A soft, lifted shadow — the card floats a little', matchName: 'ADBE Drop Shadow', params: (a) => [['Distance', 14 * a.amount], ['Softness', 50 * a.amount], ['Direction', 180]] },
@@ -52,12 +53,16 @@ const style = {
   async execute({ args, ctx, prepared, host }) {
     const st = STYLES[args.style], key = nameOf(args.style);
     const req = prepared.layers.map((l) => ({ layer: { layerId: l.id }, items: [{ key, matchName: st.matchName, before: [], params: st.params(args).map(([id, value]) => ({ id, value: Math.round(value * 100) / 100, names: [id] })) }] }));
-    const fx = await S.writeEffects(host, ctx, req, `MOE: ${st.label}`);
-    let set = null;
+    // v0.94 (docs/features/ONE_UNDO.md): the effect and its expression in ONE host call — one Ctrl+Z
+    const P = PLAN1(host, `MOE: ${st.label}`);
+    const fxRef = P.add('effects.ensure', { compId: ctx.comp.id, label: `MOE: ${st.label}`, layers: req });
+    let setRef = null;
     if (args.style === 'lightSweep') {
       const code = sweepCode(ctx.comp.time, 1.2, Number(args.every) || 3);
-      set = await host.call('expressions.set', { compId: ctx.comp.id, label: 'MOE: Light Sweep', revertOnError: true, targets: prepared.layers.map((l) => ({ address: { layerId: l.id, matchNames: ['ADBE Effect Parade', `name:${key}`, 'name:Center'] }, expression: code, enabled: true })) });
+      setRef = P.add('expressions.set', { compId: ctx.comp.id, label: 'MOE: Light Sweep', revertOnError: true, targets: prepared.layers.map((l) => ({ address: { layerId: l.id, matchNames: ['ADBE Effect Parade', `name:${key}`, 'name:Center'] }, expression: code, enabled: true })) });
     }
+    await P.commit();
+    const fx = fxRef.value(), set = setRef ? setRef.value() : null;
     return { fx, req, set, style: args.style };
   },
   verify({ result }) {

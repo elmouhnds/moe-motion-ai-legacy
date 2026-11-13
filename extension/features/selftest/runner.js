@@ -132,7 +132,7 @@ function helper(services, comp, opts) {
       if (r.status !== 'success') { const e = new Error(`${toolId}: ${r.status} — ${(r.errors || (r.verification ? r.verification.checks.filter((c) => !c.ok).map((c) => `${c.label}: ${c.detail}`) : [])).join('; ')}`); e.result = r; throw e; }
       return r;
     },
-    async values(time, addrs) { const r = await host.call('props.values', { compId: comp.compId, time, items: addrs.map((a) => ({ address: a })) }); return r.items; },
+    async values(time, addrs, inComp) { const r = await host.call('props.values', { compId: inComp || comp.compId, any: !!inComp, time, items: addrs.map((a) => ({ address: a })) }); return r.items; },
     async positions(ids, time) { return (await T.values(time, ids.map((id) => ({ layerId: id, matchNames: POS })))).map((v) => v.value); },
     async layerIds() { const d = await host.call('layers.describe', { compId: comp.compId }); return d.layers; },
     /** Undo a tool through its checkpoint and check the comp has the layers it had before. */
@@ -387,11 +387,13 @@ async function checkTemplate(T, args) {
   const opts = { title: args.title || TPL.byId(args.template).title, subtitle: args.subtitle || TPL.byId(args.template).subtitle };
   const plan = TPL.layout(args.template, opts, { width: T.comp.width, height: T.comp.height }, res.measured);
   const end = T.comp.time + Math.max(...plan.keys.map((k) => k.keys[k.keys.length - 1].t)) + 0.05;
-  const nulPos = (await T.values(end, [{ layerId: res.nullId, matchNames: POS }]))[0].value;
+  // v0.94: the template is built in its own comp, placed at the playhead — its parts are read there, at its own time
+  const inComp = res.container ? res.container.compId : null, local = res.container ? end - res.container.startTime : end;
+  const nulPos = (await T.values(local, [{ layerId: res.nullId, matchNames: POS }], inComp))[0].value;
   const errs = [];
   for (const el of plan.elements) {
     const id = res.ids[el.key];
-    const p = (await T.values(end, [{ layerId: id, matchNames: POS }]))[0].value;
+    const p = (await T.values(local, [{ layerId: id, matchNames: POS }], inComp))[0].value;
     const want = el.kind === 'path' ? el.points[0] : el.position;
     errs.push(Math.hypot(p[0] + nulPos[0] - want[0], p[1] + nulPos[1] - want[1]));
   }

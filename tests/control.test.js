@@ -203,8 +203,8 @@ test('v0.74: Wiggle moves Position / Rotation / Scale (the library\'s own preset
   assert.ok(/@keyframes cc-rise/.test(css) && /cc-apply:not\(\[disabled\]\)::after/.test(css), 'premium motion is there (Reduced turns it off globally)');
 });
 
-test('v0.75: one Apply = ONE undo group for the whole Mix (tx.begin / tx.end once), each run still verified and in History', async () => {
-  const { services, comp } = await createTestServices(studioComp([box('A', 400), box('B', 800)], { comp: { time: 1 } }));
+test('a Mix runs each tool through the executor; v0.94: no run-wide tx.begin / tx.end (a group cannot span calls) and no write without a group', async () => {
+  const { services, comp, env } = await createTestServices(studioComp([box('A', 400), box('B', 800)], { comp: { time: 1 } }));
   const calls = [];
   const orig = services.host.call.bind(services.host);
   services.host.call = (op, args, o) => { calls.push(op); return orig(op, args, o); };
@@ -213,16 +213,16 @@ test('v0.75: one Apply = ONE undo group for the whole Mix (tx.begin / tx.end onc
     runTool: async (id, args) => { const r = await services.executor.run(id, args); st.ctx = await services.executor.readContext(); return r; }, toast: () => {} };
   const out = await C.applyMix(app);
   assert.equal(out.stopped, null);
-  assert.equal(calls.filter((c) => c === 'tx.begin').length, 1, calls.join(','));
-  assert.equal(calls.filter((c) => c === 'tx.end').length, 1);
-  assert.ok(calls.indexOf('tx.end') > calls.lastIndexOf('expressions.set'), 'the group closes after the last write');
+  assert.deepEqual(calls.filter((c) => /^tx\.(begin|end)$/.test(c)), [], 'the panel no longer opens a group it cannot keep open');
+  assert.deepEqual(env.undo.entries.filter((e) => /^\(no undo group\)/.test(e)), [], 'every write is inside an undo group');
+  assert.equal(env.undo.depth, 0);
   assert.equal(services.executor.history(5).filter((x) => x.status === 'success').length, 2, 'each run in History');
   assert.match(comp._layers[0].property('ADBE Transform Group').property('ADBE Position').expression, /wiggle\(effect\("MOE Wiggle Frequency"\)/);
   assert.equal(comp._layers[0]._parade._children.find((f) => f.name === 'MOE Wiggle Amount')._children[0].value, 5);
-  // a nested batch joins the open group; a failing run still closes it
+  // batch() still nests and passes errors through, and opens nothing
   calls.length = 0;
   await services.executor.batch('outer', async () => { await services.executor.batch('inner', async () => {}); throw Object.assign(new Error('x'), {}); }).catch(() => {});
-  assert.deepEqual(calls.filter((c) => /^tx\./.test(c)), ['tx.begin', 'tx.end']);
+  assert.deepEqual(calls.filter((c) => /^tx\./.test(c)), []);
 });
 
 test('v0.75: Style Kits point at real tools only; Signature looks are complete, valid and loop; text previews say "MOE Motion"; brand motion identity', async () => {
@@ -264,7 +264,7 @@ test('v0.75: Style Kits point at real tools only; Signature looks are complete, 
   A.setBrandSource(null);
 });
 
-test('v0.76 Smart Kits: kinds, recipes made of the kit\'s own tools, progress, and a recipe is one undo group that stops honestly', async () => {
+test('v0.76 Smart Kits: kinds, recipes made of the kit\'s own tools, progress, and a recipe stops honestly', async () => {
   const KITS = require('../extension/app/ui/kits');
   const A = require('../extension/app/ui/actions');
   const R = require('../extension/app/ui/kitRun');
@@ -312,7 +312,7 @@ test('v0.76 Smart Kits: kinds, recipes made of the kit\'s own tools, progress, a
   const rec = glass.recipes.find((r) => r.id === 'frostFocus');
   const out = await R.runRecipe(app, glass, rec);
   assert.deepEqual(out, { done: ['Frosted Glass', 'Focus In'].slice(0, out.done.length), stopped: null }, JSON.stringify([out, toasts]));
-  assert.deepEqual(calls.filter((c) => /^tx\./.test(c)), ['tx.begin', 'tx.end'], 'one undo group');
+  assert.deepEqual(calls.filter((c) => /^tx\.(begin|end)$/.test(c)), [], 'v0.94: no run-wide group (each step is its own undo step)');
   assert.deepEqual(Object.keys(R.doneOf(st, 'glass')).sort(), rec.refs.slice().sort());
   assert.equal(KITS.progress(glass, R.doneOf(st, 'glass')).count, 2);
   // it stops at the first step that is not ready, and says so — nothing is ticked

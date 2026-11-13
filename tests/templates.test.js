@@ -29,7 +29,7 @@ const textDoc = (L) => L.property('ADBE Text Properties').property('ADBE Text Do
 
 async function build(args, layers) {
   const { services, comp } = await createTestServices(studioComp(layers || [], { comp: { time: 1 } }));
-  const r = await services.executor.run('design.template', args);
+  const r = await services.executor.run('design.template', Object.assign({ container: 'layers' }, args));
   return { services, comp, r };
 }
 
@@ -121,14 +121,14 @@ test('Arabic: right-to-left text with the universal composer, the layout mirrore
 test('numbering, restore, refusals and the user\'s own layers', async () => {
   const mine = [{ name: 'My Logo', transform: TA({ pos: [100, 100] }) }];
   const { services, comp, r } = await build({ template: 'tag' }, mine);
-  const r2 = await services.executor.run('design.template', { template: 'tag', title: 'SALE' });
+  const r2 = await services.executor.run('design.template', { container: 'layers', template: 'tag', title: 'SALE' });
   assert.equal(r2.status, 'success');
   assert.ok(byName(comp, 'MOE Template 2'), 'the second one is MOE Template 2');
   assert.ok((await services.executor.restore(r2.checkpointId)).ok);
   assert.ok(!byName(comp, 'MOE Template 2') && byName(comp, 'MOE Template 1'), 'restore removes only its own template');
   assert.ok((await services.executor.restore(r.checkpointId)).ok);
   assert.deepEqual(comp._layers.map((l) => l.name), ['My Logo'], 'the user\'s layer untouched, nothing left behind');
-  const bad = await services.executor.run('design.template', { template: 'tag', accent: 'red' });
+  const bad = await services.executor.run('design.template', { container: 'layers', template: 'tag', accent: 'red' });
   assert.notEqual(bad.status, 'success');
   assert.match(JSON.stringify(bad), /#RRGGBB/);
   assert.deepEqual(comp._layers.map((l) => l.name), ['My Logo'], 'a refusal changes nothing');
@@ -234,7 +234,7 @@ test('v0.51 brand: the accent is the brand\'s primary, the word on it the brand 
   const { services, comp } = await createTestServices(studioComp([], { comp: { time: 1 } }));
   const id = services.brands.save(Object.assign({}, NILE)).brand.id;
   require('../extension/features/brand/kit').setActive(services.store, id);
-  const r = await services.executor.run('design.template', { template: 'tag' });
+  const r = await services.executor.run('design.template', { container: 'layers', template: 'tag' });
   assert.equal(r.status, 'success');
   assert.match(r.summary, /Nile & Co\. brand/);
   assert.ok(nearRGB(fillOf(byName(comp, 'MOE Template 1 · Pill')), B.hexToRgb('#0E7C66')), 'pill = primary');
@@ -242,9 +242,9 @@ test('v0.51 brand: the accent is the brand\'s primary, the word on it the brand 
   assert.ok(nearRGB(word.fillColor, B.hexToRgb(o.tagText)), 'word = best reading colour');
   assert.equal(word.font, 'Montserrat-Bold');
   // what you set yourself wins; Use the brand off ignores it
-  const own = await services.executor.run('design.template', { template: 'tag', accent: '#3c9dff' });
+  const own = await services.executor.run('design.template', { container: 'layers', template: 'tag', accent: '#3c9dff' });
   assert.ok(nearRGB(fillOf(byName(comp, 'MOE Template 2 · Pill')), B.hexToRgb('#3c9dff')));
-  const off = await services.executor.run('design.template', { template: 'tag', useBrand: false });
+  const off = await services.executor.run('design.template', { container: 'layers', template: 'tag', useBrand: false });
   assert.ok(nearRGB(fillOf(byName(comp, 'MOE Template 3 · Pill')), B.hexToRgb('#ff5a3c')));
   assert.doesNotMatch(off.summary, /brand/);
   assert.ok(own.status === 'success');

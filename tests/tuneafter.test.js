@@ -95,7 +95,7 @@ test('Copy Motion → Paste Motion on the mock: keys land at the playhead, Posit
   assert.equal((await services.executor.run('motion.pasteMotion', {})).status, 'blocked');
 });
 
-test('Tune: a change restores the run and runs it again inside ONE undo group; only for the selection it was made on', async () => {
+test('Tune: a change restores the run and runs it again; only for the selection it was made on', async () => {
   const R = require('../extension/app/ui/retune');
   const { services, comp } = await createTestServices(studioComp([box('A', 400), box('B', 800)], { comp: { time: 1 } }));
   const calls = []; const call = services.host.call.bind(services.host); services.host.call = async (op, a) => { calls.push(op); return call(op, a); };
@@ -114,7 +114,7 @@ test('Tune: a change restores the run and runs it again inside ONE undo group; o
   const again = await R.retune(app, { frames: 5 });
   assert.equal(again.status, 'success');
   assert.equal(Math.abs(starts()[1] - starts()[0]), 5, 'the new number replaced the old one — not added to it');
-  assert.deepEqual(calls.filter((c) => /^tx\./.test(c)), ['tx.begin', 'tx.end'], 'one undo group for restore + run');
+  assert.deepEqual(calls.filter((c) => /^tx\.(begin|end)$/.test(c)), [], 'v0.94: no run-wide group — it could not hold the next calls');
   assert.equal(R.current(st).args.frames, 5); assert.notEqual(R.current(st).checkpointId, first.checkpointId);
   assert.equal(await R.retune(app, { frames: 5 }), null, 'the same number does nothing');
   // another selection: the strip is not offered

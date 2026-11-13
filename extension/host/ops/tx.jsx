@@ -1,46 +1,130 @@
 /*
- * MOE Motion AI - run transactions (v0.61, docs/features/ENGINE2.md). ExtendScript / ES3, ASCII only.
+ * MOE Motion AI - one Ctrl+Z per run (v0.94, docs/features/ONE_UNDO.md). ExtendScript / ES3, ASCII only.
  *
- *   tx.begin  { label }  opens ONE undo group for a whole tool run; ops inside it do not open their own
- *   tx.end    {}         closes it (always called by the panel in a finally block)
- *   tx.state  {}         read-only: is a transaction open, and since when
+ * After Effects closes an undo group when the script that opened it returns, so everything a run writes must
+ * happen in ONE panel call to be one Ctrl+Z. tx.run is that call:
  *
- * A transaction left open by a crashed panel is closed by the next tx.begin, never nested.
+ *   tx.run   { label, steps: [{ id, op, args }] }   runs registered ops in order inside one undo group.
+ *            A string "$ref:<id>.<path>" anywhere in a step's args is replaced by that path of an earlier step's
+ *            result (e.g. "$ref:s0.compId", "$ref:s3.layerId", "$ref:s5.end"). A comp created by comps.create in the
+ *            same batch may be written by the later steps (U.compById). Returns { ok, results, failed } - a failure
+ *            stops the batch and reports the step; what ran before it stays in the same undo step.
+ *   tx.begin / tx.end   (v0.61) kept so an older panel does not break; they no longer open anything.
+ *   tx.state            read-only.
  */
 (function (G) {
-    var MOE = G.MOE, ops = MOE.ops;
+    var MOE = G.MOE, U = MOE.util, ops = MOE.ops;
+    var MAX_STEPS = 500;
 
-    ops['tx.begin'] = {
+    function resolve(v, results) {
+        var i, out, k, parts, cur;
+        if (typeof v === 'string' && v.substring(0, 5) === '$ref:') {
+            parts = v.substring(5).split('.');
+            if (!results.hasOwnProperty(parts[0])) { U.fail('BAD_REF', 'Unknown step in ' + v); }
+            cur = results[parts[0]];
+            for (i = 1; i < parts.length; i++) {
+                if (cur === null || cur === undefined) { U.fail('BAD_REF', 'Nothing at ' + v); }
+                cur = cur[parts[i]];
+            }
+            return cur;
+        }
+        if (v instanceof Array) { out = []; for (i = 0; i < v.length; i++) { out.push(resolve(v[i], results)); } return out; }
+        if (v && typeof v === 'object') { out = {}; for (k in v) { if (v.hasOwnProperty(k)) { out[k] = resolve(v[k], results); } } return out; }
+        return v;
+    }
+
+    ops['tx.run'] = {
         mutates: true,
         run: function (args) {
-            var stale = null;
-            if (MOE.tx) {
-                stale = MOE.tx.label;
-                MOE.tx = null;
-                try { app.endUndoGroup(); } catch (eEnd) { /* nothing open */ }
+            var steps = args.steps, results = {}, out = [], failed = null, i, s, r, prev;
+            if (!(steps instanceof Array) || !steps.length) { U.fail('BAD_ARGS', 'No steps.'); }
+            if (steps.length > MAX_STEPS) { U.fail('BAD_ARGS', 'Too many steps (max ' + MAX_STEPS + ').'); }
+            for (i = 0; i < steps.length; i++) {
+                s = steps[i];
+                if (!s || typeof s.op !== 'string' || !ops.hasOwnProperty(s.op) || s.op.substring(0, 3) === 'tx.') {
+                    U.fail('UNKNOWN_OP', 'Step ' + (i + 1) + ': not an operation a batch can run: ' + (s && s.op));
+                }
             }
-            var label = String(args.label || 'MOE').substring(0, 120);
-            app.beginUndoGroup(label);
-            MOE.tx = { label: label, opened: new Date().getTime() };
-            return { label: label, closedStale: stale };
+            prev = MOE.txComps;
+            MOE.txComps = [];
+            app.beginUndoGroup(String(args.label || 'MOE').substring(0, 120));
+            try {
+                for (i = 0; i < steps.length; i++) {
+                    s = steps[i];
+                    try { r = ops[s.op].run(resolve(s.args || {}, results)); }
+                    catch (e) { failed = { step: i, op: s.op, code: e.moeCode || 'HOST_EXCEPTION', message: String(e.message || e) }; break; }
+                    results[s.id !== undefined && s.id !== null ? String(s.id) : String(i)] = r;
+                    out.push(r);
+                }
+            } finally {
+                MOE.txComps = prev || null;
+                app.endUndoGroup();
+            }
+            return { ok: !failed, results: out, failed: failed };
         }
     };
 
-    ops['tx.end'] = {
+    function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+    function moeName(s) { return String(s || '').substring(0, 4) === 'MOE '; }
+
+    /*
+     * v0.94 a production's own comp. comps.create makes a comp with the active comp's size, pixel aspect, frame rate and
+     * duration (inside tx.run the later steps may build in it); comps.place adds a MOE comp to the active comp as one
+     * layer; comps.removeMoe deletes MOE comps that no comp uses any more (Restore).
+     */
+    ops['comps.create'] = {
         mutates: true,
-        run: function () {
-            if (!MOE.tx) { return { closed: false }; }
-            var t = MOE.tx;
-            MOE.tx = null;
-            app.endUndoGroup();
-            return { closed: true, label: t.label, ms: new Date().getTime() - t.opened };
+        run: function (args) {
+            var base = U.compById(args.compId), name = String(args.name || 'MOE Comp').substring(0, 240);
+            if (!moeName(name)) { U.fail('BAD_ARGS', 'A comp MOE makes is named MOE ...'); }
+            return U.withUndo('MOE: New Comp', function () {
+                var c = app.project.items.addComp(name, base.width, base.height, base.pixelAspect, args.duration ? Math.max(num(args.duration), base.frameDuration) : base.duration, base.frameRate);
+                if (MOE.txComps) { MOE.txComps.push(c); }
+                return { compId: c.id, name: c.name, width: c.width, height: c.height, duration: c.duration, frameRate: c.frameRate };
+            });
         }
     };
 
-    ops['tx.state'] = {
-        mutates: false,
-        run: function () {
-            return { open: !!MOE.tx, label: MOE.tx ? MOE.tx.label : null, ms: MOE.tx ? new Date().getTime() - MOE.tx.opened : 0 };
+    ops['comps.place'] = {
+        mutates: true,
+        run: function (args) {
+            var comp = U.compById(args.compId), src = null;
+            try { src = app.project.itemByID(args.sourceId); } catch (eS) { src = null; }
+            if (!src || !(src instanceof CompItem) || !moeName(src.name)) { U.fail('COMP_NOT_FOUND', 'Only a comp MOE made can be placed.'); }
+            if (src.id === comp.id) { U.fail('BAD_ARGS', 'A comp cannot contain itself.'); }
+            return U.withUndo('MOE: Place Comp', function () {
+                var L = comp.layers.add(src);
+                L.name = String(args.name || src.name);
+                if (args.startTime !== undefined && args.startTime !== null) { L.startTime = num(args.startTime); }
+                if (args.label !== undefined) { L.label = num(args.label); }
+                return { layerId: L.id, index: L.index, name: L.name, startTime: L.startTime, sourceId: src.id };
+            });
         }
     };
+
+    ops['comps.removeMoe'] = {
+        mutates: true,
+        run: function (args) {
+            var prefix = String(args.onlyNamed || '');
+            if (!moeName(prefix)) { U.fail('BAD_ARGS', 'onlyNamed must start with MOE '); }
+            return U.withUndo('MOE: Remove Comp', function () {
+                var removed = [], kept = [], i, it;
+                for (i = 0; i < (args.ids || []).length; i++) {
+                    it = null;
+                    try { it = app.project.itemByID(args.ids[i]); } catch (eI) { it = null; }
+                    if (!it) { continue; }
+                    if (!(it instanceof CompItem) || it.name.substring(0, prefix.length) !== prefix) { kept.push({ name: it.name, why: 'not MOE' }); continue; }
+                    if (it.usedIn.length) { kept.push({ name: it.name, why: 'used in ' + it.usedIn.length + ' comp(s)' }); continue; }
+                    removed.push(it.name);
+                    it.remove();
+                }
+                return { removed: removed, kept: kept };
+            });
+        }
+    };
+
+    /* v0.61 - kept for an older panel only: a group cannot outlive its script, so these open nothing now */
+    ops['tx.begin'] = { mutates: false, run: function (args) { return { label: String(args.label || 'MOE'), deprecated: true }; } };
+    ops['tx.end'] = { mutates: false, run: function () { return { closed: false, deprecated: true }; } };
+    ops['tx.state'] = { mutates: false, run: function () { return { open: false, deprecated: true }; } };
 }($.global));

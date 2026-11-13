@@ -10,17 +10,18 @@ const base = require('../dev/preview-fixture.js');
 const clone = () => JSON.parse(JSON.stringify(base));
 const CLICK = { kind: 'arrow', from: 'corner', gap: 1.1, travel: 0.55, depth: 94, ripple: true, size: 40, color: '#FFFFFF' };
 
-test('one Ctrl+Z per run: a tool with many host writes opens exactly ONE undo group, named after it, and closes it', async () => {
+test('v0.94: every host write is inside an undo group — never an action on its own — and nothing is left open', async () => {
   const f = clone(); f.comp.layers.forEach((l) => { l.selected = l.name === 'Title' || l.name === 'Logo'; });
   const { services, env } = await createTestServices(f);
-  const g0 = env.undo.groups.length;
-  const r = await services.executor.run('interact.click', CLICK); // measure + cursor + keys = 4 writing ops
+  const e0 = env.undo.entries.length;
+  const r = await services.executor.run('interact.click', CLICK);
   assert.equal(r.status, 'success');
-  assert.deepEqual(env.undo.groups.slice(g0), ['MOE: Click on Layer']);
+  const made = env.undo.entries.slice(e0);
+  assert.ok(made.length >= 1 && made.every((e) => /^MOE: /.test(e)), made.join(' | '));
   assert.equal(env.undo.depth, 0, 'closed');
+  assert.equal(env.undo.autoClosed, 0, 'no group was left for After Effects to close');
   await services.executor.restore(r.checkpointId);
-  assert.deepEqual(env.undo.groups.slice(g0 + 1), ['MOE: Restore Click on Layer'], 'Restore is one step too');
-  assert.equal(env.undo.depth, 0);
+  assert.ok(env.undo.entries.slice(e0 + made.length).every((e) => /^MOE: /.test(e)), 'Restore too');
 });
 
 test('the run\'s undo group is closed even when the tool fails half way', async () => {
@@ -36,14 +37,21 @@ test('the run\'s undo group is closed even when the tool fails half way', async 
   assert.equal((await services.host.call('tx.state', {})).open, false);
 });
 
-test('a transaction left open (crashed panel) is closed by the next one, never nested', async () => {
-  const { services, env } = await createTestServices(clone());
-  await services.host.call('tx.begin', { label: 'MOE: stale' });
-  const r = await services.host.call('tx.begin', { label: 'MOE: next' });
-  assert.equal(r.closedStale, 'MOE: stale');
-  assert.equal(env.undo.depth, 1, 'only the new group is open');
-  await services.host.call('tx.end', {});
+test('v0.94: tx.begin / tx.end open nothing (a group cannot outlive its script); tx.run is ONE undo step for many ops', async () => {
+  const { services, env, comp } = await createTestServices(clone());
+  const r = await services.host.call('tx.begin', { label: 'MOE: old panel' });
+  assert.equal(r.deprecated, true);
   assert.equal(env.undo.depth, 0);
+  const e0 = env.undo.entries.length;
+  const { plan } = require('../extension/core/host/plan');
+  const P = plan(services.host, 'MOE: Two Nulls');
+  const a = P.add('layers.createNull', { compId: comp.id, name: 'MOE A', position: [10, 10] });
+  P.add('layers.createNull', { compId: comp.id, name: 'MOE B', position: [20, 20] });
+  P.add('layers.setParent', { compId: comp.id, items: [{ layerId: P.add('layers.createNull', { compId: comp.id, name: 'MOE C', position: [0, 0] }).at('layerId'), parentId: a.at('layerId') }] });
+  await P.commit();
+  assert.deepEqual(env.undo.entries.slice(e0), ['MOE: Two Nulls'], 'four writes, one undo step');
+  assert.equal(comp._layers.find((l) => l.name === 'MOE C').parent.name, 'MOE A', 'a ref carried the id of a layer made in the same call');
+  assert.equal(typeof a.value().layerId, 'number');
 });
 
 test('read-only tools open no transaction (no undo entry for looking)', async () => {

@@ -404,4 +404,36 @@
             });
         }
     };
+
+    /*
+     * v0.94 text.measure { compId, items: [text.create args] } -> { items: [{ size, fontSize, fitted }] }
+     * Measures texts exactly as text.create makes them (same op, auto-fit included) in a temporary comp of the same
+     * size, then removes that comp: one undo step that changes nothing. A template measures first, then builds
+     * everything in one tx.run - so the build is ONE Ctrl+Z.
+     */
+    ops['text.measure'] = {
+        mutates: true,
+        run: function (args) {
+            var comp = U.compById(args.compId), list = args.items || [];
+            if (list.length > 60) { U.fail('BAD_ARGS', 'Too many texts to measure (max 60).'); }
+            return U.withUndo('MOE: Measure Text', function () {
+                var tmp = app.project.items.addComp('MOE Measure (temporary)', comp.width, comp.height, comp.pixelAspect, Math.max(comp.duration, 1), comp.frameRate);
+                var prev = MOE.txComps, out = [], i, k, a, r;
+                MOE.txComps = [tmp];
+                try {
+                    for (i = 0; i < list.length; i++) {
+                        a = {};
+                        for (k in list[i]) { if (list[i].hasOwnProperty(k)) { a[k] = list[i][k]; } }
+                        a.compId = tmp.id;
+                        r = ops['text.create'].run(a);
+                        out.push({ size: r.size, fontSize: r.fontSize, fitted: r.fitted });
+                    }
+                } finally {
+                    MOE.txComps = prev || null;
+                    tmp.remove();
+                }
+                return { items: out };
+            });
+        }
+    };
 }($.global));

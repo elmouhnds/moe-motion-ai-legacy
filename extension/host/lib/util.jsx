@@ -24,6 +24,11 @@
     };
 
     U.compById = function (id) {
+        /* v0.94: inside ONE tx.run, a comp that this same batch created (comps.create) may be written too - nothing else */
+        var j;
+        if (MOE.txComps && id !== undefined && id !== null) {
+            for (j = 0; j < MOE.txComps.length; j++) { if (MOE.txComps[j].id === id) { return MOE.txComps[j]; } }
+        }
         var comp = U.activeComp();
         if (id !== undefined && id !== null && comp.id !== id) {
             U.fail('COMP_CHANGED', 'The active composition changed since the context was read.');
@@ -169,8 +174,14 @@
 
     /* v0.61 (docs/features/ENGINE2.md): inside a run's transaction (tx.begin ... tx.end) every op joins the run's
        one undo group, so one Ctrl+Z undoes the whole run. Outside a transaction each op is its own group. */
+    /*
+     * One undo group per host call. v0.94: After Effects closes an undo group when the script that opened it returns
+     * ("in its absence at the end of a script, the system will close the undo group automatically" - Scripting Guide,
+     * app.endUndoGroup), so a group can never span two panel calls. The v0.61 tx.begin skipped this group, which left
+     * every action of the later calls as its own undo step. Groups nest (inner names are ignored), so tx.run's
+     * single group holds every op it runs.
+     */
     U.withUndo = function (label, fn) {
-        if (MOE.tx) { return fn(); }
         app.beginUndoGroup(label);
         try { return fn(); } finally { app.endUndoGroup(); }
     };

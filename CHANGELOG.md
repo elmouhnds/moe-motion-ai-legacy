@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.94.0] — 2026-11-13 — One Ctrl+Z per production; productions in their own comp
+- **Fixed: Ctrl+Z took a production apart step by step.** After Effects closes an undo group when each script call returns, so the v0.61 "one group per run" never held: every write was its own step. Corrected: one host call is one undo group, and a tool sends all its writes as ONE call (`tx.run`, built with `core/host/plan.js`).
+- **210 of 226 library tiles are now one Ctrl+Z** (was 45, mock audit `tools/audit-undo.js`). Grid Build is 2 (Center Anchor, then the grid — was 11). Restore is one step too.
+- **Titles, lower thirds and product UI arrive in their own comp** `MOE Template N`, placed as one layer at the playhead. The first apply measures the texts in a temporary comp first (one extra undo step that changes nothing). `container: Layers` keeps the old loose layers.
+- Converted to one call: Backgrounds, Quick Animate, Quick Expressions, Trim Paths, Wipe Reveal, Styles, Depth Reveal, Click on Layer, Proximity, Focus Zoom, Carousel 3D, Glass, Thick Glass, Grid Build (2), Templates.
+- Proximity and Quick Expressions now refuse a conflict with your own expression before writing anything (before, the effector null and sliders could stay behind).
+- Mix / recipes / Tune After: one undo step per tool they run (the v0.75 note said one — it was wrong).
+- The test mock now closes an undo group after every call like After Effects, and flags a write with no group.
+
 ## [0.93.0] — 2026-11-13 — Controls on demand, part 2: the grid null and Proximity
 - **A new grid null has 8 controls instead of 46.** It carries its own layout's sliders, Layout, Order and Item Scale, and a group only when it is used (Build with *Animate in*, Morph, Seed with a random order, Twist…). Same result as before, tested item by item.
 - The grid remembers the numbers it was built with inside its items' expressions, so a slider that is not on the null still has the right value — including the other layouts' auto sizes when you switch Layout in Effect Controls.

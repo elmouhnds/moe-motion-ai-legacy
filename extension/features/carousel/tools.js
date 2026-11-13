@@ -6,6 +6,7 @@
  * the smallest that keeps neighbours apart (After Effects measures the widest card). Restore puts every card back.
  */
 const P = require('./plan');
+const { plan: PLAN1 } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 const ADDR = (id, mn) => ({ layerId: id, matchNames: ['ADBE Transform Group', mn] });
 
 const carousel = {
@@ -48,22 +49,35 @@ const carousel = {
     const R = P.radius(n, maxW, args.gap), ring = P.ring(n, R);
     const used = new Set((desc.layers || []).map((l) => l.name));
     let k = 1; while (used.has(`MOE Carousel ${k}`)) k++;
-    const nul = await host.call('layers.createNull', { compId: comp.id, name: `MOE Carousel ${k}`, position: [cx, cy], threeD: true, label: 'MOE: Carousel' });
+    // v0.94 (docs/features/ONE_UNDO.md): the null, the 3D switch, parenting, the ring and the keys in ONE host call
+    const T = PLAN1(host, 'MOE: Carousel');
+    const nulRef = T.add('layers.createNull', { compId: comp.id, name: `MOE Carousel ${k}`, position: [cx, cy], threeD: true, label: 'MOE: Carousel' });
     const flat = cards.filter((c) => !c.threeD);
-    const made3D = flat.length ? await host.call('layers.setAttrs', { compId: comp.id, label: 'MOE: Carousel', items: flat.map((c) => ({ layerId: c.id, threeDLayer: true })) }) : null;
-    const par = await host.call('layers.setParent', { compId: comp.id, label: 'MOE: Carousel', items: cards.map((c) => ({ layerId: c.id, parentId: nul.layerId })) });
+    const made3DRef = flat.length ? T.add('layers.setAttrs', { compId: comp.id, label: 'MOE: Carousel', items: flat.map((c) => ({ layerId: c.id, threeDLayer: true })) }) : null;
+    const parRef = T.add('layers.setParent', { compId: comp.id, label: 'MOE: Carousel', items: cards.map((c) => ({ layerId: c.id, parentId: nulRef.at('layerId') })) });
     // the ring, in the null's own space (its anchor is the ring's centre)
-    const set = await host.call('props.setValues', { compId: comp.id, label: 'MOE: Carousel', items: cards.flatMap((c, i) => [
+    const setRef = T.add('props.setValues', { compId: comp.id, label: 'MOE: Carousel', items: cards.flatMap((c, i) => [
       { address: ADDR(c.id, 'ADBE Position'), value: ring[i].position },
       { address: ADDR(c.id, 'ADBE Rotate Y'), value: ring[i].rotY }
-    ]).concat(args.tilt ? [{ address: ADDR(nul.layerId, 'ADBE Rotate X'), value: -args.tilt }] : []) });
+    ]).concat(args.tilt ? [{ address: ADDR(nulRef.at('layerId'), 'ADBE Rotate X'), value: -args.tilt }] : []) });
     const turnKeys = P.steps(n, { time: comp.time, turn: args.turn, hold: args.hold, steps: args.steps, reverse: args.reverse, fd });
-    const items = [{ address: ADDR(nul.layerId, 'ADBE Rotate Y'), keys: turnKeys }];
+    const items = [{ address: ADDR(nulRef.at('layerId'), 'ADBE Rotate Y'), keys: turnKeys }];
     if (args.depth > 0) {
       // each card's opacity at every key time, from its angle on the ring at that moment (native keys, eased alike)
       cards.forEach((c, i) => items.push({ address: ADDR(c.id, 'ADBE Opacity'), keys: turnKeys.map((t) => Object.assign({ t: t.t, v: Math.round(P.depth(ring[i].theta, t.v, args.depth) * 100) / 100 }, P.EASE)) }));
     }
-    const keys = await host.call('keys.write', { compId: comp.id, label: 'MOE: Carousel', items });
+    const keysRef = T.add('keys.write', { compId: comp.id, label: 'MOE: Carousel', items });
+    try {
+      await T.commit();
+    } catch (e) {
+      // nothing half-made stays: unparenting first (with jump), then the null goes — still the same undo step for the rest
+      const nv = nulRef.value(), pv = parRef.value();
+      if (pv) await host.call('layers.setParent', { compId: comp.id, label: 'MOE: Carousel', items: pv.layers.map((x) => ({ layerId: x.layerId, parentId: x.before })) }).catch(() => {});
+      if (nv && nv.layerId) await host.call('layers.remove', { compId: comp.id, layerIds: [nv.layerId], onlyNamed: 'MOE Carousel' }).catch(() => {});
+      throw e;
+    }
+    const nul = nulRef.value(), made3D = made3DRef ? made3DRef.value() : null, par = parRef.value(), set = setRef.value(), keys = keysRef.value();
+
     return { nullId: nul.layerId, name: `MOE Carousel ${k}`, R, maxW, n, made3D, par, set, keys, turnKeys };
   },
   verify({ result }) {
@@ -86,11 +100,14 @@ const carousel = {
     };
   },
   async restore({ data, host }) {
-    if (data.keys.length) await host.call('keys.remove', { compId: data.compId, items: data.keys });
-    await host.call('props.setValues', { compId: data.compId, label: 'MOE: Restore', items: data.values });
-    await host.call('layers.setParent', { compId: data.compId, label: 'MOE: Restore', items: data.parents });
-    if (data.flat.length) await host.call('layers.setAttrs', { compId: data.compId, label: 'MOE: Restore', items: data.flat.map((id) => ({ layerId: id, threeDLayer: false })) });
-    return host.call('layers.remove', { compId: data.compId, layerIds: [data.nullId], onlyNamed: 'MOE Carousel' });
+    const T = PLAN1(host, 'MOE: Restore');
+    if (data.keys.length) T.add('keys.remove', { compId: data.compId, items: data.keys });
+    T.add('props.setValues', { compId: data.compId, label: 'MOE: Restore', items: data.values });
+    T.add('layers.setParent', { compId: data.compId, label: 'MOE: Restore', items: data.parents });
+    if (data.flat.length) T.add('layers.setAttrs', { compId: data.compId, label: 'MOE: Restore', items: data.flat.map((id) => ({ layerId: id, threeDLayer: false })) });
+    const r = T.add('layers.remove', { compId: data.compId, layerIds: [data.nullId], onlyNamed: 'MOE Carousel' });
+    await T.commit();
+    return r.value();
   },
   summarize(result) { return `${result.name}: ${result.n} cards, radius ${Math.round(result.R)} px`; }
 };

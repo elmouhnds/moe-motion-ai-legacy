@@ -9,6 +9,7 @@
  */
 const PLAN = require('./animatePlan');
 const S = require('../compositing/shared');
+const { plan: PLAN1 } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 const FG = require('../../core/framegrid');
 
 const FROM = {
@@ -66,16 +67,20 @@ const wipe = {
       const m = await host.call('layers.bounds', { compId: comp.id, layerIds: ids, times: [comp.time] });
       rank = PLAN.screenOrder(ids.map((id) => { const b = m.layers.find((x) => x.layerId === id); return b && b.boxes[0] ? b.boxes[0] : [0, 0, 0, 0]; }), args.order);
     }
-    const fx = await S.writeEffects(host, ctx, ids.map((id) => ({ layer: { layerId: id }, items: [{ key: FX, matchName: 'ADBE Linear Wipe', before: [], params: [
+    // v0.94 (docs/features/ONE_UNDO.md): the wipe effects and their keys in ONE host call — one Ctrl+Z
+    const P = PLAN1(host, `MOE: ${FX}`);
+    const fxRef = P.add('effects.ensure', { compId: ctx.comp.id, label: `MOE: ${FX}`, layers: ids.map((id) => ({ layer: { layerId: id }, items: [{ key: FX, matchName: 'ADBE Linear Wipe', before: [], params: [
       { id: 'Wipe Angle', value: FROM[args.from].angle, names: ['Wipe Angle'] },
       { id: 'Feather', value: args.feather, names: ['Feather'] }
-    ] }] })), `MOE: ${FX}`);
+    ] }] })) });
     const pl = plan(args);
     const items = ids.map((id, i) => {
       const t0 = FG.snap(comp.time + rank[i] * (args.stagger || 0), fd);
       return { address: ADDR(id, 'Transition Completion'), keys: pl.map((k) => Object.assign({}, k, { t: k.t + t0 })) };
     });
-    const keys = await host.call('keys.write', { compId: comp.id, label: `MOE: ${FX}`, items });
+    const keysRef = P.add('keys.write', { compId: comp.id, label: `MOE: ${FX}`, items });
+    await P.commit();
+    const fx = fxRef.value(), keys = keysRef.value();
     return { fx, req: ids, keys, order: byScreen ? prepared.layers.map((l, i) => ({ n: l.name, r: rank[i] })).sort((a, b) => a.r - b.r).map((x) => x.n) : null };
   },
   verify({ result }) {

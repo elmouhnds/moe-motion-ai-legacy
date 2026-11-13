@@ -96,3 +96,6 @@ What the two reference products offer, compared with what MOE already has. Only 
 - **Cursor that clicks the button**: the Cursor tool (v0.4) aimed at the Button piece's centre at the click time.
 - **Phone / browser frames**: a device frame the pieces sit in.
 - **More pieces**: a pricing card, a tab bar, a slider control, a toast, an avatar stack.
+
+## v0.94 — own comp, one Ctrl+Z
+A template (and every product UI piece, which is one) is built in its own comp `MOE Template N` and placed in the active comp as ONE layer at the playhead; one Ctrl+Z removes it, and Restore removes the layer and the comp (only if nothing else uses it). The first apply measures the texts in a temporary comp (`text.measure`, one undo step that changes nothing). `container: Layers` keeps the old loose layers in the active comp. See docs/features/ONE_UNDO.md.

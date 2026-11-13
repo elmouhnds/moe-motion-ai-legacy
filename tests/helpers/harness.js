@@ -22,7 +22,17 @@ function createHostEnv(fixture, memFiles) {
   const evalScript = (script, cb) => {
     setImmediate(() => {
       let res;
+      const before = env.undo.entries.length;
       try { res = vm.runInContext(script, context); } catch (e) { res = 'EvalScript error.'; }
+      // v0.94 (docs/features/ONE_UNDO.md): After Effects closes an undo group when the script that opened it returns —
+      // a group can never span two panel calls. And a write made outside any group is its own undo step (or many).
+      if (env.undo.depth > 0) { env.undo.autoClosed++; env.undo.depth = 0; }
+      const m = /MOE_dispatch\("([^"]+)"/.exec(script);
+      const op = m && sandbox.MOE && sandbox.MOE.ops && sandbox.MOE.ops[m[1]];
+      if (op && op.mutates && env.undo.entries.length === before) {
+        let ok = false; try { ok = JSON.parse(String(res)).ok; } catch (e) { ok = false; }
+        if (ok) env.undo.entries.push(`(no undo group) ${m[1]}`);
+      }
       cb(res === undefined ? 'undefined' : String(res));
     });
   };

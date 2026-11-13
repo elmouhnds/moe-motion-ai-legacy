@@ -1,5 +1,6 @@
 'use strict';
 const S = require('../compositing/shared'); // v0.58: MOE Blur (effects.ensure / restore)
+const { plan: PLAN1 } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 /**
  * Quick Bar actions (RKBar-style one-click helpers). Each is a normal registered tool
  * (validated, permission-checked, verified by read-back, restorable), so the Quick Bar,
@@ -311,17 +312,21 @@ const animate = {
     }
     if (!items.length) throw new Error(`Nothing to animate: ${skipped.join(', ')}`);
     // v0.58: Blur — one MOE Blur per animated layer (reused if it is there), keyed on the move's timing
-    let fx = null;
+    // v0.94 (docs/features/ONE_UNDO.md): the blur effects and every key in ONE host call — one Ctrl+Z
+    const P = PLAN1(host, 'MOE: Quick Animate');
+    let fxRef = null;
     const bl = PLAN.blur(args);
     if (bl) {
       const animated = [...new Set(items.map((it) => it.address.layerId))];
-      fx = await S.writeEffects(host, ctx, animated.map((id) => ({ layer: { layerId: id }, items: [{ key: 'MOE Blur', matchName: 'ADBE Gaussian Blur 2', before: [], params: [{ id: 'Repeat Edge Pixels', value: 1, names: ['Repeat Edge Pixels'] }] }] })), 'MOE: Blur');
+      fxRef = P.add('effects.ensure', { compId: ctx.comp.id, label: 'MOE: Blur', layers: animated.map((id) => ({ layer: { layerId: id }, items: [{ key: 'MOE Blur', matchName: 'ADBE Gaussian Blur 2', before: [], params: [{ id: 'Repeat Edge Pixels', value: 1, names: ['Repeat Edge Pixels'] }] }] })) });
       animated.forEach((id) => {
         const i = prepared.layers.findIndex((l) => l.id === id), t0 = FG.snap(comp.time + rank[i] * (args.stagger || 0), comp.frameDuration || 1 / 25);
         items.push({ address: { layerId: id, matchNames: ['ADBE Effect Parade', 'name:MOE Blur', 'name:Blurriness'] }, keys: bl.keys.map((x) => Object.assign({}, x, { t: x.t + t0 })) });
       });
     }
-    const keys = await host.call('keys.write', { compId: comp.id, label: 'MOE: Quick Animate', items });
+    const keysRef = P.add('keys.write', { compId: comp.id, label: 'MOE: Quick Animate', items });
+    await P.commit();
+    const keys = keysRef.value(), fx = fxRef ? fxRef.value() : null;
     return { keys, skipped, fx, order: byScreen ? prepared.layers.map((l, i) => ({ name: l.name, rank: rank[i] })).sort((a, b) => a.rank - b.rank).map((x) => x.name) : null };
   },
   verify({ result }) {
@@ -332,9 +337,12 @@ const animate = {
   },
   checkpoint({ result, ctx }) { return { compId: ctx.comp.id, items: keyRestore(result.keys.items), fx: result.fx ? S.effectsCheckpoint(result.fx, ctx) : null }; },
   async restore({ data, host }) {
-    const r = await host.call('keys.remove', { compId: data.compId, items: data.items });
-    if (data.fx) await S.restoreEffects({ data: data.fx, host }); // a MOE Blur this run added goes away; one that was there keeps its values
-    return r;
+    const P = PLAN1(host, 'MOE: Restore');
+    const r = P.add('keys.remove', { compId: data.compId, items: data.items });
+    // a MOE Blur this run added goes away; one that was there keeps its values
+    if (data.fx) P.add('effects.restore', { compId: data.fx.compId, label: 'MOE: Restore Effects', layers: data.fx.layers });
+    await P.commit();
+    return r.value();
   },
   summarize(result) { return `Animated ${result.keys.items.length} propert(ies)${result.fx ? ' · blur' : ''}`; }
 };
@@ -358,27 +366,31 @@ const trim = {
   prepare(args, ctx) { const l = (ctx.layers || []).filter((x) => x.type === 'shape'); return l.length ? { ok: true, layers: l, preview: { summary: `${args.mode} · ${args.duration}s · ${l.length} shape layer(s)`, items: [] } } : { ok: false, error: 'Select shape layers' }; },
   async execute({ args, ctx, prepared, host }) {
     const t0 = ctx.comp.time;
-    const out = [];
+    // v0.94 (docs/features/ONE_UNDO.md): every layer's Trim Paths and keys in ONE host call — one Ctrl+Z
+    const P = PLAN1(host, 'MOE: Trim Paths');
+    const refs = [];
+    // the plan's keys (relative times) at the playhead — the same keys the tile preview draws
+    const pl = PLAN.trim(args);
+    const at = (keys) => keys.map((x) => Object.assign({}, x, { t: x.t + t0 }));
     for (const L of prepared.layers) {
-      const tr = await host.call('shapes.trim', { compId: ctx.comp.id, layerId: L.id });
+      const tr = P.add('shapes.trim', { compId: ctx.comp.id, layerId: L.id });
       const items = [];
-      // the plan's keys (relative times) at the playhead — the same keys the tile preview draws
-      const pl = PLAN.trim(args);
-      const at = (keys) => keys.map((x) => Object.assign({}, x, { t: x.t + t0 }));
-      if (pl.end) items.push({ address: tr.end, keys: at(pl.end) });
-      if (pl.start) items.push({ address: tr.start, keys: at(pl.start) });
-      const keys = await host.call('keys.write', { compId: ctx.comp.id, label: 'MOE: Trim Paths', items });
-      out.push({ trim: tr, keys });
+      if (pl.end) items.push({ address: tr.at('end'), keys: at(pl.end) });
+      if (pl.start) items.push({ address: tr.at('start'), keys: at(pl.start) });
+      refs.push({ tr, keys: P.add('keys.write', { compId: ctx.comp.id, label: 'MOE: Trim Paths', items }) });
     }
-    return { layers: out };
+    await P.commit();
+    return { layers: refs.map((r) => ({ trim: r.tr.value(), keys: r.keys.value() })) };
   },
   verify({ result }) { const c = result.layers.map((l) => ({ ok: l.keys.items.every((i) => i.written.length === 2), label: `${l.trim.name} › MOE Trim`, detail: `${l.trim.created ? 'added' : 'reused'} · ${l.keys.items.map((i) => i.name).join(' + ')} keyed` })); return { ok: c.every((x) => x.ok), checks: c }; },
   checkpoint({ result, ctx }) { return { compId: ctx.comp.id, layers: result.layers.map((l) => ({ layerId: l.trim.layerId, created: l.trim.created, items: keyRestore(l.keys.items) })) }; },
   async restore({ data, host }) {
+    const P = PLAN1(host, 'MOE: Restore');
     for (const l of data.layers) {
-      if (l.created) await host.call('shapes.untrim', { compId: data.compId, layerId: l.layerId });
-      else await host.call('keys.remove', { compId: data.compId, items: l.items });
+      if (l.created) P.add('shapes.untrim', { compId: data.compId, layerId: l.layerId });
+      else P.add('keys.remove', { compId: data.compId, items: l.items });
     }
+    await P.commit();
     return { ok: true };
   },
   summarize(result) { return `Trim Paths on ${result.layers.length} layer(s)`; }

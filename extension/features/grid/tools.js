@@ -14,6 +14,7 @@
  *   grid.placeInCells drop selected layers into the cells of that layout (keeps their keyframes).
  */
 const L = require('./layouts');
+const { plan: PLAN1 } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 const X = require('./expressions');
 const S = require('../compositing/shared');
 
@@ -210,22 +211,34 @@ const build = {
       items = split.pieces.map((p) => ({ id: p.layerId, name: p.name, threeD: false, locked: false, type: 'text' }));
     }
     // v0.33 Cloner: copies first (they keep the source's look, effects and keyframes), cycling through the sources
+    // v0.94 (docs/features/ONE_UNDO.md): the copies and the centred anchors are ONE host call (one undo step) — the
+    // anchors take the copies' ids by reference. The grid itself is the second (it needs the measured sizes).
     const clonesMade = [];
+    const P0 = PLAN1(host, copiesWanted ? 'MOE: Clone' : 'MOE: Center Anchor');
+    let manyRef = null, want = [], per = [];
     if (copiesWanted) {
-      const srcs = prepared.items, per = srcs.map((_, si) => Math.floor(copiesWanted / srcs.length) + (si < copiesWanted % srcs.length ? 1 : 0));
+      const srcs = prepared.items;
+      per = srcs.map((_, si) => Math.floor(copiesWanted / srcs.length) + (si < copiesWanted % srcs.length ? 1 : 0));
       // v0.63: every source's copies in ONE host call (was one call per selected source)
-      const want = srcs.map((src, si) => ({ src, si, count: per[si] })).filter((x) => x.count > 0);
-      const many = want.length ? await host.call('layers.cloneMany', { compId: comp.id, label: 'MOE: Clone', plain: true, sources: want.map((x) => ({ layerId: x.src.id, count: x.count })) }) : { results: [] };
+      want = srcs.map((src, si) => ({ src, si, count: per[si] })).filter((x) => x.count > 0);
+      if (want.length) manyRef = P0.add('layers.cloneMany', { compId: comp.id, label: 'MOE: Clone', plain: true, sources: want.map((x) => ({ layerId: x.src.id, count: x.count })) });
       const made = srcs.map(() => []);
-      want.forEach((x, k) => {
-        const r = many.results[k];
-        made[x.si] = r.created.map((c) => ({ id: c.layerId, name: c.name, threeD: x.src.threeD, locked: false }));
-        r.created.forEach((c) => clonesMade.push(c.layerId));
-      });
+      want.forEach((x, k) => { for (let j = 0; j < x.count; j++) made[x.si].push({ ref: manyRef.at('results', k, 'created', j), threeD: x.src.threeD, locked: false }); });
       items = srcs.slice();
       for (let j = 0; j < Math.max(...per); j++) for (let si = 0; si < srcs.length; si++) if (made[si][j]) items.push(made[si][j]);
     }
-    const anchors = args.centerAnchors !== false ? await host.call('layers.centerAnchor', { compId: comp.id, layers: items.map((l) => l.id) }) : null;
+    const anchorsRef = args.centerAnchors !== false ? P0.add('layers.centerAnchor', { compId: comp.id, layers: items.map((l) => (l.ref ? l.ref.at('layerId') : l.id)) }) : null;
+    try {
+      await P0.commit();
+    } catch (e) {
+      const m = manyRef && manyRef.value();
+      const ids = m ? [].concat(...m.results.map((r) => r.created.map((c) => c.layerId))) : [];
+      if (ids.length) await host.call('layers.remove', { compId: comp.id, layerIds: ids, onlyNamed: 'MOE Clone ' }).catch(() => {});
+      if (split) await host.call('text.unsplit', { compId: comp.id, layerIds: split.pieces.map((p) => p.layerId), sourceId: split.sourceId, sourceEnabled: split.sourceEnabled }).catch(() => {});
+      throw e;
+    }
+    items = items.map((l) => { if (!l.ref) return l; const c = l.ref.value(); clonesMade.push(c.layerId); return { id: c.layerId, name: c.name, threeD: l.threeD, locked: false }; });
+    const anchors = anchorsRef ? anchorsRef.value() : null;
     const meas = await host.call('layers.bounds', { compId: comp.id, layerIds: items.map((l) => l.id), times: [comp.time] });
     const boxes = meas.layers.map((m) => m.boxes[0]).filter(Boolean);
     const maxW = Math.max(10, ...boxes.map((b) => b[2] - b[0])), maxH = Math.max(10, ...boxes.map((b) => b[3] - b[1]));
@@ -234,65 +247,87 @@ const build = {
     const cx = boxes.length ? boxes.reduce((s, b) => s + (b[0] + b[2]) / 2, 0) / boxes.length : comp.width / 2;
     const cy = boxes.length ? boxes.reduce((s, b) => s + (b[1] + b[3]) / 2, 0) / boxes.length : comp.height / 2;
     const threeD = args.mode === 'sphere' || params.morphTo === 'sphere';
-    let made3D = null;
-    if (threeD) {
-      const flat = items.filter((l) => !l.threeD);
-      if (flat.length) made3D = await host.call('layers.setAttrs', { compId: comp.id, label: 'MOE: Make 3D', items: flat.map((l) => ({ layerId: l.id, threeDLayer: true })) });
-    }
     const center = args.mode === 'path' || args.mode === 'points' ? [0, 0] : [Math.round(cx), Math.round(cy)];
     // v0.37 In Place: anchor = position, so the null's space is the comp's — parenting (setParentWithJump keeps the
     // values) leaves every item exactly where it was, and the null still turns / scales around the items' centre
     const keepSpace = args.mode === 'keep';
-    const created = await host.call('layers.createNull', { compId: comp.id, name: prepared.name, position: threeD ? [center[0], center[1], 0] : center, anchor: keepSpace ? center : [0, 0], label: 13, threeD, undoLabel: 'MOE: Grid Null' });
-    // Layer controls take layer indices — read them after the null was added.
-    const desc = await host.call('layers.describe', { compId: comp.id });
-    const idxOf = (oldIndex) => { const cl = ctx.compLayers.find((l) => l.index === oldIndex); const d = cl && desc.layers.find((x) => x.id === cl.id); return d ? d.index : 0; };
-    // v0.93 controls on demand: only what this grid's settings use (CONTROLS_ON_DEMAND.md); the rest read as DFT in the expressions
-    const ctlNames = args.controls === 'all' ? X.gridGroupNames('all', args.mode) : X.gridNeeded(args.mode, params, { morph: !!params.morphTo, build: !!args.animateIn, falloff: !!args.effector });
-    const gridDefaults = X.gridDefaults(params);
-    const controls = await host.call('effects.ensure', {
-      compId: comp.id, label: 'MOE: Grid Controls',
-      layers: [{ layer: { layerId: created.layerId }, items: X.controlItems(args.mode, params, (name) => (name === 'Path Layer' ? idxOf(args.pathLayer) : name === 'Effector' && args.effector ? idxOf(args.effector) : 0), ctlNames) }]
-    });
-    for (const [name, list, value] of [['Layout', X.MODE_MENU, params.layoutIdx], ['Morph To', X.MODE_MENU, params.morphToIdx], ['Orient', L.ORIENTS, params.orient], ['Order', L.ORDERS, params.order], ['Build Order', L.BUILD_ORDERS, params.buildOrder], ['Build Style', L.BUILD_STYLES, params.buildStyle]]) {
-      if (ctlNames.includes(name)) await host.call('effects.setMenu', { compId: comp.id, layerId: created.layerId, effectKey: name, items: list, value });
-    }
+    const nullPos = threeD ? [center[0], center[1], 0] : center, nullAnchor = keepSpace ? center : [0, 0];
+    // v0.94 (docs/features/ONE_UNDO.md): read everything BEFORE the grid's writes (reads change nothing), then the 3D
+    // switch, the null, its controls and menus, the parenting, every expression and the keys go in ONE host call.
     const targets = [];
     items.forEach((l) => { for (const prop of Object.keys(X.PROP_ADDR)) targets.push({ layer: l, prop, address: { layerId: l.id, matchNames: X.PROP_ADDR[prop] } }); });
     const peek = await host.call('expressions.peek', { compId: comp.id, items: targets.map((t) => ({ address: t.address })) });
     const conflicts = targets.filter((t, i) => peek.items[i].expression && !peek.items[i].expression.startsWith(X.TAG));
     if (conflicts.length && !args.replace) {
-      await host.call('layers.remove', { compId: comp.id, layerIds: [created.layerId], onlyNamed: 'MOE Grid' });
-      if (made3D) await host.call('layers.setAttrs', { compId: comp.id, items: made3D.layers.map((x) => ({ layerId: x.layerId, threeDLayer: false })) });
-      if (anchors) await host.call('layers.restoreTransform', { compId: comp.id, layers: anchors.layers.filter((a) => !a.skipped).map((a) => ({ layerId: a.layerId, anchor: a.before.anchor, position: a.before.position })) });
-      if (split) await host.call('text.unsplit', { compId: comp.id, layerIds: split.pieces.map((p) => p.layerId), sourceId: split.sourceId, sourceEnabled: split.sourceEnabled });
-      if (clonesMade.length) await host.call('layers.remove', { compId: comp.id, layerIds: clonesMade, onlyNamed: 'MOE Clone ' });
+      const U = PLAN1(host, 'MOE: Grid (cancelled)');
+      if (anchors) U.add('layers.restoreTransform', { compId: comp.id, layers: anchors.layers.filter((a) => !a.skipped).map((a) => ({ layerId: a.layerId, anchor: a.before.anchor, position: a.before.position })) });
+      if (split) U.add('text.unsplit', { compId: comp.id, layerIds: split.pieces.map((p) => p.layerId), sourceId: split.sourceId, sourceEnabled: split.sourceEnabled });
+      if (clonesMade.length) U.add('layers.remove', { compId: comp.id, layerIds: clonesMade, onlyNamed: 'MOE Clone ' });
+      await U.commit();
       const e = new Error(`These properties already have your own expressions: ${[...new Set(conflicts.map((c) => `${c.layer.name} › ${c.prop}`))].slice(0, 6).join(', ')}. Turn on "Replace existing" to overwrite (restorable).`);
       e.code = 'EXPRESSION_CONFLICT';
       throw e;
     }
-    const parented = await host.call('layers.setParent', { compId: comp.id, label: 'MOE: Grid Parent', items: items.map((l) => ({ layerId: l.id, parentId: created.layerId })) });
-    // home = where each item sits in the null's space now: the expression adds (value − home), so a
-    // later hand nudge (or the layer's own Position keys) plays on top of the grid
-    const homes = await host.call('props.values', { compId: comp.id, time: comp.time, items: items.map((l) => ({ address: { layerId: l.id, matchNames: X.PROP_ADDR.position } })) });
+    // Layer controls take layer indices: the null goes on top (index 1), so every layer read now moves down by one
+    const desc = await host.call('layers.describe', { compId: comp.id });
+    const idxOf = (oldIndex) => { const cl = ctx.compLayers.find((l) => l.index === oldIndex); const d = cl && desc.layers.find((x) => x.id === cl.id); return d ? d.index + 1 : 0; };
+    // home = the item's own Position value. layers.setParent uses setParentWithJump, which per the Scripting Guide sets
+    // the parent "without changing the transform values of the child layer" — so the value read now IS the value the
+    // expression sees after parenting, and the whole grid can be one host call.
+    const pos0 = await host.call('props.values', { compId: comp.id, time: comp.time, items: items.map((l) => ({ address: { layerId: l.id, matchNames: X.PROP_ADDR.position } })) });
+    const homeOf = (i) => { const v = pos0.items[i].value || [0, 0]; return [v[0], v[1]]; };
+    // v0.93 controls on demand: only what this grid's settings use (CONTROLS_ON_DEMAND.md); the rest read as DFT in the expressions
+    const ctlNames = args.controls === 'all' ? X.gridGroupNames('all', args.mode) : X.gridNeeded(args.mode, params, { morph: !!params.morphTo, build: !!args.animateIn, falloff: !!args.effector });
+    const gridDefaults = X.gridDefaults(params);
+    const T = PLAN1(host, `MOE: Grid`);
+    let made3DRef = null;
+    if (threeD) {
+      const flat = items.filter((l) => !l.threeD);
+      if (flat.length) made3DRef = T.add('layers.setAttrs', { compId: comp.id, label: 'MOE: Make 3D', items: flat.map((l) => ({ layerId: l.id, threeDLayer: true })) });
+    }
+    const createdRef = T.add('layers.createNull', { compId: comp.id, name: prepared.name, position: nullPos, anchor: nullAnchor, label: 13, threeD, undoLabel: 'MOE: Grid Null' });
+    const nullId = createdRef.at('layerId');
+    const controlsRef = T.add('effects.ensure', {
+      compId: comp.id, label: 'MOE: Grid Controls',
+      layers: [{ layer: { layerId: nullId }, items: X.controlItems(args.mode, params, (name) => (name === 'Path Layer' ? idxOf(args.pathLayer) : name === 'Effector' && args.effector ? idxOf(args.effector) : 0), ctlNames) }]
+    });
+    for (const [name, list, value] of [['Layout', X.MODE_MENU, params.layoutIdx], ['Morph To', X.MODE_MENU, params.morphToIdx], ['Orient', L.ORIENTS, params.orient], ['Order', L.ORDERS, params.order], ['Build Order', L.BUILD_ORDERS, params.buildOrder], ['Build Style', L.BUILD_STYLES, params.buildStyle]]) {
+      if (ctlNames.includes(name)) T.add('effects.setMenu', { compId: comp.id, layerId: nullId, effectKey: name, items: list, value });
+    }
+    const parentedRef = T.add('layers.setParent', { compId: comp.id, label: 'MOE: Grid Parent', items: items.map((l) => ({ layerId: l.id, parentId: nullId })) });
     items.forEach((l, i) => {
-      const hv = homes.items[i].value || [0, 0];
-      const code = X.buildAll(i, items.length, { gridName: prepared.name, pathAccess: path && path.access, pathClosed: path && path.closed, home: [hv[0], hv[1]], defaults: gridDefaults });
+      const code = X.buildAll(i, items.length, { gridName: prepared.name, pathAccess: path && path.access, pathClosed: path && path.closed, home: homeOf(i), defaults: gridDefaults });
       targets.filter((t) => t.layer === l).forEach((t) => { t.expression = code[t.prop]; });
     });
-    const set = await host.call('expressions.set', { compId: comp.id, label: 'MOE: Grid', revertOnError: true, targets: targets.map((t) => ({ address: t.address, expression: t.expression, enabled: true })) });
-    let keys = null, morphKeys = null;
+    const setRef = T.add('expressions.set', { compId: comp.id, label: 'MOE: Grid', revertOnError: true, targets: targets.map((t) => ({ address: t.address, expression: t.expression, enabled: true })) });
+    let keysRef = null, morphRef = null;
     let checkTime = comp.time;
     if (args.animateIn) {
       const t0 = comp.time, t1 = comp.time + args.buildDuration;
-      keys = await host.call('keys.write', { compId: comp.id, label: 'MOE: Grid Build', items: [{ address: X.controlAddress(created.layerId, 'Build'), keys: [{ t: t0, v: 0, easeOut: { speed: 0, influence: 20 } }, { t: t1, v: 100, easeIn: { speed: 0, influence: 75 } }] }] });
+      keysRef = T.add('keys.write', { compId: comp.id, label: 'MOE: Grid Build', items: [{ address: X.controlAddress(nullId, 'Build'), keys: [{ t: t0, v: 0, easeOut: { speed: 0, influence: 20 } }, { t: t1, v: 100, easeIn: { speed: 0, influence: 75 } }] }] });
       checkTime = t1;
     }
     if (args.animateMorph && params.morphTo) {
       const m0 = checkTime, m1 = checkTime + args.morphDuration;
-      morphKeys = await host.call('keys.write', { compId: comp.id, label: 'MOE: Grid Morph', items: [{ address: X.controlAddress(created.layerId, 'Morph'), keys: [{ t: m0, v: 0, easeOut: { speed: 0, influence: 50 } }, { t: m1, v: 100, easeIn: { speed: 0, influence: 50 } }] }] });
+      morphRef = T.add('keys.write', { compId: comp.id, label: 'MOE: Grid Morph', items: [{ address: X.controlAddress(nullId, 'Morph'), keys: [{ t: m0, v: 0, easeOut: { speed: 0, influence: 50 } }, { t: m1, v: 100, easeIn: { speed: 0, influence: 50 } }] }] });
       checkTime = m1;
     }
+    try { await T.commit(); } catch (e) { await undoGrid(e); }
+    // a failure: nothing half-made stays — unparent (jump), the null goes, 2D again, anchors / split / clones back
+    async function undoGrid(e) {
+      const U = PLAN1(host, 'MOE: Grid (failed)');
+      const pv = parentedRef.value(), cv = createdRef.value(), mv = made3DRef && made3DRef.value();
+      if (pv) U.add('layers.setParent', { compId: comp.id, items: pv.layers.map((x) => ({ layerId: x.layerId, parentId: x.before })) });
+      if (cv && cv.layerId) U.add('layers.remove', { compId: comp.id, layerIds: [cv.layerId], onlyNamed: 'MOE Grid' });
+      if (mv) U.add('layers.setAttrs', { compId: comp.id, items: mv.layers.map((x) => ({ layerId: x.layerId, threeDLayer: false })) });
+      if (anchors) U.add('layers.restoreTransform', { compId: comp.id, layers: anchors.layers.filter((a) => !a.skipped).map((a) => ({ layerId: a.layerId, anchor: a.before.anchor, position: a.before.position })) });
+      if (split) U.add('text.unsplit', { compId: comp.id, layerIds: split.pieces.map((p) => p.layerId), sourceId: split.sourceId, sourceEnabled: split.sourceEnabled });
+      if (clonesMade.length) U.add('layers.remove', { compId: comp.id, layerIds: clonesMade, onlyNamed: 'MOE Clone ' });
+      await U.commit().catch(() => {});
+      throw e;
+    }
+    const created = createdRef.value(), controls = controlsRef.value(), parented = parentedRef.value(), set = setRef.value();
+    const made3D = made3DRef ? made3DRef.value() : null, keys = keysRef ? keysRef.value() : null, morphKeys = morphRef ? morphRef.value() : null;
     const read = await host.call('props.values', { compId: comp.id, time: checkTime, items: items.map((l) => ({ address: { layerId: l.id, matchNames: X.PROP_ADDR.position } })) });
     const finalParams = Object.assign({}, params, { build: 100, morph: morphKeys ? 100 : 0 });
     // v0.37 In Place: the items must not move (they stay where they were built); Points / Path depend on the path

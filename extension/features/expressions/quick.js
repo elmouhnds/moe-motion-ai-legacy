@@ -6,6 +6,7 @@
  * layer ("Live controls") so they can be tweaked or keyframed later.
  */
 const S = require('../compositing/shared');
+const { plan: PLAN } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 
 const TAG = '// MOE Expr';
 const T = { position: ['ADBE Transform Group', 'ADBE Position'], scale: ['ADBE Transform Group', 'ADBE Scale'], rotation: ['ADBE Transform Group', 'ADBE Rotate Z'], opacity: ['ADBE Transform Group', 'ADBE Opacity'] };
@@ -264,21 +265,25 @@ const quick = {
     const p = PRESETS[args.preset];
     const values = {};
     for (const k of Object.keys(p.nums)) values[k] = args[k] !== undefined ? args[k] : p.nums[k];
-    let fx = null;
-    if (args.live && Object.keys(p.nums).length) {
-      const layers = [...new Set(prepared.targets.map((t) => t.layerId))];
-      fx = await host.call('effects.ensure', { compId: ctx.comp.id, label: 'MOE: Expression Controls', layers: layers.map((id) => ({ layer: { layerId: id }, items: Object.keys(p.nums).map((k) => ({ key: `MOE ${p.label} ${NUM_LABEL[k]}`, matchName: 'ADBE Slider Control', before: [], params: [{ id: k, value: values[k], names: ['Slider'], suffix: 1 }] })) })) });
-    }
     const live = !!args.live && Object.keys(p.nums).length > 0;
     const expr = code(args.preset, values, live);
     const rk = p.perLayer ? ranks(prepared.targets, ctx) : null;
+    // v0.94 (docs/features/ONE_UNDO.md): read first (changes nothing), refuse a conflict before any write,
+    // then the sliders and the expressions in ONE host call — one Ctrl+Z.
     const peek = await host.call('expressions.peek', { compId: ctx.comp.id, items: prepared.targets.map((t) => ({ address: t.address })) });
     const conflicts = prepared.targets.filter((t, i) => peek.items[i].expression && !peek.items[i].expression.startsWith(TAG));
     if (conflicts.length && !args.replace) {
-      if (fx) await S.restoreEffects({ data: S.effectsCheckpoint(fx, ctx), host });
       throw Object.assign(new Error(`Already has your own expression: ${conflicts.map((c) => c.name).join(', ')}. Turn on "Replace existing" (restorable).`), { code: 'EXPRESSION_CONFLICT' });
     }
-    const set = await host.call('expressions.set', { compId: ctx.comp.id, label: `MOE: ${p.label}`, revertOnError: true, targets: prepared.targets.map((t, i) => ({ address: t.address, expression: rk ? code(args.preset, values, live, rk[i]) : expr, enabled: true })) });
+    const P = PLAN(host, `MOE: ${p.label}`);
+    let fxRef = null;
+    if (live) {
+      const layers = [...new Set(prepared.targets.map((t) => t.layerId))];
+      fxRef = P.add('effects.ensure', { compId: ctx.comp.id, label: 'MOE: Expression Controls', layers: layers.map((id) => ({ layer: { layerId: id }, items: Object.keys(p.nums).map((k) => ({ key: `MOE ${p.label} ${NUM_LABEL[k]}`, matchName: 'ADBE Slider Control', before: [], params: [{ id: k, value: values[k], names: ['Slider'], suffix: 1 }] })) })) });
+    }
+    const setRef = P.add('expressions.set', { compId: ctx.comp.id, label: `MOE: ${p.label}`, revertOnError: true, targets: prepared.targets.map((t, i) => ({ address: t.address, expression: rk ? code(args.preset, values, live, rk[i]) : expr, enabled: true })) });
+    await P.commit();
+    const fx = fxRef ? fxRef.value() : null, set = setRef.value();
     return { set, fx, preset: p.label, expr };
   },
 
@@ -290,8 +295,10 @@ const quick = {
     return { compId: ctx.comp.id, fx: result.fx ? S.effectsCheckpoint(result.fx, ctx) : null, expressions: result.set.targets.filter((t) => !t.skipped && !t.reverted).map((t) => ({ address: t.address, expression: t.before.expression, enabled: t.before.expressionEnabled })) };
   },
   async restore({ data, host }) {
-    await host.call('expressions.set', { compId: data.compId, label: 'MOE: Restore', revertOnError: false, targets: data.expressions });
-    if (data.fx) await S.restoreEffects({ data: data.fx, host });
+    const P = PLAN(host, 'MOE: Restore');
+    P.add('expressions.set', { compId: data.compId, label: 'MOE: Restore', revertOnError: false, targets: data.expressions });
+    if (data.fx) P.add('effects.restore', { compId: data.fx.compId, label: 'MOE: Restore Effects', layers: data.fx.layers });
+    await P.commit();
     return { ok: true };
   },
   summarize(result) { return `${result.preset} on ${result.set.targets.length} propert(ies)`; }

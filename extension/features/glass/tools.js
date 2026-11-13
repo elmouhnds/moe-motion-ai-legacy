@@ -13,6 +13,7 @@
  * Every amount lives as a control on "MOE Glass N" (Effect Controls) and is animatable.
  */
 const { hexToRgb } = require('../brand/brands');
+const { plan: PLAN1 } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 
 const LOOKS = {
   clear: { label: 'Clear', frost: 2, refraction: 35, brightness: 8, tint: '#FFFFFF', tintAmount: 6, rim: 70, rimWidth: 3, angle: -45, shadow: 25, softness: 30, distance: 12 },
@@ -122,57 +123,66 @@ const apply = {
   async execute({ args, ctx, prepared, host }) {
     const comp = ctx.comp;
     const values = lookValues(args.look, args.tint);
-    const setups = [];
+    // v0.94 (docs/features/ONE_UNDO.md): every source's glass (layers, order, effects, links, matte) in ONE host call —
+    // one Ctrl+Z. The new layers' ids reach the later steps by reference.
+    const T = PLAN1(host, 'MOE: Glass');
+    const pending = [];
     for (let i = 0; i < prepared.sources.length; i++) {
       const src = prepared.sources[i];
       const name = prepared.names[i];
       const made = [];
-      const glass = await host.call('layers.createAdjustment', { compId: comp.id, name, above: src.id, inPoint: src.inPoint, outPoint: src.outPoint, label: 14, comment: `${TAG} of ${src.name}` });
+      const glassR = T.add('layers.createAdjustment', { compId: comp.id, name, above: src.id, inPoint: src.inPoint, outPoint: src.outPoint, label: 14, comment: `${TAG} of ${src.name}` });
+      const glass = { layerId: glassR.at('layerId') };
       made.push(glass.layerId);
       const parts = {};
-      try {
-        if (args.shadow) { parts.shadow = await host.call('layers.duplicateLinked', { compId: comp.id, sourceId: src.id, name: `${name} Shadow`, place: 'below', label: 14 }); made.push(parts.shadow.layerId); }
-        if (args.tintLayer) { parts.tint = await host.call('layers.duplicateLinked', { compId: comp.id, sourceId: src.id, name: `${name} Tint`, place: 'above', label: 14 }); made.push(parts.tint.layerId); }
-        if (args.rim) { parts.rim = await host.call('layers.duplicateLinked', { compId: comp.id, sourceId: src.id, name: `${name} Rim`, place: 'above', label: 14 }); made.push(parts.rim.layerId); }
-        // Stack: Rim, Tint, Glass, Source, Shadow.
-        const order = [];
-        if (parts.tint) order.push({ layerId: parts.tint.layerId, before: glass.layerId });
-        if (parts.rim) order.push({ layerId: parts.rim.layerId, before: parts.tint ? parts.tint.layerId : glass.layerId });
-        if (order.length) await host.call('layers.move', { compId: comp.id, items: order });
+      if (args.shadow) { parts.shadow = T.add('layers.duplicateLinked', { compId: comp.id, sourceId: src.id, name: `${name} Shadow`, place: 'below', label: 14 }); made.push(parts.shadow.at('layerId')); }
+      if (args.tintLayer) { parts.tint = T.add('layers.duplicateLinked', { compId: comp.id, sourceId: src.id, name: `${name} Tint`, place: 'above', label: 14 }); made.push(parts.tint.at('layerId')); }
+      if (args.rim) { parts.rim = T.add('layers.duplicateLinked', { compId: comp.id, sourceId: src.id, name: `${name} Rim`, place: 'above', label: 14 }); made.push(parts.rim.at('layerId')); }
+      // Stack: Rim, Tint, Glass, Source, Shadow.
+      const order = [];
+      if (parts.tint) order.push({ layerId: parts.tint.at('layerId'), before: glass.layerId });
+      if (parts.rim) order.push({ layerId: parts.rim.at('layerId'), before: parts.tint ? parts.tint.at('layerId') : glass.layerId });
+      if (order.length) T.add('layers.move', { compId: comp.id, items: order });
 
-        const fxLayers = [{ layer: { layerId: glass.layerId }, items: [
-          ...controlItems(values),
-          { key: 'MOE Glass Frost', matchName: 'ADBE Gaussian Blur 2', before: [], params: [{ id: 'Repeat Edge Pixels', value: 1, names: ['Repeat Edge Pixels'] }] },
-          { key: 'MOE Glass Lens', matchName: 'ADBE Optics Compensation', before: [], params: [{ id: 'Reverse Lens Distortion', value: 1, names: ['Reverse Lens Distortion'] }] },
-          { key: 'MOE Glass Light', matchName: 'ADBE Brightness & Contrast 2', before: [], params: [] }
-        ] }];
-        if (parts.tint) fxLayers.push({ layer: { layerId: parts.tint.layerId }, items: [{ key: 'MOE Glass Fill', matchName: 'ADBE Fill', before: [], params: [] }] });
-        if (parts.rim) fxLayers.push({ layer: { layerId: parts.rim.layerId }, items: [{ key: 'MOE Glass Fill', matchName: 'ADBE Fill', before: [], params: [{ id: 'Color', value: [0.5, 0.5, 0.5, 1], names: ['Color'] }] }, { key: 'MOE Glass Bevel', matchName: 'ADBE Bevel Alpha', before: [], params: [{ id: 'Light Intensity', value: 1, names: ['Light Intensity'] }] }] });
-        if (parts.shadow) fxLayers.push({ layer: { layerId: parts.shadow.layerId }, items: [{ key: 'MOE Glass Fill', matchName: 'ADBE Fill', before: [], params: [{ id: 'Color', value: [0, 0, 0, 1], names: ['Color'] }] }, { key: 'MOE Glass Blur', matchName: 'ADBE Gaussian Blur 2', before: [], params: [{ id: 'Repeat Edge Pixels', value: 0, names: ['Repeat Edge Pixels'] }] }] });
-        const fx = await host.call('effects.ensure', { compId: comp.id, label: 'MOE: Glass Effects', layers: fxLayers });
+      const fxLayers = [{ layer: { layerId: glass.layerId }, items: [
+        ...controlItems(values),
+        { key: 'MOE Glass Frost', matchName: 'ADBE Gaussian Blur 2', before: [], params: [{ id: 'Repeat Edge Pixels', value: 1, names: ['Repeat Edge Pixels'] }] },
+        { key: 'MOE Glass Lens', matchName: 'ADBE Optics Compensation', before: [], params: [{ id: 'Reverse Lens Distortion', value: 1, names: ['Reverse Lens Distortion'] }] },
+        { key: 'MOE Glass Light', matchName: 'ADBE Brightness & Contrast 2', before: [], params: [] }
+      ] }];
+      if (parts.tint) fxLayers.push({ layer: { layerId: parts.tint.at('layerId') }, items: [{ key: 'MOE Glass Fill', matchName: 'ADBE Fill', before: [], params: [] }] });
+      if (parts.rim) fxLayers.push({ layer: { layerId: parts.rim.at('layerId') }, items: [{ key: 'MOE Glass Fill', matchName: 'ADBE Fill', before: [], params: [{ id: 'Color', value: [0.5, 0.5, 0.5, 1], names: ['Color'] }] }, { key: 'MOE Glass Bevel', matchName: 'ADBE Bevel Alpha', before: [], params: [{ id: 'Light Intensity', value: 1, names: ['Light Intensity'] }] }] });
+      if (parts.shadow) fxLayers.push({ layer: { layerId: parts.shadow.at('layerId') }, items: [{ key: 'MOE Glass Fill', matchName: 'ADBE Fill', before: [], params: [{ id: 'Color', value: [0, 0, 0, 1], names: ['Color'] }] }, { key: 'MOE Glass Blur', matchName: 'ADBE Gaussian Blur 2', before: [], params: [{ id: 'Repeat Edge Pixels', value: 0, names: ['Repeat Edge Pixels'] }] }] });
+      const fx = T.add('effects.ensure', { compId: comp.id, label: 'MOE: Glass Effects', layers: fxLayers });
 
-        const X = expressions(name, src.name);
-        const targets = [
-          { address: fxAddr(glass.layerId, 'MOE Glass Frost', 'Blurriness'), expression: X.frost },
-          { address: fxAddr(glass.layerId, 'MOE Glass Lens', 'Field Of View (FOV)'), expression: X.lens },
-          { address: fxAddr(glass.layerId, 'MOE Glass Lens', 'View Center'), expression: X.center },
-          { address: fxAddr(glass.layerId, 'MOE Glass Light', 'Brightness'), expression: X.brightness }
-        ];
-        if (parts.tint) targets.push({ address: fxAddr(parts.tint.layerId, 'MOE Glass Fill', 'Color'), expression: X.tintColor }, { address: tAddr(parts.tint.layerId, 'ADBE Opacity'), expression: X.tintOpacity });
-        if (parts.rim) targets.push({ address: tAddr(parts.rim.layerId, 'ADBE Opacity'), expression: X.rimOpacity }, { address: fxAddr(parts.rim.layerId, 'MOE Glass Bevel', 'Edge Thickness'), expression: X.rimWidth }, { address: fxAddr(parts.rim.layerId, 'MOE Glass Bevel', 'Light Angle'), expression: X.rimAngle });
-        if (parts.shadow) targets.push({ address: tAddr(parts.shadow.layerId, 'ADBE Opacity'), expression: X.shadowOpacity }, { address: fxAddr(parts.shadow.layerId, 'MOE Glass Blur', 'Blurriness'), expression: X.shadowBlur }, { address: tAddr(parts.shadow.layerId, 'ADBE Position'), expression: X.shadowOffset });
-        const set = await host.call('expressions.set', { compId: comp.id, label: 'MOE: Glass', revertOnError: true, targets: targets.map((t) => Object.assign(t, { enabled: true })) });
-        const matte = await host.call('layers.setMatte', { compId: comp.id, items: [{ layerId: glass.layerId, matteId: src.id, type: 'alpha' }] });
-        const attrs = [{ layerId: src.id, enabled: false }];
-        if (parts.rim) attrs.push({ layerId: parts.rim.layerId, blendingMode: 'overlay' });
-        const hide = await host.call('layers.setAttrs', { compId: comp.id, label: 'MOE: Glass', items: attrs });
-        setups.push({ source: { id: src.id, name: src.name }, name, glassId: glass.layerId, parts: Object.fromEntries(Object.entries(parts).map(([k, v]) => [k, v.layerId])), fx, set, matte, hide, made });
-      } catch (e) {
-        await host.call('layers.remove', { compId: comp.id, layerIds: made, onlyNamed: 'MOE Glass' }).catch(() => {});
-        await host.call('layers.setAttrs', { compId: comp.id, items: [{ layerId: src.id, enabled: true }] }).catch(() => {});
-        throw e;
-      }
+      const X = expressions(name, src.name);
+      const targets = [
+        { address: fxAddr(glass.layerId, 'MOE Glass Frost', 'Blurriness'), expression: X.frost },
+        { address: fxAddr(glass.layerId, 'MOE Glass Lens', 'Field Of View (FOV)'), expression: X.lens },
+        { address: fxAddr(glass.layerId, 'MOE Glass Lens', 'View Center'), expression: X.center },
+        { address: fxAddr(glass.layerId, 'MOE Glass Light', 'Brightness'), expression: X.brightness }
+      ];
+      if (parts.tint) targets.push({ address: fxAddr(parts.tint.at('layerId'), 'MOE Glass Fill', 'Color'), expression: X.tintColor }, { address: tAddr(parts.tint.at('layerId'), 'ADBE Opacity'), expression: X.tintOpacity });
+      if (parts.rim) targets.push({ address: tAddr(parts.rim.at('layerId'), 'ADBE Opacity'), expression: X.rimOpacity }, { address: fxAddr(parts.rim.at('layerId'), 'MOE Glass Bevel', 'Edge Thickness'), expression: X.rimWidth }, { address: fxAddr(parts.rim.at('layerId'), 'MOE Glass Bevel', 'Light Angle'), expression: X.rimAngle });
+      if (parts.shadow) targets.push({ address: tAddr(parts.shadow.at('layerId'), 'ADBE Opacity'), expression: X.shadowOpacity }, { address: fxAddr(parts.shadow.at('layerId'), 'MOE Glass Blur', 'Blurriness'), expression: X.shadowBlur }, { address: tAddr(parts.shadow.at('layerId'), 'ADBE Position'), expression: X.shadowOffset });
+      const set = T.add('expressions.set', { compId: comp.id, label: 'MOE: Glass', revertOnError: true, targets: targets.map((t) => Object.assign(t, { enabled: true })) });
+      const matte = T.add('layers.setMatte', { compId: comp.id, items: [{ layerId: glass.layerId, matteId: src.id, type: 'alpha' }] });
+      const attrs = [{ layerId: src.id, enabled: false }];
+      if (parts.rim) attrs.push({ layerId: parts.rim.at('layerId'), blendingMode: 'overlay' });
+      const hide = T.add('layers.setAttrs', { compId: comp.id, label: 'MOE: Glass', items: attrs });
+      pending.push({ source: { id: src.id, name: src.name }, name, glassR, parts, fx, set, matte, hide, made });
     }
+    try {
+      await T.commit();
+    } catch (e) {
+      // nothing half-made stays: every layer this run made goes, the sources are shown again
+      const ids = [];
+      for (const p of pending) for (const m of p.made) { const v = typeof m === 'object' && m && m.value ? m.value() : m; if (v !== undefined && v !== null) ids.push(v); }
+      if (ids.length) await host.call('layers.remove', { compId: comp.id, layerIds: ids, onlyNamed: 'MOE Glass' }).catch(() => {});
+      await host.call('layers.setAttrs', { compId: comp.id, items: pending.map((p) => ({ layerId: p.source.id, enabled: true })) }).catch(() => {});
+      throw e;
+    }
+    const setups = pending.map((p) => ({ source: p.source, name: p.name, glassId: p.glassR.value().layerId, parts: Object.fromEntries(Object.entries(p.parts).map(([k, v]) => [k, v.value().layerId])), fx: p.fx.value(), set: p.set.value(), matte: p.matte.value(), hide: p.hide.value(), made: p.made.map((m) => m.value()) }));
     return { setups, look: args.look };
   },
 
@@ -196,10 +206,12 @@ const apply = {
   },
 
   async restore({ data, host }) {
+    const T = PLAN1(host, 'MOE: Restore Glass');
     for (const s of data.setups) {
-      await host.call('layers.remove', { compId: data.compId, layerIds: s.made, onlyNamed: 'MOE Glass' });
-      await host.call('layers.setAttrs', { compId: data.compId, label: 'MOE: Restore Glass', items: [{ layerId: s.source, enabled: true }] });
+      T.add('layers.remove', { compId: data.compId, layerIds: s.made, onlyNamed: 'MOE Glass' });
+      T.add('layers.setAttrs', { compId: data.compId, label: 'MOE: Restore Glass', items: [{ layerId: s.source, enabled: true }] });
     }
+    await T.commit();
     return { ok: true };
   },
 

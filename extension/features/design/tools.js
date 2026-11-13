@@ -1,4 +1,5 @@
 'use strict';
+const { plan: PLAN } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 /**
  * Design tools (category "design"):
  *   design.insertShape  a Lucide icon (as editable Bézier paths) or a native AE primitive
@@ -257,38 +258,51 @@ const background = {
   },
 
   async execute({ args, ctx, prepared, host }) {
+    // v0.94 (docs/features/ONE_UNDO.md): the solid, its effects, its sliders and their expressions in ONE host call —
+    // one Ctrl+Z. The expressions' addresses come from the effect's own result (refs), in the order they were asked for.
     const plan = prepared.plan;
-    const solid = await host.call('layers.createSolid', { compId: ctx.comp.id, name: prepared.name, color: B.hexToRgb(plan.base), bottom: true, comment: `MOE Background · ${plan.palette.name}` });
-    const out = { solid, fx: null, fxRequest: null, grain: null, grainError: null, drift: null };
-    try {
-      if (plan.items.length) {
-        out.fxRequest = [{ layer: { layerId: solid.layerId }, items: plan.items }];
-        out.fx = await S.writeEffects(host, ctx, out.fxRequest, 'MOE: Background');
-      }
-    } catch (e) {
-      await host.call('layers.remove', { compId: ctx.comp.id, layerIds: [solid.layerId], label: 'MOE: Remove Background', onlyNamed: 'MOE ' });
-      throw e;
-    }
-    if (plan.grain) {
-      try { out.grain = await S.writeEffects(host, ctx, [{ layer: { layerId: solid.layerId }, items: [plan.grain] }], 'MOE: Grain'); } catch (e) { out.grainError = e.message; }
-    }
-    if (plan.animated && out.fx) {
+    const P = PLAN(host, `MOE: ${prepared.name}`);
+    const solid = P.add('layers.createSolid', { compId: ctx.comp.id, name: prepared.name, color: B.hexToRgb(plan.base), bottom: true, comment: `MOE Background · ${plan.palette.name}` });
+    const out = { solid: null, fx: null, fxRequest: null, grain: null, grainError: null, drift: null };
+    const fxRequest = plan.items.length ? [{ layer: { layerId: solid.at('layerId') }, items: plan.items }] : null;
+    const fx = fxRequest ? P.add('effects.ensure', { compId: ctx.comp.id, label: 'MOE: Background', layers: fxRequest }) : null;
+    let controls = null, controlsRequest = null, drift = null;
+    if (plan.animated && fx) {
       // sliders first: the expressions read them
-      out.controlsRequest = [{ layer: { layerId: solid.layerId }, items: plan.controls }];
-      out.controls = await S.writeEffects(host, ctx, out.controlsRequest, 'MOE: Background Controls');
-      const entry = out.fx.layers[0].items[0];
-      const addr = (id) => { const p = entry.params.find((x) => x.id === id); return { layerId: solid.layerId, matchNames: ['ADBE Effect Parade', `name:${entry.key}`, p.matchName] }; };
+      controlsRequest = [{ layer: { layerId: solid.at('layerId') }, items: plan.controls }];
+      controls = P.add('effects.ensure', { compId: ctx.comp.id, label: 'MOE: Background Controls', layers: controlsRequest });
+      const item = plan.items[0];
+      const addr = (id) => ({ layerId: solid.at('layerId'), matchNames: ['ADBE Effect Parade', `name:${item.key}`, fx.at('layers', 0, 'items', 0, 'params', item.params.findIndex((x) => x.id === id), 'matchName')] });
       const targets = [];
       if (plan.motion !== 'none') plan.drift.forEach((id, i) => targets.push({ address: addr(id), expression: BM.pointExpression(plan.motion, i, plan.drift.length, ctx.comp.width, ctx.comp.height), enabled: true }));
       if (plan.colorMotion !== 'none') {
-        const P = plan.palette.colors.map((hx) => B.hexToRgb(hx).concat([1]));
+        const Pc = plan.palette.colors.map((hx) => B.hexToRgb(hx).concat([1]));
         plan.slots.forEach((sl, i) => {
           const other = plan.slots.find((x) => x.id === sl.other);
-          targets.push({ address: addr(sl.id), expression: BM.colorExpression(plan.colorMotion, { i, n: plan.slots.length, idx: sl.idx, P, own: P[sl.idx], other: P[other.idx] }), enabled: true });
+          targets.push({ address: addr(sl.id), expression: BM.colorExpression(plan.colorMotion, { i, n: plan.slots.length, idx: sl.idx, P: Pc, own: Pc[sl.idx], other: Pc[other.idx] }), enabled: true });
         });
       }
-      out.drift = await host.call('expressions.set', { compId: ctx.comp.id, label: 'MOE: Background Motion', revertOnError: true, targets });
+      if (targets.length) drift = P.add('expressions.set', { compId: ctx.comp.id, label: 'MOE: Background Motion', revertOnError: true, targets });
     }
+    // grain last: if this machine lacks it, everything else is already there (and the report says so)
+    const grain = plan.grain ? P.add('effects.ensure', { compId: ctx.comp.id, label: 'MOE: Grain', layers: [{ layer: { layerId: solid.at('layerId') }, items: [plan.grain] }] }) : null;
+    const grainStep = grain ? P.size - 1 : -1;
+    try {
+      await P.commit();
+    } catch (e) {
+      if (e.step !== grainStep) {
+        const id = solid.value() && solid.value().layerId;
+        if (id) await host.call('layers.remove', { compId: ctx.comp.id, layerIds: [id], label: 'MOE: Remove Background', onlyNamed: 'MOE ' });
+        throw e;
+      }
+      out.grainError = e.message;
+    }
+    out.solid = solid.value();
+    if (fx) { out.fx = fx.value(); out.fxRequest = [{ layer: { layerId: out.solid.layerId }, items: plan.items }]; }
+    if (controls) { out.controls = controls.value(); out.controlsRequest = [{ layer: { layerId: out.solid.layerId }, items: plan.controls }]; }
+    if (drift) out.drift = drift.value();
+    if (grain && !out.grainError) out.grain = grain.value();
+    void controlsRequest;
     return out;
   },
 
