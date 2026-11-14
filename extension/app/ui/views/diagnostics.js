@@ -2,6 +2,51 @@
 const { h, icon } = require('../dom');
 const ST = require('../../../features/selftest/runner');
 const PR = require('../../../features/previews/renderer');
+const TT = require('../../../features/selftest/tileRunner');
+
+/* ---------- v0.98.2 Tile Test (docs/features/TILE_TEST.md) — every tile, inside After Effects ---------- */
+const tt = { step: 'idle', section: 'all', progress: null, report: null, stop: false, filter: 'fail' };
+const TT_KEY = 'tiletest-last';
+async function runTileTest(app) {
+  const { SECTIONS } = require('../studio/sections');
+  tt.step = 'running'; tt.stop = false; tt.report = null; tt.progress = { i: 0, total: 0, label: 'Starting' }; app.scheduleRender();
+  try {
+    tt.report = await TT.runTiles(app.services, TT.libraryTiles(SECTIONS, tt.section === 'all' ? null : tt.section), { shouldStop: () => tt.stop, onProgress: (i, total, label) => { tt.progress = { i, total, label }; app.scheduleRender(); } });
+    try { app.services.store.set(TT_KEY, tt.report); } catch (_) { /* store is optional */ }
+  } catch (e) { tt.report = { error: String(e.message || e), tiles: [], totals: {} }; }
+  tt.step = 'done'; tt.progress = null;
+  try { await app.refreshContext(true); } catch (_) { /* re-reads on its own */ }
+  app.scheduleRender();
+}
+/** The report to send: totals, then every failed / skipped tile first (what needs fixing), then the passes. */
+function tileReportText(r) {
+  const order = { fail: 0, skip: 1, pass: 2 };
+  return JSON.stringify(Object.assign({}, r, { tiles: (r.tiles || []).slice().sort((a, b) => order[a.status] - order[b.status]) }), null, 1);
+}
+function tileTestCard(app) {
+  const { SECTIONS } = require('../studio/sections');
+  if (!tt.report && tt.step === 'idle') { try { tt.report = app.services.store.get(TT_KEY, null); } catch (_) { tt.report = null; } }
+  const libs = SECTIONS.filter((s) => s.kind === 'library' && Array.isArray(s.tiles));
+  const count = TT.libraryTiles(SECTIONS, tt.section === 'all' ? null : tt.section).length;
+  const r = tt.report, busy = tt.step === 'running';
+  const shown = r && r.tiles ? r.tiles.filter((t) => tt.filter === 'all' || t.status === tt.filter) : [];
+  return h('div', { class: 'selftest-card', 'data-key': 'tile-test' },
+    h('div', { class: 'why pad' }, 'Runs every tile the way a click does, each in its own temporary "MOE Self-Test Tiles" comp (a card, the words "MOE Motion", three cards, or a ready grid with an effector), then presses Edit › Undo in After Effects and counts how many it takes to bring everything back. Your comps are not touched. All tiles take several minutes; Stop works between tiles.'),
+    h('div', { class: 'actions pad' },
+      h('select', { class: 'inp', 'aria-label': 'Which tiles to test', disabled: busy, value: tt.section, onchange: (e) => { tt.section = e.target.value; app.scheduleRender(); } },
+        [h('option', { value: 'all', selected: tt.section === 'all' }, 'All libraries')].concat(libs.map((s) => h('option', { value: s.id, selected: tt.section === s.id }, s.label)))),
+      h('span', { class: 'why' }, `${count} tile(s)`)),
+    h('div', { class: 'actions pad' },
+      busy ? h('button', { class: 'btn', onclick: () => { tt.stop = true; app.scheduleRender(); } }, icon('x', 'sm'), tt.stop ? 'Stopping after this tile…' : 'Stop')
+        : h('button', { class: 'btn primary', disabled: !app.state.get().hostInfo, title: app.state.get().hostInfo ? 'Test every tile in After Effects' : 'Connect to After Effects first', onclick: () => runTileTest(app) }, icon('play', 'sm'), r ? 'Test again' : 'Test every tile'),
+      r && r.tiles && r.tiles.length && !busy ? h('button', { class: 'btn ghost', onclick: () => app.copy(tileReportText(r)) }, icon('copy', 'sm'), 'Copy report') : null),
+    busy && tt.progress ? h('div', { class: 'why pad', role: 'status' }, `${tt.progress.i + 1} / ${tt.progress.total || '…'} · ${tt.progress.label}`) : null,
+    r && r.error ? h('div', { class: 'notice err' }, r.error) : null,
+    r && r.tiles && r.tiles.length ? h('div', { class: 'why pad' }, `${r.totals.pass || 0} passed · ${r.totals.fail || 0} failed · ${r.totals.skip || 0} need something else in the comp${r.stopped ? ' · stopped' : ''} — ${((r.ms || 0) / 1000).toFixed(0)} s${r.ae && r.ae.appVersion ? ` · AE ${r.ae.appVersion}` : ''}`) : null,
+    r && r.tiles && r.tiles.length ? h('div', { class: 'actions pad' }, ['fail', 'skip', 'pass', 'all'].map((f) => h('button', { class: `btn ghost${tt.filter === f ? ' on' : ''}`, 'aria-pressed': String(tt.filter === f), onclick: () => { tt.filter = f; app.scheduleRender(); } }, { fail: 'Failed', skip: 'Skipped', pass: 'Passed', all: 'All' }[f]))) : null,
+    shown.length ? h('div', { class: 'selftest-list' }, shown.slice(0, 80).map((t) => h('div', { class: `selftest-check ${t.status}`, 'data-key': `tt-${t.tile}` },
+      h('span', { class: `selftest-badge ${t.status}` }, STATUS[t.status] || t.status), h('div', {}, h('div', { class: 'selftest-label' }, `${t.label} · ${t.tool}`), h('div', { class: 'why' }, `${t.detail}${t.ms ? ` · ${(t.ms / 1000).toFixed(1)} s` : ''}`))))) : null);
+}
 
 /* ---------- v0.40 Self-Test inside After Effects (docs/features/SELF_TEST.md) ---------- */
 const test = { step: 'idle', progress: null, report: null };  // idle → confirm → running → done
@@ -107,6 +152,8 @@ function render(app) {
     s.hostError ? h('div', { class: 'notice err' }, s.hostError) : null,
     kv([['Version', hi.appVersion], ['Build', hi.buildName || hi.buildNumber], ['Language', hi.language], ['OS', hi.os], ['ExtendScript', hi.engineVersion], ['Host module', hi.hostModuleVersion], ['Expression engine', s.ctx && s.ctx.expressionEngine]]),
     h('div', { class: 'actions pad' }, h('button', { class: 'btn', onclick: () => app.reconnect() }, icon('refresh', 'sm'), 'Reconnect'), h('button', { class: 'btn ghost', onclick: () => app.copy(report(app)) }, icon('copy', 'sm'), 'Copy report')),
+    h('div', { class: 'section-h' }, 'Test every tile in After Effects'),
+    tileTestCard(app),
     h('div', { class: 'section-h' }, 'Check in After Effects'),
     selfTestCard(app),
     h('div', { class: 'section-h' }, 'Rendered previews'),
@@ -122,4 +169,4 @@ function render(app) {
     h('div', { class: 'section-h' }, 'Log'),
     h('div', { class: 'log' }, logs.length ? logs.map((e) => h('div', { class: e.level }, `${e.t.slice(11, 19)} ${e.level.padEnd(5)} ${e.area}: ${e.message}`)) : 'No entries'));
 }
-module.exports = { render, report, selfTestCard };
+module.exports = { render, report, selfTestCard, tileTestCard, tileReportText };

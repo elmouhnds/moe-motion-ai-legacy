@@ -44,3 +44,27 @@ test('a grid null\'s menus hold their full lists and the chosen value straight f
   const layout = menus.find((f) => f.name === 'Layout');
   assert.ok(layout && layout._children[0].value > 3, 'sphere is past item 3 of the Layout menu');
 });
+
+test('v0.98.2: the grid call throws (After Effects error) — the real error is reported and nothing stays behind', async () => {
+  const r0 = await createTestServices(gridItems(4));
+  const before = r0.comp._layers.map((l) => l.name).sort();
+  const host = r0.services.host, call = host.call.bind(host);
+  host.call = async (op, a) => {
+    if (op === 'tx.run' && a.label === 'MOE: Grid') { await call(op, a); throw Object.assign(new Error('After Effects error: simulated'), { code: 'HOST_EXCEPTION' }); }
+    return call(op, a);
+  };
+  const r = await r0.services.executor.run('grid.build', { mode: 'rect', columns: 2 });
+  assert.notEqual(r.status, 'success');
+  const text = JSON.stringify(r);
+  assert.ok(!/PLAN_NOT_COMMITTED/.test(text), text.slice(0, 400));
+  assert.ok(/simulated/.test(text), text.slice(0, 400));
+  assert.deepEqual(r0.comp._layers.map((l) => l.name).sort(), before);
+  assert.ok(r0.comp._layers.every((l) => !l.parent), 'every item unparented again');
+});
+
+test('v0.98.2: no undo group is ever opened inside another (After Effects: "Undo group mismatch")', async () => {
+  const r0 = await createTestServices(gridItems(9));
+  const r = await r0.services.executor.run('grid.build', { mode: 'sphere', clones: 0 });
+  assert.equal(r.status, 'success');
+  assert.equal(r0.env.undo.mismatch || 0, 0);
+});

@@ -71,6 +71,58 @@
         }
     };
 
+    /* v0.98.2 tile test: read-only counts of the self-test comp and the project, to prove Ctrl+Z brought it back.
+       args: { compId } -> { layers, items, names, undoLabels } */
+    ops['selftest.census'] = {
+        mutates: false,
+        run: function (args) {
+            var c = itemById(args.compId), names = [], i;
+            if (!c || !(c instanceof CompItem) || String(c.name).substring(0, PREFIX.length) !== PREFIX) { U.fail('NOT_SELFTEST', 'Only the self-test comp is counted.'); }
+            for (i = 1; i <= c.numLayers; i++) { names.push(String(c.layer(i).name)); }
+            return { layers: c.numLayers, items: app.project.numItems, names: names, undoLabels: (MOE.undoLabels || []).slice(0) };
+        }
+    };
+
+    /* v0.98.2 tile test: Edit > Undo of the newest MOE group (found by its menu text, never a numeric id), only in the
+       self-test comp. args: {} -> { found, label } */
+    ops['selftest.undoLast'] = {
+        mutates: true,
+        run: function () {
+            var comp = app.project.activeItem, label, id = 0;
+            if (!(comp instanceof CompItem) || String(comp.name).substring(0, PREFIX.length) !== PREFIX) { U.fail('NOT_SELFTEST', 'Undo is only run on the self-test comp.'); }
+            if (!(MOE.undoLabels instanceof Array) || !MOE.undoLabels.length) { return { found: false, label: '' }; }
+            label = MOE.undoLabels.pop();
+            try { id = app.findMenuCommandId('Undo ' + label); } catch (eF) { id = 0; }
+            if (!id) { return { found: false, label: label }; }
+            app.executeCommand(id);
+            return { found: true, label: label };
+        }
+    };
+
+    /* v0.98.2 tile test: select one property of a layer of the self-test comp (PropertyBase.selected, read/write in
+       the Scripting Guide), as a user clicks its name. args: { compId, layerId, matchNames: [] } -> { selected } */
+    ops['selftest.selectProp'] = {
+        mutates: false,
+        run: function (args) {
+            var c = itemById(args.compId), L, p, i;
+            if (!c || !(c instanceof CompItem) || String(c.name).substring(0, PREFIX.length) !== PREFIX) { U.fail('NOT_SELFTEST', 'Only the self-test comp.'); }
+            L = U.findLayer(c, { layerId: args.layerId });
+            p = L;
+            for (i = 0; i < args.matchNames.length; i++) { p = p.property(args.matchNames[i]); if (!p) { U.fail('NO_PROPERTY', 'No ' + args.matchNames[i]); } }
+            L.selected = true;
+            p.selected = true;
+            /* and its keyframes (Property.setSelectedAtKey), as a click on the property name in the timeline does */
+            for (i = 1; i <= p.numKeys; i++) { p.setSelectedAtKey(i, true); }
+            return { selected: !!p.selected, name: p.name, keys: p.numKeys };
+        }
+    };
+
+    /* v0.98.2 tile test: forget the labels before a tile (so Undo only ever goes back over that tile's own groups). */
+    ops['selftest.resetUndoLabels'] = {
+        mutates: false,
+        run: function () { MOE.undoLabels = []; return { ok: true }; }
+    };
+
     /* v0.62 (LINKS.md): rename a layer of the self-test comp (to prove a renamed grid relinks). args: { layerId, name } */
     ops['selftest.rename'] = {
         mutates: true,

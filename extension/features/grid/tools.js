@@ -317,8 +317,19 @@ const build = {
     async function undoGrid(e) {
       // v0.98.1: each cleanup step is its own guarded call — one plan stopped at its first failing step and left the
       // MOE Grid null in the timeline (the owner's After Effects report). Failure path only; success stays one Ctrl+Z.
-      const pv = parentedRef.value(), cv = createdRef.value(), mv = made3DRef && made3DRef.value();
+      const pv = parentedRef.value(), mv = made3DRef && made3DRef.value();
+      let cv = createdRef.value();
+      // the call itself failed (no results): find this run's null by its unique name, so it never stays behind
+      if (!cv || !cv.layerId) {
+        try {
+          const ls = await host.call('layers.list', { scope: 'active', maxLayers: 2000 });
+          const hit = (ls.layers || []).find((x) => x.compId === comp.id && x.name === prepared.name);
+          if (hit) cv = { layerId: hit.id };
+        } catch (x) { /* nothing more we can learn */ }
+      }
       const steps = [];
+      // the call failed with no results: put every item back on the parent it had before (read before the plan)
+      if (!pv && cv && cv.layerId) steps.push(['layers.setParent', { compId: comp.id, items: items.map((l) => { const d = desc.layers.find((x) => x.id === l.id); return { layerId: l.id, parentId: d ? d.parentId : null }; }) }]);
       if (pv) steps.push(['layers.setParent', { compId: comp.id, items: pv.layers.map((x) => ({ layerId: x.layerId, parentId: x.before })) }]);
       if (cv && cv.layerId) steps.push(['layers.remove', { compId: comp.id, layerIds: [cv.layerId], onlyNamed: 'MOE Grid' }]);
       if (mv) steps.push(['layers.setAttrs', { compId: comp.id, items: mv.layers.map((x) => ({ layerId: x.layerId, threeDLayer: false })) }]);

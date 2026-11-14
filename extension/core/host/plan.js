@@ -45,7 +45,11 @@ function plan(host, label) {
     async commit() {
       if (P.done) return P.results;
       if (!steps.length) { P.done = true; return P.results; }
-      const r = await host.call('tx.run', { label, steps });
+      let r;
+      // v0.98.2 (owner's report: grid.build "PLAN_NOT_COMMITTED"): when the call itself throws (After Effects error,
+      // timeout, a modal dialog) the plan still counts as done — refs read as undefined — so the caller's cleanup runs
+      // and the real error is the one reported
+      try { r = await host.call('tx.run', { label, steps }); } catch (e) { P.done = true; P.results = []; P.failed = { step: -1, op: 'tx.run', code: e.code || 'HOST_EXCEPTION', message: e.message }; throw e; }
       P.done = true;
       P.results = r.results || [];
       P.failed = r.failed || null;

@@ -180,9 +180,22 @@
      * app.endUndoGroup), so a group can never span two panel calls. The v0.61 tx.begin skipped this group, which left
      * every action of the later calls as its own undo step. Groups nest (inner names are ignored), so tx.run's
      * single group holds every op it runs.
+     * v0.98.2 (owner's After Effects 26.5: "Undo group mismatch, will attempt to fix"): the "groups nest" assumption
+     * above was never verified. Only the OUTERMOST call opens and closes a group now (MOE.undoDepth); an op run
+     * inside tx.run writes into tx.run's group and never calls begin/end itself.
      */
     U.withUndo = function (label, fn) {
-        app.beginUndoGroup(label);
-        try { return fn(); } finally { app.endUndoGroup(); }
+        var outer = !(MOE.undoDepth > 0);
+        if (outer) {
+            app.beginUndoGroup(label); MOE.undoDepth = 0;
+            /* v0.98.2: the labels of the groups MOE opened (newest last) - the tile test presses Edit > Undo <label> */
+            if (!(MOE.undoLabels instanceof Array)) { MOE.undoLabels = []; }
+            MOE.undoLabels.push(String(label)); if (MOE.undoLabels.length > 50) { MOE.undoLabels.shift(); }
+        }
+        MOE.undoDepth += 1;
+        try { return fn(); } finally {
+            MOE.undoDepth -= 1;
+            if (outer) { MOE.undoDepth = 0; app.endUndoGroup(); }
+        }
     };
 }($.global));

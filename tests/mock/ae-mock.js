@@ -275,6 +275,7 @@ class MockProperty {
     return p;
   }
   get numKeys() { return this._keys.length; }
+  setSelectedAtKey(i, on) { const k = this._keys[i - 1]; if (!k) throw new Error('After Effects error: no key ' + i); k.selected = !!on; }
   get selectedKeys() {
     const out = [];
     this._keys.forEach((k, i) => { if (k.selected) out.push(i + 1); });
@@ -317,6 +318,9 @@ class MockProperty {
   }
   /** v0.98.1: a Dropdown Menu Control starts with 3 items (After Effects' default) and refuses a value outside its list —
    *  the owner's After Effects reported "Value 6 out of range 1 to 3" when a menu was set before its items were. */
+  // PropertyBase.selected (read/write, Scripting Guide) — the tile test selects a property as a click does
+  get selected() { return !!this._selected; }
+  set selected(v) { this._selected = !!v; }
   _checkMenu(v) {
     if (!/Dropdown Control/.test(this.matchName || '')) return;
     const n = (this._menuItems || ['Item 1', 'Item 2', 'Item 3']).length;
@@ -1022,7 +1026,9 @@ function installAE(target, fixture, { readFile, evalCode }) {
       },
       effects: Object.keys(EFFECTS).map((mn) => ({ displayName: mn.replace(/^ADBE /, ''), matchName: mn, category: 'Mock' })).concat((fixture && fixture.extraEffects) || []),
       preferences: { getPrefAsString() { throw new Error('After Effects error: preference not found'); } },
-      beginUndoGroup(label) { if (undo.depth === 0) undo.entries.push(label); undo.depth++; undo.groups.push(label); },
+      // v0.98.2: After Effects 26.5 warns "Undo group mismatch, will attempt to fix" for a group opened inside an open one or
+      // an end with none open (the owner's report); the mock counts both and the tests require zero
+      beginUndoGroup(label) { if (undo.depth === 0) undo.entries.push(label); else undo.mismatch = (undo.mismatch || 0) + 1; undo.depth++; undo.groups.push(label); },
       purge(target) { (app0.purged = app0.purged || []).push(target); },
       findMenuCommandId(name) { return { 'Reveal Layer Source in Project': 2517, 'Convert Audio to Keyframes': 3065 }[name] || 0; },
       executeCommand(id) {
@@ -1041,7 +1047,7 @@ function installAE(target, fixture, { readFile, evalCode }) {
           }
         }
       },
-      endUndoGroup() { undo.depth = Math.max(0, undo.depth - 1); }
+      endUndoGroup() { if (undo.depth === 0) undo.mismatch = (undo.mismatch || 0) + 1; undo.depth = Math.max(0, undo.depth - 1); }
     },
     $: {
       global: target, os: 'MockOS', version: 'mock',

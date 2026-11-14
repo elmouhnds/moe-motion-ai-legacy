@@ -21,7 +21,7 @@ const MEASURE = /^MOE: (Measure \(temporary\)|Measure Text|Analyze \(temporary\)
 (async () => {
   const tiles = [];
   for (const sec of S.SECTIONS.filter((s) => s.kind === 'library')) for (const t of sec.tiles || []) if (!t.needsInput) tiles.push(Object.assign({ section: sec.id }, t));
-  const out = [];
+  const out = [], mismatch = [];
   for (const t of tiles) {
     const { services, env } = await createTestServices(comp());
     const tool = services.registry.get(t.tool);
@@ -29,6 +29,7 @@ const MEASURE = /^MOE: (Measure \(temporary\)|Measure Text|Analyze \(temporary\)
     const args = Object.assign({}, Object.fromEntries(Object.entries(tool.params || {}).filter(([, p]) => p.default !== undefined).map(([k, p]) => [k, p.default])), t.args);
     const e0 = env.undo.entries.length;
     const r = await services.executor.run(t.tool, args, { approved: true }).catch((e) => ({ status: `threw ${e.message}` }));
+    if (env.undo.mismatch) mismatch.push(`${t.section}/${t.id} ×${env.undo.mismatch}`);
     if (r.status !== 'success' && r.status !== 'partial') continue; // not runnable on this fixture
     const steps = env.undo.entries.slice(e0);
     // a measuring step makes a temporary probe / comp and removes it inside the same undo group: it changes nothing
@@ -38,6 +39,7 @@ const MEASURE = /^MOE: (Measure \(temporary\)|Measure Text|Analyze \(temporary\)
   out.sort((a, b) => b.steps - a.steps);
   if (process.argv.includes('--json')) { console.log(JSON.stringify(out, null, 1)); return; }
   const one = out.filter((o) => o.steps <= 1).length, many = out.filter((o) => o.steps > 1), loose = out.filter((o) => o.ungrouped);
+  console.log(`undo group mismatches (After Effects warns on each): ${mismatch.length ? mismatch.join(', ') : 0}`);
   console.log(`${out.length} tiles ran · one Ctrl+Z: ${one} (of them ${out.filter((o) => o.steps <= 1 && o.measure).length} also have measure step(s) that change nothing) · more than one: ${many.length} · a write with no undo group: ${loose.length}`);
   const byTool = new Map();
   for (const o of many) { const k = o.tool; if (!byTool.has(k)) byTool.set(k, { tool: k, tiles: 0, max: 0, example: o }); const b = byTool.get(k); b.tiles++; if (o.steps > b.max) { b.max = o.steps; b.example = o; } }

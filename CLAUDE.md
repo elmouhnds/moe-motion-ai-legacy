@@ -192,6 +192,11 @@ Permanent rules for anyone (human or AI) working in this repository.
 - The mock enforces this (`_checkMenu`). Keep the mock as strict as After Effects: a lenient mock hid this bug from 600+ tests.
 - A failure cleanup runs each step on its own (try/catch): one plan stops at its first failing step and left a null in the timeline.
 
+## One undo group at a time + Tile Test (v0.98.2 — the owner's After Effects 26.5 report)
+- After Effects warns "Undo group mismatch, will attempt to fix" when a group is opened inside an open one. Never call `app.beginUndoGroup` directly; `U.withUndo` opens a group only at the outermost call (`MOE.undoDepth`) — ops inside `tx.run` write into its group. The mock counts mismatches; `tools/audit-undo.js` must report 0.
+- A plan is done even when its host call throws (refs read undefined) — a cleanup must cope with unknown ids (find MOE's own layer by its unique name) and must never hide the real error.
+- Before telling the owner a fix works in After Effects, the Tile Test (Diagnostics) is the proof: ask for its report. A new tile must run on a `tileRunner.subjectOf` subject or skip with a reason.
+
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).
 - Tests run the **real host .jsx** against `tests/mock/ae-mock.js`. That proves logic, not host behaviour. Never describe mock results as After Effects results.

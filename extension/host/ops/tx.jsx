@@ -47,7 +47,8 @@
             }
             prev = MOE.txComps;
             MOE.txComps = [];
-            app.beginUndoGroup(String(args.label || 'MOE').substring(0, 120));
+            /* v0.98.2: the one group of the whole batch, through U.withUndo (depth-counted: ops inside never open their own) */
+            return U.withUndo(String(args.label || 'MOE').substring(0, 120), function () {
             try {
                 for (i = 0; i < steps.length; i++) {
                     s = steps[i];
@@ -58,9 +59,9 @@
                 }
             } finally {
                 MOE.txComps = prev || null;
-                app.endUndoGroup();
             }
             return { ok: !failed, results: out, failed: failed };
+            });
         }
     };
 

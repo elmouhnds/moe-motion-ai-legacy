@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.98.2] — 2026-11-14 — Undo groups fixed, nothing left behind, every tile testable in After Effects
+- **"Undo group mismatch, will attempt to fix"** (owner, After Effects 26.5): ops opened their own undo group inside `tx.run`'s group. The code assumed groups nest; that was never verified. Now only the outermost call opens a group (`MOE.undoDepth`); the mock counts a group inside a group or an end with none open as a mismatch — before the fix almost every tile had one, now 0 (`tools/audit-undo.js`).
+- **grid.build "PLAN_NOT_COMMITTED"**: when After Effects threw during the grid call, the plan was never marked done, the cleanup crashed on it, the real error was hidden and the clones stayed in the timeline. A plan is now done even when the call throws; the cleanup finds the grid null by its name, puts every item back on its earlier parent, removes clones, and the real error is reported.
+- **Tile Test** (Diagnostics › Test every tile in After Effects): every library tile runs inside After Effects on its own subject (card, text, cards, a ready grid, a grid with an effector, selected keys), then Edit › Undo is pressed for real and counted until everything is back; failed tiles first in the report. docs/features/TILE_TEST.md.
+
 ## [0.98.1] — 2026-11-14 — Fix: Cloner and Effectors in real After Effects
 - **The owner's first real After Effects report**: every Cloner tile only left a null in the timeline, then "Globe 3D: After Effects error: Unable to call "setValue" because of parameter 1. Value 6 out of range 1 to 3." Cause: a new Dropdown Menu Control has 3 items; `effects.ensure` set the menu values (Layout = 6 for Globe, Effector Type, Falloff, Colour Mode…) before `effects.setMenu` gave the dropdown its list.
 - `effects.ensure` now fills a dropdown's list first (`menu` on the item → `setPropertyParameters`), then its value; a value with no list that does not fit waits at 1 for the `effects.setMenu` that follows. Grid, Effector and Colour controls send their lists.
