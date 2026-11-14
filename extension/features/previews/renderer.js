@@ -21,7 +21,7 @@ const CARD = { size: [210, 118], roundness: 18, fill: [1, 0.416, 0.239] }; // MO
 const SUBJECT = {
   'quick.animate': 'card', 'quick.wipe': 'card', 'reveal.matte': 'card', 'reveal.fx': 'card', 'quick.depth': 'card', 'quick.shake': 'card',
   'design.style': 'card', 'interact.click': 'card', 'quick.trimPaths': 'outline', 'text.animate': 'text',
-  'design.background': 'none', 'design.template': 'none', 'layout.carousel': 'cards'
+  'design.background': 'none', 'design.template': 'none', 'layout.carousel': 'cards', 'interact.clickFx': 'card'
 };
 
 function hash(s) { let x = 5381; for (let i = 0; i < s.length; i++) x = ((x << 5) + x + s.charCodeAt(i)) >>> 0; return x.toString(36); }

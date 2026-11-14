@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.97: Reveal Composer - 3,888 reveal styles (Shape x Material x Motion x Palette); Matte FX and rendered previews (0.96)."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.97: Reveal Composer - 3,888 ستايل ريفيل (شكل × خامة × حركة × ألوان)، و Matte FX والـ previews الحقيقية (0.96)"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.98: Click VFX, controller nulls, a rendered preview on every effect; Reveal Composer (0.97)."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.98: Click VFX، و null للتحكم، و preview متعمله render لكل ايفكت، و Reveal Composer (0.97)"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

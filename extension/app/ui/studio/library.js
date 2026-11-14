@@ -122,9 +122,9 @@ function thumbEl(tile, cls, liveArgs) {
   // v0.96 (RENDERED_PREVIEWS.md): a tile After Effects rendered plays its own frames — unless the Inspector's settings
   // differ from the tile's (then the render is not what Apply would make, and the drawn preview follows the settings)
   const same = !liveArgs || Object.keys(liveArgs).every((k) => liveArgs[k] === undefined || JSON.stringify(liveArgs[k]) === JSON.stringify((tile.args || {})[k]));
-  const rend = same ? RENDERED.get(tile) : null;
+  const rend = same ? RENDERED.best(tile) : null;
   if (rend) {
-    const canvas = h('canvas', { class: `st-thumb rendered ${cls || ''}`, 'aria-hidden': 'true', 'data-key': `${tile.id}|${cls || ''}|r${rend.at}` });
+    const canvas = h('canvas', { class: `st-thumb rendered ${cls || ''}`, 'aria-hidden': 'true', title: rend.sprite ? 'Preview rendered by MOE from the tool\'s own plan — After Effects\' own render replaces it (Diagnostics › Rendered previews)' : 'Rendered by After Effects', 'data-key': `${tile.id}|${cls || ''}|r${rend.at}` });
     const t0 = Math.random() * 2;
     return widgets.animated(canvas, (now) => { const { c, W, H } = widgets.prep(canvas); if (!RENDERED.draw(c, W, H, rend, now === null ? null : now / 1000 + t0)) thumbs.draw(c, W, H, tile.thumb, 1.6); });
   }

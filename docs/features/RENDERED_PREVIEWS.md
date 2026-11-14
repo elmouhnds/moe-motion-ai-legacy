@@ -30,3 +30,21 @@ Tools without a preview scene (grid, glass, zoom, compositing, expressions, …)
   - unknown tools listed;
   - the host refuses other comps, other names and other folders.
 - Self-Test `renderPreview`, in After Effects: the Render Queue really writes JPEG frames. **Rendering itself is unverified until that check passes**, because the mock does not render. Whether CEP shows `file:///` JPEGs in the tiles also needs a look in After Effects.
+
+## v0.98: previews bundled with MOE (the owner: "render with any program you can")
+Every motion / reveal / click tile now ships with a real render, so it plays before anything is applied, even with no After Effects render yet.
+1. `tools/preview-frames.js` takes each frame's values from the SAME plans the tools write: mattePlan, fxPlan (completion, evolution, stepped time, the lagged edge), clickFxPlan, animatePlan and wipe.
+2. `tools/render-previews.py` (numpy + PIL) turns them into pixels: an accent card on a dark stage, at 2× and scaled down. It draws:
+   - matte cells;
+   - the ramp + value-noise fBm map through the Gradient Wipe rule;
+   - the Difference edge band + glow;
+   - Turbulent wobble, Mosaic, ball scatter;
+   - moves with blur, fade, scale and rotation, and the Linear Wipe.
+
+   The output is one WebP sprite per tile (320 × 180, 15 fps) in `extension/assets/previews/` with `index.json`.
+
+Run `npm run previews` after a tile changes. `tests/click.vfx.test.js` fails on any stale preview, because every sprite carries the tile's signature.
+
+The panel (`studio/rendered.js best()`) plays, in order: **the user's After Effects render**, then **MOE's render**, then a quiet stage (`thumbs.render`). It never draws a look-alike. The still frame of a tile is a moment inside the effect (40 % into a reveal), so every tile shows its character at rest. The web preview embeds the sprites.
+
+**Honest limits:** MOE's renderer approximates After Effects' Fractal Noise, Glow and CC Ball Action. The look is close, not identical. After Effects' own render (Diagnostics › Rendered previews) replaces it tile by tile. 110 tiles are covered so far: Motion moves and wipes, Matte Reveal, Matte FX and composed recipes, and Click VFX.

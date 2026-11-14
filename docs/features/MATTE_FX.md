@@ -34,3 +34,6 @@ Settings: Direction (In / Out), Duration, Ease, Direction angle, Edge softness, 
   - one Ctrl+Z, and Restore removes everything;
   - refusals.
 - Self-Test `fxMatte`, in After Effects: Burn In and Ink Bleed, every parameter found by its English name, the mattes wired, Restore. **The effect parameter names are unverified until this check passes in After Effects.**
+
+## v0.98: the controller null
+One `MOE FX N Controls` null per run holds only what this style uses: Softness, Noise, Noise Size (not for streaks), Boil % (scales the keyed Evolution), Warp (with Turbulent Displace), and Edge Colour + Glow (with an edge). They are linked by `// MOE FX` expressions. Inside the pre-comps the link reads `comp("<your comp>").layer("MOE FX N Controls")`, because a pre-comp cannot use thisComp for the user's comp. **Renaming your comp breaks those links until they are fixed.** That is said in the doc; the next version can relink them. Restore removes the null.

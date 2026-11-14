@@ -44,6 +44,8 @@ const jsxFns = jsxFiles.map((f) => {
 }).join(',\n');
 const texts = [...jsxFiles, ...jsonFiles].map((f) => `${asString(rel(f))}: ${asString(fs.readFileSync(f, 'utf8'))}`).join(',\n');
 
+const PV = path.join(ROOT, 'extension/assets/previews');
+const previewImgs = JSON.stringify(fs.existsSync(PV) ? Object.fromEntries(fs.readdirSync(PV).filter((f) => f.endsWith('.webp')).map((f) => [f, `data:image/webp;base64,${fs.readFileSync(path.join(PV, f)).toString('base64')}`])) : {});
 const font = fs.readFileSync(path.join(ROOT, 'extension/assets/fonts/sora-latin-wght.woff2')).toString('base64');
 const css = fs.readFileSync(path.join(ROOT, 'extension/css/tokens.css'), 'utf8').replace('url("../assets/fonts/sora-latin-wght.woff2")', `url("data:font/woff2;base64,${font}")`)
   + '\n' + fs.readFileSync(path.join(ROOT, 'extension/css/app.css'), 'utf8')
@@ -134,6 +136,8 @@ ${jsxFns}
 window.__TEXT = {
 ${texts}
 };
+// v0.98 bundled previews (MOE renderer sprites) as data URLs — the preview page has no files next to it
+window.__PREVIEW_IMG = ${previewImgs};
 </script>
 <script>
 (function () {

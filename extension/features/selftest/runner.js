@@ -57,6 +57,8 @@ const CHECKS = [
   // v0.96 (MATTE_FX.md): Fractal Noise, Gradient Ramp, Gradient Wipe, Turbulent Displace, Fill, Glow found by their names
   { id: 'fxMatte', label: 'Matte FX (Burn In, Ink Bleed, Pixel Rain): every effect parameter found by name, mattes wired', run: checkFxMatte },
   // v0.96 (RENDERED_PREVIEWS.md): the Render Queue writes a JPEG sequence MOE can play
+  // v0.98 (CLICK_VFX.md): the four click stacks, every effect parameter by name, the controller linked, then Restore
+  { id: 'clickFx', label: 'Click VFX (4 styles): effects found by name, controller linked, on the click point', run: checkClickFx },
   { id: 'renderPreview', label: 'Rendered previews: the Render Queue writes JPEG frames to the previews folder', run: checkRenderPreview },
   // v0.64 (WAVE4.md): Exploder's Wiggly Selector settings are found by their English names in this After Effects
   { id: 'exploder', label: 'Explode: the Wiggly Selector and its 7 settings, found by name', run: checkExploder },
@@ -538,6 +540,21 @@ async function checkFxMatte(T) {
     out.push({ preset, ok: !!r && u.back, detail: r ? `${r.result.layers[0].fxName}: ${r.verification.checks.map((c) => c.detail).join(' · ')} · Restore ${u.back ? 'ok' : 'left layers'}` : err });
   }
   return { status: out.every((x) => x.ok) ? 'pass' : 'fail', detail: out.map((x) => `${x.preset} — ${x.detail}`).join(' | ') };
+}
+
+async function checkClickFx(T) {
+  const before = (await T.layerIds()).length;
+  const solid = await T.host.call('layers.createSolid', { compId: T.compId, name: 'ST Click Card', color: [1, 0.42, 0.24] });
+  const out = [];
+  for (const style of ['ripple', 'neon', 'burst', 'pixel']) {
+    await T.select([solid.layerId]);
+    let r = null, err = null;
+    try { r = await T.run('interact.clickFx', { style }); } catch (e) { err = String(e.message || e).slice(0, 240); }
+    const u = r ? await T.undo(r, before + 1) : { back: true };
+    out.push({ style, ok: !!r && u.back, detail: r ? r.verification.checks.map((c) => c.detail).join(' · ') : err });
+  }
+  await T.host.call('layers.remove', { compId: T.compId, layerIds: [solid.layerId], onlyNamed: 'ST ' });
+  return { status: out.every((x) => x.ok) ? 'pass' : 'fail', detail: out.map((x) => `${x.style}: ${x.detail}`).join(' | ') };
 }
 
 async function checkRenderPreview(T) {

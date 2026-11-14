@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.98.0] — 2026-11-14 — Click VFX, controller nulls, every effect previewed
+- **Click VFX** (Product UI › Click FX): Liquid Ripple, Neon Ring, Particle Burst, Pixel Ring at the selected layer's real centre, at the playhead — stacks of native effects rebuilt from the studied project file (Turbulent 20 / 2, Mosaic 48 × 27, CC Ball Action scatter 0 → 160, Glow in place of Deep Glow). One Ctrl+Z.
+- **Controller nulls** (owner): after applying, ONE null holds only the style's look-and-feel values, linked by expressions — Matte FX: Softness, Noise, Noise Size, Boil %, Warp, Edge Colour, Glow (only those the style uses); Click VFX: Size %, Colour, Glow, Wobble / Pixel Blocks.
+- **Every effect previewed before applying**: 110 motion / reveal / click tiles ship a render made from their own plan (MOE's renderer, numpy + PIL → WebP sprites, 2.7 MB); the tile shows a moment of the effect at rest and plays on hover. Your own After Effects render (Diagnostics) still wins.
+- Self-Test `clickFx`; `npm run previews`; a test fails on any stale preview.
+
 ## [0.97.0] — 2026-11-14 — Reveal Composer: Shape × Material × Motion × Palette
 - From the owner's Reveal Seed report: Matte FX gets **Compose** — pick a Shape (Wipe, Angled, Rise, Iris, From a point, Corner bloom, Dissolve, Rain, Curtain), a Material (Soft light, Glass, Liquid, Ink, Paper, Pixel, Neon, Burn, Smoke), a Motion (Impact, Smooth, Snap, Gentle, Linear, Stepped 12 fps) and a Palette — **3,888 combinations** on one engine, with one Intensity master.
 - **Shuffle / Lock / Remix** in the Inspector; **From a point** grows the reveal out of any point of the layer (a click, a cursor).

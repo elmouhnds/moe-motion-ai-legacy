@@ -65,9 +65,9 @@ const ANIMATE = [
     .map(([id, label, a, hint]) => { const args = Object.assign({ dir: 'in', duration: 0.8, ease: 'smooth' }, a); return Object.assign(T(id, label, 'reveal.matte', args, { k: 'matte', style: args.style, dir: args.dir }, [args.dir === 'in' ? 'In' : 'Out', 'Matte'], 'NEW'), { hint }); }),
   // v0.96 (MATTE_FX.md): organic reveals from a Fractal Noise gradient map read by Gradient Wipe; the tile plays the
   // render After Effects made of it (Diagnostics › Rendered previews) — an icon until then, never a look-alike drawing
-  ...Object.entries(require('../../../features/reveal/fxPlan').PRESETS).map(([id, p]) => Object.assign(T(`fx-${id}`, p.label, 'reveal.fx', { preset: id, dir: 'in' }, { k: 'icon', icon: 'layers' }, ['In', 'FX'], 'NEW'), { hint: p.hint })),
+  ...Object.entries(require('../../../features/reveal/fxPlan').PRESETS).map(([id, p]) => Object.assign(T(`fx-${id}`, p.label, 'reveal.fx', { preset: id, dir: 'in' }, { k: 'render', icon: 'layers' }, ['In', 'FX'], 'NEW'), { hint: p.hint })),
   ...[['fx-burnAway', 'Burn Away', 'burnIn', 'Burns away along the diagonal, an ember front'], ['fx-inkRecede', 'Ink Recede', 'inkBleed', 'Ink draws back into the centre'], ['fx-grainOut', 'Grain Out', 'grainDissolve', 'Dissolves away into film grain']]
-    .map(([id, label, preset, hint]) => Object.assign(T(id, label, 'reveal.fx', { preset, dir: 'out' }, { k: 'icon', icon: 'layers', dir: 'out' }, ['Out', 'FX'], 'NEW'), { hint })),
+    .map(([id, label, preset, hint]) => Object.assign(T(id, label, 'reveal.fx', { preset, dir: 'out' }, { k: 'render', icon: 'layers', dir: 'out' }, ['Out', 'FX'], 'NEW'), { hint })),
   // v0.97 (REVEAL_COMPOSER.md): curated recipes of the grammar — Shape + Material + Motion (+ Palette); the Inspector's
   // Compose mode changes any axis (3,888 combinations, one engine)
   ...[['rc-sceneIris', 'Scene Iris', 'iris', 'soft', 'smooth', 'material', 'A clean iris for scene changes'],
@@ -94,7 +94,7 @@ const ANIMATE = [
     ['rc-auroraDissolve', 'Aurora Dissolve', 'dissolve', 'neon', 'gentle', 'aurora', 'Dissolves in with aurora light'],
     ['rc-burnDissolve', 'Burn Dissolve', 'dissolve', 'burn', 'smooth', 'ember', 'Burns away everywhere at once', { dir: 'out' }],
     ['rc-pixelFadeOut', 'Pixel Fade Out', 'dissolve', 'pixel', 'stepped', 'brand', 'Goes in choppy blocks', { dir: 'out' }]]
-    .map(([id, label, shape, material, motion, palette, hint, extra]) => { const args = Object.assign({ preset: 'compose', shape, material, motion, palette, intensity: 60, dir: 'in' }, extra || {}); return Object.assign(T(id, label, 'reveal.fx', args, { k: 'icon', icon: 'layers', dir: args.dir }, [args.dir === 'in' ? 'In' : 'Out', 'FX'], 'NEW'), { hint }); }),
+    .map(([id, label, shape, material, motion, palette, hint, extra]) => { const args = Object.assign({ preset: 'compose', shape, material, motion, palette, intensity: 60, dir: 'in' }, extra || {}); return Object.assign(T(id, label, 'reveal.fx', args, { k: 'render', icon: 'layers', dir: args.dir }, [args.dir === 'in' ? 'In' : 'Out', 'FX'], 'NEW'), { hint }); }),
   T('slideFadeIn', 'Slide + Fade In', 'quick.animate', { kind: 'moveRL', dir: 'in', distance: 140, fade: true, ease: 'expo', duration: 0.7 }, { k: 'move', dx: 0.5, dy: 0, dir: 'in' }, ['In', 'Slide', 'Fade'], 'IN'),
   T('dropFade', 'Drop + Fade', 'quick.animate', { kind: 'moveTB', dir: 'in', distance: 80, fade: true, overshoot: true, duration: 0.7 }, { k: 'move', dx: 0, dy: -0.3, dir: 'in' }, ['In', 'Slide', 'Fade'], 'IN'),
   T('zoomFadeIn', 'Zoom Fade In', 'quick.animate', { kind: 'scale', dir: 'in', away: 130, fade: true, ease: 'expo', duration: 0.7 }, { k: 'scale', dir: 'in' }, ['In', 'Scale', 'Fade'], 'IN'),
@@ -323,6 +323,8 @@ const REVEAL = { kind: 'moveBT', dir: 'in', distance: 40, fade: true, blur: 12, 
 const INTERACT_TILES = [
   Object.assign(T('ui-click', 'Click on Layer', 'interact.click', { kind: 'arrow', from: 'corner' }, { k: 'click', hand: false }, ['Interact'], 'NEW'), { hint: 'Select the layers in click order: the cursor goes to each one\'s real centre and the layer presses with it' }),
   Object.assign(T('ui-tap', 'Tap', 'interact.click', { kind: 'hand', from: 'side', depth: 92 }, { k: 'click', hand: true }, ['Interact'], 'NEW'), { hint: 'A hand cursor that taps each selected layer, for touch and mobile UI' }),
+  // v0.98 (CLICK_VFX.md): the click itself as a premium effect — ring / distortion / glow / colour, one Controls null
+  ...Object.entries(require('../../../features/interact/clickFxPlan').STYLES).map(([id, st]) => Object.assign(T(`cfx-${id}`, st.label, 'interact.clickFx', { style: id }, { k: 'render', icon: 'cursor' }, ['Interact', 'Click FX'], 'NEW'), { hint: st.hint })),
   Object.assign(T('ui-reveal', 'UI Reveal', 'quick.animate', Object.assign({ order: 'screen' }, REVEAL), { k: 'uiReveal', order: 'screen' }, ['Interact'], 'NEW'), { hint: 'The selected UI rises in from a blur in reading order — rows top to bottom, left to right, measured on screen' }),
   Object.assign(T('ui-revealRtl', 'UI Reveal · RTL', 'quick.animate', Object.assign({ order: 'screenRtl' }, REVEAL), { k: 'uiReveal', order: 'screenRtl' }, ['Interact'], 'NEW'), { hint: 'The same build, right to left — for Arabic and Hebrew interfaces' }),
   Object.assign(T('ui-revealCenter', 'UI Pop · Centre Out', 'quick.animate', { kind: 'scale', dir: 'in', overshoot: true, fade: true, stagger: 0.05, order: 'center', ease: 'snappy', duration: 0.5 }, { k: 'uiReveal', order: 'center' }, ['Interact'], 'NEW'), { hint: 'The pieces pop in from the middle of the layout outwards' })
@@ -341,7 +343,7 @@ const SECTIONS = [
   { id: 'expressions', label: 'Expressions', icon: 'expr', kind: 'library', tiles: EXPRESSIONS, filters: ['All', 'Random', 'Periodic', 'Keys', 'Auto'], tools: null, editor: true,
     // v0.66 (TOOL_CARDS.md): a list grouped by what each expression moves; the group that fits the selection comes first
     groupBy: (t) => (EXPR[t.args.preset] || {}).target, groups: [['position', 'Position'], ['rotation', 'Rotation'], ['scale', 'Scale'], ['opacity', 'Opacity'], ['keyed', 'Your keyframes']] },
-  { id: 'productui', label: 'Product UI', icon: 'uiKit', kind: 'library', tiles: INTERACT_TILES.concat(UI_TILES), filters: ['All', 'Interact', 'Controls', 'Feedback', 'Data', 'Dark'], tools: (t) => t.id === 'design.template' || t.id === 'interact.click' },
+  { id: 'productui', label: 'Product UI', icon: 'uiKit', kind: 'library', tiles: INTERACT_TILES.concat(UI_TILES), filters: ['All', 'Interact', 'Click FX', 'Controls', 'Feedback', 'Data', 'Dark'], tools: (t) => t.id === 'design.template' || t.id === 'interact.click' || t.id === 'interact.clickFx' },
   { id: 'templates', label: 'Templates', icon: 'type', kind: 'library', tiles: TEMPLATE_TILES, filters: ['All', 'Titles', 'Callouts', 'Outro', 'Arabic'], tools: (t) => t.id === 'design.template' },
   { id: 'shapes', label: 'Shapes & Icons', icon: 'shapes', kind: 'view' },
   { id: 'backgrounds', label: 'Backgrounds', icon: 'background', kind: 'library', composer: 'background', tiles: BACKGROUNDS, filters: PAL.TAGS, tools: (t) => /^design\.(background|colorize)$/.test(t.id), extras: 'palette' },

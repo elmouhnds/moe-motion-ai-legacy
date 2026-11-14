@@ -32,6 +32,7 @@ const links = require('./links/tools'); // v0.62 rename-safe links
 const { wipe } = require('./quick/wipe'); // v0.63 Wipe Reveal
 const { matte } = require('./reveal/matteTool'); // v0.95 Matte Reveal
 const { fx: matteFx } = require('./reveal/fxTool'); // v0.96 Matte FX
+const { clickFx } = require('./interact/clickFxTool'); // v0.98 Click VFX
 const { carousel } = require('./carousel/tools'); // v0.63 Carousel 3D
 const { depth } = require('./quick/depth'); // v0.64 Depth Reveal
 const glass = require('./glass/tools');
@@ -61,7 +62,7 @@ const TOOLS = [
   adapt.resize, adapt.suggest,
   exprQuick.quick, expr.apply, expr.validate, expr.inspect, expr.remove, assist,
   quick.reveal, quick.purge, quick.duplicate, quick.flip, quick.parentNull, quick.precompose, quick.separate,
-  quick.selectSame, quick.reverseKeys, quick.mirrorKeys, quick.animate, quick.shake, wipe, matte, matteFx, carousel, depth, quick.trim, quick.typewriter, quick.counter,
+  quick.selectSame, quick.reverseKeys, quick.mirrorKeys, quick.animate, quick.shake, wipe, matte, matteFx, clickFx, carousel, depth, quick.trim, quick.typewriter, quick.counter,
   ...compositing,
   glass.apply, glass.look, thickGlass.thick, thickGlass.thickLook,
   green.greenPrompt, green.importKey,

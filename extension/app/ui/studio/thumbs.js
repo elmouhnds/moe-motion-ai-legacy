@@ -603,6 +603,14 @@ const DRAW = {
     c.restore();
   },
   /**
+   * v0.98 (RENDERED_PREVIEWS.md): a tile whose preview is a RENDER (MOE's renderer or After Effects'). This only shows
+   * while the frames load or if no render exists for its settings — a quiet stage, never a look-alike drawing (owner).
+   */
+  render(c, W, H) {
+    c.fillStyle = '#12141a'; c.fillRect(0, 0, W, H);
+    c.strokeStyle = 'rgba(230,230,230,0.12)'; c.setLineDash && c.setLineDash([3, 3]); rrect(c, W * 0.24, H * 0.24, W * 0.52, H * 0.52, 6); c.stroke(); c.setLineDash && c.setLineDash([]);
+  },
+  /**
    * v0.60: UI Reveal — a small page measured into boxes, ranked by the tool's own screenOrder (reading order, right to
    * left, or from the centre), each piece playing Quick Animate's keys (+ fade + blur) one Stagger after the other.
    */

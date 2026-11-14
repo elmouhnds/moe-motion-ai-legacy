@@ -25,6 +25,25 @@ const FXA = (id, fx, param) => ({ layerId: id, matchNames: ['ADBE Effect Parade'
 const TR = (id, mn) => ({ layerId: id, matchNames: ['ADBE Transform Group', mn] });
 const v = (id, value) => ({ id, value, names: [id] });
 
+/**
+ * v0.98: the controller's sliders — only the look-and-feel values this style uses (Controls on demand). Each links to
+ * the effect parameter it drives; `expr` with $ = the control (e.g. Boil scales the keyed Evolution).
+ */
+function controlsFor(p) {
+  const c = [
+    { key: 'Softness', value: p.soft, targets: [{ zone: 'A', layer: 'wipe', fx: `${PREFIX} Wipe`, param: 'Transition Softness' }] },
+    { key: 'Noise', value: p.noise.mix, targets: [{ zone: 'M', layer: 'noise', param: 'ADBE Opacity' }] }
+  ];
+  if (!p.noise.stretch) c.push({ key: 'Noise Size', value: p.noise.scale, targets: [{ zone: 'M', layer: 'noise', fx: `${PREFIX} Noise`, param: 'Scale' }] });
+  c.push({ key: 'Boil %', value: 100, targets: [{ zone: 'M', layer: 'noise', fx: `${PREFIX} Noise`, param: 'Evolution', expr: 'value * $ / 100' }] });
+  if (p.displace) c.push({ key: 'Warp', value: p.displace.amount, targets: [{ zone: 'A', layer: 'wipe', fx: `${PREFIX} Liquid`, param: 'Amount' }] });
+  if (p.edge) {
+    c.push({ key: 'Edge Colour', color: true, value: p.edge.color, targets: [{ zone: 'main', layer: 'dup', fx: `${PREFIX} Edge Colour`, param: 'Color' }] });
+    c.push({ key: 'Glow', value: p.edge.glow, targets: [{ zone: 'main', layer: 'dup', fx: `${PREFIX} Edge Glow`, param: 'Glow Radius' }] });
+  }
+  return c;
+}
+
 const fx = {
   id: 'reveal.fx', version: '1.0.0', category: 'motion', group: 'Quick · Animate', name: 'Matte FX',
   description: 'Organic reveals the professional way: each layer appears (or goes) through an alpha matte made of Fractal Noise over a direction ramp, read by Gradient Wipe — ink, smoke, burn, frost, liquid, grain — with an optional glowing edge (Fill + Glow on a linked copy). Native effects only, one Ctrl+Z, Restore removes everything it made.',
@@ -115,6 +134,7 @@ const fx = {
     let n = 1;
     const nextN = () => { while ([...used].some((x) => x.indexOf(`${PREFIX} ${n} `) === 0)) n++; const k = n++; return k; };
     const T = PLAN1(host, 'MOE: Matte FX');
+    let shared = null;
     const jobs = use.map((L, i) => {
       const p = F.build(args, L.rect), N = nextN(), t0 = FG.snap(comp.time + i * (args.stagger || 0), fd), name = `${PREFIX} ${N}`;
       const at = (keys) => keys.map((k) => Object.assign({}, k, { t: k.t + t0 }));
@@ -173,6 +193,33 @@ const fx = {
         const eSet = T.add('layers.setMatte', { compId: comp.id, items: [{ layerId: dup.at('layerId'), matteId: eL.at('layerId'), type: 'luma' }] });
         Object.assign(job, { E, dup, eL, eSet, glowFx });
       }
+      // v0.98 (owner): ONE controller null with only the look-and-feel values this style uses, linked by expressions
+      // (`// MOE FX`) — change the taste later without the panel and without a crowd of sliders
+      // one shared controller per run: every layer of this run reads the same null (made with the first layer)
+      const ctl = controlsFor(p);
+      if (!shared) {
+        const ctlName = `${name} Controls`;
+        const ctlL = T.add('layers.createNull', { compId: comp.id, name: ctlName, position: [comp.width / 2, comp.height / 2], label: 14 });
+        T.add('effects.ensure', { compId: comp.id, label: 'MOE: Matte FX Controls', layers: [{ layer: { layerId: ctlL.at('layerId') }, items: ctl.map((c) => c.color
+          ? { key: c.key, matchName: 'ADBE Color Control', before: [], params: [{ id: 'Color', value: c.value, names: ['Color'] }] }
+          : { key: c.key, matchName: 'ADBE Slider Control', before: [], params: [{ id: 'Slider', value: c.value, names: ['Slider'] }] }) }] });
+        shared = { ctlL, ctlName };
+      }
+      const { ctlL, ctlName } = shared;
+      const ref = (key, color) => `comp(${JSON.stringify(comp.name)}).layer(${JSON.stringify(ctlName)}).effect(${JSON.stringify(key)})(${color ? '"Color"' : '"Slider"'})`;
+      const local = (key, color) => `thisComp.layer(${JSON.stringify(ctlName)}).effect(${JSON.stringify(key)})(${color ? '"Color"' : '"Slider"'})`;
+      const where = { M: { comp: M, layers: { noise } }, A: { comp: A, layers: { wipe } }, main: { comp: null, layers: { dup: job.dup } } };
+      for (const zone of ['M', 'A', 'main']) {
+        const targets = [];
+        for (const c of ctl) for (const tg of c.targets.filter((x) => x.zone === zone)) {
+          const lr = where[zone].layers[tg.layer];
+          if (!lr) continue;
+          const src = zone === 'main' ? local(c.key, c.color) : ref(c.key, c.color);
+          targets.push({ address: tg.fx ? FXA(lr.at('layerId'), tg.fx, tg.param) : TR(lr.at('layerId'), tg.param), expression: `// MOE FX\n${tg.expr ? tg.expr.replace('$', src) : src}`, enabled: true });
+        }
+        if (targets.length) (job.exprSets = job.exprSets || []).push(T.add('expressions.set', { compId: zone === 'main' ? comp.id : where[zone].comp.at('compId'), label: 'MOE: Matte FX Controls', revertOnError: true, targets }));
+      }
+      Object.assign(job, { ctlL, ctl, ctlName });
       return job;
     });
     try {
@@ -181,7 +228,7 @@ const fx = {
       // nothing half-made stays: layers first (they use the comps), then the comps that nothing else uses
       const layerIds = [], compIds = [];
       for (const j of jobs) {
-        for (const r of [j.aL, j.eL, j.dup]) { const x = r && r.value(); if (x && x.layerId) layerIds.push(x.layerId); }
+        for (const r of [j.aL, j.eL, j.dup, j.ctlL]) { const x = r && r.value(); if (x && x.layerId && !layerIds.includes(x.layerId)) layerIds.push(x.layerId); }
         for (const r of [j.E, j.A, j.M]) { const x = r && r.value(); if (x && x.compId) compIds.push(x.compId); }
       }
       if (layerIds.length) await host.call('layers.setMatte', { compId: comp.id, items: jobs.map((j) => ({ layerId: j.L.layerId })) }).catch(() => {});
@@ -196,7 +243,7 @@ const fx = {
       const unmapped = [].concat(...[j.wipeFx, j.glowFx].filter(Boolean).map((r) => r.value().layers)).flatMap((x) => x.items.flatMap((it) => it.params.filter((q) => q.resolvedBy !== 'name').map((q) => `${it.key}.${q.id}`)));
       return {
         targetId: j.L.layerId, name: j.L.name, fxName: j.name, preset: j.p.label,
-        matteId: j.aL.value().layerId, matteNow: now[i].matte, edgeId: j.eL ? j.eL.value().layerId : null, glowId: j.dup ? j.dup.value().layerId : null,
+        matteId: j.aL.value().layerId, matteNow: now[i].matte, controlsId: j.ctlL.value().layerId, controlsName: j.ctlName, controls: j.ctl.map((c) => c.key), links: [].concat(...(j.exprSets || []).map((r) => r.value().targets)).map((t) => ({ name: t.name, ok: !t.skipped && !t.reverted && !(t.after && t.after.expressionError), why: t.skipped || (t.after && t.after.expressionError) || '' })), edgeId: j.eL ? j.eL.value().layerId : null, glowId: j.dup ? j.dup.value().layerId : null,
         edgeMatte: j.eSet ? j.eSet.value().layers[0] : null,
         comps: [j.E && j.E.value().compId, j.A.value().compId, j.M.value().compId].filter(Boolean),
         completion: { first: w[0], last: w[w.length - 1] }, plan: { first: j.p.completion[0].v, last: j.p.completion[j.p.completion.length - 1].v },
@@ -213,18 +260,20 @@ const fx = {
       const keysOk = Math.abs(L.completion.first.value - L.plan.first) < 0.01 && Math.abs(L.completion.last.value - L.plan.last) < 0.01;
       c.push({ ok: keysOk, label: `${L.name} › ${L.preset}`, detail: `Gradient Wipe Completion ${L.completion.first.value} → ${L.completion.last.value} %, ${L.completion.first.t.toFixed(2)}–${L.completion.last.t.toFixed(2)} s` });
       if (L.glowId) c.push({ ok: !!L.edgeMatte && L.edgeMatte.after === L.edgeId, label: `${L.name} › Edge`, detail: L.edgeMatte && L.edgeMatte.after === L.edgeId ? `${L.fxName} Glow on the edge band (luma)` : 'edge matte not set' });
+      const bad = L.links.filter((x) => !x.ok);
+      c.push({ ok: !bad.length && L.links.length > 0, label: `${L.name} › ${L.controlsName}`, detail: bad.length ? `${bad.length} link(s) failed: ${bad.slice(0, 3).map((x) => `${x.name}: ${x.why}`).join('; ')}` : `${L.controls.join(' · ')} — ${L.links.length} expression link(s), no engine errors` });
       c.push({ ok: !L.unmapped.length, label: `${L.name} › effect parameters`, detail: L.unmapped.length ? `not found by name: ${L.unmapped.join(', ')}` : 'every parameter found by its English name' });
     }
     for (const s of result.skipped) c.push({ ok: true, label: 'Skipped', detail: s });
     return { ok: c.every((x) => x.ok), checks: c };
   },
   checkpoint({ result, ctx }) {
-    return { compId: ctx.comp.id, layers: result.layers.map((L) => ({ targetId: L.targetId, layerIds: [L.matteId, L.edgeId, L.glowId].filter(Boolean), comps: L.comps })) };
+    return { compId: ctx.comp.id, layers: result.layers.map((L) => ({ targetId: L.targetId, layerIds: [L.matteId, L.edgeId, L.glowId, L.controlsId].filter(Boolean), comps: L.comps })) };
   },
   async restore({ data, host }) {
     const T = PLAN1(host, 'MOE: Restore Matte FX');
     T.add('layers.setMatte', { compId: data.compId, items: data.layers.map((L) => ({ layerId: L.targetId })) });
-    T.add('layers.remove', { compId: data.compId, layerIds: [].concat(...data.layers.map((L) => L.layerIds)), onlyNamed: PREFIX });
+    T.add('layers.remove', { compId: data.compId, layerIds: [...new Set([].concat(...data.layers.map((L) => L.layerIds)))], onlyNamed: PREFIX });
     T.add('comps.removeMoe', { compId: data.compId, ids: [].concat(...data.layers.map((L) => L.comps)), onlyNamed: PREFIX });
     await T.commit();
     return { ok: true };

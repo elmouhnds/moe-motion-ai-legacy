@@ -88,7 +88,7 @@ test('the tiles: Interact in Product UI, Click in Zoom & Focus, product backdrop
   const { SECTIONS } = require('../extension/app/ui/studio/sections');
   const by = (id) => SECTIONS.find((s) => s.id === id);
   const ui = by('productui').tiles.filter((t) => t.tags.includes('Interact'));
-  assert.deepEqual(ui.map((t) => t.id), ['ui-click', 'ui-tap', 'ui-reveal', 'ui-revealRtl', 'ui-revealCenter']);
+  assert.deepEqual(ui.map((t) => t.id), ['ui-click', 'ui-tap', 'cfx-ripple', 'cfx-neon', 'cfx-burst', 'cfx-pixel', 'ui-reveal', 'ui-revealRtl', 'ui-revealCenter']); // v0.98: Click VFX after Tap
   assert.equal(ui.find((t) => t.id === 'ui-reveal').args.order, 'screen');
   assert.ok(by('zoom').tiles.some((t) => t.tool === 'interact.click'));
   const bg = by('backgrounds').tiles.filter((t) => t.tags.includes('Product'));
