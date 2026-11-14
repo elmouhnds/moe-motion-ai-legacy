@@ -2,6 +2,11 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.96.0] — 2026-11-14 — Matte FX library + real rendered previews
+- **Matte FX** (Motion › FX, tool `reveal.fx`): 16 organic reveals made the professional way — Fractal Noise over a direction ramp as a gradient map, read by Gradient Wipe as the layer's alpha matte, Turbulent Displace for liquid edges, and a glowing edge front (the matte against itself a moment later, Difference → luma matte of a linked copy with Fill + Glow). Organic Sweep, Ink Bleed, Smoke Rise, Burn In, Lava Edge, Electric Edge, Neon Wipe, Paper Tear, Frost Creep, Light Bloom, Cloud Iris, Liquid Rise, Ink Wash, Grain Dissolve, Cloud Dissolve, Aurora Edge — plus Burn Away, Ink Recede, Grain Out. One Ctrl+Z; Restore removes the layers and pre-comps.
+- **Rendered previews** (Diagnostics): After Effects renders each tile's real result (480 × 270, 15 fps, JPEG sequence through the Render Queue) and the tile plays those frames. Your comps and your Render Queue are untouched; tiles already rendered with the same settings are skipped; Stop between tiles.
+- New Self-Test checks `fxMatte` and `renderPreview`; `comps.create` takes a size; Difference blending.
+
 ## [0.95.0] — 2026-11-13 — Matte Reveal: alpha-matte reveals in nine styles
 - **Matte Reveal** (Motion › Matte, SaaS kit): each selected layer gets its own alpha track matte — a `MOE Matte · <layer>` shape layer that follows the layer — and is revealed or hidden in one of nine styles: Wipe (8 directions incl. diagonals), Corner, Split, Iris, Card (pill → card), Blinds, Stripes, Shutter, Pixels. Cascade, cell order (in order / reverse / centre / random / diagonal), soft edge, stagger between layers.
 - 15 new tiles with live previews of the real plan; a SaaS recipe *Card & Click*.

@@ -63,6 +63,11 @@ const ANIMATE = [
     ['mtIrisOut', 'Iris Close', { style: 'iris', dir: 'out', ease: 'expo' }, 'A circle closes on the centre'],
     ['mtPixelsOut', 'Pixel Hide', { style: 'pixels', cols: 10, order: 'random', cascade: 0.75, dir: 'out', duration: 1 }, 'Blocks disappear at random']]
     .map(([id, label, a, hint]) => { const args = Object.assign({ dir: 'in', duration: 0.8, ease: 'smooth' }, a); return Object.assign(T(id, label, 'reveal.matte', args, { k: 'matte', style: args.style, dir: args.dir }, [args.dir === 'in' ? 'In' : 'Out', 'Matte'], 'NEW'), { hint }); }),
+  // v0.96 (MATTE_FX.md): organic reveals from a Fractal Noise gradient map read by Gradient Wipe; the tile plays the
+  // render After Effects made of it (Diagnostics › Rendered previews) — an icon until then, never a look-alike drawing
+  ...Object.entries(require('../../../features/reveal/fxPlan').PRESETS).map(([id, p]) => Object.assign(T(`fx-${id}`, p.label, 'reveal.fx', { preset: id, dir: 'in' }, { k: 'icon', icon: 'layers' }, ['In', 'FX'], 'NEW'), { hint: p.hint })),
+  ...[['fx-burnAway', 'Burn Away', 'burnIn', 'Burns away along the diagonal, an ember front'], ['fx-inkRecede', 'Ink Recede', 'inkBleed', 'Ink draws back into the centre'], ['fx-grainOut', 'Grain Out', 'grainDissolve', 'Dissolves away into film grain']]
+    .map(([id, label, preset, hint]) => Object.assign(T(id, label, 'reveal.fx', { preset, dir: 'out' }, { k: 'icon', icon: 'layers', dir: 'out' }, ['Out', 'FX'], 'NEW'), { hint })),
   T('slideFadeIn', 'Slide + Fade In', 'quick.animate', { kind: 'moveRL', dir: 'in', distance: 140, fade: true, ease: 'expo', duration: 0.7 }, { k: 'move', dx: 0.5, dy: 0, dir: 'in' }, ['In', 'Slide', 'Fade'], 'IN'),
   T('dropFade', 'Drop + Fade', 'quick.animate', { kind: 'moveTB', dir: 'in', distance: 80, fade: true, overshoot: true, duration: 0.7 }, { k: 'move', dx: 0, dy: -0.3, dir: 'in' }, ['In', 'Slide', 'Fade'], 'IN'),
   T('zoomFadeIn', 'Zoom Fade In', 'quick.animate', { kind: 'scale', dir: 'in', away: 130, fade: true, ease: 'expo', duration: 0.7 }, { k: 'scale', dir: 'in' }, ['In', 'Scale', 'Fade'], 'IN'),
@@ -301,7 +306,7 @@ const SECTIONS = [
   { id: 'kit', label: 'Toolbox', icon: 'kExcite', kind: 'view' },
   // v0.32 modes: In / Out / Draw On / Proximity are what the moves are for — one set at a time. The ease tiles
   // live in the Motion Control (graph + curve presets); they still resolve (Quick Bar, search) and show when searched.
-  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Blur', 'Wipe', 'Matte', 'Depth', 'Trim', 'Ease', 'Keys', 'Proximity'],
+  { id: 'animate', label: 'Motion', icon: 'motion', kind: 'library', tiles: ANIMATE, filters: ['All', 'In', 'Out', 'Slide', 'Fade', 'Scale', 'Blur', 'Wipe', 'Matte', 'FX', 'Depth', 'Trim', 'Ease', 'Keys', 'Proximity'],
     modes: [['In', 'In', 'The layer arrives'], ['Out', 'Out', 'The layer leaves'], ['Shake', 'Shake', 'An impact that settles back (real keys)'], ['Trim', 'Draw On', 'Trim paths for shape lines'], ['Proximity', 'Proximity', 'Layers react to a moving point']],
     elsewhere: [['kit', 'Ease', 'Ease presets and the speed graph are in Motion Control']], tools: (t) => t.category === 'motion' && !/^(zoom|interact)\./.test(t.id) && t.id !== 'motion.easeCurve' && t.id !== 'motion.pasteEase' || /^quick\.(animate|trimPaths|reverseKeys|mirrorKeys)$/.test(t.id) },
   { id: 'text', label: 'Text', icon: 'type', kind: 'view' },

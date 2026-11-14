@@ -78,7 +78,9 @@
             var base = U.compById(args.compId), name = String(args.name || 'MOE Comp').substring(0, 240);
             if (!moeName(name)) { U.fail('BAD_ARGS', 'A comp MOE makes is named MOE ...'); }
             return U.withUndo('MOE: New Comp', function () {
-                var c = app.project.items.addComp(name, base.width, base.height, base.pixelAspect, args.duration ? Math.max(num(args.duration), base.frameDuration) : base.duration, base.frameRate);
+                var cw = args.width ? Math.round(num(args.width)) : base.width, ch = args.height ? Math.round(num(args.height)) : base.height, c;
+                if (cw < 4 || ch < 4 || cw > 30000 || ch > 30000) { U.fail('BAD_ARGS', 'A comp is 4 to 30000 px wide and high.'); }
+                c = app.project.items.addComp(name, cw, ch, base.pixelAspect, args.duration ? Math.max(num(args.duration), base.frameDuration) : base.duration, base.frameRate);
                 if (MOE.txComps) { MOE.txComps.push(c); }
                 return { compId: c.id, name: c.name, width: c.width, height: c.height, duration: c.duration, frameRate: c.frameRate };
             });

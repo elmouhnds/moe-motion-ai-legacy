@@ -156,7 +156,16 @@ const EFFECTS = {
     { name: 'Light', valueType: 'NO_VALUE', value: 0 }, { name: 'Using', valueType: 'OneD', value: 1 }, { name: 'Light Intensity', valueType: 'OneD', value: 100 }, { name: 'Light Color', valueType: 'COLOR', value: [1, 1, 1, 1] },
     { name: 'Light Type', valueType: 'OneD', value: 1 }, { name: 'Light Height', valueType: 'OneD', value: 50 }, { name: 'Light Position', valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Light Direction', valueType: 'OneD', value: -45 },
     { name: 'Shading', valueType: 'NO_VALUE', value: 0 }, { name: 'Ambient', valueType: 'OneD', value: 75 }, { name: 'Diffuse', valueType: 'OneD', value: 0 }, { name: 'Specular', valueType: 'OneD', value: 25 }, { name: 'Roughness', valueType: 'OneD', value: 15 }, { name: 'Metal', valueType: 'OneD', value: 100 }],
-  'ADBE Checkbox Control': [{ name: 'Checkbox', valueType: 'OneD', value: 0 }]
+  'ADBE Checkbox Control': [{ name: 'Checkbox', valueType: 'OneD', value: 0 }],
+  // v0.96 Matte FX: Gradient Wipe, Fractal Noise, Turbulent Displace — names as in Effect Controls (topic headers are
+  // NO_VALUE). UNVERIFIED in After Effects: effects.ensure fails with the real list if a name differs (Self-Test fxMatte).
+  'ADBE Gradient Wipe': [{ name: 'Transition Completion', valueType: 'OneD', value: 0 }, { name: 'Transition Softness', valueType: 'OneD', value: 0 }, { name: 'Gradient Layer', valueType: 'LAYER_INDEX', value: 0 }, { name: 'Gradient Placement', valueType: 'OneD', value: 3 }, { name: 'Invert Gradient', valueType: 'OneD', value: 0 }],
+  'ADBE Fractal Noise': [{ name: 'Fractal Type', valueType: 'OneD', value: 1 }, { name: 'Noise Type', valueType: 'OneD', value: 3 }, { name: 'Invert', valueType: 'OneD', value: 0 }, { name: 'Contrast', valueType: 'OneD', value: 100 }, { name: 'Brightness', valueType: 'OneD', value: 0 }, { name: 'Overflow', valueType: 'OneD', value: 3 },
+    { name: 'Transform', valueType: 'NO_VALUE', value: 0 }, { name: 'Rotation', valueType: 'OneD', value: 0 }, { name: 'Uniform Scaling', valueType: 'OneD', value: 1 }, { name: 'Scale', valueType: 'OneD', value: 100 }, { name: 'Scale Width', valueType: 'OneD', value: 100 }, { name: 'Scale Height', valueType: 'OneD', value: 100 }, { name: 'Offset Turbulence', valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Perspective Offset', valueType: 'OneD', value: 0 },
+    { name: 'Complexity', valueType: 'OneD', value: 6 }, { name: 'Sub Settings', valueType: 'NO_VALUE', value: 0 }, { name: 'Sub Influence (%)', valueType: 'OneD', value: 70 }, { name: 'Sub Scaling', valueType: 'OneD', value: 56 }, { name: 'Sub Rotation', valueType: 'OneD', value: 0 }, { name: 'Sub Offset', valueType: 'TwoD', value: [0, 0] }, { name: 'Center Subscale', valueType: 'OneD', value: 0 },
+    { name: 'Evolution', valueType: 'OneD', value: 0 }, { name: 'Evolution Options', valueType: 'NO_VALUE', value: 0 }, { name: 'Cycle Evolution', valueType: 'OneD', value: 0 }, { name: 'Cycle (in Revolutions)', valueType: 'OneD', value: 1 }, { name: 'Random Seed', valueType: 'OneD', value: 0 }, { name: 'Opacity', valueType: 'OneD', value: 100 }, { name: 'Blending Mode', valueType: 'OneD', value: 1 }],
+  'ADBE Turbulent Displace': [{ name: 'Displacement', valueType: 'OneD', value: 1 }, { name: 'Amount', valueType: 'OneD', value: 50 }, { name: 'Size', valueType: 'OneD', value: 100 }, { name: 'Offset (Turbulence)', valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Complexity', valueType: 'OneD', value: 1 }, { name: 'Evolution', valueType: 'OneD', value: 0 },
+    { name: 'Evolution Options', valueType: 'NO_VALUE', value: 0 }, { name: 'Cycle Evolution', valueType: 'OneD', value: 0 }, { name: 'Cycle (in Revolutions)', valueType: 'OneD', value: 1 }, { name: 'Random Seed', valueType: 'OneD', value: 0 }, { name: 'Pinning', valueType: 'OneD', value: 3 }, { name: 'Resize Layer', valueType: 'OneD', value: 0 }, { name: 'Antialiasing for Best Quality', valueType: 'OneD', value: 1 }]
 };
 
 class MockEffect {
@@ -519,7 +528,7 @@ class Shape {
   clone() { const c = new Shape(); c.vertices = this.vertices.map((v) => v.slice()); c.inTangents = this.inTangents.map((v) => v.slice()); c.outTangents = this.outTangents.map((v) => v.slice()); c.closed = this.closed; return c; }
 }
 const MaskMode = { NONE: 6812 + 100, ADD: 6913, SUBTRACT: 6914, INTERSECT: 6915, LIGHTEN: 6916, DARKEN: 6917, DIFFERENCE: 6918 };
-const BlendingMode = { NORMAL: 5212, ADD: 5220, SCREEN: 5222, OVERLAY: 5224, SOFT_LIGHT: 5225, MULTIPLY: 5216, LIGHTEN: 5219 };
+const BlendingMode = { NORMAL: 5212, ADD: 5220, SCREEN: 5222, OVERLAY: 5224, SOFT_LIGHT: 5225, MULTIPLY: 5216, LIGHTEN: 5219, DIFFERENCE: 5214 };
 const TrackMatteType = { ALPHA: 5013, ALPHA_INVERTED: 5014, LUMA: 5015, LUMA_INVERTED: 5016, NO_TRACK_MATTE: 5012 };
 
 function deepClone(v) {
@@ -943,7 +952,35 @@ function installAE(target, fixture, { readFile, evalCode }) {
     get exists() { try { readFile(this.fsName); return true; } catch (e) { return false; } }
   }
   const app0 = {};
-  class Folder { constructor(p) { this.fsName = p; } get exists() { return true; } execute() { (app0.opened = app0.opened || []).push(this.fsName); return true; } }
+  // v0.96: a tiny in-memory file list for rendered previews (Folder.getFiles with a "name_*.jpg" mask, File.remove)
+  const mockFiles = new Set();
+  class Folder {
+    constructor(p) { this.fsName = String(p).replace(/\\/g, '/'); }
+    get exists() { return true; }
+    create() { return true; }
+    execute() { (app0.opened = app0.opened || []).push(this.fsName); return true; }
+    getFiles(mask) {
+      const re = new RegExp('^' + String(mask || '*').replace(/[.]/g, '\\.').replace(/\*/g, '.*') + '$');
+      return [...mockFiles].filter((f) => f.slice(0, f.lastIndexOf('/')) === this.fsName && re.test(f.slice(f.lastIndexOf('/') + 1))).map((f) => { const x = new File(f); x.remove = () => mockFiles.delete(f); return x; });
+    }
+  }
+  Folder.userData = new Folder('/mock/userData');
+  // v0.96: the Render Queue as rendered previews use it (items.add, timeSpan*, outputModule(1).setSettings / file, render)
+  const RQItemStatus = { QUEUED: 2615, UNQUEUED: 2614, DONE: 2619 };
+  const renderQueue = { _items: [], renders: [],
+    get numItems() { return this._items.length; },
+    item(i) { return this._items[i - 1]; },
+    items: { add: (c) => { const it = { comp: c, status: RQItemStatus.QUEUED, render: true, timeSpanStart: 0, timeSpanDuration: c.duration, _om: { settings: {}, file: null, setSettings(o) { Object.assign(this.settings, o); } },
+      outputModule() { return this._om; }, remove() { const k = renderQueue._items.indexOf(it); if (k >= 0) renderQueue._items.splice(k, 1); } }; renderQueue._items.push(it); return it; } },
+    render() {
+      for (const it of this._items.filter((x) => x.render && x.status === RQItemStatus.QUEUED)) {
+        const n = Math.round(it.timeSpanDuration * it.comp.frameRate), f = it._om.file.fsName;
+        this.renders.push({ comp: it.comp.name, format: it._om.settings.Format, frames: n, file: f });
+        for (let k = 0; k < n; k++) mockFiles.add(f.replace('[#####]', String(k).padStart(5, '0')));
+        it.status = RQItemStatus.DONE;
+      }
+    } };
+  if (project) project.renderQueue = renderQueue;
   class ImportOptions { constructor(file) { this.file = file; this.importAs = 1; } canImportAs() { return /\.(png|jpg|jpeg|mov|mp4|exr|tif|tiff|webm)$/i.test(this.file.fsName); } }
   if (project) {
     project.importFile = (io) => {
@@ -957,7 +994,7 @@ function installAE(target, fixture, { readFile, evalCode }) {
   }
   Object.assign(target, {
     ImportOptions, ImportAsType: { FOOTAGE: 1, COMP: 2, PROJECT: 3 },
-    Folder, PurgeTarget: { ALL_CACHES: 1, UNDO_CACHES: 2, SNAPSHOT_CACHES: 3, IMAGE_CACHES: 4 },
+    Folder, RQItemStatus, PurgeTarget: { ALL_CACHES: 1, UNDO_CACHES: 2, SNAPSHOT_CACHES: 3, IMAGE_CACHES: 4 },
     PropertyValueType, KeyframeInterpolationType, PropertyType, KeyframeEase, CompItem, File, MarkerValue,
     TextLayer: MockTextLayer, ShapeLayer: MockShapeLayer, AVLayer: MockLayer, FileSource,
     ParagraphDirection, ParagraphJustification, ComposerEngine, CTScript, PREFType: { PREF_Type_MACHINE_INDEPENDENT: 0 },

@@ -120,7 +120,7 @@
         }
     };
 
-    var BLEND = { normal: 'NORMAL', add: 'ADD', screen: 'SCREEN', overlay: 'OVERLAY', softLight: 'SOFT_LIGHT', multiply: 'MULTIPLY', lighten: 'LIGHTEN' };
+    var BLEND = { normal: 'NORMAL', add: 'ADD', screen: 'SCREEN', overlay: 'OVERLAY', softLight: 'SOFT_LIGHT', multiply: 'MULTIPLY', lighten: 'LIGHTEN', difference: 'DIFFERENCE' };
     function blendName(v) { var k; for (k in BLEND) { if (BLEND.hasOwnProperty(k) && BlendingMode[BLEND[k]] === v) { return k; } } return String(v); }
 
     /* args: { compId, label, items: [{ layerId, enabled, blendingMode, label, guideLayer, threeDLayer, shy, comment, name }] } */

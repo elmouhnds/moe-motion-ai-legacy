@@ -1,6 +1,7 @@
 'use strict';
 const { h, icon } = require('../dom');
 const ST = require('../../../features/selftest/runner');
+const PR = require('../../../features/previews/renderer');
 
 /* ---------- v0.40 Self-Test inside After Effects (docs/features/SELF_TEST.md) ---------- */
 const test = { step: 'idle', progress: null, report: null };  // idle → confirm → running → done
@@ -44,6 +45,43 @@ function selfTestCard(app) {
     !hasComp ? null : null);
 }
 
+/* ---------- v0.96 Rendered previews (docs/features/RENDERED_PREVIEWS.md) ---------- */
+const rp = { step: 'idle', section: 'animate', progress: null, report: null, stop: false };
+function libraryTiles(id) {
+  const { SECTIONS } = require('../studio/sections');
+  return SECTIONS.filter((s) => s.kind === 'library' && Array.isArray(s.tiles) && (id === 'all' || s.id === id)).flatMap((s) => s.tiles);
+}
+async function runRender(app, force) {
+  rp.step = 'running'; rp.stop = false; rp.report = null; rp.progress = { i: 0, total: 0, label: 'Starting' }; app.scheduleRender();
+  try {
+    rp.report = await PR.renderTiles(app.services, libraryTiles(rp.section), { force, shouldStop: () => rp.stop, onProgress: (i, total, label) => { rp.progress = { i, total, label }; app.scheduleRender(); } });
+  } catch (e) { rp.report = { error: String(e.message || e), rendered: [], failed: [], skipped: [] }; }
+  rp.step = 'done'; rp.progress = null;
+  try { await app.refreshContext(true); } catch (_) { /* re-reads on its own */ }
+  app.scheduleRender();
+}
+function renderCard(app) {
+  const { SECTIONS } = require('../studio/sections');
+  const libs = SECTIONS.filter((s) => s.kind === 'library' && Array.isArray(s.tiles));
+  const p = PR.plan(libraryTiles(rp.section), app.services.registry);
+  const r = rp.report;
+  const busy = rp.step === 'running';
+  return h('div', { class: 'selftest-card', 'data-key': 'render-previews' },
+    h('div', { class: 'why pad' }, `After Effects renders each tile's real result — the tool with the tile's own settings on a card or the words "MOE Motion", ${PR.SCENE.width} × ${PR.SCENE.height}, ${PR.SCENE.fps} fps — and the tile plays those frames. Each tile is made and removed in its own "MOE Self-Test Preview" comp; your comps and your Render Queue items are not touched (queued ones are paused while it renders and switched back on). Tiles already rendered with the same settings are skipped.`),
+    h('div', { class: 'actions pad' },
+      h('select', { class: 'inp', 'aria-label': 'Which tiles', disabled: busy, value: rp.section, onchange: (e) => { rp.section = e.target.value; app.scheduleRender(); } },
+        [h('option', { value: 'all', selected: rp.section === 'all' }, 'All libraries')].concat(libs.map((s) => h('option', { value: s.id, selected: rp.section === s.id }, s.label)))),
+      h('span', { class: 'why' }, `${p.ok.length} tile(s) can be rendered${p.skip.length ? ` · ${p.skip.length} not yet` : ''}`)),
+    h('div', { class: 'actions pad' },
+      busy ? h('button', { class: 'btn', onclick: () => { rp.stop = true; app.scheduleRender(); } }, icon('x', 'sm'), rp.stop ? 'Stopping after this tile…' : 'Stop')
+        : h('button', { class: 'btn', disabled: !app.state.get().hostInfo || !p.ok.length, title: app.state.get().hostInfo ? 'Render the previews in After Effects' : 'Connect to After Effects first', onclick: () => runRender(app, false) }, icon('play', 'sm'), 'Render previews'),
+      busy ? null : h('button', { class: 'btn ghost', disabled: !app.state.get().hostInfo || !p.ok.length, onclick: () => runRender(app, true) }, icon('refresh', 'sm'), 'Render again (all)')),
+    busy && rp.progress ? h('div', { class: 'why pad', role: 'status' }, `${rp.progress.i + 1} / ${rp.progress.total || '…'} · ${rp.progress.label}`) : null,
+    r && r.error ? h('div', { class: 'notice err' }, r.error) : null,
+    r && !r.error ? h('div', { class: 'why pad' }, `${r.rendered.filter((x) => !x.cached).length} rendered · ${r.rendered.filter((x) => x.cached).length} already up to date · ${r.failed.length} failed · ${r.skipped.length} not rendered yet${r.stopped ? ' · stopped' : ''} — ${(r.ms / 1000).toFixed(0)} s`) : null,
+    r && r.failed && r.failed.length ? h('div', { class: 'selftest-list' }, r.failed.slice(0, 30).map((f) => h('div', { class: 'selftest-check fail', 'data-key': `rf-${f.id}` }, h('span', { class: 'selftest-badge fail' }, 'Fail'), h('div', {}, h('div', { class: 'selftest-label' }, f.label), h('div', { class: 'why' }, f.why))))) : null);
+}
+
 function kv(rows) {
   return h('dl', { class: 'kv' }, rows.flatMap(([k, v]) => [h('dt', {}, k), h('dd', {}, v === undefined || v === null || v === '' ? '—' : String(v))]));
 }
@@ -71,6 +109,8 @@ function render(app) {
     h('div', { class: 'actions pad' }, h('button', { class: 'btn', onclick: () => app.reconnect() }, icon('refresh', 'sm'), 'Reconnect'), h('button', { class: 'btn ghost', onclick: () => app.copy(report(app)) }, icon('copy', 'sm'), 'Copy report')),
     h('div', { class: 'section-h' }, 'Check in After Effects'),
     selfTestCard(app),
+    h('div', { class: 'section-h' }, 'Rendered previews'),
+    renderCard(app),
     h('div', { class: 'section-h' }, 'MOE Motion AI'),
     kv([['Version', app.services.version], ['Runtime', `${app.services.platform.kind} · Node ${app.services.platform.info.node}`], ['Tools', app.services.registry.list().length], ['Data folder', app.services.store.dataDir]]),
     h('div', { class: 'section-h' }, 'Panel performance'),

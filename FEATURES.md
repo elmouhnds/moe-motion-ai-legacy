@@ -100,6 +100,8 @@
 
 **Target & Audio Effectors** (v0.36.0): Target turns the clones to face the effector null; Audio drives every move from a soundtrack's loudness (After Effects' Convert Audio to Keyframes, run for you), each clone a little later — tiles Aim, Look Near, Beat Pulse, Beat Wave (docs/features/TARGET_AUDIO_EFFECTORS.md).
 
+**Matte FX** (v0.96.0): 16 organic reveals from a Fractal Noise gradient map read by Gradient Wipe — ink, smoke, burn, frost, liquid, grain — with optional glowing edges. **Rendered previews**: After Effects renders each tile's real result and the tile plays it. Mock-tested, not yet run in After Effects.
+
 **Matte Reveal** (v0.95.0): reveal or hide layers through their own alpha track matte in nine styles — Wipe, Corner, Split, Iris, Card, Blinds, Stripes, Shutter, Pixels — one Ctrl+Z, the matte follows the layer. Mock-tested, not yet run in After Effects.
 
 **One Ctrl+Z** (v0.94.0): a production is one undo step — titles, lower thirds and product UI arrive in their own comp as one layer; backgrounds, animations, expressions, glass, zoom, carousel, click and proximity are one step each (Grid Build: two). Mock-tested, not yet run in After Effects.

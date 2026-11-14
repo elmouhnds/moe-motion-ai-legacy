@@ -45,6 +45,7 @@
                 d.fontSize = num(args.fontSize) || 80;
                 d.justification = args.justification === 'right' ? ParagraphJustification.RIGHT_JUSTIFY : args.justification === 'center' ? ParagraphJustification.CENTER_JUSTIFY : ParagraphJustification.LEFT_JUSTIFY;
                 if (args.rtl) { try { d.direction = ParagraphDirection.DIRECTION_RIGHT_TO_LEFT; } catch (eD) { } }
+                if (args.color) { d.applyFill = true; d.fillColor = [num(args.color[0]), num(args.color[1]), num(args.color[2])]; }
                 sp.setValue(d);
                 if (args.name) { L.name = String(args.name); }
                 if (args.position) { L.property('ADBE Transform Group').property('ADBE Position').setValue([num(args.position[0]), num(args.position[1])]); }
@@ -119,6 +120,45 @@
                 }
                 return { removed: removed, solidsRemoved: gone, reopened: reopened };
             });
+        }
+    };
+    /* v0.96 Rendered previews (docs/features/RENDERED_PREVIEWS.md). Renders a "MOE Self-Test ..." comp - and only such a
+     * comp - to a JPEG sequence through After Effects' own Render Queue (RenderQueue.items.add, RenderQueueItem
+     * timeSpanStart / timeSpanDuration, OutputModule.setSettings({ Format }), OutputModule.file, RenderQueue.render),
+     * into <user data>/MOE Motion AI/previews/<name>/ only (Folder.userData). Items of the user's own render queue that
+     * are queued are switched off while it renders and switched back on in finally; MOE's item is removed.
+     * args: { compId, name ([a-z0-9-], max 80), start, duration } -> { folder, frames, pattern } */
+    ops['previews.render'] = {
+        mutates: true,
+        run: function (args) {
+            var c = itemById(args.compId), name = String(args.name || ''), root, dir, rq, item = null, paused = [], i, it, om, files, k;
+            if (!c || !(c instanceof CompItem) || String(c.name).substring(0, PREFIX.length) !== PREFIX) { U.fail('BAD_ARGS', 'Only a "' + PREFIX + '" comp is rendered as a preview.'); }
+            if (!/^[a-z0-9-]{1,80}$/.test(name)) { U.fail('BAD_ARGS', 'A preview name is 1 to 80 of a-z, 0-9 and -.'); }
+            root = new Folder(Folder.userData.fsName + '/MOE Motion AI/previews');
+            if (!root.exists) { root.create(); }
+            dir = new Folder(root.fsName + '/' + name);
+            if (!dir.exists) { dir.create(); }
+            files = dir.getFiles(name + '_*.jpg');
+            for (k = 0; k < files.length; k++) { try { files[k].remove(); } catch (eF) { /* in use */ } }
+            rq = app.project.renderQueue;
+            try {
+                for (i = 1; i <= rq.numItems; i++) {
+                    it = rq.item(i);
+                    if (it.status === RQItemStatus.QUEUED) { it.render = false; paused.push(it); }
+                }
+                item = rq.items.add(c);
+                item.timeSpanStart = Math.max(0, num(args.start));
+                item.timeSpanDuration = Math.max(c.frameDuration, Math.min(num(args.duration) || 2, c.duration - item.timeSpanStart));
+                om = item.outputModule(1);
+                om.setSettings({ 'Format': 'JPEG Sequence' });
+                om.file = new File(dir.fsName + '/' + name + '_[#####].jpg');
+                rq.render();
+            } finally {
+                if (item) { try { item.remove(); } catch (eR) { /* already gone */ } }
+                for (i = 0; i < paused.length; i++) { try { paused[i].render = true; } catch (eP) { /* removed by the user */ } }
+            }
+            files = dir.getFiles(name + '_*.jpg');
+            return { folder: dir.fsName, frames: files.length, pattern: name + '_[#####].jpg', paused: paused.length };
         }
     };
 }($.global));

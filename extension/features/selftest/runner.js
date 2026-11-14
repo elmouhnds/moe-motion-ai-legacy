@@ -54,6 +54,10 @@ const CHECKS = [
   { id: 'wipe', label: 'Wipe Reveal "from the left" reveals the left side first (pixels)', run: checkWipe },
   // v0.95 (MATTE_REVEAL.md): the matte wiring and the cells' values as After Effects evaluates them, half-way through
   { id: 'matte', label: 'Matte Reveal (Pixels): alpha matte set, half-way share = mattePlan, one Ctrl+Z', run: checkMatte },
+  // v0.96 (MATTE_FX.md): Fractal Noise, Gradient Ramp, Gradient Wipe, Turbulent Displace, Fill, Glow found by their names
+  { id: 'fxMatte', label: 'Matte FX (Burn In + Ink Bleed): every effect parameter found by name, mattes wired', run: checkFxMatte },
+  // v0.96 (RENDERED_PREVIEWS.md): the Render Queue writes a JPEG sequence MOE can play
+  { id: 'renderPreview', label: 'Rendered previews: the Render Queue writes JPEG frames to the previews folder', run: checkRenderPreview },
   // v0.64 (WAVE4.md): Exploder's Wiggly Selector settings are found by their English names in this After Effects
   { id: 'exploder', label: 'Explode: the Wiggly Selector and its 7 settings, found by name', run: checkExploder },
   // v0.67 (SMART_LAYER.md): layer markers are written and read by After Effects, and marker expressions follow them
@@ -515,6 +519,27 @@ async function checkMatte(T) {
   await T.host.call('layers.remove', { compId: T.compId, layerIds: [solid.layerId], onlyNamed: 'ST ' });
   const ok = wired && Math.abs(shown - want) < 0.03 && u.back;
   return { status: ok ? 'pass' : 'fail', detail: `${wired ? `track matte = ${L.matteName}` : 'the track matte is NOT the MOE matte'}; half-way After Effects shows ${Math.round(shown * 100)}% of the layer (plan ${Math.round(want * 100)}%), ${p.cells.length} cells · Restore ${u.back ? 'ok' : 'left layers'}`, numbers: { shown, want } };
+}
+
+async function checkFxMatte(T) {
+  const before = (await T.layerIds()).length;
+  const out = [];
+  for (const preset of ['burnIn', 'inkBleed']) {
+    const solid = await T.host.call('layers.createSolid', { compId: T.compId, name: `ST FX ${preset}`, color: [1, 1, 1] });
+    await T.select([solid.layerId]);
+    let r = null, err = null;
+    try { r = await T.run('reveal.fx', { preset, dir: 'in', duration: 1 }); } catch (e) { err = String(e.message || e).slice(0, 300); }
+    const u = r ? await T.undo(r, before + 1) : { back: true };
+    await T.host.call('layers.remove', { compId: T.compId, layerIds: [solid.layerId], onlyNamed: 'ST ' });
+    out.push({ preset, ok: !!r && u.back, detail: r ? `${r.result.layers[0].fxName}: ${r.verification.checks.map((c) => c.detail).join(' · ')} · Restore ${u.back ? 'ok' : 'left layers'}` : err });
+  }
+  return { status: out.every((x) => x.ok) ? 'pass' : 'fail', detail: out.map((x) => `${x.preset} — ${x.detail}`).join(' | ') };
+}
+
+async function checkRenderPreview(T) {
+  const r = await T.host.call('previews.render', { compId: T.compId, name: 'selftest-check', start: 0, duration: 0.2 });
+  const want = Math.round(0.2 * 25);
+  return { status: r.frames >= want ? 'pass' : 'fail', detail: `After Effects rendered ${r.frames} JPEG frame(s) (want ${want}) to ${r.folder}${r.paused ? ` · ${r.paused} of your queued render item(s) paused and switched back on` : ''}`, numbers: { frames: r.frames } };
 }
 
 async function checkExploder(T) {

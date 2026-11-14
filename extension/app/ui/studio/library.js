@@ -1,4 +1,5 @@
 'use strict';
+const RENDERED = require('./rendered'); // v0.96 rendered previews
 const TC = require('../../../core/toolcard');
 /**
  * Studio library section: filter chips + search + visual tiles, and an Inspector that
@@ -118,6 +119,15 @@ function brandedArgs(app, args) {
 /** v0.47: the tools whose previews play their real keys (features/quick/animatePlan.js). */
 const PLANNED = ['quick.animate', 'quick.trimPaths', 'design.template', 'interact.click', 'quick.wipe', 'reveal.matte', 'layout.carousel', 'quick.depth'];
 function thumbEl(tile, cls, liveArgs) {
+  // v0.96 (RENDERED_PREVIEWS.md): a tile After Effects rendered plays its own frames — unless the Inspector's settings
+  // differ from the tile's (then the render is not what Apply would make, and the drawn preview follows the settings)
+  const same = !liveArgs || Object.keys(liveArgs).every((k) => liveArgs[k] === undefined || JSON.stringify(liveArgs[k]) === JSON.stringify((tile.args || {})[k]));
+  const rend = same ? RENDERED.get(tile) : null;
+  if (rend) {
+    const canvas = h('canvas', { class: `st-thumb rendered ${cls || ''}`, 'aria-hidden': 'true', 'data-key': `${tile.id}|${cls || ''}|r${rend.at}` });
+    const t0 = Math.random() * 2;
+    return widgets.animated(canvas, (now) => { const { c, W, H } = widgets.prep(canvas); if (!RENDERED.draw(c, W, H, rend, now === null ? null : now / 1000 + t0)) thumbs.draw(c, W, H, tile.thumb, 1.6); });
+  }
   if (tile.thumb.k === 'icon') return h('div', { class: `st-thumb icon ${cls || ''}` }, icon(tile.thumb.icon));
   // the preview gets the tool's own args — the tile's preset, or the Inspector's current settings (live)
   const th = PLANNED.includes(tile.tool) ? Object.assign({}, tile.thumb, { args: Object.assign({}, tile.args || {}, liveArgs || {}) }, cls === 'big' ? { strip: true } : {}) : tile.thumb;
@@ -210,6 +220,7 @@ function groupTiles(section, tiles, ctx) {
 }
 
 function render(app, section) {
+  RENDERED.sync(app.services);
   // v0.68 (LOOK_AND_FEEL.md): a section can be one instrument instead of tiles + Inspector
   if (section.composer === 'background') return require('./bgComposer').render(app, section);
   const s = app.state.get();

@@ -37,6 +37,9 @@
 - [ ] Host verification (TEST_REPORT.md → Premium checklist 45–54)
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
+## M2.02 — Matte FX + Rendered previews ✅ (v0.96.0)
+- Fractal Noise / Gradient Wipe matte library (16 + 3) and After Effects-rendered tile previews. Open: preview scenes for grid, glass, zoom, compositing, expressions; the reference videos (to be uploaded); a run in After Effects (effect names, Render Queue, file:// frames in CEP).
+
 ## M2.01 — Matte Reveal ✅ (v0.95.0)
 - Alpha track matte per layer, nine styles from one pure plan. Open: 3D layers; a matte from the user's own shape; a run in After Effects.
 

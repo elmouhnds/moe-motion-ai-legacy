@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.95: Matte Reveal - alpha-matte reveals in nine styles; one Ctrl+Z per production (0.94)."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.95: Matte Reveal - ريفيل بالـ alpha matte في 9 ستايلات، و Ctrl+Z واحدة لكل إنتاج (0.94)"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.96: Matte FX - 16 Fractal Noise reveals; previews rendered by After Effects; Matte Reveal (0.95)."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.96: Matte FX - 16 ريفيل بالـ Fractal Noise، و previews بيعملها After Effects render، و Matte Reveal (0.95)"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"
