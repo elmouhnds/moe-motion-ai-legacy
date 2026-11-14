@@ -85,6 +85,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['check', 'Claude can test MOE in After Effects (0.99)', 'Diagnostics › Claude Test Bridge: with Claude Code on this computer, Claude runs every tile and tool in a temporary comp, looks at After Effects\' own render, presses Ctrl+Z, fixes the code and tests again — while you work. Off until you allow it; your comps are never touched.'],
   ['check', 'Fixes from your After Effects test (0.98.2)', 'No more "Undo group mismatch": MOE opens one undo group at a time. A grid that fails no longer leaves clones or a null behind, and shows the real error. New: Diagnostics › Test every tile in After Effects runs every tile in a temporary comp, presses Ctrl+Z for real and lists what failed — Copy report and send it.'],
   ['grid', 'Cloner fixed (0.98.1)', 'Your After Effects report: the Cloner only left a null and said "Value 6 out of range 1 to 3". A new dropdown control in After Effects has 3 items and MOE set its value before its list. Now the list comes first, so Globe 3D, every Cloner layout, the Effectors and Colour work, and a failed build never leaves a null behind.'],
   ['cursor', 'Click VFX, controllers, previews', 'Product UI › Click FX: a Liquid Ripple, Neon Ring, Particle Burst or Pixel Ring at the real centre of a layer. After applying, one Controls null holds only the values that change the look (size, colour, glow…), linked by expressions. And every motion, reveal and click tile now plays a rendered preview before you apply it.'],

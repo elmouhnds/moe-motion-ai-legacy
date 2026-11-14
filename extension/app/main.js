@@ -23,6 +23,13 @@ async function start({ cs, root, platform, mount, ui, mode }) {
   app.boot();
   services.logger.info('app', `MOE Motion AI ${services.version} starting${mode === 'kit' ? ' (Motion Kit panel)' : ''}`, plat.info);
   await app.reconnect();
+  // v0.99 Claude Test Bridge: back on after a reload the bridge itself was asked for (moe_deploy), never otherwise
+  if (mode !== 'kit') {
+    try {
+      const r = services.store.get('bridge-resume', null);
+      if (r && r.until > Date.now()) { services.store.set('bridge-resume', null); const b = require('./ui/views/diagnostics').bridgeOf(app); if (b) await b.start(); }
+    } catch (e) { services.logger.warn('bridge', 'could not turn the bridge back on', { message: e.message }); }
+  }
   return app;
 }
 

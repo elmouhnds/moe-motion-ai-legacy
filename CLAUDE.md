@@ -197,6 +197,12 @@ Permanent rules for anyone (human or AI) working in this repository.
 - A plan is done even when its host call throws (refs read undefined) — a cleanup must cope with unknown ids (find MOE's own layer by its unique name) and must never hide the real error.
 - Before telling the owner a fix works in After Effects, the Tile Test (Diagnostics) is the proof: ask for its report. A new tile must run on a `tileRunner.subjectOf` subject or skip with a reason.
 
+## Testing in After Effects — Claude Test Bridge (v0.99, docs/features/CLAUDE_TEST_BRIDGE.md — the owner's request)
+- When this repo is open in Claude Code on the owner's PC with After Effects running, the `moe-after-effects` MCP server (`.mcp.json` → `tools/moe-mcp.js`) is the way to test: `moe_status` → `moe_test_tiles` → fix → `npm run check` → `moe_deploy` → test the failed ids again. Use `moe_try_tool` to LOOK at the rendered frames of anything visual and judge it as a motion designer (premium, not dated) — say what was judged by eye.
+- Report After Effects results as After Effects results only when they came from the bridge; mock results stay mock results.
+- The bridge has fixed commands only. Never add an eval / raw host-op / file command to it; a new capability is a new registered tool. It runs tools only on `MOE Self-Test …` comps and listens only on 127.0.0.1 with its key.
+- If `moe_status` says the bridge is off, ask the owner to click Diagnostics › Claude Test Bridge › Allow Claude to test — never work around it.
+
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).
 - Tests run the **real host .jsx** against `tests/mock/ae-mock.js`. That proves logic, not host behaviour. Never describe mock results as After Effects results.

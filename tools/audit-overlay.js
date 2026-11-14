@@ -20,6 +20,9 @@ const THEMES = ['dark', 'light'];
     await p.evaluate((s) => { const a = window.__app; a.services.settings.update({ ui: { layout: s } }); a.go('home'); a.render(); }, style); await p.waitForTimeout(900);
     const check = async (name, sels) => {
       await p.waitForTimeout(700); // past the 100 ms fade-in, also on a slow machine
+      // v0.99: then wait for every finite animation to END (page fade-in after a style switch, the menu's own fade) —
+      // a fixed wait caught the Glass sidebar menu mid-fade twice (0 % / 49 %); never measure a picture mid-animation
+      await p.evaluate(() => Promise.race([Promise.all(document.getAnimations().filter((a) => { const t = a.effect && a.effect.getComputedTiming(); return t && t.iterations !== Infinity; }).map((a) => a.finished.catch(() => null))), new Promise((r) => setTimeout(r, 4000))]));
       const r = await p.evaluate((sels) => {
         const alphaOf = (c) => { const m = /rgba?\(([^)]+)\)/.exec(c); if (!m) return 0; const v = m[1].split(',').map(Number); return v.length > 3 ? v[3] : 1; };
         for (const sel of sels) for (const e of document.querySelectorAll(sel)) { const r = e.getBoundingClientRect(); if (r.width < 40 || r.height < 20) continue; const cs = getComputedStyle(e); if (cs.display === 'none' || cs.visibility === 'hidden') continue; let op = 1; for (let n = e; n && n.nodeType === 1; n = n.parentElement) op *= Number(getComputedStyle(n).opacity); /* a faded parent makes a solid panel see-through too */ return { sel, alpha: Math.round(alphaOf(cs.backgroundColor) * op * 100) / 100 }; }

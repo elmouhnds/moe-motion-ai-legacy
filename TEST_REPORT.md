@@ -2,6 +2,9 @@
 
 Last run: 2026-11-06 (v0.59.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
+## Claude Test Bridge (v0.99.0)
+`tests/testbridge.test.js`: a real HTTP bridge on 127.0.0.1 and the real MCP server process over stdio, with the mock After Effects behind them — key required (401 without / wrong), unknown command 404, browser Origin 403, unknown tool 400; MCP initialize / tools/list / moe_status / moe_try_tool (Globe on cards: PASS) / moe_test_tiles (3 tiles: 3 pass) / a bad tool → isError; with the bridge off the MCP server says how to turn it on; reload sets a 2-minute resume ticket. **Mock, not After Effects; not yet run on the owner's PC.**
+
 ## Second real After Effects report (v0.98.1 → v0.98.2)
 
 After Effects 26.5 (Windows): the Cloner still failed; "Undo group mismatch, will attempt to fix"; grid.build failed with PLAN_NOT_COMMITTED and left 20+ clones; context.get then timed out (After Effects blocked by the dialog). Causes found in code: nested undo groups (every op inside `tx.run` opened its own), and a plan that stayed "not committed" when the host call threw. The mock now counts undo-group mismatches (before: almost every tile; after: 0) and a test reproduces the throw + leftover clones. 635/635 pass. **Not yet confirmed in After Effects** — the new Tile Test (Diagnostics) is the way to confirm: it runs every tile in After Effects and presses Undo for real.

@@ -18,6 +18,31 @@ async function runTileTest(app) {
   try { await app.refreshContext(true); } catch (_) { /* re-reads on its own */ }
   app.scheduleRender();
 }
+/* ---------- v0.99 Claude Test Bridge (docs/features/CLAUDE_TEST_BRIDGE.md) ---------- */
+function bridgeOf(app) {
+  if (app.bridge !== undefined) return app.bridge;
+  let mods = null;
+  try { mods = { http: require('http'), fs: require('fs'), path: require('path'), crypto: require('crypto') }; } catch (_) { mods = null; }
+  if (!mods || !mods.http || !mods.http.createServer) { app.bridge = null; return null; } // the browser preview has no Node
+  app.bridge = require('../../../core/testbridge').createTestBridge(Object.assign({ services: app.services, onReload: () => { try { window.location.reload(); } catch (_) { /* not in a panel */ } }, onChange: () => app.scheduleRender() }, mods));
+  try { window.addEventListener('beforeunload', () => { app.bridge && app.bridge.stop(); }); } catch (_) { /* no window */ }
+  return app.bridge;
+}
+function bridgeCard(app) {
+  const b = bridgeOf(app);
+  if (!b) return h('div', { class: 'selftest-card', 'data-key': 'bridge' }, h('div', { class: 'why pad' }, 'Claude Test Bridge works only inside After Effects (it needs the panel\'s Node.js).'));
+  const toggle = async () => {
+    try { if (b.on) await b.stop(); else await b.start(); } catch (e) { app.toast(`Claude Test Bridge: ${e.message}`, 5000, 'warn'); }
+    app.scheduleRender();
+  };
+  return h('div', { class: 'selftest-card', 'data-key': 'bridge' },
+    h('div', { class: 'why pad' }, 'Lets Claude Code on THIS computer test MOE inside After Effects: run tiles and tools on a temporary "MOE Self-Test" comp, render the result, press Ctrl+Z and read the report — the same as Test every tile, driven by Claude. Local only (127.0.0.1) with a private key file; no scripts, only MOE\'s own tools; your comps are not touched. Off when the panel closes.'),
+    h('div', { class: 'actions pad' },
+      h('button', { class: `btn${b.on ? '' : ' primary'}`, disabled: !app.state.get().hostInfo && !b.on, onclick: toggle }, icon(b.on ? 'x' : 'play', 'sm'), b.on ? 'Turn off' : 'Allow Claude to test'),
+      b.on ? h('span', { class: 'why' }, `On · port ${b.port}${b.job ? ` · ${b.job.id}: ${b.job.progress.i + 1}/${b.job.progress.total} ${b.job.progress.label}` : ' · waiting for Claude'}`) : null),
+    b.on ? h('div', { class: 'why pad' }, `Key file: ${b.file}`) : null);
+}
+
 /** The report to send: totals, then every failed / skipped tile first (what needs fixing), then the passes. */
 function tileReportText(r) {
   const order = { fail: 0, skip: 1, pass: 2 };
@@ -152,6 +177,8 @@ function render(app) {
     s.hostError ? h('div', { class: 'notice err' }, s.hostError) : null,
     kv([['Version', hi.appVersion], ['Build', hi.buildName || hi.buildNumber], ['Language', hi.language], ['OS', hi.os], ['ExtendScript', hi.engineVersion], ['Host module', hi.hostModuleVersion], ['Expression engine', s.ctx && s.ctx.expressionEngine]]),
     h('div', { class: 'actions pad' }, h('button', { class: 'btn', onclick: () => app.reconnect() }, icon('refresh', 'sm'), 'Reconnect'), h('button', { class: 'btn ghost', onclick: () => app.copy(report(app)) }, icon('copy', 'sm'), 'Copy report')),
+    h('div', { class: 'section-h' }, 'Claude Test Bridge'),
+    bridgeCard(app),
     h('div', { class: 'section-h' }, 'Test every tile in After Effects'),
     tileTestCard(app),
     h('div', { class: 'section-h' }, 'Check in After Effects'),
@@ -169,4 +196,4 @@ function render(app) {
     h('div', { class: 'section-h' }, 'Log'),
     h('div', { class: 'log' }, logs.length ? logs.map((e) => h('div', { class: e.level }, `${e.t.slice(11, 19)} ${e.level.padEnd(5)} ${e.area}: ${e.message}`)) : 'No entries'));
 }
-module.exports = { render, report, selfTestCard, tileTestCard, tileReportText };
+module.exports = { render, report, selfTestCard, tileTestCard, tileReportText, bridgeOf };

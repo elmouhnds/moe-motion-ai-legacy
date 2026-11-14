@@ -112,7 +112,7 @@ async function runTiles(services, tiles, opts = {}) {
     const s = Date.now();
     try {
       begin = await host.call('selftest.begin', { name: 'MOE Self-Test Tiles', width: SCENE.width, height: SCENE.height, duration: SCENE.duration, frameRate: SCENE.fps });
-      const kind = subjectOf(tile);
+      const kind = tile.subject || subjectOf(tile);
       const ids = await subject(services, begin.compId, kind);
       await selectSubject(host, begin.compId, kind, ids);
       const base = await host.call('selftest.census', { compId: begin.compId });
@@ -127,6 +127,14 @@ async function runTiles(services, tiles, opts = {}) {
       } else if (run.status !== 'success' && run.status !== 'partial') {
         row.detail = ((run.errors || []).join('; ') || (run.verification ? run.verification.checks.filter((c) => !c.ok).map((c) => `${c.label}: ${c.detail}`).join('; ') : run.status)).slice(0, 600);
       } else {
+        // v0.99 (Claude Test Bridge): After Effects renders the result BEFORE Undo, so the reviewer sees the real pixels
+        if (opts.render) {
+          try {
+            const name = `review-${String(tile.id || tile.tool).toLowerCase().replace(/[^a-z0-9-]+/g, '-')}`.slice(0, 80);
+            const fr = await host.call('previews.render', { compId: begin.compId, name, start: opts.render.start || 0, duration: Math.min(SCENE.duration, opts.render.duration || 2.4) });
+            row.frames = { folder: fr.folder, pattern: fr.pattern, count: fr.frames, fps: SCENE.fps };
+          } catch (e) { row.frames = { error: String(e.message || e).slice(0, 200) }; }
+        }
         // the owner's rule: one Ctrl+Z takes the whole run back — press Undo the way the user would and count
         const undo = { presses: 0, back: false, labels: [], menu: true };
         let now = await host.call('selftest.census', { compId: begin.compId });

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "moe-after-effects": {
+      "command": "node",
+      "args": ["tools/moe-mcp.js"]
+    }
+  }
+}

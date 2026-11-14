@@ -2,6 +2,10 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.99.0] — 2026-11-14 — Claude Test Bridge: Opus tests MOE inside After Effects
+- **Claude Test Bridge** (Diagnostics, off until "Allow Claude to test"): Claude Code on the owner's PC drives MOE inside After Effects through an MCP server (`tools/moe-mcp.js`, registered by `.mcp.json`): Tile Test of any tiles, one tool on a chosen subject with After Effects' own render returned as images, logs, and `moe_deploy` (copy the repo into the installed panel + reload). Local only (127.0.0.1 + a key file), 8 fixed commands, no eval, only `MOE Self-Test` comps. docs/features/CLAUDE_TEST_BRIDGE.md.
+- Tile Test can render each result before Undo.
+
 ## [0.98.2] — 2026-11-14 — Undo groups fixed, nothing left behind, every tile testable in After Effects
 - **"Undo group mismatch, will attempt to fix"** (owner, After Effects 26.5): ops opened their own undo group inside `tx.run`'s group. The code assumed groups nest; that was never verified. Now only the outermost call opens a group (`MOE.undoDepth`); the mock counts a group inside a group or an end with none open as a mismatch — before the fix almost every tile had one, now 0 (`tools/audit-undo.js`).
 - **grid.build "PLAN_NOT_COMMITTED"**: when After Effects threw during the grid call, the plan was never marked done, the cleanup crashed on it, the real error was hidden and the clones stayed in the timeline. A plan is now done even when the call throws; the cleanup finds the grid null by its name, puts every item back on its earlier parent, removes clones, and the real error is reported.
