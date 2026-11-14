@@ -25,9 +25,10 @@ function paletteFour(id) {
 }
 
 function gridItems(controls) {
-  return EF.COLOUR_CONTROLS.map(([name, kind]) => {
+  return EF.COLOUR_CONTROLS.map(([name, kind, , list]) => {
     const K = ctl(kind);
-    return { key: name, matchName: K.matchName, before: [], params: [{ id: name, value: controls[name], names: [K.param], suffix: 1, nth: { type: K.type, n: 1 } }] };
+    // v0.98.1: Colour Mode carries its list (effects.ensure fills a new 3-item dropdown before its value)
+    return Object.assign({ key: name, matchName: K.matchName, before: [], params: [{ id: name, value: controls[name], names: [K.param], suffix: 1, nth: { type: K.type, n: 1 } }] }, kind === 'menu' && list ? { menu: list } : {});
   });
 }
 

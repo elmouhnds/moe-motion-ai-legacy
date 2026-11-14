@@ -406,12 +406,13 @@ const PROP_ADDR = {
 /** effects.ensure items for the grid null's controls with values from params. */
 function controlItems(mode, params, layerIndexOf = () => 0, names = null) {
   const only = names ? new Set(names) : null;
-  return controlsFor(mode).filter(([name]) => !only || only.has(name)).map(([name, kind, def]) => {
+  return controlsFor(mode).filter(([name]) => !only || only.has(name)).map(([name, kind, def, list]) => {
     const K = KIND[kind];
     let value = params[KEY[name]] !== undefined ? params[KEY[name]] : def;
     if (kind === 'checkbox') value = value ? 1 : 0;
     if (kind === 'layer') value = layerIndexOf(name);
-    return { key: name, matchName: K.matchName, before: [], params: [{ id: name, value, names: [K.param], suffix: 1, nth: { type: K.type, n: 1 } }] };
+    // v0.98.1: a menu carries its list, so effects.ensure fills the dropdown before its value (a new one has 3 items)
+    return Object.assign({ key: name, matchName: K.matchName, before: [], params: [{ id: name, value, names: [K.param], suffix: 1, nth: { type: K.type, n: 1 } }] }, kind === 'menu' && list ? { menu: list } : {});
   });
 }
 

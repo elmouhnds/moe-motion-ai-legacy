@@ -187,6 +187,11 @@ Permanent rules for anyone (human or AI) working in this repository.
 - A tool that builds an effect stack adds ONE controller null per run (`MOE FX N Controls`, `MOE Click N Controls`) with only the look-and-feel values its style uses (Controls on demand), linked by tagged expressions — never a crowd of sliders, never one null per layer.
 - Every motion / reveal / click tile ships a render: `npm run previews` (plan values → `tools/render-previews.py` pixels → `assets/previews/*.webp`). The panel plays the user's After Effects render first, MOE's render second, a quiet stage last — never a look-alike drawing. A tile whose args change must be re-rendered (the freshness test fails otherwise). Never call MOE's render an After Effects render.
 
+## Dropdown menus (v0.98.1 — the owner's first real After Effects report)
+- A new Dropdown Menu Control has **3 items** until `setPropertyParameters`; `setValue(6)` on it throws "Value 6 out of range 1 to 3". Give the list first: an `effects.ensure` item carries `menu: [labels]` and the host sets it before the value; or set the value with `effects.setMenu`. Never a menu value through `ensure` without its list.
+- The mock enforces this (`_checkMenu`). Keep the mock as strict as After Effects: a lenient mock hid this bug from 600+ tests.
+- A failure cleanup runs each step on its own (try/catch): one plan stops at its first failing step and left a null in the timeline.
+
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).
 - Tests run the **real host .jsx** against `tests/mock/ae-mock.js`. That proves logic, not host behaviour. Never describe mock results as After Effects results.

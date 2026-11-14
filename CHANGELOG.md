@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.98.1] — 2026-11-14 — Fix: Cloner and Effectors in real After Effects
+- **The owner's first real After Effects report**: every Cloner tile only left a null in the timeline, then "Globe 3D: After Effects error: Unable to call "setValue" because of parameter 1. Value 6 out of range 1 to 3." Cause: a new Dropdown Menu Control has 3 items; `effects.ensure` set the menu values (Layout = 6 for Globe, Effector Type, Falloff, Colour Mode…) before `effects.setMenu` gave the dropdown its list.
+- `effects.ensure` now fills a dropdown's list first (`menu` on the item → `setPropertyParameters`), then its value; a value with no list that does not fit waits at 1 for the `effects.setMenu` that follows. Grid, Effector and Colour controls send their lists.
+- A failed grid no longer leaves its null: each cleanup step runs on its own, so one failing step cannot stop the rest.
+- Why the tests missed it: the mock accepted any dropdown value. It now throws exactly like After Effects (3 items until the list is set); `tests/dropdown.menu.test.js` reproduces the report and the leftover null.
+
 ## [0.98.0] — 2026-11-14 — Click VFX, controller nulls, every effect previewed
 - **Click VFX** (Product UI › Click FX): Liquid Ripple, Neon Ring, Particle Burst, Pixel Ring at the selected layer's real centre, at the playhead — stacks of native effects rebuilt from the studied project file (Turbulent 20 / 2, Mosaic 48 × 27, CC Ball Action scatter 0 → 160, Glow in place of Deep Glow). One Ctrl+Z.
 - **Controller nulls** (owner): after applying, ONE null holds only the style's look-and-feel values, linked by expressions — Matte FX: Softness, Noise, Noise Size, Boil %, Warp, Edge Colour, Glow (only those the style uses); Click VFX: Size %, Colour, Glow, Wobble / Pixel Blocks.

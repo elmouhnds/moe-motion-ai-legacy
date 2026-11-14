@@ -100,7 +100,7 @@
 
 **Target & Audio Effectors** (v0.36.0): Target turns the clones to face the effector null; Audio drives every move from a soundtrack's loudness (After Effects' Convert Audio to Keyframes, run for you), each clone a little later — tiles Aim, Look Near, Beat Pulse, Beat Wave (docs/features/TARGET_AUDIO_EFFECTORS.md).
 
-**Click VFX** (v0.98.0): Liquid Ripple, Neon Ring, Particle Burst, Pixel Ring at a layer's real centre with one controller null. **Controller nulls** on Matte FX too. **110 tiles previewed** by MOE's renderer before applying. Mock-tested, not yet run in After Effects.
+**Click VFX** (v0.98.0): Liquid Ripple, Neon Ring, Particle Burst, Pixel Ring at a layer's real centre with one controller null. **Controller nulls** on Matte FX too. **110 tiles previewed** by MOE's renderer before applying. Mock-tested, not yet run in After Effects. **v0.98.1**: Cloner / Effectors / Colour fixed after the owner's first real After Effects report (dropdown list before its value).
 
 **Reveal Composer** (v0.97.0): Shape × Material × Motion × Palette — 3,888 reveal styles on one engine, Intensity master, Shuffle / Lock / Remix, 24 curated recipes. Mock-tested, not yet run in After Effects.
 

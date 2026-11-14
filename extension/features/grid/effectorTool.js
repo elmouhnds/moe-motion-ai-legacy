@@ -28,12 +28,13 @@ function nextName(ctx) {
 /** effects.ensure items for the effector null's controls. */
 function controlItems(values, names) {
   const only = names ? new Set(names) : null;
-  return EF.CONTROLS.filter(([name]) => !only || only.has(name)).map(([name, kind, def]) => {
+  return EF.CONTROLS.filter(([name]) => !only || only.has(name)).map(([name, kind, def, list]) => {
     const K = X.KIND[kind];
     let value = values[EF.KEY[name]] !== undefined ? values[EF.KEY[name]] : def;
     if (kind === 'checkbox') value = value ? 1 : 0;
     // a colour stays [r, g, b, a]; everything else is one number
-    return { key: name, matchName: K.matchName, before: [], params: [{ id: name, value: kind === 'color' ? EF.rgba(value) : Number(value), names: [K.param], suffix: 1, nth: { type: K.type, n: 1 } }] };
+    // v0.98.1: a menu carries its list (effects.ensure fills a new 3-item dropdown before its value)
+    return Object.assign({ key: name, matchName: K.matchName, before: [], params: [{ id: name, value: kind === 'color' ? EF.rgba(value) : Number(value), names: [K.param], suffix: 1, nth: { type: K.type, n: 1 } }] }, kind === 'menu' && list ? { menu: list } : {});
   });
 }
 const slotItem = (slot, value) => ({ key: slot, matchName: X.KIND.layer.matchName, before: [], params: [{ id: slot, value, names: [X.KIND.layer.param], suffix: 1, nth: { type: X.KIND.layer.type, n: 1 } }] });

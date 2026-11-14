@@ -210,8 +210,22 @@
                                 var beforeVal = plain(res.r.prop.value);
                                 if (!created) { undoLog.push({ kind: 'param', layer: layer, key: item.key, matchName: item.matchName, index: res.r.index, value: beforeVal }); }
                                 /* layerRef: a layer parameter (e.g. CC Glass Bump Map) takes the layer's current index. */
-                                res.r.prop.setValue(res.spec.layerRef !== undefined && res.spec.layerRef !== null ? U.findLayer(comp, { layerId: res.spec.layerRef }).index : res.spec.value);
-                                entry.params.push({ id: res.spec.id, index: res.r.index, name: res.r.prop.name, matchName: res.r.prop.matchName, resolvedBy: res.r.method, before: beforeVal, after: plain(res.r.prop.value) });
+                                var want = res.spec.layerRef !== undefined && res.spec.layerRef !== null ? U.findLayer(comp, { layerId: res.spec.layerRef }).index : res.spec.value, deferred = false;
+                                if (item.matchName === 'ADBE Dropdown Control') {
+                                    /* v0.98.1 (owner's After Effects: "Value 6 out of range 1 to 3"): a new Dropdown Menu Control
+                                       has 3 items. Its list is set first when the spec carries it (item.menu,
+                                       Property.setPropertyParameters); otherwise a value outside the current list waits
+                                       for the effects.setMenu that sets list and value together (deferred). */
+                                    if (item.menu && item.menu.length && typeof res.r.prop.setPropertyParameters === 'function') {
+                                        res.r.prop.setPropertyParameters(item.menu);
+                                        fx = findEffect(layer.property('ADBE Effect Parade'), item.key, item.matchName);
+                                        res.r.prop = fx.property(1);
+                                    }
+                                    try { res.r.prop.setValue(want); } catch (eMenu) { res.r.prop.setValue(1); deferred = true; }
+                                } else {
+                                    res.r.prop.setValue(want);
+                                }
+                                entry.params.push({ id: res.spec.id, index: res.r.index, name: res.r.prop.name, matchName: res.r.prop.matchName, resolvedBy: res.r.method, before: beforeVal, after: plain(res.r.prop.value), deferred: deferred });
                             }
                             /* Ordering: move before the earliest listed MOE effect present. */
                             if (item.before && item.before.length) {

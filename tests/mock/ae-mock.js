@@ -315,12 +315,21 @@ class MockProperty {
     }
     return clone(this._value);
   }
+  /** v0.98.1: a Dropdown Menu Control starts with 3 items (After Effects' default) and refuses a value outside its list —
+   *  the owner's After Effects reported "Value 6 out of range 1 to 3" when a menu was set before its items were. */
+  _checkMenu(v) {
+    if (!/Dropdown Control/.test(this.matchName || '')) return;
+    const n = (this._menuItems || ['Item 1', 'Item 2', 'Item 3']).length;
+    if (!(v >= 1 && v <= n)) throw new Error(`After Effects error: Unable to call "setValue" because of parameter 1. Value ${v} out of range 1 to ${n}.`);
+  }
   setValue(v) {
+    this._checkMenu(v);
     if (this.propertyValueType === PropertyValueType.COLOR && (!Array.isArray(v) || v.length !== 4)) throw new Error('After Effects error: color value must have 4 components');
     if (this.propertyValueType === PropertyValueType.LAYER_INDEX) { const layers = this._layer()._comp._layers; this._ref = v >= 1 && v <= layers.length ? layers[v - 1] : null; }
     this._value = clone(v);
   }
   setValueAtTime(t, v) {
+    this._checkMenu(v);
     const lt = t - this._layer().startTime;
     const dims = dimsFor(this.propertyValueType);
     const lin = () => Array.from({ length: dims }, () => ({ speed: 0, influence: 16.666666667 }));

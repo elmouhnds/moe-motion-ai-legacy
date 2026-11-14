@@ -315,15 +315,17 @@ const build = {
     try { await T.commit(); } catch (e) { await undoGrid(e); }
     // a failure: nothing half-made stays — unparent (jump), the null goes, 2D again, anchors / split / clones back
     async function undoGrid(e) {
-      const U = PLAN1(host, 'MOE: Grid (failed)');
+      // v0.98.1: each cleanup step is its own guarded call — one plan stopped at its first failing step and left the
+      // MOE Grid null in the timeline (the owner's After Effects report). Failure path only; success stays one Ctrl+Z.
       const pv = parentedRef.value(), cv = createdRef.value(), mv = made3DRef && made3DRef.value();
-      if (pv) U.add('layers.setParent', { compId: comp.id, items: pv.layers.map((x) => ({ layerId: x.layerId, parentId: x.before })) });
-      if (cv && cv.layerId) U.add('layers.remove', { compId: comp.id, layerIds: [cv.layerId], onlyNamed: 'MOE Grid' });
-      if (mv) U.add('layers.setAttrs', { compId: comp.id, items: mv.layers.map((x) => ({ layerId: x.layerId, threeDLayer: false })) });
-      if (anchors) U.add('layers.restoreTransform', { compId: comp.id, layers: anchors.layers.filter((a) => !a.skipped).map((a) => ({ layerId: a.layerId, anchor: a.before.anchor, position: a.before.position })) });
-      if (split) U.add('text.unsplit', { compId: comp.id, layerIds: split.pieces.map((p) => p.layerId), sourceId: split.sourceId, sourceEnabled: split.sourceEnabled });
-      if (clonesMade.length) U.add('layers.remove', { compId: comp.id, layerIds: clonesMade, onlyNamed: 'MOE Clone ' });
-      await U.commit().catch(() => {});
+      const steps = [];
+      if (pv) steps.push(['layers.setParent', { compId: comp.id, items: pv.layers.map((x) => ({ layerId: x.layerId, parentId: x.before })) }]);
+      if (cv && cv.layerId) steps.push(['layers.remove', { compId: comp.id, layerIds: [cv.layerId], onlyNamed: 'MOE Grid' }]);
+      if (mv) steps.push(['layers.setAttrs', { compId: comp.id, items: mv.layers.map((x) => ({ layerId: x.layerId, threeDLayer: false })) }]);
+      if (anchors) steps.push(['layers.restoreTransform', { compId: comp.id, layers: anchors.layers.filter((a) => !a.skipped).map((a) => ({ layerId: a.layerId, anchor: a.before.anchor, position: a.before.position })) }]);
+      if (split) steps.push(['text.unsplit', { compId: comp.id, layerIds: split.pieces.map((p) => p.layerId), sourceId: split.sourceId, sourceEnabled: split.sourceEnabled }]);
+      if (clonesMade.length) steps.push(['layers.remove', { compId: comp.id, layerIds: clonesMade, onlyNamed: 'MOE Clone ' }]);
+      for (const [op, a] of steps) { try { const U = PLAN1(host, 'MOE: Grid (failed)'); U.add(op, a); await U.commit(); } catch (x) { /* the next step still runs */ } }
       throw e;
     }
     const created = createdRef.value(), controls = controlsRef.value(), parented = parentedRef.value(), set = setRef.value();

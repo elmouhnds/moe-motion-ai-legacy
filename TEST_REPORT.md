@@ -2,6 +2,10 @@
 
 Last run: 2026-11-06 (v0.59.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
+## First real After Effects report (v0.98.0 → v0.98.1)
+
+The owner ran the Cloner in After Effects 2025: only a null appeared, then "Globe 3D: After Effects error: Unable to call "setValue" because of parameter 1. Value 6 out of range 1 to 3." The mock had accepted any Dropdown Menu Control value; After Effects gives a new one 3 items until `setPropertyParameters`. Fixed in `effects.ensure` (list first) and the grid cleanup (each step guarded). The mock now enforces the 3-item default (`_checkMenu`), which turned 20+ tests red before the fix; `tests/dropdown.menu.test.js` fails on v0.98.0 and passes on v0.98.1. 630/630 pass; undo audit 288 tiles, 0 writes outside an undo group. **Still to confirm in After Effects** (owner's retry + Self-Test).
+
 ## Summary
 
 | Layer | How it was tested | Result |

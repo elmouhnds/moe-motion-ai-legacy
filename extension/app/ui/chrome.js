@@ -85,6 +85,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['grid', 'Cloner fixed (0.98.1)', 'Your After Effects report: the Cloner only left a null and said "Value 6 out of range 1 to 3". A new dropdown control in After Effects has 3 items and MOE set its value before its list. Now the list comes first, so Globe 3D, every Cloner layout, the Effectors and Colour work, and a failed build never leaves a null behind.'],
   ['cursor', 'Click VFX, controllers, previews', 'Product UI › Click FX: a Liquid Ripple, Neon Ring, Particle Burst or Pixel Ring at the real centre of a layer. After applying, one Controls null holds only the values that change the look (size, colour, glow…), linked by expressions. And every motion, reveal and click tile now plays a rendered preview before you apply it.'],
   ['wand', 'Reveal Composer — 3,888 styles', 'Matte FX › Compose: pick a Shape, a Material, a Motion and a Palette (plus one Intensity) and the same engine builds it. Shuffle finds a new combination, a click on an axis locks it, Alt-click remixes only that axis. From a point grows the reveal out of a click or a cursor. 24 ready recipes in Motion › FX.'],
   ['layers', 'Matte FX — 16 organic reveals', 'Ink, smoke, burn, frost, liquid, grain: each layer appears through an alpha matte made of Fractal Noise and a direction ramp read by Gradient Wipe, with a glowing edge where it fits. Motion › FX. And Diagnostics › Rendered previews: After Effects renders every tile\'s real result and the tile plays it.'],
