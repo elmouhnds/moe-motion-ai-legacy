@@ -55,7 +55,7 @@ const CHECKS = [
   // v0.95 (MATTE_REVEAL.md): the matte wiring and the cells' values as After Effects evaluates them, half-way through
   { id: 'matte', label: 'Matte Reveal (Pixels): alpha matte set, half-way share = mattePlan, one Ctrl+Z', run: checkMatte },
   // v0.96 (MATTE_FX.md): Fractal Noise, Gradient Ramp, Gradient Wipe, Turbulent Displace, Fill, Glow found by their names
-  { id: 'fxMatte', label: 'Matte FX (Burn In + Ink Bleed): every effect parameter found by name, mattes wired', run: checkFxMatte },
+  { id: 'fxMatte', label: 'Matte FX (Burn In, Ink Bleed, Pixel Rain): every effect parameter found by name, mattes wired', run: checkFxMatte },
   // v0.96 (RENDERED_PREVIEWS.md): the Render Queue writes a JPEG sequence MOE can play
   { id: 'renderPreview', label: 'Rendered previews: the Render Queue writes JPEG frames to the previews folder', run: checkRenderPreview },
   // v0.64 (WAVE4.md): Exploder's Wiggly Selector settings are found by their English names in this After Effects
@@ -524,11 +524,15 @@ async function checkMatte(T) {
 async function checkFxMatte(T) {
   const before = (await T.layerIds()).length;
   const out = [];
-  for (const preset of ['burnIn', 'inkBleed']) {
+  // v0.97: Pixel Rain sets Fractal Noise's Noise Type (Block = 1) and Fractal Type (Max = 11) from the studied project
+  // file, Uniform Scaling / Scale Width / Height, and Posterize Time — their names are proven here, in After Effects
+  const runs = [{ preset: 'burnIn' }, { preset: 'inkBleed' }, { preset: 'compose', shape: 'rain', material: 'pixel', motion: 'stepped', palette: 'cyan' }];
+  for (const a of runs) {
+    const preset = a.preset === 'compose' ? 'Pixel Rain' : a.preset;
     const solid = await T.host.call('layers.createSolid', { compId: T.compId, name: `ST FX ${preset}`, color: [1, 1, 1] });
     await T.select([solid.layerId]);
     let r = null, err = null;
-    try { r = await T.run('reveal.fx', { preset, dir: 'in', duration: 1 }); } catch (e) { err = String(e.message || e).slice(0, 300); }
+    try { r = await T.run('reveal.fx', Object.assign({ dir: 'in', duration: 1 }, a)); } catch (e) { err = String(e.message || e).slice(0, 300); }
     const u = r ? await T.undo(r, before + 1) : { back: true };
     await T.host.call('layers.remove', { compId: T.compId, layerIds: [solid.layerId], onlyNamed: 'ST ' });
     out.push({ preset, ok: !!r && u.back, detail: r ? `${r.result.layers[0].fxName}: ${r.verification.checks.map((c) => c.detail).join(' · ')} · Restore ${u.back ? 'ok' : 'left layers'}` : err });

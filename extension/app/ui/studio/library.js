@@ -279,7 +279,7 @@ function render(app, section) {
     // v0.66 (docs/features/TOOL_CARDS.md): the card says what this tile will do before Apply — what it acts on, what
     // it writes, how to undo it, and the exact code for expressions; the sticky bar below is the one Apply.
     (() => {
-      const thumb = inline || widgets.body[tool.id] || (tool.ui && tool.ui.renderBody) ? null : thumbEl(tile, 'big', PLANNED.includes(tool.id) ? (tool.id === 'design.template' ? brandedArgs(app, Object.assign({}, tile.args, app.state.get().args[tool.id] || {})) : app.state.get().args[tool.id]) : null);
+      const thumb = inline || widgets.body[tool.id] || (tool.ui && tool.ui.renderBody && !tool.ui.bodyKeepsThumb) ? null : thumbEl(tile, 'big', PLANNED.includes(tool.id) ? (tool.id === 'design.template' ? brandedArgs(app, Object.assign({}, tile.args, app.state.get().args[tool.id] || {})) : app.state.get().args[tool.id]) : null);
       return thumb || null;
     })(),
     inline ? null : h('div', { class: 'st-ins-title' }, tile.label),

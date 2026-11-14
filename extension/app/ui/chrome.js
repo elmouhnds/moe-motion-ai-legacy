@@ -85,6 +85,7 @@ function markBannerSeen(app, sectionId) {
 
 /* ---------- sheets (modal) ---------- */
 const WHATS_NEW = [
+  ['wand', 'Reveal Composer — 3,888 styles', 'Matte FX › Compose: pick a Shape, a Material, a Motion and a Palette (plus one Intensity) and the same engine builds it. Shuffle finds a new combination, a click on an axis locks it, Alt-click remixes only that axis. From a point grows the reveal out of a click or a cursor. 24 ready recipes in Motion › FX.'],
   ['layers', 'Matte FX — 16 organic reveals', 'Ink, smoke, burn, frost, liquid, grain: each layer appears through an alpha matte made of Fractal Noise and a direction ramp read by Gradient Wipe, with a glowing edge where it fits. Motion › FX. And Diagnostics › Rendered previews: After Effects renders every tile\'s real result and the tile plays it.'],
   ['layers', 'Matte Reveal — nine styles', 'Select layers, pick Motion › Matte: each layer gets its own alpha track matte (a MOE Matte layer that follows it) and appears through a Wipe in any direction, a Corner, Split, Iris, a Card that grows from a pill, Blinds, Stripes, Shutter or Pixels. In and Out, cascade, soft edge. One Ctrl+Z; Restore removes the mattes.'],
   ['undo', 'One Ctrl+Z per production', 'Titles, lower thirds and product UI now arrive in their own comp, as one layer at the playhead — and one Ctrl+Z takes back the whole thing. Backgrounds, animations, expressions, glass, zoom, carousel, click and proximity are one undo step each too (Grid Build: two). Restore is one step.'],

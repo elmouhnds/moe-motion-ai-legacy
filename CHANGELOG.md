@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.97.0] — 2026-11-14 — Reveal Composer: Shape × Material × Motion × Palette
+- From the owner's Reveal Seed report: Matte FX gets **Compose** — pick a Shape (Wipe, Angled, Rise, Iris, From a point, Corner bloom, Dissolve, Rain, Curtain), a Material (Soft light, Glass, Liquid, Ink, Paper, Pixel, Neon, Burn, Smoke), a Motion (Impact, Smooth, Snap, Gentle, Linear, Stepped 12 fps) and a Palette — **3,888 combinations** on one engine, with one Intensity master.
+- **Shuffle / Lock / Remix** in the Inspector; **From a point** grows the reveal out of any point of the layer (a click, a cursor).
+- New in the engine: Block / Max pixel noise (values from the studied project file), stretched-noise streaks, Posterize Time for stepped motion.
+- 24 curated recipes as tiles (Scene Iris, Card Wipe, Pixel Rain, Neon Scan, Glass Lens, Spark Ring, Torn Edge, Glitch Curtain, …).
+
 ## [0.96.0] — 2026-11-14 — Matte FX library + real rendered previews
 - **Matte FX** (Motion › FX, tool `reveal.fx`): 16 organic reveals made the professional way — Fractal Noise over a direction ramp as a gradient map, read by Gradient Wipe as the layer's alpha matte, Turbulent Displace for liquid edges, and a glowing edge front (the matte against itself a moment later, Difference → luma matte of a linked copy with Fill + Glow). Organic Sweep, Ink Bleed, Smoke Rise, Burn In, Lava Edge, Electric Edge, Neon Wipe, Paper Tear, Frost Creep, Light Bloom, Cloud Iris, Liquid Rise, Ink Wash, Grain Dissolve, Cloud Dissolve, Aurora Edge — plus Burn Away, Ink Recede, Grain Out. One Ctrl+Z; Restore removes the layers and pre-comps.
 - **Rendered previews** (Diagnostics): After Effects renders each tile's real result (480 × 270, 15 fps, JPEG sequence through the Render Queue) and the tile plays those frames. Your comps and your Render Queue are untouched; tiles already rendered with the same settings are skipped; Stop between tiles.

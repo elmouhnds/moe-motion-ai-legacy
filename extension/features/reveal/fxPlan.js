@@ -26,6 +26,13 @@ const PLAN = require('../quick/animatePlan');
 /** Gradient Ramp's Ramp Shape menu: 1 Linear Ramp, 2 Radial Ramp (After Effects' Gradient Ramp, two items). */
 const RAMP_SHAPE = { linear: 1, radial: 2 };
 const LIMITS = { margin: 64, size: 8000, edgeLag: [0.02, 0.4] };
+/**
+ * Fractal Noise menus, used only by the Pixel material. The values are not guessed: the Click VFX project file the owner
+ * shared (docs/research/CLICK_VFX_STUDY.md) stores Noise Type 1 and Fractal Type 11 on the very layer the tutorial
+ * shows as "Max / Block, Brightness -35" (owner's Reveal Seed report, [SEEN]). Unverified in this After Effects until the
+ * Self-Test fxMatte reads them back.
+ */
+const NOISE_MENU = { type: { block: 1 }, fractal: { max: 11 } };
 
 const hex = (h) => { const s = String(h || '#ffffff').replace('#', ''); const n = parseInt(s.length === 3 ? s.split('').map((c) => c + c).join('') : s, 16); return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255, 1]; };
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -62,7 +69,8 @@ const PRESETS = {
  * glow, intensity, seed, edge (true | false: off turns the preset's edge off).
  */
 function build(args, rect) {
-  const P = PRESETS[args.preset] || PRESETS.organicSweep;
+  // v0.97: 'compose' = the grammar (shape × material × motion × palette); otherwise a curated preset
+  const P = args.preset === 'compose' ? require('./grammar').compose(args) : (PRESETS[args.preset] || PRESETS.organicSweep);
   const [l, t, w, h] = rect;
   if (!(w >= 1 && h >= 1)) throw Object.assign(new Error('Nothing to reveal (empty layer box)'), { code: 'EMPTY' });
   const m = LIMITS.margin;
@@ -80,15 +88,22 @@ function build(args, rect) {
     const R = (Math.abs(w * d[0]) + Math.abs(h * d[1])) / 2 + m / 2;
     ramp = { shape: 'linear', start: [r2(c[0] - d[0] * R), r2(c[1] - d[1] * R)], end: [r2(c[0] + d[0] * R), r2(c[1] + d[1] * R)], startColor: [1, 1, 1, 1], endColor: [0, 0, 0, 1] };
   } else if (P.ramp === 'radial') {
-    const R = Math.hypot(w, h) / 2 + m / 2;
-    ramp = { shape: 'radial', start: c.map(r2), end: [r2(c[0] + R), r2(c[1])], startColor: [1, 1, 1, 1], endColor: [0, 0, 0, 1] };
+    // from the centre, or from any point of the layer (v0.97: the click / cursor distance field) — far enough to clear
+    // the farthest corner
+    const o = P.origin ? [m + P.origin[0] * w, m + P.origin[1] * h] : c;
+    const R = Math.max(...[[m, m], [m + w, m], [m, m + h], [m + w, m + h]].map((q) => Math.hypot(q[0] - o[0], q[1] - o[1]))) + m / 2;
+    ramp = { shape: 'radial', start: o.map(r2), end: [r2(o[0] + R), r2(o[1])], startColor: [1, 1, 1, 1], endColor: [0, 0, 0, 1] };
   } else {
     ramp = { shape: 'linear', start: [0, 0], end: [W, 0], startColor: [0.5, 0.5, 0.5, 1], endColor: [0.5, 0.5, 0.5, 1] };
   }
   const mix = Math.max(0, Math.min(100, args.mix !== undefined ? Number(args.mix) : P.noise.mix));
   const noise = {
     scale: args.scale > 0 ? Number(args.scale) : P.noise.scale, complexity: P.noise.complexity, contrast: P.noise.contrast,
-    seed: Math.round(args.seed || 0), mix, blend: P.ramp === 'none' ? 'normal' : 'overlay', offset: c.map(r2)
+    seed: Math.round(args.seed || 0), mix, blend: P.ramp === 'none' ? 'normal' : 'overlay', offset: c.map(r2),
+    brightness: P.noise.brightness || 0,
+    type: P.noise.type && NOISE_MENU.type[P.noise.type] ? NOISE_MENU.type[P.noise.type] : null,
+    fractal: P.noise.fractal && NOISE_MENU.fractal[P.noise.fractal] ? NOISE_MENU.fractal[P.noise.fractal] : null,
+    stretch: P.noise.stretch || null
   };
   const soft = Math.max(0, Math.min(100, args.softness !== undefined ? Number(args.softness) : P.soft));
   const completion = out ? PLAN.keysFor(e, 0, dur, 0, 100) : PLAN.keysFor(e, 0, dur, 100, 0);
@@ -103,7 +118,7 @@ function build(args, rect) {
   } : null;
   return {
     preset: args.preset in PRESETS ? args.preset : 'organicSweep', label: P.label,
-    size: [W, H], margin: m, anchor: [r2(m - l), r2(m - t)], end: dur,
+    size: [W, H], margin: m, anchor: [r2(m - l), r2(m - t)], end: dur, stepped: P.stepped || 0,
     ramp, noise, soft, completion, evolution, displace: P.displace || null, edge
   };
 }
@@ -120,4 +135,4 @@ function shownAt(p, lt, v) {
   return Math.max(0, Math.min(1, (v - comp * (1 + s) + s) / s));
 }
 
-module.exports = { PRESETS, RAMP_SHAPE, LIMITS, build, shownAt, hex };
+module.exports = { PRESETS, RAMP_SHAPE, NOISE_MENU, LIMITS, build, shownAt, hex };

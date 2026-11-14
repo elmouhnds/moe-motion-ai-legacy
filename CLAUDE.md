@@ -179,6 +179,10 @@ Permanent rules for anyone (human or AI) working in this repository.
 - A tile's preview is After Effects' own render of the tile's own args (`previews/renderer.js` → `previews.render`), played from `<data>/previews`; until it is rendered the tile shows an icon or its existing plan drawing — never a new look-alike drawing (owner). A render is used only when its signature (tool, version, args) matches.
 - `previews.render` renders only `MOE Self-Test …` comps into `<user data>/MOE Motion AI/previews/<a-z0-9->`, pauses the user's queued items and restores them in finally.
 
+## Reveal Composer (v0.97, docs/features/REVEAL_COMPOSER.md — the owner's Reveal Seed report)
+- A reveal style is a combination, not a new tool: Shape × Material × Motion × Palette in `reveal/grammar.js` (pure, data), composed into the SAME spec `fxPlan.build` reads. A new shape / material / motion / palette is a table entry and must pass the hidden → shown test for every pairing; curated tiles are combinations (`preset: 'compose'`).
+- Intensity is the one master: it scales noise, warp and glow together, so no combination breaks. Native menu values only with evidence (`fxPlan.NOISE_MENU` cites its source) and a Self-Test that runs them.
+
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).
 - Tests run the **real host .jsx** against `tests/mock/ae-mock.js`. That proves logic, not host behaviour. Never describe mock results as After Effects results.

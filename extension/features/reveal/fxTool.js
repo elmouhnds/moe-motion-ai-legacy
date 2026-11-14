@@ -11,6 +11,11 @@
  * Gradient Wipe's Completion is the plan's at the first and last key, every effect parameter was found by its name.
  */
 const F = require('./fxPlan');
+const G = require('./grammar');
+/** The spec a set of args builds (a curated preset, or the grammar's composition). */
+/** Locked axes of the Shuffle (session memory, not a setting). */
+const LOCKS = {};
+const specOf = (a) => (a.preset === 'compose' ? G.compose(a) : F.PRESETS[a.preset]) || null;
 const FG = require('../../core/framegrid');
 const { plan: PLAN1 } = require('../../core/host/plan');
 
@@ -26,17 +31,25 @@ const fx = {
   keywords: ['matte fx', 'fractal noise', 'gradient wipe', 'organic reveal', 'ink', 'smoke', 'burn', 'dissolve', 'glow edge', 'alpha matte', 'transition', 'حبر', 'دخان', 'حرق', 'ريفيل', 'ماسك'],
   icon: 'layers',
   params: {
-    preset: { type: 'enum', label: 'Effect', tileFixed: true, default: 'organicSweep', options: Object.entries(F.PRESETS).map(([value, p]) => ({ value, label: p.label })) },
+    preset: { type: 'enum', label: 'Effect', tileFixed: true, default: 'organicSweep', options: [{ value: 'compose', label: 'Compose — Shape × Material × Motion × Palette' }].concat(Object.entries(F.PRESETS).map(([value, p]) => ({ value, label: p.label }))) },
+    // v0.97 (REVEAL_COMPOSER.md): the grammar — four choices, 3,888 combinations, one engine
+    shape: { type: 'enum', label: 'Shape', default: 'sweep', options: Object.entries(G.SHAPES).map(([value, x]) => ({ value, label: x.label })), showIf: (a) => a.preset === 'compose' },
+    material: { type: 'enum', label: 'Material', default: 'soft', options: Object.entries(G.MATERIALS).map(([value, x]) => ({ value, label: x.label })), showIf: (a) => a.preset === 'compose' },
+    motion: { type: 'enum', label: 'Motion', default: 'smooth', options: Object.entries(G.MOTIONS).map(([value, x]) => ({ value, label: x.label })), showIf: (a) => a.preset === 'compose' },
+    palette: { type: 'enum', label: 'Palette', default: 'material', options: Object.entries(G.PALETTES).map(([value, x]) => ({ value, label: x.label })), showIf: (a) => a.preset === 'compose' },
+    intensity: { type: 'number', label: 'Intensity', min: 0, max: 100, step: 1, default: 60, description: 'Noise, warp and glow together (60 = the material as designed)', showIf: (a) => a.preset === 'compose' },
+    originX: { type: 'number', label: 'Point X', min: 0, max: 100, step: 1, default: 50, unit: '%', description: 'Where it grows from, across the layer', showIf: (a) => a.preset === 'compose' && a.shape === 'point' },
+    originY: { type: 'number', label: 'Point Y', min: 0, max: 100, step: 1, default: 50, unit: '%', showIf: (a) => a.preset === 'compose' && a.shape === 'point' },
     dir: { type: 'enum', label: 'Direction', default: 'in', options: [{ value: 'in', label: 'Reveal (in)' }, { value: 'out', label: 'Hide (out)' }] },
     duration: { type: 'number', label: 'Duration', min: 0.1, max: 10, step: 0.05, default: 1, unit: 's' },
     ease: { type: 'enum', label: 'Ease', default: 'smooth', options: EASES },
-    angle: { type: 'number', label: 'Direction angle', min: 0, max: 359, step: 1, unit: '°', description: 'Where the reveal travels (0 = to the right, 90 = down). Empty = the effect\'s own', showIf: (a) => F.PRESETS[a.preset] && F.PRESETS[a.preset].ramp === 'linear' },
+    angle: { type: 'number', label: 'Direction angle', min: 0, max: 359, step: 1, unit: '°', description: 'Where the reveal travels (0 = to the right, 90 = down). Empty = the effect\'s own', showIf: (a) => { const P = specOf(a); return !!P && P.ramp === 'linear'; } },
     softness: { type: 'number', label: 'Edge softness', min: 0, max: 100, step: 1, unit: '%', description: 'Empty = the effect\'s own' },
     mix: { type: 'number', label: 'Noise', min: 0, max: 100, step: 1, unit: '%', description: 'How much the Fractal Noise breaks the edge. Empty = the effect\'s own' },
     scale: { type: 'number', label: 'Noise size', min: 2, max: 2000, step: 1, description: 'Fractal Noise Scale. Empty = the effect\'s own', advanced: true },
-    edge: { type: 'boolean', label: 'Glowing edge', default: true, showIf: (a) => F.PRESETS[a.preset] && !!F.PRESETS[a.preset].edge },
-    edgeColor: { type: 'string', label: 'Edge colour (#hex)', maxLength: 7, pattern: '^#[0-9A-Fa-f]{6}$', showIf: (a) => a.edge !== false && F.PRESETS[a.preset] && !!F.PRESETS[a.preset].edge },
-    glow: { type: 'number', label: 'Glow radius', min: 1, max: 400, step: 1, unit: 'px', advanced: true, showIf: (a) => a.edge !== false && F.PRESETS[a.preset] && !!F.PRESETS[a.preset].edge },
+    edge: { type: 'boolean', label: 'Glowing edge', default: true, showIf: (a) => { const P = specOf(a); return !!P && !!P.edge; } },
+    edgeColor: { type: 'string', label: 'Edge colour (#hex)', maxLength: 7, pattern: '^#[0-9A-Fa-f]{6}$', showIf: (a) => { const P = specOf(a); return a.edge !== false && !!P && !!P.edge; } },
+    glow: { type: 'number', label: 'Glow radius', min: 1, max: 400, step: 1, unit: 'px', advanced: true, showIf: (a) => { const P = specOf(a); return a.edge !== false && !!P && !!P.edge; } },
     seed: { type: 'number', label: 'Seed', min: 0, max: 9999, step: 1, default: 0, advanced: true },
     stagger: { type: 'number', label: 'Stagger', min: 0, max: 2, step: 0.01, default: 0, unit: 's', advanced: true, description: 'Delay between the selected layers (selection order)' }
   },
@@ -46,9 +59,31 @@ const fx = {
   ai: { callable: true, hint: `Organic matte reveal/hide of the selected layers from Fractal Noise + Gradient Wipe. preset: ${Object.keys(F.PRESETS).join('|')}; dir in|out; angle; softness %; mix %; edge on/off.` },
   uses: { hostOps: ['layers.rects', 'comps.create', 'comps.place', 'layers.createSolid', 'effects.ensure', 'keys.write', 'props.setValues', 'layers.setAttrs', 'layers.setParent', 'layers.move', 'layers.duplicateLinked', 'layers.setMatte', 'layers.remove', 'comps.removeMoe', 'props.values', 'tx.run'], network: false },
   compatibility: { minAE: '23.0' },
-  ui: { primaryLabel: 'Reveal' },
+  ui: {
+    primaryLabel: 'Reveal',
+    // v0.97 (REVEAL_COMPOSER.md, report §8): Shuffle within the guardrails, Remix one axis, Lock the axes to keep.
+    // Pure UI over the tool's own params (grammar.shuffle) — nothing is written until Apply.
+    bodyKeepsThumb: true,
+    renderBody(args, setArgs, { h }) {
+      if (args.preset !== 'compose') return null;
+      const locks = LOCKS;
+      const axes = [['shape', 'Shape'], ['material', 'Material'], ['motion', 'Motion'], ['palette', 'Palette']];
+      const roll = (only) => {
+        const keep = only ? Object.fromEntries(axes.map(([k]) => [k, k !== only])) : locks;
+        setArgs(Object.assign({}, args, G.shuffle(args, Date.now() % 2147483646 || 1, keep)));
+      };
+      return h('div', { class: 'compose-row', 'data-key': 'fx-compose' },
+        h('div', { class: 'why' }, `${G.COUNT.toLocaleString('en')} combinations — Shuffle keeps the locked axes`),
+        h('div', { class: 'actions' },
+          h('button', { class: 'btn', title: 'A new combination (locked axes stay)', onclick: () => roll(null) }, 'Shuffle'),
+          axes.map(([k, label]) => h('button', {
+            class: 'chip-btn', 'aria-pressed': String(!!locks[k]), title: `${locks[k] ? 'Unlock' : 'Lock'} ${label} · Alt-click: remix only ${label}`,
+            onclick: (e) => { if (e && e.altKey) roll(k); else { locks[k] = !locks[k]; setArgs(Object.assign({}, args)); } }
+          }, label))));
+    }
+  },
   prepare(args, ctx) {
-    const P = F.PRESETS[args.preset];
+    const P = specOf(args);
     if (!P) return { ok: false, error: `Unknown effect ${args.preset}` };
     const l = (ctx.layers || []).filter((x) => !['camera', 'light', 'null', 'audio'].includes(x.type));
     if (!l.length) return { ok: false, error: 'Select the layers to reveal (shapes, text, footage, pre-comps)' };
@@ -56,7 +91,7 @@ const fx = {
   },
   explain(args, ctx, prepared) {
     if (!prepared) return {};
-    const P = F.PRESETS[args.preset];
+    const P = specOf(args);
     const edge = args.edge !== false && P.edge;
     return {
       target: `${prepared.layers.length} selected layer(s)`,
@@ -88,7 +123,14 @@ const fx = {
       const ramp = T.add('layers.createSolid', { compId: M.at('compId'), name: `${PREFIX} Ramp`, color: [0, 0, 0] });
       T.add('effects.ensure', { compId: M.at('compId'), label: 'MOE: Matte FX', layers: [{ layer: { layerId: ramp.at('layerId') }, items: [{ key: `${PREFIX} Ramp`, matchName: 'ADBE Ramp', before: [], params: [v('Start of Ramp', p.ramp.start), v('Start Color', p.ramp.startColor), v('End of Ramp', p.ramp.end), v('End Color', p.ramp.endColor), v('Ramp Shape', F.RAMP_SHAPE[p.ramp.shape])] }] }] });
       const noise = T.add('layers.createSolid', { compId: M.at('compId'), name: `${PREFIX} Noise`, color: [0, 0, 0] });
-      T.add('effects.ensure', { compId: M.at('compId'), label: 'MOE: Matte FX', layers: [{ layer: { layerId: noise.at('layerId') }, items: [{ key: `${PREFIX} Noise`, matchName: 'ADBE Fractal Noise', before: [], params: [v('Contrast', p.noise.contrast), v('Scale', p.noise.scale), v('Complexity', p.noise.complexity), v('Random Seed', p.noise.seed), v('Offset Turbulence', p.noise.offset)] }] }] });
+      const np = [v('Contrast', p.noise.contrast), v('Complexity', p.noise.complexity), v('Random Seed', p.noise.seed), v('Offset Turbulence', p.noise.offset)];
+      if (p.noise.brightness) np.push(v('Brightness', p.noise.brightness));
+      if (p.noise.type) np.push(v('Noise Type', p.noise.type));
+      if (p.noise.fractal) np.push(v('Fractal Type', p.noise.fractal));
+      // streaks: Uniform Scaling off, then Scale Width / Height (otherwise one Scale)
+      if (p.noise.stretch) np.push(v('Uniform Scaling', 0), v('Scale Width', p.noise.stretch[0]), v('Scale Height', p.noise.stretch[1]));
+      else np.push(v('Scale', p.noise.scale));
+      T.add('effects.ensure', { compId: M.at('compId'), label: 'MOE: Matte FX', layers: [{ layer: { layerId: noise.at('layerId') }, items: [{ key: `${PREFIX} Noise`, matchName: 'ADBE Fractal Noise', before: [], params: np }] }] });
       T.add('keys.write', { compId: M.at('compId'), label: 'MOE: Matte FX', items: [{ address: FXA(noise.at('layerId'), `${PREFIX} Noise`, 'Evolution'), keys: at(p.evolution) }] });
       T.add('props.setValues', { compId: M.at('compId'), label: 'MOE: Matte FX', items: [{ address: TR(noise.at('layerId'), 'ADBE Opacity'), value: p.noise.mix }] });
       T.add('layers.setAttrs', { compId: M.at('compId'), label: 'MOE: Matte FX', items: [{ layerId: noise.at('layerId'), blendingMode: p.noise.blend }] });
@@ -99,6 +141,8 @@ const fx = {
       const wipe = T.add('layers.createSolid', { compId: A.at('compId'), name: `${PREFIX} Wipe`, color: [1, 1, 1] });
       const items = [{ key: `${PREFIX} Wipe`, matchName: 'ADBE Gradient Wipe', before: [], params: [v('Transition Softness', p.soft), { id: 'Gradient Layer', layerRef: mapL.at('layerId'), names: ['Gradient Layer'] }] }];
       if (p.displace) items.push({ key: `${PREFIX} Liquid`, matchName: 'ADBE Turbulent Displace', before: [], params: [v('Amount', p.displace.amount), v('Size', p.displace.size)] });
+      // Stepped motion: the matte (and the Map it reads) sampled at a lower frame rate — Posterize Time
+      if (p.stepped) items.push({ key: `${PREFIX} Steps`, matchName: 'ADBE Posterize Time', before: [], params: [v('Frame Rate', p.stepped)] });
       const wipeFx = T.add('effects.ensure', { compId: A.at('compId'), label: 'MOE: Matte FX', layers: [{ layer: { layerId: wipe.at('layerId') }, items }] });
       const wipeKeys = T.add('keys.write', { compId: A.at('compId'), label: 'MOE: Matte FX', items: [{ address: FXA(wipe.at('layerId'), `${PREFIX} Wipe`, 'Transition Completion'), keys: at(p.completion) }] });
       // in the user's comp: the matte on the layer, in its own space, following it
@@ -159,7 +203,7 @@ const fx = {
         unmapped
       };
     });
-    return { preset: args.preset, dir: args.dir, skipped, layers };
+    return { preset: args.preset, label: specOf(args).label, dir: args.dir, skipped, layers };
   },
   verify({ result }) {
     const c = [];
@@ -185,7 +229,7 @@ const fx = {
     await T.commit();
     return { ok: true };
   },
-  summarize(result) { return `${F.PRESETS[result.preset].label} on ${result.layers.length} layer(s)`; }
+  summarize(result) { return `${result.label || (F.PRESETS[result.preset] || {}).label} on ${result.layers.length} layer(s)`; }
 };
 
 module.exports = { fx, PREFIX };

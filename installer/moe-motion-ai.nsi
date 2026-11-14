@@ -118,8 +118,8 @@ VIAddVersionKey "LegalCopyright" "© ${PUBLISHER}"
 !insertmacro MUI_LANGUAGE "Arabic"
 
 ; What's new: one line per release (keep it to the headline; the panel's What's new has the rest)
-LangString WhatsNew ${LANG_ENGLISH} "New in 0.96: Matte FX - 16 Fractal Noise reveals; previews rendered by After Effects; Matte Reveal (0.95)."
-LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.96: Matte FX - 16 ريفيل بالـ Fractal Noise، و previews بيعملها After Effects render، و Matte Reveal (0.95)"
+LangString WhatsNew ${LANG_ENGLISH} "New in 0.97: Reveal Composer - 3,888 reveal styles (Shape x Material x Motion x Palette); Matte FX and rendered previews (0.96)."
+LangString WhatsNew ${LANG_ARABIC}  "الجديد في 0.97: Reveal Composer - 3,888 ستايل ريفيل (شكل × خامة × حركة × ألوان)، و Matte FX والـ previews الحقيقية (0.96)"
 
 LangString WelcomeTitle ${LANG_ENGLISH} "MOE Motion AI ${VERSION}"
 LangString WelcomeTitle ${LANG_ARABIC}  "MOE Motion AI ${VERSION}"

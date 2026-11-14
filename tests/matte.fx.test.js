@@ -118,3 +118,33 @@ test('host: previews.render renders only a MOE Self-Test comp, only under previe
   assert.equal(ok.frames, 5);
   assert.match(ok.folder, /\/MOE Motion AI\/previews\/ok-1$/);
 });
+
+test('grammar (v0.97): 3,888 combinations, each hidden → shown; Pixel uses Block / Max noise, Stepped adds Posterize Time, Rain stretches the noise; Shuffle keeps locks', async () => {
+  const G = require('../extension/features/reveal/grammar');
+  assert.equal(G.COUNT, 9 * 9 * 6 * 8);
+  const rect = [-200, -80, 400, 160];
+  for (const shape of Object.keys(G.SHAPES)) for (const material of Object.keys(G.MATERIALS)) {
+    const p = F.build({ preset: 'compose', shape, material, motion: 'smooth', palette: 'cyan', originX: 10, originY: 90 }, rect);
+    for (const v of [0, 0.5, 1]) { assert.ok(Math.abs(F.shownAt(p, 0, v)) < 1e-9); assert.ok(Math.abs(F.shownAt(p, p.end, v) - 1) < 1e-9); }
+  }
+  const pt = F.build({ preset: 'compose', shape: 'point', material: 'soft', originX: 0, originY: 0 }, rect);
+  assert.deepEqual(pt.ramp.start, [pt.margin, pt.margin], 'the field grows from the chosen point');
+  assert.ok(pt.ramp.end[0] - pt.ramp.start[0] >= Math.hypot(400, 160), 'and clears the farthest corner');
+  const k0 = G.compose({ shape: 'sweep', material: 'liquid', intensity: 0 }), k1 = G.compose({ shape: 'sweep', material: 'liquid', intensity: 100 });
+  assert.ok(k0.noise.mix === 0 && k1.noise.mix > G.MATERIALS.liquid.noise.mix && k1.displace.amount > k0.displace.amount, 'Intensity scales noise and warp together');
+  const keep = G.shuffle({ shape: 'iris', material: 'ink', motion: 'snap', palette: 'gold' }, 42, { shape: true, palette: true });
+  assert.equal(keep.shape, 'iris'); assert.equal(keep.palette, 'gold');
+  assert.deepEqual(G.shuffle({}, 7), G.shuffle({}, 7), 'deterministic per seed');
+  // on the mock: Pixel Rain (stepped)
+  const r0 = await setup(1);
+  const r = await r0.services.executor.run('reveal.fx', { preset: 'compose', shape: 'rain', material: 'pixel', motion: 'stepped', palette: 'cyan' }, { approved: true });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
+  const P = r0.env.project, M = P._items.find((x) => x.name === 'MOE FX 1 Map'), A = P._items.find((x) => x.name === 'MOE FX 1 Matte');
+  const fn = M._layers.find((x) => x.name === 'MOE FX Noise')._parade._children.find((x) => x.name === 'MOE FX Noise');
+  assert.equal(fn.property('Noise Type').value, 1); assert.equal(fn.property('Fractal Type').value, 11);
+  assert.equal(fn.property('Uniform Scaling').value, 0); assert.deepEqual([fn.property('Scale Width').value, fn.property('Scale Height').value], [24, 900]);
+  assert.equal(fn.property('Brightness').value, -35);
+  const steps = A._layers.find((x) => x.name === 'MOE FX Wipe')._parade._children.find((x) => x.name === 'MOE FX Steps');
+  assert.equal(steps.property('Frame Rate').value, 12);
+  assert.match(r.verification.checks.map((c) => c.detail).join(' '), /every parameter found by its English name/);
+});
