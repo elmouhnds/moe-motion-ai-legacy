@@ -1,9 +1,9 @@
 # Motion Dock — how it divides its interface (study for MOE, 2026-11-15)
 
-**Source:** motionfun.net/motion-dock and its documentation (v13): introduction, first layout, arrange tools, isolate,
-multiple panels, personalize, switch layouts, controls reference, settings — read in full. **Not seen:** the panel itself
-(the page has no screenshots of it; the YouTube demo was not watched). Everything below is what the docs state; what
-is inference is marked *(inference)*.
+**Source:** motionfun.net/motion-dock rendered in Chromium (owner-approved), its documentation (v13, 9 pages read in
+full), the page's five demo videos (tools 27.6 s, build 11 s, layouts 4.5 s, docks 5 s, AEbar 3.8 s — studied frame by
+frame as contact sheets) and the 30 module preview images of its picker. The YouTube review was not watched. Their
+media stays in the session scratchpad only — nothing of theirs is bundled in MOE. *(inference)* marks my reading.
 
 ## 1. The idea in one line
 Motion Dock is not a panel of pages — it is a **canvas of tools the user arranges**. "The dock takes care of the
@@ -32,6 +32,38 @@ workspace. Each tool takes care of a particular task, with its own controls and 
 8. **Everything reachable when chrome is hidden:** isolated panels keep their controls in After Effects' own panel menu.
 9. **Modifier keys belong to each tool** (documented per tool), not to the dock.
 
+## 3b. What the videos and module images show (the design, not just the docs)
+**Panel anatomy (layouts video, a tall panel docked right of the viewer):** header row = "Motion Dock 1.0.0" + version
+chip · `1 2 3` · grid · gear. Below it, modules stacked as rounded dark cards (≈10 px radius, 1 px hairline border, the
+same ≈5 px gap everywhere). Layout 1 (designer): an AEbar icon row → Anchored 3×3 dots + Picky icon grid side by side →
+Fits ratio buttons (16:9 · 9:16 · 1:1 · 4:5 · 4K · …) + Switched toggles → Petals palette flower (large) → a row of
+ease-curve icons at the bottom. Layout 2 (organiser): Renamer (token chips `{name} {#} {comp}`, preview line "Nothing
+changes", Apply) → Lineup sort icons → Nanny (Adopt · Chain · Release) + Copycat → Tidy (Scan ring + checklist).
+Layout 3 (animator): Springy (5 mode icons + Apply Overshoot) → Spellbound (W Words · L Lines · A Letters · Split) →
+Odo ($1,250,000 big read-out, From → To, format toggles , $ % .0 K, 5 ease icons, `123 Create`) + Yoink (PNG/GIF/MP4)
+→ Accordion (Group · Fold · Unfold + a ghost layer tree "Select layers, then Group").
+
+**Design language:**
+1. **Grey first, colour as meaning.** Surfaces are neutral; each module owns ONE accent used only for its selected
+   state and its primary verb (Springy orange, Odo/Clickety pink, Spellbound purple, Yoink/Tidy green, AEbar icons tinted
+   by kind). Selected = tinted fill + accent border; never a full coloured button.
+2. **Icon-first, words only where a choice must be read** (Adopt/Chain/Release, Words/Lines/Letters, ratios). Big
+   square hit targets (~40–56 px) in even rows.
+3. **Every module shows its result or state as the hero:** Odo's number, Petals' flower, BPM's "Tap in time", Butthead's
+   stroke preview, Tidy's health score 60. The tool is its own preview.
+4. **Empty states teach:** ghost tree + "Select layers, then Group"; Renamer "Nothing changes" until a token changes it.
+5. **Feedback where you look:** a green toast at the top ("Saved Yoink … copied"), a pressed ripple on click, the
+   affected layers highlighted in the timeline.
+
+**Responsiveness (docks + aebars videos):** the same module redraws for its slot — Snippy goes from a 3×3 grid to ONE
+row in a floating "Motion Dock 2" strip under the timeline; AEbar is a single icon row at the bottom of a layout and a
+full grid in the picker. Panels can be tiny floating toolbars or tall docks.
+
+**Editing (build video):** Edit layout → a dotted grid appears under the modules → click empty space → the picker
+slides over the panel: search field, sections ANIMATE · TEXT · LAYERS · DESIGN, each module as a **real miniature
+screenshot card** (name under it, ⓘ About, ✓ when already in the layout) → click a card → it lands in the drawn slot
+with a blue selection frame and corner handles. The click shows a ripple; the panel never leaves the comp's view.
+
 ## 4. MOE compared
 | | Motion Dock | MOE now |
 |---|---|---|
@@ -46,6 +78,15 @@ workspace. Each tool takes care of a particular task, with its own controls and 
 **What MOE has that Motion Dock does not:** rendered previews, Tool Cards (what a tool will do before it runs), libraries
 with presets, kits and recipes, the AI assistant, one Ctrl+Z per production. **What MOE lacks:** the user deciding
 what is on screen and where; per-module responsiveness; a clean use/edit split; role starters; multiple layouts.
+
+## 4b. Concrete lessons for MOE's design (independent of a Dock)
+- One spacing token everywhere (MOE has several gaps) and one card radius; hairline borders instead of shadows.
+- One accent per tool family, used only for selected / primary — the rest grey (MOE uses the accent for many states).
+- Each MOE group gets a **hero read-out**: the Motion Control's curve, the Cloner's live grid, Matte FX's rendered tile,
+  the template's preview — and loses its explanatory text.
+- Words only on choices; everything else an icon with a tooltip (MOE already has the icon set).
+- Empty states that show the result's shape (ghost layers) + the one sentence of what to select.
+- A picker of real miniature screenshots of each MOE group (we have the renderer for this).
 
 ## 5. Recommendation (for the owner to decide)
 Add a fifth way of working rather than another style: **MOE Dock** — the same registered tools and groups MOE already
