@@ -92,12 +92,16 @@ async function renderTiles(services, tiles, opts = {}) {
       out.rendered.push({ id: tile.id, key, frames: r.frames });
     } catch (e) {
       out.failed.push({ id: tile.id, label: tile.label, why: String(e.message || e).slice(0, 300) });
+      // v0.99.3 (side session: 208 render failures left no line in diagnostics.jsonl): every failed render is logged
+      services.logger.warn('previews', `${tile.tool} ${tile.id}: render failed`, { code: e.code || 'RENDER_FAILED', message: String(e.message || e).slice(0, 300) });
     } finally {
       if (run && run.checkpointId) { try { await executor.restore(run.checkpointId); } catch (_) { /* the comp goes anyway */ } }
       if (begin) { try { await host.call('selftest.end', { compId: begin.compId, previousId: begin.previousId }); } catch (_) { /* reported by the next call */ } }
     }
   }
   out.ms = Date.now() - started;
+  services.logger.info('previews', `rendered ${out.rendered.filter((x) => !x.cached).length} · cached ${out.rendered.filter((x) => x.cached).length} · failed ${out.failed.length} · skipped ${out.skipped.length}${out.stopped ? ' · stopped' : ''}`, { ms: out.ms });
+  if (out.failed.length) services.logger.warn('previews', `${out.failed.length} preview render(s) failed`, { code: 'RENDER_FAILED', first: out.failed[0].why });
   return out;
 }
 

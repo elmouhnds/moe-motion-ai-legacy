@@ -2,6 +2,10 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.99.3] — 2026-11-15 — Render failures are logged; a partial tile run keeps the full report
+- From the side session's correction: Diagnostics › Render previews failed 208 / 208 on 0.99.0 with the same read-only `Format` error (fixed in 0.99.1 — the shared render path picks a template) and wrote nothing to `diagnostics.jsonl`. Every failed render is now logged (`previews`, code RENDER_FAILED) with a summary line per run.
+- A tile run of one section no longer replaces the last full run: `tiletest-all` and `tiletest-<section>` keep their own reports.
+
 ## [0.99.2] — 2026-11-15 — The bridge reads the whole error log
 - From the side session's second report (run on 0.99.0, so the 0.99.1 fixes were not in it yet): the bridge's `logs` answered from a short in-memory list — after a 13-minute run only the last 28 s were left. It now reads every warning and error from `diagnostics.jsonl` on disk, with `since`, `limit` and `code` (HOST_EXCEPTION, PARAM_UNRESOLVED, HOST_TIMEOUT…) and a count per code. Tiles that fail before the executor (e.g. a test comp that could not be made) are logged since 0.99.1.
 

@@ -12,7 +12,12 @@ async function runTileTest(app) {
   tt.step = 'running'; tt.stop = false; tt.report = null; tt.progress = { i: 0, total: 0, label: 'Starting' }; app.scheduleRender();
   try {
     tt.report = await TT.runTiles(app.services, TT.libraryTiles(SECTIONS, tt.section === 'all' ? null : tt.section), { shouldStop: () => tt.stop, onProgress: (i, total, label) => { tt.progress = { i, total, label }; app.scheduleRender(); } });
-    try { app.services.store.set(TT_KEY, tt.report); } catch (_) { /* store is optional */ }
+    // v0.99.3 (side session: an 18-tile run replaced the full 353-tile report): the last run, plus the last FULL run
+    // and the last run of each section in their own documents — a partial run never replaces a full one
+    try {
+      app.services.store.set(TT_KEY, tt.report);
+      app.services.store.set(tt.section === 'all' ? 'tiletest-all' : `tiletest-${tt.section}`, tt.report);
+    } catch (_) { /* store is optional */ }
   } catch (e) { tt.report = { error: String(e.message || e), tiles: [], totals: {} }; }
   tt.step = 'done'; tt.progress = null;
   try { await app.refreshContext(true); } catch (_) { /* re-reads on its own */ }

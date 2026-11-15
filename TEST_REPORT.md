@@ -2,6 +2,9 @@
 
 Last run: 2026-11-06 (v0.59.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
+## Render previews in After Effects (still on v0.99.0)
+The owner clicked Diagnostics › Render previews on 0.99.0: 0 rendered · 208 failed, every one "Invalid Value for key: <Format>. Property is read-only" — the shared render path, fixed in 0.99.1 (output-module template). Not yet re-run on 0.99.1+. The failures left no line in the logs; logged since 0.99.3.
+
 ## Second run in After Effects (still on v0.99.0)
 The owner ran Diagnostics › Test every tile on 0.99.0 (before installing 0.99.1): 222 pass · 127 fail · 4 skip — the same five bugs, as expected; the layout timeouts grew from 6 to 11 as a cascade (After Effects busy after the failing grids). Its new finding — `logs` lost most errors in a long run while `diagnostics.jsonl` kept all 123 — is fixed in 0.99.2. The "unescaped quote in logs" claim was withdrawn by the side session itself for the logger; the bridge answer is `JSON.stringify` and parses strictly in `tests/testbridge.test.js`.
 
