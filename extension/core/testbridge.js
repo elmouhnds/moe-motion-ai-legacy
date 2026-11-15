@@ -75,7 +75,17 @@ function createTestBridge({ services, http, fs, path, crypto, onReload, onChange
       return { id: job.id, state: job.state, progress: job.progress, report: job.report };
     },
     async stop() { if (running) running.stop = true; return { stopping: !!running }; },
-    async logs() { return { entries: (services.logger.problems ? services.logger.problems() : services.logger.entries().filter((e) => e.level === 'warn' || e.level === 'error')).slice(-100) }; },
+    // v0.99.2 (side session, run 2: the in-memory list held only the last 28 s of a 13-minute job): every warning and
+    // error is read from the panel's own diagnostics.jsonl on disk. { since?: ISO time, limit?: 1–2000, code? }
+    async logs(b) {
+      const limit = Math.max(1, Math.min(2000, Number(b && b.limit) || 300));
+      let rows = services.store.tail('diagnostics', 5000).filter((e) => e && (e.level === 'warn' || e.level === 'error'));
+      if (b && b.since) rows = rows.filter((e) => String(e.t) >= String(b.since));
+      if (b && b.code) rows = rows.filter((e) => e.data && e.data.code === b.code);
+      const codes = {};
+      rows.forEach((e) => { const c = (e.data && e.data.code) || e.level; codes[c] = (codes[c] || 0) + 1; });
+      return { source: 'diagnostics.jsonl', total: rows.length, codes, entries: rows.slice(-limit) };
+    },
     async reload() {
       // the bridge comes back on after THIS reload only (asked by the authenticated client, valid 2 minutes)
       services.store.set('bridge-resume', { until: Date.now() + 120000 });

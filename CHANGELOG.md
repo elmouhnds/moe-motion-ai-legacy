@@ -2,6 +2,9 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.99.2] — 2026-11-15 — The bridge reads the whole error log
+- From the side session's second report (run on 0.99.0, so the 0.99.1 fixes were not in it yet): the bridge's `logs` answered from a short in-memory list — after a 13-minute run only the last 28 s were left. It now reads every warning and error from `diagnostics.jsonl` on disk, with `since`, `limit` and `code` (HOST_EXCEPTION, PARAM_UNRESOLVED, HOST_TIMEOUT…) and a count per code. Tiles that fail before the executor (e.g. a test comp that could not be made) are logged since 0.99.1.
+
 ## [0.99.1] — 2026-11-15 — Fixes from the first full run inside After Effects 2026 (Claude Test Bridge)
 The side session on the owner's laptop ran all 353 tiles in After Effects 26.5.3 through the bridge: 222 pass · 126 fail · 5 skip, five product bugs + three bridge bugs. Each one is now reproduced by the test mock (which throws After Effects' exact message) and fixed:
 - **Grid / Cloner / every effector (51 tiles)** — "null is not an object (effects.ensure)": after `setPropertyParameters` the old references are stale; `effects.ensure` now uses the property it returns, reaches the effect through `parentProperty`, and gives the effect its MOE name back (also in `effects.setMenu`).

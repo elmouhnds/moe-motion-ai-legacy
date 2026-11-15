@@ -119,7 +119,7 @@ const TOOLS = [
   { name: 'moe_try_tool', description: 'Run ONE registered MOE tool with given args on a fresh test subject inside After Effects, render the result with After Effects\' Render Queue and return up to 4 frames as images, then Undo and report. Use it to SEE what a tool produces.', inputSchema: { type: 'object', required: ['tool'], properties: { tool: { type: 'string', description: 'e.g. reveal.fx, grid.build, interact.clickFx' }, args: { type: 'object' }, subject: { type: 'string', enum: SUBJECTS }, seconds: { type: 'number', description: 'seconds to render (default 2.4, max 6)' }, frames: { type: 'number', description: 'images to return (default 4, max 8)' } } } },
   { name: 'moe_job', description: 'Progress or report of a job (id, or "last").', inputSchema: { type: 'object', required: ['job'], properties: { job: { type: 'string' } } } },
   { name: 'moe_stop', description: 'Stop the running job after its current tile.', inputSchema: { type: 'object', properties: {} } },
-  { name: 'moe_logs', description: 'The panel\'s last warnings and errors.', inputSchema: { type: 'object', properties: {} } },
+  { name: 'moe_logs', description: 'Every warning and error the panel wrote to diagnostics.jsonl (on disk, so nothing rolls off). Filters: since (ISO time), limit (default 300), code (e.g. HOST_EXCEPTION, PARAM_UNRESOLVED, HOST_TIMEOUT).', inputSchema: { type: 'object', properties: { since: { type: 'string' }, limit: { type: 'number' }, code: { type: 'string' } } } },
   { name: 'moe_deploy', description: 'Copy this repository\'s extension/ folder into the installed MOE panel and reload the panel (host scripts reload with it). Run after changing code, before testing again.', inputSchema: { type: 'object', properties: {} } }
 ];
 
@@ -137,7 +137,7 @@ async function runTool(name, a = {}) {
     }
     case 'moe_job': { const j = await call('job', { job: a.job }); return text(j.state === 'running' ? `running ${j.progress.i + 1}/${j.progress.total} · ${j.progress.label}` : summary(j.report)); }
     case 'moe_stop': return text(await call('stop'));
-    case 'moe_logs': return text((await call('logs')).entries.map((e) => `${e.t} ${e.level} ${e.area}: ${e.message}${e.data ? ` ${JSON.stringify(e.data)}` : ''}`).join('\n') || 'No warnings or errors.');
+    case 'moe_logs': return text((await call('logs', { since: a.since, limit: a.limit, code: a.code })).entries.map((e) => `${e.t} ${e.level} ${e.area}: ${e.message}${e.data ? ` ${JSON.stringify(e.data)}` : ''}`).join('\n') || 'No warnings or errors.');
     case 'moe_deploy': return text(await deploy());
     default: throw new Error(`Unknown tool ${name}`);
   }

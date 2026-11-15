@@ -10,7 +10,7 @@
     if (!root) { throw new Error('MOE_ROOT is not set'); }
 
     G.MOE = G.MOE || {};
-    G.MOE.version = '0.99.1';
+    G.MOE.version = '0.99.2';
     G.MOE.ops = {};
 
     var files = [
@@ -52,7 +52,7 @@
             if (!MOE.ops.hasOwnProperty(opName)) {
                 MOE.util.fail('UNKNOWN_OP', 'Unknown host operation: ' + opName);
             }
-            MOE.undoDepth = 0; /* v0.99.1: every panel call starts outside any MOE undo group */
+            MOE.undoDepth = 0; /* v0.99.2: every panel call starts outside any MOE undo group */
             var args = argsJson ? MOE.json.parse(argsJson) : {};
             var data = MOE.ops[opName].run(args);
             envelope = { ok: true, op: opName, data: data };
