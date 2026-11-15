@@ -2,6 +2,18 @@
 
 Last run: 2026-11-06 (v0.59.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
+## First Self-Test in After Effects (still on v0.99.0)
+32 checks, 7 pass / 25 fail — the first OUTPUT check in After Effects. 15 failures are the grid bug (fixed in 0.99.1),
+4 the stall behind a slow grid, 1 the render Format (0.99.1), 1 Matte FX (0.99.1). New and fixed in 0.99.5: Wipe Reveal
+from the wrong side (the tile test had passed it), the Marker In / Out check on a null (nulls are at 0 % in 26.x — the
+tool itself is right), Explode on a hidden selector setting. Undo was confirmed by three checks (trail, matte, wipe).
+
+## Third run in After Effects (still on v0.99.0)
+222 / 126 / 5 — identical to run 1 tile for tile: the five bugs are deterministic (fixed since 0.99.1, not yet installed
+there). New: per-tile times — layout 83 % of the run; the clone grids took 49–121 s and blocked the next tiles. The
+cascade of false timeouts is fixed in 0.99.5; whether the clone grids themselves are slow in After Effects is measured
+on the next run with 0.99.5.
+
 ## Tile Test coverage (v0.99.4, mock)
 353 / 353 tiles run on the mock with no skip (was 340 + 13 skipped / failed for want of a subject). The host profile is
 read in every run. **Mock, not After Effects** — the next After Effects run on 0.99.4 gives the real numbers and the

@@ -210,6 +210,10 @@ Permanent rules for anyone (human or AI) working in this repository.
 - `Layer.label` is a whole number 0–16 — set it only through `U.isLabel`; an undo name goes in `undoLabel`.
 - The Transform effect (ADBE Geometry2) has 13 parameters; match names are not in display order (Uniform Scale -0011, Scale Height -0003, Scale Width -0004, comp shutter -0009, Shutter Angle -0010); names may use typographic apostrophes (`apos()`). `expectParams` may be a list of counts.
 - `OutputModule.setSettings({ Format })` is read-only: pick a format with `templates` / `applyTemplate`.
+- Linear Wipe at 90° HIDES from the left as Completion rises — a reveal writes the opposite angle (`wipe.aeAngle`).
+- A new null has Opacity 0 % — never test an opacity expression on a null.
+- After Effects hides some text-selector settings by context: write them through `setShown` (skip + name), never let one hidden setting fail a tool.
+- A tile "pass" means the tool ran without an error; correctness is the Self-Test's job (it compares After Effects' output with MOE's maths). Report them separately.
 - Never trust a mock that is more lenient than After Effects: every After Effects error found goes into `tests/mock/ae-mock.js` with its exact message, and a test fails on the old code.
 
 ## Testing rules

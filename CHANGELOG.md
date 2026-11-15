@@ -2,6 +2,23 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.99.5] — 2026-11-15 — One slow call is one timeout, not a cascade; the full error list in the report
+- From the side session's third report (still on 0.99.0): a call "timed out at 30 s" yet After Effects worked on it for
+  120 s — After Effects cannot interrupt a script — and the next four tiles "timed out" at `selftest.begin` behind it.
+  The panel now waits for the late answer before the next call starts its clock (one honest timeout, logged when the
+  late answer arrives as HOST_LATE) and the message says the script is still running, not that it stopped.
+- From the FIRST run of the Self-Test in After Effects (it checks output, not just that a tool ran — 7 pass / 25 fail on
+  0.99.0, 15 of them the grid bug fixed in 0.99.1):
+  - **Wipe Reveal revealed from the wrong side** (all directions): at 90° Linear Wipe HIDES from the left, so a reveal
+    now writes the opposite angle. The mock now renders Linear Wipe the way After Effects does; the old code fails it.
+  - **Marker In / Out read 0 on a null** — After Effects 26 makes nulls at Opacity 0 %, and the expression scales the
+    layer's own opacity. The tool is right on visible layers; the check now uses a solid, and the mock makes nulls at 0 %.
+  - **Explode (text.animate) failed on a hidden selector setting** — a setting After Effects hides in that context is
+    now skipped and named (`hiddenSkipped`) instead of failing the whole animator.
+  - The Self-Test runs through the Claude Test Bridge (`selftest`, MCP `moe_self_test`).
+- Diagnostics › Copy report lists EVERY warning and error since the panel started, from `diagnostics.jsonl`, with counts
+  by code and by tool — it showed only the last 31 s of a 10-minute run before.
+
 ## [0.99.4] — 2026-11-15 — Tile Test: every tile runs, and a host profile of After Effects
 - **Host profile**: each Tile Test first reads, in its own test comp, the 34 native effects MOE writes — every
   parameter's name, match name, type and RANGE (`Property.hasMin / minValue / maxValue`) — and puts it in the report;

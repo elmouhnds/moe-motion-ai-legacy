@@ -247,31 +247,43 @@
             var c = itemById(args.compId), name = String(args.name || ''), root, dir, rq, item = null, paused = [], i, it, om, files, k, fmt = null;
             if (!c || !(c instanceof CompItem) || String(c.name).substring(0, PREFIX.length) !== PREFIX) { U.fail('BAD_ARGS', 'Only a "' + PREFIX + '" comp is rendered as a preview.'); }
             if (!/^[a-z0-9-]{1,80}$/.test(name)) { U.fail('BAD_ARGS', 'A preview name is 1 to 80 of a-z, 0-9 and -.'); }
-            root = new Folder(Folder.userData.fsName + '/MOE Motion AI/previews');
-            if (!root.exists) { root.create(); }
-            dir = new Folder(root.fsName + '/' + name);
-            if (!dir.exists) { dir.create(); }
-            files = dir.getFiles(name + '_*.*');
-            for (k = 0; k < files.length; k++) { try { files[k].remove(); } catch (eF) { /* in use */ } }
+            /* v0.99.5 (side session): the format is set FIRST - nothing of the user's Render Queue is touched and no folder
+               is made unless MOE's own item can be configured; the new frames carry a run stamp and the old ones are
+               removed only AFTER a render that wrote frames, so a failed render never wipes a good preview */
+            var stamp = String(new Date().getTime()), pattern, fresh;
             rq = app.project.renderQueue;
+            item = rq.items.add(c);
             try {
-                for (i = 1; i <= rq.numItems; i++) {
-                    it = rq.item(i);
-                    if (it.status === RQItemStatus.QUEUED) { it.render = false; paused.push(it); }
-                }
-                item = rq.items.add(c);
                 item.timeSpanStart = Math.max(0, num(args.start));
                 item.timeSpanDuration = Math.max(c.frameDuration, Math.min(num(args.duration) || 2, c.duration - item.timeSpanStart));
                 om = item.outputModule(1);
                 fmt = pickFormat(om);
-                om.file = new File(dir.fsName + '/' + name + '_[#####].' + fmt.ext);
+            } catch (eSet) {
+                try { item.remove(); } catch (eR0) { /* gone */ }
+                throw eSet;
+            }
+            root = new Folder(Folder.userData.fsName + '/MOE Motion AI/previews');
+            if (!root.exists) { root.create(); }
+            dir = new Folder(root.fsName + '/' + name);
+            if (!dir.exists) { dir.create(); }
+            pattern = name + '_' + stamp + '_[#####].' + fmt.ext;
+            try {
+                om.file = new File(dir.fsName + '/' + pattern);
+                for (i = 1; i <= rq.numItems; i++) {
+                    it = rq.item(i);
+                    if (it !== item && it.status === RQItemStatus.QUEUED) { it.render = false; paused.push(it); }
+                }
                 rq.render();
             } finally {
                 if (item) { try { item.remove(); } catch (eR) { /* already gone */ } }
                 for (i = 0; i < paused.length; i++) { try { paused[i].render = true; } catch (eP) { /* removed by the user */ } }
             }
-            files = dir.getFiles(name + '_*.' + fmt.ext);
-            return { folder: dir.fsName, frames: files.length, pattern: name + '_[#####].' + fmt.ext, format: fmt.how, paused: paused.length };
+            fresh = dir.getFiles(name + '_' + stamp + '_*.' + fmt.ext);
+            if (fresh.length) {
+                files = dir.getFiles(name + '_*.*');
+                for (k = 0; k < files.length; k++) { if (String(files[k].name).substr(0, (name + '_' + stamp + '_').length) !== name + '_' + stamp + '_') { try { files[k].remove(); } catch (eF) { /* in use */ } } }
+            }
+            return { folder: dir.fsName, frames: fresh.length, pattern: pattern, format: fmt.how, paused: paused.length };
         }
     };
 }($.global));

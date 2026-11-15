@@ -22,7 +22,7 @@ test('Wipe Reveal: one MOE Wipe (Linear Wipe) per layer, angle by direction, Tra
   for (const L of comp._layers.filter((l) => l.selected)) {
     const fx = fxOf(L, WP.FX);
     assert.equal(fx.matchName, 'ADBE Linear Wipe');
-    assert.equal(param(fx, 'Wipe Angle').value, 90, 'from the left: 90° (the wipe travels left → right)');
+    assert.equal(param(fx, 'Wipe Angle').value, 270, 'reveal from the left: 270° — at 90° Linear Wipe HIDES from the left (measured in After Effects 26.5), so a reveal writes the opposite');
     assert.equal(param(fx, 'Feather').value, 60);
     const k = param(fx, 'Transition Completion')._keys;
     assert.deepEqual(k.map((x) => x.value), [100, 0]);

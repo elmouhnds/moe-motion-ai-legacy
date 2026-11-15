@@ -28,17 +28,37 @@ function createHostBridge({ evalScript, rootPath, timeoutMs = 30000, logger }) {
   let busy = false;
   const log = logger || { info() {}, warn() {}, error() {} };
 
-  function rawEval(script, label, callTimeout) {
+  // v0.99.5 (side session, run 3: a call "timed out at 30 s" yet After Effects worked on it for 120 s, and every call
+  // after it timed out too): After Effects cannot interrupt a script, so a timeout only stops the panel WAITING. The
+  // script still runs; `stillRunning` is its late answer, and the next call waits for it before its own clock starts —
+  // so one slow call is reported once, not as a cascade of false timeouts.
+  let stillRunning = null;
+  const LATE_WAIT_MS = 10 * 60 * 1000;
+
+  async function rawEval(script, label, callTimeout) {
+    if (stillRunning) {
+      const s = stillRunning;
+      let t;
+      await Promise.race([s.done, new Promise((r) => { t = setTimeout(r, LATE_WAIT_MS); })]);
+      clearTimeout(t);
+      if (stillRunning === s) stillRunning = null;
+    }
     const limit = callTimeout || timeoutMs;
+    const started = Date.now();
     return new Promise((resolve, reject) => {
-      let done = false;
+      let done = false, late = null;
       const timer = setTimeout(() => {
         if (done) return;
         done = true;
-        reject(new HostError('HOST_TIMEOUT', `After Effects did not answer "${label}" within ${Math.round(limit / 1000)}s. It may be busy (rendering or a modal dialog).`));
+        let finish;
+        late = { label, started, done: new Promise((r) => { finish = r; }) };
+        late.finish = finish;
+        stillRunning = late;
+        reject(new HostError('HOST_TIMEOUT', `After Effects is still working on "${label}" after ${Math.round(limit / 1000)} s (it may be busy or showing a dialog). It is not stopped — After Effects cannot interrupt a script — and the next steps wait for it.`));
       }, limit);
       try {
         evalScript(script, (res) => {
+          if (late) { log.warn('host', `"${label}" finished late`, { code: 'HOST_LATE', ms: Date.now() - started }); late.finish(); if (stillRunning === late) stillRunning = null; return; }
           if (done) return;
           done = true;
           clearTimeout(timer);

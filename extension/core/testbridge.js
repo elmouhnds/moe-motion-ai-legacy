@@ -22,7 +22,7 @@
  *   reload             reload the panel (after new code was deployed) — the host scripts reload with it
  */
 const MAX_BODY = 64 * 1024;
-const COMMANDS = ['status', 'tiles', 'test', 'try', 'job', 'stop', 'logs', 'reload'];
+const COMMANDS = ['status', 'tiles', 'test', 'try', 'selftest', 'job', 'stop', 'logs', 'reload'];
 
 function createTestBridge({ services, http, fs, path, crypto, onReload, onChange, dataDir }) {
   const TT = require('../features/selftest/tileRunner');
@@ -39,7 +39,11 @@ function createTestBridge({ services, http, fs, path, crypto, onReload, onChange
     const job = { id, kind, state: 'running', progress: { i: 0, total: list.length, label: '' }, report: null, stop: false, startedAt: new Date().toISOString() };
     jobs.set(id, job); running = job;
     if (onChange) onChange();
-    TT.runTiles(services, list, Object.assign({}, opts, { shouldStop: () => job.stop, onProgress: (i, total, label) => { job.progress = { i, total, label }; } }))
+    const runner = kind === 'selftest'
+      // v0.99.5 (side session): the Self-Test checks OUTPUT against MOE's maths (the tile test only checks that a tool ran)
+      ? require('../features/selftest/runner').runSelfTest(services, { only: opts.only, onProgress: (c, i, total) => { job.progress = { i, total, label: c.label }; } }).then((r) => { try { services.store.set('selftest-last', r); } catch (_) { /* optional */ } return r; })
+      : TT.runTiles(services, list, Object.assign({}, opts, { shouldStop: () => job.stop, onProgress: (i, total, label) => { job.progress = { i, total, label }; } }));
+    runner
       .then((r) => { job.report = r; job.state = r.stopped ? 'stopped' : 'done'; })
       .catch((e) => { job.report = { error: String(e.message || e) }; job.state = 'failed'; })
       .finally(() => { running = null; services.logger.info('bridge', `${kind} job ${job.state}`, { id }); if (onChange) onChange(); });
@@ -68,6 +72,11 @@ function createTestBridge({ services, http, fs, path, crypto, onReload, onChange
       // args are validated by the executor against the tool's own schema, like any click
       const tile = { section: 'try', id: b.tool.replace(/[^a-z0-9]+/gi, '-'), label: `Try ${b.tool}`, tool: b.tool, args: b.args && typeof b.args === 'object' ? b.args : {}, subject: b.subject || undefined };
       return startJob('try', [tile], { render: b.render === false ? null : { duration: Number(b.render && b.render.duration) || 2.4 } });
+    },
+    async selftest(b) {
+      const all = require('../features/selftest/runner').CHECKS.map((c) => c.id);
+      const only = Array.isArray(b && b.only) && b.only.length ? b.only.filter((x) => all.includes(x)) : null;
+      return startJob('selftest', only || all, { only });
     },
     async job(b) {
       const job = jobs.get(b && b.job) || (b && b.job === 'last' ? [...jobs.values()].pop() : null);

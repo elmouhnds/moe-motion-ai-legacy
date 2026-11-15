@@ -103,3 +103,16 @@ test('logs keep the errors after many info lines, and the answer is strict JSON 
     assert.ok(j.entries.some((e) => /carousel failed/.test(e.message) && /"label"/.test(e.data.message)));
   } finally { await b.stop(); }
 });
+
+test('v0.99.5: the Self-Test runs through the bridge (output checks, not only "did not throw")', async () => {
+  const { b, info } = await bridge();
+  const auth = { Authorization: `Bearer ${info.token}` };
+  try {
+    const s = await post(info.port, 'selftest', { only: ['wipe', 'markers', 'exploder'] }, auth);
+    assert.equal(s.code, 200);
+    let j;
+    for (let i = 0; i < 100; i++) { j = (await post(info.port, 'job', { job: s.body.job }, auth)).body; if (j.state !== 'running') break; await new Promise((r) => setTimeout(r, 100)); }
+    assert.equal(j.state, 'done', JSON.stringify(j).slice(0, 300));
+    assert.deepEqual(j.report.checks.map((c) => [c.id, c.status]), [['wipe', 'pass'], ['exploder', 'pass'], ['markers', 'pass']]);
+  } finally { await b.stop(); }
+});

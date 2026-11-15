@@ -108,7 +108,9 @@ async function checkRetime(T) {
 
 /** v0.67: markers.add / markers.remove counted by After Effects itself, and the Marker In / Out expression read back. */
 async function checkMarkers(T) {
-  const [id] = await T.nulls([[300, 300]], 'ST Marker');
+  // v0.99.5: a visible layer — a null has Opacity 0 % in After Effects 26 (the check read 0 · 0 · 0 on one), and Marker
+  // In / Out scales the layer's own opacity, which is what it does on the layers users give it
+  const id = (await T.host.call('layers.createSolid', { compId: T.compId, name: 'ST Marker', color: [1, 1, 1] })).layerId;
   const add = await T.host.call('markers.add', { compId: T.compId, label: 'MOE: Self-Test Markers', layers: [id], times: [0.5, 1.5], comment: 'MOE Beat' });
   const total = add.layers[0].total;
   await T.select([id]);

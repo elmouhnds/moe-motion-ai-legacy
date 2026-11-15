@@ -79,7 +79,7 @@ function sampleable(layer) {
         for (let j = 0; j < N; j++) {
           const x = point[0] - radius[0] + (2 * radius[0] * (i + 0.5)) / N;
           const y = point[1] - radius[1] + (2 * radius[1] * (j + 0.5)) / N;
-          const c = postEffect ? renderEffects(layer, px(x / layer.width, y / layer.height, t), x, y) : px(x / layer.width, y / layer.height, t);
+          const c = postEffect ? renderEffects(layer, px(x / layer.width, y / layer.height, t), x, y, t) : px(x / layer.width, y / layer.height, t);
           for (let k = 0; k < 3; k++) acc[k] += (c[k] * c[3]) / (N * N);
           acc[3] += c[3] / (N * N);
         }
@@ -91,10 +91,19 @@ function sampleable(layer) {
 }
 
 /** Post-effect pixel simulation for the effects MOE adds (enabled ones only, in stack order). */
-function renderEffects(layer, rgba, x, y) {
+function renderEffects(layer, rgba, x, y, t) {
   let c = rgba.slice();
   for (const fx of (layer._parade ? layer._parade._children : [])) {
     if (!fx.enabled) continue;
+    // v0.99.5: Linear Wipe as measured in After Effects 26.5 by the Self-Test — at 90° it HIDES from the left as
+    // Transition Completion rises (travel direction (sin a, −cos a) in layer space, y down); feather ignored
+    if (fx.matchName === 'ADBE Linear Wipe' && x !== undefined) {
+      const at = (n) => { const p = fx._children.find((q) => q.name === n); return t !== undefined && p.numKeys ? p.valueAtTime(t, false) : p.value; };
+      const a = at('Wipe Angle') * Math.PI / 180, done = at('Transition Completion') / 100;
+      const u = (x / layer.width - 0.5) * Math.sin(a) - (y / layer.height - 0.5) * Math.cos(a) + 0.5;
+      if (u < done) c = [c[0], c[1], c[2], 0];
+      continue;
+    }
     // v0.40 mock: Gradient Ramp (linear) replaces the colour along Start → End (layer space)
     if (fx.matchName === 'ADBE Ramp' && x !== undefined) {
       const v = (n) => fx._children.find((q) => q.name === n).value;
@@ -868,6 +877,9 @@ class CompItem {
     this.layers = {
       addNull(duration) {
         const n = new MockLayer({ name: 'Null 1', nullLayer: true, outPoint: duration }, comp);
+        // v0.99.5: After Effects 26.5 makes a null with Opacity 0 % (the owner's screenshot of "Null 14"; the Self-Test's
+        // Marker In / Out read 0 · 0 · 0 on one) — an expression that scales `value` reads 0 there
+        n.property('ADBE Transform Group').property('ADBE Opacity').setValue(0);
         comp._layers.unshift(n);
         return n;
       },

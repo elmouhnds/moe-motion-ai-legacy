@@ -88,7 +88,7 @@ function createApp(root, services, env = {}) {
     const m = String(msg || '');
     const file = /host\/[\w/]+\.jsx line \S+/.exec(m);
     if (file) return `· ${file[0]}`;
-    if (/did not answer/.test(m)) return '· AE is busy (render / dialog?)';
+    if (/did not answer|is still working on/.test(m)) return '· AE is busy (render / dialog?)';
     if (/EvalScript error/.test(m)) return '· ExtendScript could not run';
     return m ? `· ${m.slice(0, 60)}${m.length > 60 ? '…' : ''}` : '';
   }

@@ -162,13 +162,28 @@ function kv(rows) {
   return h('dl', { class: 'kv' }, rows.flatMap(([k, v]) => [h('dt', {}, k), h('dd', {}, v === undefined || v === null || v === '' ? '—' : String(v))]));
 }
 
+/** v0.99.5 (side session, run 3: the report held the last 31 s of a 10-minute run): every warning / error since the
+ * panel started, from diagnostics.jsonl on disk — counts by code and by tool, and each one compactly. */
+function problemsReport(app) {
+  const since = new Date(Date.now() - (typeof performance !== 'undefined' ? performance.now() : 0)).toISOString();
+  let rows = [];
+  try { rows = app.services.store.tail('diagnostics', 5000).filter((e) => e && (e.level === 'warn' || e.level === 'error') && String(e.t) >= since); } catch (_) { rows = app.services.logger.problems(); }
+  const count = (key) => rows.reduce((o, e) => { const k = key(e); o[k] = (o[k] || 0) + 1; return o; }, {});
+  return {
+    since, total: rows.length,
+    byCode: count((e) => (e.data && e.data.code) || e.level),
+    byTool: count((e) => String(e.message).split(' ')[0]),
+    entries: rows.slice(-500).map((e) => ({ t: e.t, level: e.level, area: e.area, message: e.message, code: e.data && e.data.code, detail: e.data && (e.data.message || e.data.detail) }))
+  };
+}
+
 function report(app) {
   const s = app.state.get();
   return JSON.stringify({
     moe: app.services.version, host: s.hostInfo, hostError: s.hostError, platform: app.services.platform.info,
     tools: app.services.registry.list().map((t) => `${t.id}@${t.version}`),
     ui: Object.assign({ motion: document.documentElement.getAttribute('data-motion'), uptimeS: Math.round(performance.now() / 1000) }, app.stats),
-    session: app.services.cost.session(), problems: app.services.logger.problems().slice(-30)
+    session: app.services.cost.session(), problems: problemsReport(app)
   }, null, 2);
 }
 

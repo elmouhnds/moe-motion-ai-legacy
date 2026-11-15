@@ -101,6 +101,16 @@
         }
     };
 
+    /* v0.99.5 (Self-Test on After Effects 26.5: 'Can not "set value" with this property, because the property or a
+       parent property is hidden' in Explode): After Effects hides some selector settings by context (e.g. Smoothness
+       unless Shape is Square). A hidden one is skipped and NAMED in MOE.textHidden - never the whole animator lost. */
+    function setShown(p, v, label) {
+        try { p.setValue(v); return true; } catch (e) {
+            if (/hidden/i.test(String(e.message || e))) { MOE.textHidden.push(label || p.name); return false; }
+            throw e;
+        }
+    }
+
     function setAdvanced(selector, adv) {
         var a = selector.property('ADBE Text Range Advanced');
         var map = [
@@ -109,7 +119,7 @@
             ['easeHigh', 'ADBE Text Levels Max Ease'], ['easeLow', 'ADBE Text Levels Min Ease'], ['randomize', 'ADBE Text Randomize Order']
         ], i;
         for (i = 0; i < map.length; i++) {
-            if (adv[map[i][0]] !== undefined && adv[map[i][0]] !== null) { a.property(map[i][1]).setValue(adv[map[i][0]]); }
+            if (adv[map[i][0]] !== undefined && adv[map[i][0]] !== null) { setShown(a.property(map[i][1]), adv[map[i][0]], 'Range ' + map[i][0]); }
         }
     }
 
@@ -130,7 +140,7 @@
         for (i = 0; i < names.length; i++) {
             if (o[names[i][0]] === undefined) { continue; }
             var p = find(w, names[i][1]);
-            if (p) { p.setValue(o[names[i][0]]); set.push(names[i][1]); } else { missing.push(names[i][1]); }
+            if (p) { if (setShown(p, o[names[i][0]], 'Wiggly ' + names[i][1])) { set.push(names[i][1]); } } else { missing.push(names[i][1]); }
         }
         return { set: set, missing: missing };
     }
@@ -154,6 +164,7 @@
             var comp = U.compById(args.compId);
             return U.withUndo(args.label || 'MOE: Text Animation', function () {
                 var out = [], li, layer, animators, anim, idx, sel, k, i, p, replaced, spec = args.spec, keyProp, ke;
+                MOE.textHidden = [];
                 for (li = 0; li < args.layers.length; li++) {
                     var startTime = num(args.layers[li].startTime);
                     layer = U.findLayer(comp, { layerId: args.layers[li].layerId });
@@ -171,7 +182,7 @@
                         p = props.addProperty(spec.props[i].matchName);
                         anim = layer.property('ADBE Text Properties').property('ADBE Text Animators').property(idx);
                         props = anim.property('ADBE Text Animator Properties');
-                        props.property(spec.props[i].matchName).setValue(spec.props[i].value);
+                        setShown(props.property(spec.props[i].matchName), spec.props[i].value, 'Animator ' + spec.props[i].matchName);
                     }
                     anim.property('ADBE Text Selectors').addProperty('ADBE Text Selector');
                     anim = layer.property('ADBE Text Properties').property('ADBE Text Animators').property(idx);
@@ -196,7 +207,7 @@
                         keyProp.setInterpolationTypeAtKey(k, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
                         keyProp.setTemporalEaseAtKey(k, [new KeyframeEase(0, ke.inInfl || 33.33)], [new KeyframeEase(0, ke.outInfl || 33.33)]);
                     }
-                    out.push({ layerId: layer.id, name: layer.name, animator: args.name, index: idx, replaced: replaced, keys: keyProp.numKeys, firstKey: keyProp.keyTime(1), lastKey: keyProp.keyTime(keyProp.numKeys), props: props.numProperties, wiggly: wig });
+                    out.push({ layerId: layer.id, name: layer.name, animator: args.name, index: idx, replaced: replaced, keys: keyProp.numKeys, firstKey: keyProp.keyTime(1), lastKey: keyProp.keyTime(keyProp.numKeys), props: props.numProperties, wiggly: wig, hiddenSkipped: MOE.textHidden.slice(0) });
                 }
                 return { layers: out };
             });

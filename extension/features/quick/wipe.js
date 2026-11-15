@@ -4,8 +4,10 @@
  * one effect named "MOE Wipe", Wipe Angle and Feather set by their English names, Transition Completion keyed
  * 100 → 0 (in) or 0 → 100 (out) on the comp's frame grid, with Quick Animate's eases, Stagger and screen Order.
  *
- * Angles: After Effects' Linear Wipe travels from left to right at 90° (the reference manual); a reveal runs the
- * transition backwards, so the layer appears in the direction the wipe travels. The Self-Test measures it.
+ * Angles: `FROM` is the side the layer appears from (what the user picks and the previews draw). v0.99.5 — measured in
+ * After Effects 26.5 by the Self-Test: at 90° Linear Wipe HIDES from the left as Completion rises, so a reveal (the
+ * transition run backwards, 100 → 0) uncovers the RIGHT side first. A reveal therefore writes the opposite angle
+ * (`aeAngle`); a hide writes the angle itself.
  */
 const PLAN = require('./animatePlan');
 const S = require('../compositing/shared');
@@ -20,6 +22,8 @@ const FROM = {
   topLeft: { label: 'Diagonal ↘', angle: 135 },
   bottomLeft: { label: 'Diagonal ↗', angle: 45 }
 };
+/** The Wipe Angle written to After Effects for this side and direction (see above). */
+const aeAngle = (from, dir) => { const a = (FROM[from] || FROM.left).angle; return dir === 'out' ? a : (a + 180) % 360; };
 const FX = 'MOE Wipe';
 const ADDR = (id, p) => ({ layerId: id, matchNames: ['ADBE Effect Parade', `name:${FX}`, `name:${p}`] });
 
@@ -70,7 +74,7 @@ const wipe = {
     // v0.94 (docs/features/ONE_UNDO.md): the wipe effects and their keys in ONE host call — one Ctrl+Z
     const P = PLAN1(host, `MOE: ${FX}`);
     const fxRef = P.add('effects.ensure', { compId: ctx.comp.id, label: `MOE: ${FX}`, layers: ids.map((id) => ({ layer: { layerId: id }, items: [{ key: FX, matchName: 'ADBE Linear Wipe', before: [], params: [
-      { id: 'Wipe Angle', value: FROM[args.from].angle, names: ['Wipe Angle'] },
+      { id: 'Wipe Angle', value: aeAngle(args.from, args.dir), names: ['Wipe Angle'] },
       { id: 'Feather', value: args.feather, names: ['Feather'] }
     ] }] })) });
     const pl = plan(args);
@@ -97,4 +101,4 @@ const wipe = {
   summarize(result) { return `${FX} on ${result.keys.items.length} layer(s)`; }
 };
 
-module.exports = { FROM, FX, plan, wipe };
+module.exports = { FROM, FX, plan, wipe, aeAngle };
