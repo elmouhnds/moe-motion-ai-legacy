@@ -38,7 +38,7 @@
 - Next: icon morphs (path-to-path), multi-colour icon packs with per-part groups, lower-thirds / callout templates built from shapes + text, Lottie / SVG file import into shapes, pattern backgrounds (grid, dots, stripes), Text section in the library + Inspector pattern, hover-to-preview on the comp
 
 ## M2.05 — Claude Test Bridge ✅ (v0.99.0)
-Opus (Claude Code on the owner's PC) tests every tile and tool inside After Effects through the panel's local bridge + MCP server, looks at real renders, fixes and redeploys. Next: the owner's first bridge session.
+Opus (Claude Code on the owner's PC) tests every tile and tool inside After Effects through the panel's local bridge + MCP server, looks at real renders, fixes and redeploys. First run (AE 26.5): 222/353 → 5 bugs fixed in v0.99.1. Next: re-run on 0.99.1 with renders (visual review) and the Undo count.
 
 ## M2.04 — Click VFX + controllers + bundled previews ✅ (v0.98.0; v0.98.1 Cloner fix; v0.98.2 undo groups + Tile Test in After Effects)
 - Click VFX (4 styles), controller nulls with only the style's values, 110 tiles rendered by MOE's renderer. Next: renders for grid / glass / zoom / text / backgrounds; relink of cross-comp controller links after a comp rename; Ring / Clock / Cells fields.

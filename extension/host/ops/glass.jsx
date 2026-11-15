@@ -133,7 +133,7 @@
                     holder.name = args.name;
                     if (args.above) { holder.moveBefore(U.findLayer(comp, { layerId: args.above })); }
                     holder.enabled = false;
-                    if (args.label !== undefined) { holder.label = args.label; }
+                    if (U.isLabel(args.label)) { holder.label = args.label; }
                     if (args.comment) { holder.comment = String(args.comment); }
                 } catch (e) {
                     try { if (holder) { holder.remove(); } } catch (eH) { /* best effort */ }

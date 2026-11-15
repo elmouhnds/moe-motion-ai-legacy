@@ -84,3 +84,15 @@ test('Cursor Animator: cursor layer with travel/hold, pulse and ripple from a ke
   assert.ok((await services.executor.restore(r.checkpointId)).ok);
   assert.equal(comp._layers.some((l) => /^MOE Cursor/.test(l.name)), false);
 });
+
+test('v0.99.1: the zoom keys go to Scale Height (-0003) — the scale Uniform Scale drives; Scale Width (-0004) stays untouched', async () => {
+  const { services, comp } = await createTestServices(rec());
+  const r = await services.executor.run('zoom.focus', { target: 'layer', level: 200, spotlight: 50 });
+  assert.equal(r.status, 'success', JSON.stringify(r.errors || r.verification));
+  const f = fxOf(comp);
+  const height = f._children.find((p) => p.matchName === 'ADBE Geometry2-0003'), width = f._children.find((p) => p.matchName === 'ADBE Geometry2-0004');
+  assert.equal(height.name, 'Scale Height');
+  assert.ok(height.numKeys >= 2, 'Scale Height is keyed');
+  assert.equal(width.numKeys, 0, 'Scale Width is not keyed');
+  assert.equal(f._children.find((p) => p.matchName === 'ADBE Geometry2-0011').value, 1, 'Uniform Scale on');
+});

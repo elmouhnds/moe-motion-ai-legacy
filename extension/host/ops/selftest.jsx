@@ -92,10 +92,16 @@
             if (!(comp instanceof CompItem) || String(comp.name).substring(0, PREFIX.length) !== PREFIX) { U.fail('NOT_SELFTEST', 'Undo is only run on the self-test comp.'); }
             if (!(MOE.undoLabels instanceof Array) || !MOE.undoLabels.length) { return { found: false, label: '' }; }
             label = MOE.undoLabels.pop();
-            try { id = app.findMenuCommandId('Undo ' + label); } catch (eF) { id = 0; }
-            if (!id) { return { found: false, label: label }; }
+            /* v0.99.1 (Tile Test on After Effects 26.5: "Undo MOE: ..." is not found by name): Edit > Undo is found
+               by its text - first "Undo <label>", then plain "Undo" (app.findMenuCommandId) - never by a numeric id */
+            var tried = ['Undo ' + label, 'Undo'], t, how = '';
+            for (t = 0; t < tried.length && !id; t++) {
+                try { id = app.findMenuCommandId(tried[t]); } catch (eF) { id = 0; }
+                if (id) { how = tried[t]; }
+            }
+            if (!id) { return { found: false, label: label, tried: tried }; }
             app.executeCommand(id);
-            return { found: true, label: label };
+            return { found: true, label: label, menu: how };
         }
     };
 
@@ -180,17 +186,32 @@
      * into <user data>/MOE Motion AI/previews/<name>/ only (Folder.userData). Items of the user's own render queue that
      * are queued are switched off while it renders and switched back on in finally; MOE's item is removed.
      * args: { compId, name ([a-z0-9-], max 80), start, duration } -> { folder, frames, pattern } */
+    /* v0.99.1 (Tile Test on After Effects 26.5: "Invalid Value for key: <Format>. Property is read-only"): the format
+       comes from an output-module TEMPLATE there (OutputModule.templates / applyTemplate, Scripting Guide); setSettings
+       Format is tried first for older versions. JPEG, then PNG, then TIFF - whichever template exists. */
+    function pickFormat(om) {
+        var t, i, k, order = [[/JPEG/i, 'jpg'], [/PNG/i, 'png'], [/TIFF/i, 'tif']];
+        try { om.setSettings({ 'Format': 'JPEG Sequence' }); return { ext: 'jpg', how: 'Format: JPEG Sequence' }; } catch (eS) { /* read-only on 26.x */ }
+        t = om.templates || [];
+        for (k = 0; k < order.length; k++) {
+            for (i = 0; i < t.length; i++) {
+                if (order[k][0].test(String(t[i]))) { om.applyTemplate(t[i]); return { ext: order[k][1], how: 'template: ' + t[i] }; }
+            }
+        }
+        U.fail('NO_FORMAT', 'No JPEG / PNG / TIFF output module template in this After Effects. Templates: ' + t.join(', '));
+    }
+
     ops['previews.render'] = {
         mutates: true,
         run: function (args) {
-            var c = itemById(args.compId), name = String(args.name || ''), root, dir, rq, item = null, paused = [], i, it, om, files, k;
+            var c = itemById(args.compId), name = String(args.name || ''), root, dir, rq, item = null, paused = [], i, it, om, files, k, fmt = null;
             if (!c || !(c instanceof CompItem) || String(c.name).substring(0, PREFIX.length) !== PREFIX) { U.fail('BAD_ARGS', 'Only a "' + PREFIX + '" comp is rendered as a preview.'); }
             if (!/^[a-z0-9-]{1,80}$/.test(name)) { U.fail('BAD_ARGS', 'A preview name is 1 to 80 of a-z, 0-9 and -.'); }
             root = new Folder(Folder.userData.fsName + '/MOE Motion AI/previews');
             if (!root.exists) { root.create(); }
             dir = new Folder(root.fsName + '/' + name);
             if (!dir.exists) { dir.create(); }
-            files = dir.getFiles(name + '_*.jpg');
+            files = dir.getFiles(name + '_*.*');
             for (k = 0; k < files.length; k++) { try { files[k].remove(); } catch (eF) { /* in use */ } }
             rq = app.project.renderQueue;
             try {
@@ -202,15 +223,15 @@
                 item.timeSpanStart = Math.max(0, num(args.start));
                 item.timeSpanDuration = Math.max(c.frameDuration, Math.min(num(args.duration) || 2, c.duration - item.timeSpanStart));
                 om = item.outputModule(1);
-                om.setSettings({ 'Format': 'JPEG Sequence' });
-                om.file = new File(dir.fsName + '/' + name + '_[#####].jpg');
+                fmt = pickFormat(om);
+                om.file = new File(dir.fsName + '/' + name + '_[#####].' + fmt.ext);
                 rq.render();
             } finally {
                 if (item) { try { item.remove(); } catch (eR) { /* already gone */ } }
                 for (i = 0; i < paused.length; i++) { try { paused[i].render = true; } catch (eP) { /* removed by the user */ } }
             }
-            files = dir.getFiles(name + '_*.jpg');
-            return { folder: dir.fsName, frames: files.length, pattern: name + '_[#####].jpg', paused: paused.length };
+            files = dir.getFiles(name + '_*.' + fmt.ext);
+            return { folder: dir.fsName, frames: files.length, pattern: name + '_[#####].' + fmt.ext, format: fmt.how, paused: paused.length };
         }
     };
 }($.global));

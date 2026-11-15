@@ -125,9 +125,12 @@ const EFFECTS = {
   'ADBE Spill2': [{ name: 'Method', valueType: 'OneD', value: 1 }],
   'ADBE Simple Choker': [{ name: 'View', valueType: 'OneD', value: 1 }, { name: 'Choke Matte', valueType: 'OneD', value: 0 }],
   'ADBE Gaussian Blur 2': [{ name: 'Blurriness', valueType: 'OneD', value: 0 }, { name: 'Blur Dimensions', valueType: 'OneD', value: 1 }, { name: 'Repeat Edge Pixels', valueType: 'OneD', value: 0 }],
-  'ADBE Geometry2': [{ name: 'Anchor Point', valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Position', valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Uniform Scale', valueType: 'OneD', value: 1 },
-    { name: 'Scale Height', valueType: 'OneD', value: 100 }, { name: 'Scale Width', valueType: 'OneD', value: 100 }, { name: 'Skew', valueType: 'OneD', value: 0 }, { name: 'Skew Axis', valueType: 'OneD', value: 0 },
-    { name: 'Rotation', valueType: 'OneD', value: 0 }, { name: 'Opacity', valueType: 'OneD', value: 100 }, { name: "Use Composition's Shutter Angle", valueType: 'OneD', value: 1 }, { name: 'Shutter Angle', valueType: 'OneD', value: 0 }, { name: 'Sampling', valueType: 'OneD', value: 1 }],
+  // v0.99.1: After Effects 26.5 as the Tile Test read it (13 parameters; match names NOT in display order — Uniform Scale is
+  // -0011 at position 3; the apostrophe of "Use Composition’s" is typographic). Parameters 12–13 were cut off in the
+  // report: their names here are stand-ins (unverified).
+  'ADBE Geometry2': [{ name: 'Anchor Point', mn: 1, valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Position', mn: 2, valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Uniform Scale', mn: 11, valueType: 'OneD', value: 1 },
+    { name: 'Scale Height', mn: 3, valueType: 'OneD', value: 100 }, { name: 'Scale Width', mn: 4, valueType: 'OneD', value: 100 }, { name: 'Skew', mn: 5, valueType: 'OneD', value: 0 }, { name: 'Skew Axis', mn: 6, valueType: 'OneD', value: 0 },
+    { name: 'Rotation', mn: 7, valueType: 'OneD', value: 0 }, { name: 'Opacity', mn: 8, valueType: 'OneD', value: 100 }, { name: 'Use Composition\u2019s Shutter Angle', mn: 9, valueType: 'OneD', value: 1 }, { name: 'Shutter Angle', mn: 10, valueType: 'OneD', value: 0 }, { name: 'Shutter Phase', mn: 12, valueType: 'OneD', value: 0 }, { name: 'Sampling', mn: 13, valueType: 'OneD', value: 1 }],
   'ADBE Optics Compensation': [{ name: 'Field Of View (FOV)', valueType: 'OneD', value: 0 }, { name: 'Reverse Lens Distortion', valueType: 'OneD', value: 0 }, { name: 'FOV Orientation', valueType: 'OneD', value: 1 },
     { name: 'View Center', valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Optimal Pixels (Invalidates Reversal)', valueType: 'OneD', value: 0 }, { name: 'Resize', valueType: 'OneD', value: 1 }],
   'ADBE Brightness & Contrast 2': [{ name: 'Brightness', valueType: 'OneD', value: 0 }, { name: 'Contrast', valueType: 'OneD', value: 0 }, { name: 'Use Legacy', valueType: 'OneD', value: 0 }],
@@ -159,7 +162,7 @@ const EFFECTS = {
   'ADBE Checkbox Control': [{ name: 'Checkbox', valueType: 'OneD', value: 0 }],
   // v0.96 Matte FX: Gradient Wipe, Fractal Noise, Turbulent Displace — names as in Effect Controls (topic headers are
   // NO_VALUE). UNVERIFIED in After Effects: effects.ensure fails with the real list if a name differs (Self-Test fxMatte).
-  'ADBE Gradient Wipe': [{ name: 'Transition Completion', valueType: 'OneD', value: 0 }, { name: 'Transition Softness', valueType: 'OneD', value: 0 }, { name: 'Gradient Layer', valueType: 'LAYER_INDEX', value: 0 }, { name: 'Gradient Placement', valueType: 'OneD', value: 3 }, { name: 'Invert Gradient', valueType: 'OneD', value: 0 }],
+  'ADBE Gradient Wipe': [{ name: 'Transition Completion', valueType: 'OneD', value: 0, range: [0, 1] }, { name: 'Transition Softness', valueType: 'OneD', value: 0, range: [0, 1] }, { name: 'Gradient Layer', valueType: 'LAYER_INDEX', value: 0 }, { name: 'Gradient Placement', valueType: 'OneD', value: 3 }, { name: 'Invert Gradient', valueType: 'OneD', value: 0 }],
   'ADBE Fractal Noise': [{ name: 'Fractal Type', valueType: 'OneD', value: 1 }, { name: 'Noise Type', valueType: 'OneD', value: 3 }, { name: 'Invert', valueType: 'OneD', value: 0 }, { name: 'Contrast', valueType: 'OneD', value: 100 }, { name: 'Brightness', valueType: 'OneD', value: 0 }, { name: 'Overflow', valueType: 'OneD', value: 3 },
     { name: 'Transform', valueType: 'NO_VALUE', value: 0 }, { name: 'Rotation', valueType: 'OneD', value: 0 }, { name: 'Uniform Scaling', valueType: 'OneD', value: 1 }, { name: 'Scale', valueType: 'OneD', value: 100 }, { name: 'Scale Width', valueType: 'OneD', value: 100 }, { name: 'Scale Height', valueType: 'OneD', value: 100 }, { name: 'Offset Turbulence', valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Perspective Offset', valueType: 'OneD', value: 0 },
     { name: 'Complexity', valueType: 'OneD', value: 6 }, { name: 'Sub Settings', valueType: 'NO_VALUE', value: 0 }, { name: 'Sub Influence (%)', valueType: 'OneD', value: 70 }, { name: 'Sub Scaling', valueType: 'OneD', value: 56 }, { name: 'Sub Rotation', valueType: 'OneD', value: 0 }, { name: 'Sub Offset', valueType: 'TwoD', value: [0, 0] }, { name: 'Center Subscale', valueType: 'OneD', value: 0 },
@@ -183,8 +186,8 @@ class MockEffect {
     const specs = (EFFECTS[matchName] || []).filter((p) => !(opts.dropParams || []).includes(p.name));
     this._children = specs.map((p, i) => new MockProperty({
       name: opts.locale ? `${opts.locale}:${p.name}` : p.name,
-      matchName: `${matchName}-${String(i + 1).padStart(4, '0')}`,
-      valueType: p.valueType, value: p.value, canSetExpression: true
+      matchName: `${matchName}-${String(p.mn || i + 1).padStart(4, '0')}`,
+      valueType: p.valueType, value: p.value, canSetExpression: true, range: p.range
     }, this, i + 1));
   }
   get propertyIndex() { return this.parentProperty._children.indexOf(this) + 1; }
@@ -249,6 +252,7 @@ class MockProperty {
     this.matchName = spec.matchName || spec.name;
     this.propertyType = PropertyType.PROPERTY;
     this.propertyValueType = PropertyValueType[spec.valueType || 'OneD'];
+    this._range = spec.range || null; // v0.99.1: a parameter After Effects limits (Tile Test on AE 26.5)
     this.isSpatial = /SPATIAL/.test(spec.valueType || '');
     this.canVaryOverTime = true;
     this.canSetExpression = spec.canSetExpression !== false;
@@ -321,19 +325,30 @@ class MockProperty {
   // PropertyBase.selected (read/write, Scripting Guide) — the tile test selects a property as a click does
   get selected() { return !!this._selected; }
   set selected(v) { this._selected = !!v; }
+  _checkRange(v, i) {
+    if (!this._range || typeof v !== 'number') return;
+    if (v < this._range[0] || v > this._range[1]) throw new Error(`After Effects error: Unable to call "${i ? 'setValueAtTime' : 'setValue'}" because of parameter ${i ? 2 : 1}. Value ${v} out of range ${this._range[0]} to ${this._range[1]}.`);
+  }
   _checkMenu(v) {
     if (!/Dropdown Control/.test(this.matchName || '')) return;
     const n = (this._menuItems || ['Item 1', 'Item 2', 'Item 3']).length;
     if (!(v >= 1 && v <= n)) throw new Error(`After Effects error: Unable to call "setValue" because of parameter 1. Value ${v} out of range 1 to ${n}.`);
   }
+  _checkHidden() {
+    const L = this._hidden3D || /^ADBE (Rotate X|Rotate Y|Orientation)$/.test(this.matchName || '') ? this._layer() : null;
+    if (L && !L.threeDLayer) throw new Error('After Effects error: Can not "set value" with this property, because the property or a parent property is hidden.');
+  }
   setValue(v) {
+    this._checkHidden();
     this._checkMenu(v);
+    this._checkRange(v, 0);
     if (this.propertyValueType === PropertyValueType.COLOR && (!Array.isArray(v) || v.length !== 4)) throw new Error('After Effects error: color value must have 4 components');
     if (this.propertyValueType === PropertyValueType.LAYER_INDEX) { const layers = this._layer()._comp._layers; this._ref = v >= 1 && v <= layers.length ? layers[v - 1] : null; }
     this._value = clone(v);
   }
   setValueAtTime(t, v) {
     this._checkMenu(v);
+    this._checkRange(v, 1);
     const lt = t - this._layer().startTime;
     const dims = dimsFor(this.propertyValueType);
     const lin = () => Array.from({ length: dims }, () => ({ speed: 0, influence: 16.666666667 }));
@@ -407,6 +422,9 @@ class MockProperty {
   setPropertyParameters(items) {
     if (!/Dropdown Control/.test(this.matchName)) throw new Error('After Effects error: setPropertyParameters needs a Dropdown Menu Control');
     this._menuItems = items.slice();
+    // v0.99.1: modelled on After Effects 26.5 (Tile Test: the effect could not be found by its name afterwards) —
+    // the old references go stale and the effect is back to its default name; callers must use the returned property
+    if (this.parentProperty && this.parentProperty.matchName === 'ADBE Dropdown Control') this.parentProperty.name = 'Dropdown Menu Control';
     return this;
   }
   get expression() { return this._expression; }
@@ -446,10 +464,19 @@ class MockGroup {
   get numProperties() { return this._children.length; }
   property(key) {
     if (typeof key === 'number') return this._children[key - 1] || null;
-    return this._children.find((c) => c.matchName === key || c.name === key) || null;
+    const found = this._children.find((c) => c.matchName === key || c.name === key) || null;
+    // v0.99.1 (Tile Test, After Effects 26.5: "the property or a parent property is hidden"): a 2D layer still HAS its
+    // 3D Transform properties, hidden — reading works, writing throws. Modelled for X / Y Rotation and Orientation.
+    if (!found && this.matchName === 'ADBE Transform Group' && HIDDEN_2D[key]) {
+      if (!this._hidden2D) this._hidden2D = {};
+      if (!this._hidden2D[key]) { const pr = new MockProperty({ name: HIDDEN_2D[key][0], matchName: key, valueType: HIDDEN_2D[key][1], value: HIDDEN_2D[key][2] }, this, 0); pr._hidden3D = true; this._hidden2D[key] = pr; }
+      return this._hidden2D[key];
+    }
+    return found;
   }
   propertyGroup(countUp) { return MockProperty.prototype.propertyGroup.call(this, countUp); }
 }
+const HIDDEN_2D = { 'ADBE Rotate X': ['X Rotation', 'OneD', 0], 'ADBE Rotate Y': ['Y Rotation', 'OneD', 0], 'ADBE Orientation': ['Orientation', 'ThreeD_SPATIAL', [0, 0, 0]] };
 
 /* Generic named/indexed groups used by text animators and shape contents. */
 class MockNode {
@@ -749,6 +776,9 @@ class MockLayer {
   setParentWithJump(p) { if (p === this) throw new Error('After Effects error: a layer cannot be its own parent'); this._parent = p || null; }
   get autoOrient() { return this._autoOrient || AutoOrientType.NO_AUTO_ORIENT; }
   set autoOrient(v) { this._autoOrient = v; }
+  // Layer.label: a label colour 0..16 — After Effects 26.5 throws for anything else (Tile Test: '"MOE: Carousel" is not an integer')
+  get label() { return this._label || 0; }
+  set label(v) { if (typeof v !== 'number' || Math.floor(v) !== v || v < 0 || v > 16) throw new Error(`After Effects error: Unable to set "label". ${v} is not an integer.`); this._label = v; }
   get threeDLayer() { return this._threeD; }
   set threeDLayer(v) {
     v = !!v;
@@ -987,7 +1017,12 @@ function installAE(target, fixture, { readFile, evalCode }) {
   const renderQueue = { _items: [], renders: [],
     get numItems() { return this._items.length; },
     item(i) { return this._items[i - 1]; },
-    items: { add: (c) => { const it = { comp: c, status: RQItemStatus.QUEUED, render: true, timeSpanStart: 0, timeSpanDuration: c.duration, _om: { settings: {}, file: null, setSettings(o) { Object.assign(this.settings, o); } },
+    items: { add: (c) => { const it = { comp: c, status: RQItemStatus.QUEUED, render: true, timeSpanStart: 0, timeSpanDuration: c.duration, _om: { settings: {}, file: null,
+      // v0.99.1: like After Effects 26.5 (Tile Test: "Invalid Value for key: <Format>. Property is read-only") — the format
+      // comes from a template. Template names here are stand-ins (the real list was not read yet); no JPEG one on purpose.
+      setSettings(o) { if (o && Object.prototype.hasOwnProperty.call(o, 'Format')) throw new Error('After Effects error: Invalid Value for key: <Format>.  Property is read-only'); Object.assign(this.settings, o); },
+      templates: ['Best Settings', 'High Quality', 'High Quality with Alpha', 'Lossless', 'Photoshop', 'PNG Sequence', 'TIFF Sequence with Alpha'],
+      applyTemplate(t) { if (!this.templates.includes(t)) throw new Error('After Effects error: no such template ' + t); this.settings.Format = t; } },
       outputModule() { return this._om; }, remove() { const k = renderQueue._items.indexOf(it); if (k >= 0) renderQueue._items.splice(k, 1); } }; renderQueue._items.push(it); return it; } },
     render() {
       for (const it of this._items.filter((x) => x.render && x.status === RQItemStatus.QUEUED)) {

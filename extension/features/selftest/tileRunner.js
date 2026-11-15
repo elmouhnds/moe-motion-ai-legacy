@@ -165,6 +165,9 @@ async function runTiles(services, tiles, opts = {}) {
       if (run && run.checkpointId && !(row.undo && row.undo.back)) { try { await executor.restore(run.checkpointId); } catch (_) { /* the comp goes anyway */ } }
       if (begin) { try { await host.call('selftest.end', { compId: begin.compId, previousId: begin.previousId }); } catch (e) { row.detail += ` · cleanup: ${e.message}`; } }
     }
+    // v0.99.1: a failed tile and a failed render are in the panel's log too (the Tile Test found them only in the job)
+    if (row.status === 'fail') services.logger.warn('tiletest', `${row.tile} failed`, { tool: row.tool, detail: row.detail });
+    if (row.frames && row.frames.error) services.logger.warn('tiletest', `${row.tile} render failed`, { detail: row.frames.error });
     report.tiles.push(row);
   }
   report.ms = Date.now() - started;

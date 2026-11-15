@@ -82,7 +82,7 @@
             return U.withUndo(args.undoLabel || 'MOE: New Null', function () {
                 var n = comp.layers.addNull(comp.duration), tg;
                 n.name = args.name;
-                if (args.label !== undefined) { n.label = args.label; }
+                if (U.isLabel(args.label)) { n.label = args.label; }
                 if (args.threeD) { n.threeDLayer = true; }
                 tg = n.property('ADBE Transform Group');
                 if (args.anchor) { tg.property('ADBE Anchor Point').setValue(args.threeD ? [num(args.anchor[0]), num(args.anchor[1]), 0] : [num(args.anchor[0]), num(args.anchor[1])]); }

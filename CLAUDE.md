@@ -203,6 +203,15 @@ Permanent rules for anyone (human or AI) working in this repository.
 - The bridge has fixed commands only. Never add an eval / raw host-op / file command to it; a new capability is a new registered tool. It runs tools only on `MOE Self-Test …` comps and listens only on 127.0.0.1 with its key.
 - If `moe_status` says the bridge is off, ask the owner to click Diagnostics › Claude Test Bridge › Allow Claude to test — never work around it.
 
+## After Effects 26.x facts (v0.99.1 — read in After Effects 26.5.3 by the Tile Test; the mock enforces each)
+- `Property.setPropertyParameters` invalidates the old references: use the property it RETURNS (`.parentProperty` is the effect) and re-name the effect if its name changed.
+- Gradient Wipe's Transition Completion / Transition Softness are 0–1 to a script (Effect Controls shows %); Linear Wipe's Completion is 0–100. Convert only where it is written (`fxTool WIPE_UNIT`).
+- A 2D layer has hidden X / Y Rotation and Orientation: never write them unless `threeDLayer`.
+- `Layer.label` is a whole number 0–16 — set it only through `U.isLabel`; an undo name goes in `undoLabel`.
+- The Transform effect (ADBE Geometry2) has 13 parameters; match names are not in display order (Uniform Scale -0011, Scale Height -0003, Scale Width -0004, comp shutter -0009, Shutter Angle -0010); names may use typographic apostrophes (`apos()`). `expectParams` may be a list of counts.
+- `OutputModule.setSettings({ Format })` is read-only: pick a format with `templates` / `applyTemplate`.
+- Never trust a mock that is more lenient than After Effects: every After Effects error found goes into `tests/mock/ae-mock.js` with its exact message, and a test fails on the old code.
+
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).
 - Tests run the **real host .jsx** against `tests/mock/ae-mock.js`. That proves logic, not host behaviour. Never describe mock results as After Effects results.

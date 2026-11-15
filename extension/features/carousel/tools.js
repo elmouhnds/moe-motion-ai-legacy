@@ -51,7 +51,7 @@ const carousel = {
     let k = 1; while (used.has(`MOE Carousel ${k}`)) k++;
     // v0.94 (docs/features/ONE_UNDO.md): the null, the 3D switch, parenting, the ring and the keys in ONE host call
     const T = PLAN1(host, 'MOE: Carousel');
-    const nulRef = T.add('layers.createNull', { compId: comp.id, name: `MOE Carousel ${k}`, position: [cx, cy], threeD: true, label: 'MOE: Carousel' });
+    const nulRef = T.add('layers.createNull', { compId: comp.id, name: `MOE Carousel ${k}`, position: [cx, cy], threeD: true, undoLabel: 'MOE: Carousel' });
     const flat = cards.filter((c) => !c.threeD);
     const made3DRef = flat.length ? T.add('layers.setAttrs', { compId: comp.id, label: 'MOE: Carousel', items: flat.map((c) => ({ layerId: c.id, threeDLayer: true })) }) : null;
     const parRef = T.add('layers.setParent', { compId: comp.id, label: 'MOE: Carousel', items: cards.map((c) => ({ layerId: c.id, parentId: nulRef.at('layerId') })) });

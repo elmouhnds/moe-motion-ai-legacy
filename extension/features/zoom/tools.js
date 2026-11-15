@@ -17,15 +17,19 @@ const FX = 'ADBE Geometry2';
 const ADDR = (id) => ({
   anchor: { layerId: id, matchNames: ['ADBE Effect Parade', `name:${RIG}`, 'ADBE Geometry2-0001'] },
   position: { layerId: id, matchNames: ['ADBE Effect Parade', `name:${RIG}`, 'ADBE Geometry2-0002'] },
-  scale: { layerId: id, matchNames: ['ADBE Effect Parade', `name:${RIG}`, 'ADBE Geometry2-0004'] }
+  // v0.99.1 (Tile Test, After Effects 26.5): Scale Height is -0003 (the one Uniform Scale drives); -0004 is Scale Width,
+  // ignored while Uniform Scale is on — the zoom keys went there before
+  scale: { layerId: id, matchNames: ['ADBE Effect Parade', `name:${RIG}`, 'ADBE Geometry2-0003'] }
 });
 const EASE_OPTIONS = Object.entries(Z.EASES).map(([value, e]) => ({ value, label: e.label }));
 const RIG_ITEMS = (mb) => [{
-  key: RIG, matchName: FX, before: [], expectParams: 12,
+  // v0.99.1: After Effects 26.5 has 13 parameters (12 before) and match names out of display order — names first;
+  // the suffixes are the real match names read on 26.5 (Uniform Scale -0011, comp shutter -0009, Shutter Angle -0010)
+  key: RIG, matchName: FX, before: [], expectParams: [12, 13],
   params: [
-    { id: 'Uniform Scale', value: 1, names: ['Uniform Scale'], suffix: 3 },
-    { id: 'Comp Shutter', value: 0, names: ["Use Composition's Shutter Angle"], suffix: 10 },
-    { id: 'Shutter Angle', value: mb ? 180 : 0, names: ['Shutter Angle'], suffix: 11 }
+    { id: 'Uniform Scale', value: 1, names: ['Uniform Scale'], suffix: 11 },
+    { id: 'Comp Shutter', value: 0, names: ["Use Composition's Shutter Angle", 'Use Composition\u2019s Shutter Angle'], suffix: 9 },
+    { id: 'Shutter Angle', value: mb ? 180 : 0, names: ['Shutter Angle'], suffix: 10 }
   ]
 }];
 

@@ -65,7 +65,7 @@
                 var contents = function () { return L.property('ADBE Root Vectors Group').property(gi).property('ADBE Vectors Group'); };
                 try {
                     L.name = args.name || 'MOE Shape';
-                    if (args.label !== undefined) { L.label = args.label; }
+                    if (U.isLabel(args.label)) { L.label = args.label; }
                     gi = L.property('ADBE Root Vectors Group').addProperty('ADBE Vector Group').propertyIndex;
                     L.property('ADBE Root Vectors Group').property(gi).name = args.groupName || 'Shape';
                     if (hasPaths) {
@@ -185,7 +185,7 @@
                 var contents = function () { return L.property('ADBE Root Vectors Group').property(gi).property('ADBE Vectors Group'); };
                 try {
                     L.name = args.name;
-                    if (args.label !== undefined) { L.label = args.label; }
+                    if (U.isLabel(args.label)) { L.label = args.label; }
                     for (i = 0; i < args.cells.length; i++) {
                         cell = args.cells[i];
                         root = L.property('ADBE Root Vectors Group');

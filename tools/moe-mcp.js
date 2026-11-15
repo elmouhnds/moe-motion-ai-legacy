@@ -77,7 +77,9 @@ function frameImages(row, want = 4) {
   const out = [];
   for (const i of picks) {
     const file = path.join(row.frames.folder, row.frames.pattern.replace('[#####]', String(i).padStart(5, '0')));
-    try { out.push({ type: 'image', data: fs.readFileSync(file).toString('base64'), mimeType: 'image/jpeg' }); out.push({ type: 'text', text: `frame ${i} / ${n} (${(i / row.frames.fps).toFixed(2)} s) — ${file}` }); } catch (e) { out.push({ type: 'text', text: `frame ${i}: ${e.message}` }); }
+    const mime = /\.png$/i.test(file) ? 'image/png' : /\.jpe?g$/i.test(file) ? 'image/jpeg' : null;
+    if (!mime) { out.push({ type: 'text', text: `frame ${i}: ${path.extname(file)} cannot be shown as an image — ${file}` }); continue; }
+    try { out.push({ type: 'image', data: fs.readFileSync(file).toString('base64'), mimeType: mime }); out.push({ type: 'text', text: `frame ${i} / ${n} (${(i / row.frames.fps).toFixed(2)} s) — ${file}` }); } catch (e) { out.push({ type: 'text', text: `frame ${i}: ${e.message}` }); }
   }
   return out;
 }

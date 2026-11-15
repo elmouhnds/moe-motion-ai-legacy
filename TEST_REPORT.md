@@ -2,6 +2,9 @@
 
 Last run: 2026-11-06 (v0.59.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
+## First full run inside After Effects (v0.99.0 → v0.99.1)
+The side session on the owner's laptop (After Effects 26.5.3x9, Windows 11, MOE 0.99.0) ran all 353 tiles through the Claude Test Bridge: **222 pass · 126 fail · 5 skip**. Healthy in After Effects: backgrounds 52/52, expressions 37/37, templates 12/12, quick.animate 42/42, reveal.matte 15/15, interact.clickFx 4/4 and more. The 126 failures were 5 bugs (grid/effectors 51, reveal.fx 43, glass 14, carousel/click label 6, zoom 5) + 6 timeouts on big clone grids; the bridge could not render (Format read-only) or press Undo by name, and its log lost the errors in a long run. All fixed in 0.99.1 and reproduced first in the mock (each old-code failure checked). **The visual quality and the Undo count are still unverified in After Effects** — they need the next bridge run on 0.99.1. Not reproduced here: "unescaped quotes in the logs JSON" (the bridge answer parses strictly in `tests/testbridge.test.js`).
+
 ## Claude Test Bridge (v0.99.0)
 `tests/testbridge.test.js`: a real HTTP bridge on 127.0.0.1 and the real MCP server process over stdio, with the mock After Effects behind them — key required (401 without / wrong), unknown command 404, browser Origin 403, unknown tool 400; MCP initialize / tools/list / moe_status / moe_try_tool (Globe on cards: PASS) / moe_test_tiles (3 tiles: 3 pass) / a bad tool → isError; with the bridge off the MCP server says how to turn it on; reload sets a 2-minute resume ticket. **Mock, not After Effects; not yet run on the owner's PC.**
 

@@ -75,7 +75,7 @@ function createTestBridge({ services, http, fs, path, crypto, onReload, onChange
       return { id: job.id, state: job.state, progress: job.progress, report: job.report };
     },
     async stop() { if (running) running.stop = true; return { stopping: !!running }; },
-    async logs() { return { entries: services.logger.entries().filter((e) => e.level !== 'debug' && e.level !== 'info').slice(-60) }; },
+    async logs() { return { entries: (services.logger.problems ? services.logger.problems() : services.logger.entries().filter((e) => e.level === 'warn' || e.level === 'error')).slice(-100) }; },
     async reload() {
       // the bridge comes back on after THIS reload only (asked by the authenticated client, valid 2 minutes)
       services.store.set('bridge-resume', { until: Date.now() + 120000 });

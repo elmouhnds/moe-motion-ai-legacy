@@ -30,7 +30,7 @@
         else if (args.bottom) { L.moveToEnd(); }
         if (args.inPoint !== undefined && args.inPoint !== null) { L.inPoint = num(args.inPoint); }
         if (args.outPoint !== undefined && args.outPoint !== null) { L.outPoint = num(args.outPoint); }
-        if (args.label !== undefined) { L.label = args.label; }
+        if (U.isLabel(args.label)) { L.label = args.label; }
         if (args.comment) { L.comment = String(args.comment); }
     }
 
@@ -83,6 +83,9 @@
         clearAnim(pos);
         pos.setValue(z ? [0, 0, 0] : [0, 0]);
         for (i = 0; i < names.length; i++) {
+            /* v0.99.1 (Tile Test, After Effects 26.5: "the property or a parent property is hidden"): a 2D layer keeps
+               X / Y Rotation and Orientation hidden - writing them throws. Only a 3D layer gets them. */
+            if (!z && (names[i] === 'ADBE Rotate X' || names[i] === 'ADBE Rotate Y' || names[i] === 'ADBE Orientation')) { continue; }
             p = L.property('ADBE Transform Group').property(names[i]);
             if (!p) { continue; }
             clearAnim(p);
@@ -113,7 +116,7 @@
                 d.locked = false;
                 identity(d);
                 d.setParentWithJump(src);
-                if (args.label !== undefined) { d.label = args.label; }
+                if (U.isLabel(args.label)) { d.label = args.label; }
                 if (args.comment) { d.comment = String(args.comment); }
                 return { layerId: d.id, index: d.index, name: d.name, parentId: src.id };
             });
@@ -385,7 +388,7 @@
             return U.withUndo('MOE: Cursor', function () {
                 var L = comp.layers.addShape(), root, g, gi, c, k = num(args.size || 32) / 30, ring, ri, col = args.color || [1, 1, 1], out = args.outline || [0, 0, 0];
                 L.name = args.name || 'MOE Cursor';
-                if (args.label !== undefined) { L.label = args.label; }
+                if (U.isLabel(args.label)) { L.label = args.label; }
                 /* Click ring first (drawn below the pointer). */
                 root = L.property('ADBE Root Vectors Group');
                 ring = root.addProperty('ADBE Vector Group');
@@ -446,6 +449,8 @@
                 p = fx.property(1);
                 if (typeof p.setPropertyParameters !== 'function') { U.fail('UNSUPPORTED', 'Dropdown menus need After Effects 17.0.1 or later.'); }
                 p = p.setPropertyParameters(args.items);
+                /* v0.99.1: the effect keeps its MOE name (expressions read it by name) even if After Effects resets it */
+                if (p.parentProperty && p.parentProperty.name !== args.effectKey) { p.parentProperty.name = args.effectKey; }
                 if (args.value) { p.setValue(args.value); }
                 return { layerId: L.id, effect: args.effectKey, items: args.items.length, value: plain(p.value) };
             });

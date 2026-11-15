@@ -184,6 +184,10 @@
      * above was never verified. Only the OUTERMOST call opens and closes a group now (MOE.undoDepth); an op run
      * inside tx.run writes into tx.run's group and never calls begin/end itself.
      */
+    /* v0.99.1 (Tile Test, After Effects 26.5: 'Unable to set "label". MOE: Carousel is not an integer'): Layer.label is
+       a label colour 0..16; anything else is ignored, never written. */
+    U.isLabel = function (v) { return typeof v === 'number' && v >= 0 && v <= 16 && Math.floor(v) === v; };
+
     U.withUndo = function (label, fn) {
         var outer = !(MOE.undoDepth > 0);
         if (outer) {

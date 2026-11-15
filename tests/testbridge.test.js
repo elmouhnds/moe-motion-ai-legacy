@@ -89,3 +89,17 @@ test('reload: the bridge turns back on only after a reload it was asked for', as
     assert.ok(resume && resume.until > Date.now() && resume.until < Date.now() + 130000);
   } finally { await b.stop(); }
 });
+
+test('logs keep the errors after many info lines, and the answer is strict JSON even with quotes in a message', async () => {
+  const { b, info, services } = await bridge();
+  try {
+    services.logger.error('exec', 'layout.carousel failed', { message: 'Unable to set "label". MOE: Carousel is not an integer.' });
+    for (let i = 0; i < 900; i++) services.logger.info('exec', `noise ${i}`);
+    const raw = await new Promise((resolve, reject) => {
+      const req = http.request({ host: '127.0.0.1', port: info.port, path: '/v1/logs', method: 'POST', headers: { Authorization: `Bearer ${info.token}`, 'Content-Type': 'application/json', 'Content-Length': 2 } }, (res) => { const c = []; res.on('data', (d) => c.push(d)); res.on('end', () => resolve(Buffer.concat(c).toString('utf8'))); });
+      req.on('error', reject); req.end('{}');
+    });
+    const j = JSON.parse(raw); // strict parse
+    assert.ok(j.entries.some((e) => /carousel failed/.test(e.message) && /"label"/.test(e.data.message)));
+  } finally { await b.stop(); }
+});

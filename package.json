@@ -1,6 +1,6 @@
 {
   "name": "moe-motion-ai",
-  "version": "0.99.0",
+  "version": "0.99.1",
   "private": true,
   "description": "MOE Motion AI \u2014 independent After Effects 2025 workbench panel (CEP 12 + ExtendScript).",
   "license": "UNLICENSED",

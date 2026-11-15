@@ -110,13 +110,19 @@
      * Resolve a logical parameter. spec: { id, names: [], suffix: N, nth: { type, n } }
      * Returns { prop, index, method } or null.
      */
+    /* expectParams: one count, or the list of counts known on the After Effects versions MOE runs on */
+    function countOk(want, n) { var i; if (want instanceof Array) { for (i = 0; i < want.length; i++) { if (want[i] === n) { return true; } } return false; } return want === n; }
+
+    function apos(s) { return String(s).replace(/[\u2018\u2019\u02BC]/g, "'"); }
+
     function resolveParam(fx, effectMatchName, spec, strict) {
         var i, j, p, count;
         if (spec.names) {
             for (i = 1; i <= fx.numProperties; i++) {
                 p = fx.property(i);
                 for (j = 0; j < spec.names.length; j++) {
-                    if (p.name === spec.names[j]) { return { prop: p, index: i, method: 'name' }; }
+                    /* v0.99.1: After Effects 26.5 spells "Use Composition\u2019s" with a typographic apostrophe */
+                    if (p.name === spec.names[j] || apos(p.name) === apos(spec.names[j])) { return { prop: p, index: i, method: 'name' }; }
                 }
             }
         }
@@ -194,7 +200,7 @@
                             var missing = [];
                             /* Fallbacks (match-name convention / order) are only trusted when the
                                effect has exactly the parameter layout we expect. */
-                            var strict = !!(item.expectParams && fx.numProperties !== item.expectParams);
+                            var strict = !!(item.expectParams && !countOk(item.expectParams, fx.numProperties));
                             for (pi = 0; pi < item.params.length; pi++) {
                                 spec = item.params[pi];
                                 r = resolveParam(fx, item.matchName, spec, strict);
@@ -217,9 +223,13 @@
                                        Property.setPropertyParameters); otherwise a value outside the current list waits
                                        for the effects.setMenu that sets list and value together (deferred). */
                                     if (item.menu && item.menu.length && typeof res.r.prop.setPropertyParameters === 'function') {
-                                        res.r.prop.setPropertyParameters(item.menu);
-                                        fx = findEffect(layer.property('ADBE Effect Parade'), item.key, item.matchName);
-                                        res.r.prop = fx.property(1);
+                                        /* v0.99.1 (Tile Test on After Effects 26.5: "null is not an object (step 2: effects.ensure)"):
+                                           setPropertyParameters invalidates the old references - use the property it
+                                           RETURNS, reach the effect through its parentProperty, and give the effect its
+                                           name back if After Effects reset it (expressions read it by name). */
+                                        res.r.prop = res.r.prop.setPropertyParameters(item.menu);
+                                        fx = res.r.prop.parentProperty;
+                                        if (fx && fx.name !== item.key) { fx.name = item.key; }
                                     }
                                     try { res.r.prop.setValue(want); } catch (eMenu) { res.r.prop.setValue(1); deferred = true; }
                                 } else {

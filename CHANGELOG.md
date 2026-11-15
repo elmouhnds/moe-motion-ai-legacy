@@ -2,6 +2,15 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.99.1] — 2026-11-15 — Fixes from the first full run inside After Effects 2026 (Claude Test Bridge)
+The side session on the owner's laptop ran all 353 tiles in After Effects 26.5.3 through the bridge: 222 pass · 126 fail · 5 skip, five product bugs + three bridge bugs. Each one is now reproduced by the test mock (which throws After Effects' exact message) and fixed:
+- **Grid / Cloner / every effector (51 tiles)** — "null is not an object (effects.ensure)": after `setPropertyParameters` the old references are stale; `effects.ensure` now uses the property it returns, reaches the effect through `parentProperty`, and gives the effect its MOE name back (also in `effects.setMenu`).
+- **Matte FX — the whole library (43 tiles)** — "Value 16 out of range 0 to 1": Gradient Wipe's Transition Completion / Softness are fractions 0–1 to a script. Written ÷ 100 (the plan and previews stay in %); the Softness control keeps % and its expression divides.
+- **Glass + Thick Glass (14 tiles)** — "property … is hidden": the linked copy wrote X/Y Rotation and Orientation on a 2D layer; only 3D layers get them now.
+- **Carousel + Click on Layer (6 tiles)** — 'Unable to set "label"': an undo name was sent as the label colour; callers fixed and the host only ever sets a whole number 0–16 (`U.isLabel`).
+- **Zoom (5 tiles)** — the Transform effect has 13 parameters in 26.x, the apostrophe of "Use Composition’s Shutter Angle" is typographic, and its match names are not in display order. Names are compared apostrophe-insensitively, 12 or 13 parameters accepted, and **the zoom keys now go to Scale Height (-0003)** — before they went to Scale Width (-0004), which Uniform Scale ignores.
+- **Bridge**: renders use an output-module template (JPEG → PNG → TIFF) because Format is read-only in 26.x; Undo is found as "Undo <name>" then "Undo"; warnings / errors keep their own log ring (a long run had pushed them out); failed tiles and renders are logged; a write batch waits up to 5 min instead of giving up at 30 s while After Effects is still writing (the 6 clone timeouts).
+
 ## [0.99.0] — 2026-11-14 — Claude Test Bridge: Opus tests MOE inside After Effects
 - **Claude Test Bridge** (Diagnostics, off until "Allow Claude to test"): Claude Code on the owner's PC drives MOE inside After Effects through an MCP server (`tools/moe-mcp.js`, registered by `.mcp.json`): Tile Test of any tiles, one tool on a chosen subject with After Effects' own render returned as images, logs, and `moe_deploy` (copy the repo into the installed panel + reload). Local only (127.0.0.1 + a key file), 8 fixed commands, no eval, only `MOE Self-Test` comps. docs/features/CLAUDE_TEST_BRIDGE.md.
 - Tile Test can render each result before Undo.

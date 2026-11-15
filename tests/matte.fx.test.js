@@ -52,13 +52,15 @@ test('tool: Map / Matte / Edge pre-comps, alpha matte + glowing linked copy (lum
   assert.equal(matte._parent, L); assert.equal(em._parent, L); assert.equal(glow._parent, L);
   assert.equal(matte.enabled, false); assert.equal(em.enabled, false);
   assert.deepEqual(Array.from(matte.property('ADBE Transform Group').property('ADBE Anchor Point').value), F.build({ preset: 'burnIn' }, (() => { const q = L.sourceRectAtTime(0); return [q.left, q.top, q.width, q.height]; })()).anchor);
-  // inside the Matte: Gradient Wipe reads the (hidden) Map layer, Completion keyed 100 → 0
+  // inside the Matte: Gradient Wipe reads the (hidden) Map layer, Completion keyed 100 % → 0 % — written 1 → 0 (v0.99.1: a fraction
+  // to a script in After Effects 26.5, Tile Test)
   const A = P._items.find((x) => x.name === 'MOE FX 1 Matte');
   const wipe = A._layers.find((x) => x.name === 'MOE FX Wipe'), mapL = A._layers.find((x) => x.name === 'MOE FX 1 Map');
   const gw = wipe._parade._children.find((x) => x.name === 'MOE FX Wipe');
   assert.equal(gw.property('Gradient Layer').value, mapL.index);
   const tc = gw.property('Transition Completion');
-  assert.equal(tc.numKeys, 2); assert.equal(tc.keyValue(1), 100); assert.equal(tc.keyValue(2), 0);
+  assert.equal(tc.numKeys, 2); assert.equal(tc.keyValue(1), 1); assert.equal(tc.keyValue(2), 0);
+  assert.ok(gw.property('Transition Softness').value <= 1, 'Softness written as a fraction');
   assert.equal(mapL.enabled, false);
   // the Edge comp: the matte against itself a moment later, Difference
   const E = P._items.find((x) => x.name === 'MOE FX 1 Edge');
@@ -85,7 +87,7 @@ test('tool: a layer with a track matte or 3D is skipped and named; nothing usabl
   assert.deepEqual(r0.env.undo.entries.slice(e0), []);
 });
 
-test('rendered previews: one comp per tile, the tool with the tile\'s args, a JPEG sequence through the Render Queue; nothing left; the user\'s queue kept; cached until the args change', async () => {
+test('rendered previews: one comp per tile, the tool with the tile\'s args, an image sequence through the Render Queue (format from a template, v0.99.1); nothing left; the user\'s queue kept; cached until the args change', async () => {
   const r0 = await setup(1);
   const P = r0.env.project, items0 = P._items.length;
   P.renderQueue.items.add(P._items[0]);
@@ -94,7 +96,9 @@ test('rendered previews: one comp per tile, the tool with the tile\'s args, a JP
   assert.deepEqual(out.failed, []);
   assert.equal(out.rendered.length, 3);
   assert.equal(P._items.length, items0, 'no comp, pre-comp or solid left in the project');
-  assert.deepEqual(P.renderQueue.renders.map((x) => x.format), ['JPEG Sequence', 'JPEG Sequence', 'JPEG Sequence']);
+  // After Effects 26.5: Format is read-only — the format comes from a template (no JPEG one in the mock's list → PNG)
+  assert.deepEqual(P.renderQueue.renders.map((x) => x.format), ['PNG Sequence', 'PNG Sequence', 'PNG Sequence']);
+  assert.ok(P.renderQueue.renders.every((x) => /\.png$/.test(x.file)));
   assert.ok(P.renderQueue.renders.every((x) => /^MOE Self-Test Preview$/.test(x.comp) && /\/MOE Motion AI\/previews\//.test(x.file)));
   assert.deepEqual(P.renderQueue._items.map((i) => [i.render, i.status]), [[true, 2615]], 'the user\'s item is still queued and on');
   const idx = r0.services.store.get('previews', {});

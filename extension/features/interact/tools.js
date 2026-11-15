@@ -112,7 +112,7 @@ const click = {
     const outline = (col[0] + col[1] + col[2]) / 3 > 0.5 ? [0, 0, 0] : [1, 1, 1];
     // v0.94 (docs/features/ONE_UNDO.md): the cursor and every key in ONE host call — one Ctrl+Z
     const TX = PLAN1(host, 'MOE: Click on Layer');
-    const madeRef = TX.add('shapes.cursor', { compId: comp.id, name: `MOE Cursor ${n}`, kind: args.kind, size: args.size, color: col, outline, position: pl.pos[0].v, inPoint: Math.max(0, pl.start), outPoint: pl.end + 0.05, label: 'MOE: Click on Layer' });
+    const madeRef = TX.add('shapes.cursor', { compId: comp.id, name: `MOE Cursor ${n}`, kind: args.kind, size: args.size, color: col, outline, position: pl.pos[0].v, inPoint: Math.max(0, pl.start), outPoint: pl.end + 0.05 });
     const A = (k) => madeRef.at('addresses', k);
     const cur = [{ address: A('position'), keys: pl.pos, spatialLinear: true }, { address: A('opacity'), keys: pl.opacity }, { address: A('scale'), keys: pl.scale }];
     if (args.ripple) cur.push({ address: A('ringScale'), keys: pl.ringS }, { address: A('ringOpacity'), keys: pl.ringO });

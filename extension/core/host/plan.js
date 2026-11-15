@@ -30,6 +30,8 @@ class Ref {
   }
 }
 
+const WRITE_TIMEOUT_MS = 300000;
+
 function plan(host, label) {
   const steps = [];
   const P = {
@@ -49,7 +51,9 @@ function plan(host, label) {
       // v0.98.2 (owner's report: grid.build "PLAN_NOT_COMMITTED"): when the call itself throws (After Effects error,
       // timeout, a modal dialog) the plan still counts as done — refs read as undefined — so the caller's cleanup runs
       // and the real error is the one reported
-      try { r = await host.call('tx.run', { label, steps }); } catch (e) { P.done = true; P.results = []; P.failed = { step: -1, op: 'tx.run', code: e.code || 'HOST_EXCEPTION', message: e.message }; throw e; }
+      // v0.99.1 (Tile Test: big clone grids took 44–120 s and the 30 s limit gave up while After Effects was still
+      // writing — then the cleanup ran into a busy host): a write batch is waited for up to WRITE_TIMEOUT_MS
+      try { r = await host.call('tx.run', { label, steps }, { timeoutMs: WRITE_TIMEOUT_MS }); } catch (e) { P.done = true; P.results = []; P.failed = { step: -1, op: 'tx.run', code: e.code || 'HOST_EXCEPTION', message: e.message }; throw e; }
       P.done = true;
       P.results = r.results || [];
       P.failed = r.failed || null;

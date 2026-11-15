@@ -162,7 +162,7 @@ function report(app) {
     moe: app.services.version, host: s.hostInfo, hostError: s.hostError, platform: app.services.platform.info,
     tools: app.services.registry.list().map((t) => `${t.id}@${t.version}`),
     ui: Object.assign({ motion: document.documentElement.getAttribute('data-motion'), uptimeS: Math.round(performance.now() / 1000) }, app.stats),
-    session: app.services.cost.session(), problems: app.services.logger.entries().filter((e) => e.level !== 'info' && e.level !== 'debug').slice(-30)
+    session: app.services.cost.session(), problems: app.services.logger.problems().slice(-30)
   }, null, 2);
 }
 

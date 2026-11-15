@@ -24,6 +24,11 @@ const PREFIX = 'MOE FX';
 const FXA = (id, fx, param) => ({ layerId: id, matchNames: ['ADBE Effect Parade', `name:${fx}`, `name:${param}`] });
 const TR = (id, mn) => ({ layerId: id, matchNames: ['ADBE Transform Group', mn] });
 const v = (id, value) => ({ id, value, names: [id] });
+// v0.99.1 (Tile Test, After Effects 26.5: "Value 16 out of range 0 to 1"): Gradient Wipe's Transition Completion and
+// Transition Softness are fractions 0–1 to a script, though Effect Controls shows them as %. The plan stays in % (the
+// previews read it); only what is written to After Effects is divided — here and nowhere else.
+const WIPE_UNIT = 100;
+const frac = (keys) => keys.map((k) => Object.assign({}, k, { v: k.v / WIPE_UNIT }));
 
 /**
  * v0.98: the controller's sliders — only the look-and-feel values this style uses (Controls on demand). Each links to
@@ -31,7 +36,7 @@ const v = (id, value) => ({ id, value, names: [id] });
  */
 function controlsFor(p) {
   const c = [
-    { key: 'Softness', value: p.soft, targets: [{ zone: 'A', layer: 'wipe', fx: `${PREFIX} Wipe`, param: 'Transition Softness' }] },
+    { key: 'Softness', value: p.soft, targets: [{ zone: 'A', layer: 'wipe', fx: `${PREFIX} Wipe`, param: 'Transition Softness', expr: `$ / ${WIPE_UNIT}` }] },
     { key: 'Noise', value: p.noise.mix, targets: [{ zone: 'M', layer: 'noise', param: 'ADBE Opacity' }] }
   ];
   if (!p.noise.stretch) c.push({ key: 'Noise Size', value: p.noise.scale, targets: [{ zone: 'M', layer: 'noise', fx: `${PREFIX} Noise`, param: 'Scale' }] });
@@ -159,12 +164,12 @@ const fx = {
       const mapL = T.add('comps.place', { compId: A.at('compId'), sourceId: M.at('compId'), name: `${name} Map`, startTime: 0 });
       T.add('layers.setAttrs', { compId: A.at('compId'), label: 'MOE: Matte FX', items: [{ layerId: mapL.at('layerId'), enabled: false }] });
       const wipe = T.add('layers.createSolid', { compId: A.at('compId'), name: `${PREFIX} Wipe`, color: [1, 1, 1] });
-      const items = [{ key: `${PREFIX} Wipe`, matchName: 'ADBE Gradient Wipe', before: [], params: [v('Transition Softness', p.soft), { id: 'Gradient Layer', layerRef: mapL.at('layerId'), names: ['Gradient Layer'] }] }];
+      const items = [{ key: `${PREFIX} Wipe`, matchName: 'ADBE Gradient Wipe', before: [], params: [v('Transition Softness', p.soft / WIPE_UNIT), { id: 'Gradient Layer', layerRef: mapL.at('layerId'), names: ['Gradient Layer'] }] }];
       if (p.displace) items.push({ key: `${PREFIX} Liquid`, matchName: 'ADBE Turbulent Displace', before: [], params: [v('Amount', p.displace.amount), v('Size', p.displace.size)] });
       // Stepped motion: the matte (and the Map it reads) sampled at a lower frame rate — Posterize Time
       if (p.stepped) items.push({ key: `${PREFIX} Steps`, matchName: 'ADBE Posterize Time', before: [], params: [v('Frame Rate', p.stepped)] });
       const wipeFx = T.add('effects.ensure', { compId: A.at('compId'), label: 'MOE: Matte FX', layers: [{ layer: { layerId: wipe.at('layerId') }, items }] });
-      const wipeKeys = T.add('keys.write', { compId: A.at('compId'), label: 'MOE: Matte FX', items: [{ address: FXA(wipe.at('layerId'), `${PREFIX} Wipe`, 'Transition Completion'), keys: at(p.completion) }] });
+      const wipeKeys = T.add('keys.write', { compId: A.at('compId'), label: 'MOE: Matte FX', items: [{ address: FXA(wipe.at('layerId'), `${PREFIX} Wipe`, 'Transition Completion'), keys: frac(at(p.completion)) }] });
       // in the user's comp: the matte on the layer, in its own space, following it
       const place = (src, nm) => {
         const r = T.add('comps.place', { compId: comp.id, sourceId: src.at('compId'), name: nm, startTime: 0, label: 14 });
@@ -246,7 +251,7 @@ const fx = {
         matteId: j.aL.value().layerId, matteNow: now[i].matte, controlsId: j.ctlL.value().layerId, controlsName: j.ctlName, controls: j.ctl.map((c) => c.key), links: [].concat(...(j.exprSets || []).map((r) => r.value().targets)).map((t) => ({ name: t.name, ok: !t.skipped && !t.reverted && !(t.after && t.after.expressionError), why: t.skipped || (t.after && t.after.expressionError) || '' })), edgeId: j.eL ? j.eL.value().layerId : null, glowId: j.dup ? j.dup.value().layerId : null,
         edgeMatte: j.eSet ? j.eSet.value().layers[0] : null,
         comps: [j.E && j.E.value().compId, j.A.value().compId, j.M.value().compId].filter(Boolean),
-        completion: { first: w[0], last: w[w.length - 1] }, plan: { first: j.p.completion[0].v, last: j.p.completion[j.p.completion.length - 1].v },
+        completion: { first: w[0], last: w[w.length - 1] }, plan: { first: j.p.completion[0].v / WIPE_UNIT, last: j.p.completion[j.p.completion.length - 1].v / WIPE_UNIT },
         unmapped
       };
     });
@@ -258,7 +263,7 @@ const fx = {
       const wired = L.matteNow && L.matteNow.layerId === L.matteId;
       c.push({ ok: wired, label: `${L.name} › Track Matte`, detail: wired ? `${L.fxName} Matte (alpha) — read back from After Effects` : 'the track matte is not the MOE matte' });
       const keysOk = Math.abs(L.completion.first.value - L.plan.first) < 0.01 && Math.abs(L.completion.last.value - L.plan.last) < 0.01;
-      c.push({ ok: keysOk, label: `${L.name} › ${L.preset}`, detail: `Gradient Wipe Completion ${L.completion.first.value} → ${L.completion.last.value} %, ${L.completion.first.t.toFixed(2)}–${L.completion.last.t.toFixed(2)} s` });
+      c.push({ ok: keysOk, label: `${L.name} › ${L.preset}`, detail: `Gradient Wipe Completion ${Math.round(L.completion.first.value * WIPE_UNIT)} → ${Math.round(L.completion.last.value * WIPE_UNIT)} %, ${L.completion.first.t.toFixed(2)}–${L.completion.last.t.toFixed(2)} s` });
       if (L.glowId) c.push({ ok: !!L.edgeMatte && L.edgeMatte.after === L.edgeId, label: `${L.name} › Edge`, detail: L.edgeMatte && L.edgeMatte.after === L.edgeId ? `${L.fxName} Glow on the edge band (luma)` : 'edge matte not set' });
       const bad = L.links.filter((x) => !x.ok);
       c.push({ ok: !bad.length && L.links.length > 0, label: `${L.name} › ${L.controlsName}`, detail: bad.length ? `${bad.length} link(s) failed: ${bad.slice(0, 3).map((x) => `${x.name}: ${x.why}`).join('; ')}` : `${L.controls.join(' · ')} — ${L.links.length} expression link(s), no engine errors` });

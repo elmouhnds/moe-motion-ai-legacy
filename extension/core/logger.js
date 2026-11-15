@@ -18,6 +18,9 @@ function scrub(value) {
 
 function createLogger({ capacity = 500, sink } = {}) {
   const entries = [];
+  // v0.99.1 (Tile Test: the bridge's logs came back empty after a long run — info / debug lines had pushed the
+  // errors out of the ring): warnings and errors also go to their own ring
+  const problems = [];
   const listeners = new Set();
 
   function write(level, area, message, data) {
@@ -25,6 +28,7 @@ function createLogger({ capacity = 500, sink } = {}) {
     if (data !== undefined) entry.data = scrub(data);
     entries.push(entry);
     if (entries.length > capacity) entries.shift();
+    if (level === 'warn' || level === 'error') { problems.push(entry); if (problems.length > capacity) problems.shift(); }
     if (sink && level !== 'debug') { try { sink(entry); } catch (e) { /* never throw from logging */ } }
     listeners.forEach((fn) => fn(entry));
     return entry;
@@ -36,6 +40,7 @@ function createLogger({ capacity = 500, sink } = {}) {
     warn: (a, m, d) => write('warn', a, m, d),
     error: (a, m, d) => write('error', a, m, d),
     entries: (level) => entries.filter((e) => !level || e.level === level),
+    problems: () => problems.slice(),
     onEntry: (fn) => { listeners.add(fn); return () => listeners.delete(fn); }
   };
 }
