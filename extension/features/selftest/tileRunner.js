@@ -18,6 +18,22 @@
 const SCENE = { width: 1920, height: 1080, fps: 25, duration: 6 };
 const CARD = { size: [420, 240], roundness: 36, fill: [1, 0.416, 0.239] };
 const MAX_UNDO = 4;
+// v0.99.4 Host profile: every native effect MOE writes (the mock models the same list — tests/mock/ae-mock.js EFFECTS);
+// read at the start of a Tile Test so a changed After Effects shows up before any tool fails
+const PROFILE_EFFECTS = ['ADBE Color Control', 'ADBE CHANNEL MIXER', 'Keylight 906', 'ADBE KeyCleaner', 'ADBE Spill2', 'ADBE Simple Choker', 'ADBE Gaussian Blur 2', 'ADBE Geometry2', 'ADBE Optics Compensation', 'ADBE Brightness & Contrast 2', 'ADBE Bevel Alpha', 'ADBE Point Control', 'ADBE Point3D Control', 'ADBE Angle Control', 'ADBE Layer Control', 'ADBE Dropdown Control', 'ADBE Drop Shadow', 'ADBE Glo2', 'ADBE Linear Wipe', 'CC Light Sweep', 'ADBE Tint', 'ADBE Ramp', 'ADBE 4ColorGradient', 'ADBE Noise', 'ADBE Fill', 'ADBE Slider Control', 'CC Glass', 'ADBE Checkbox Control', 'ADBE Gradient Wipe', 'ADBE Fractal Noise', 'ADBE Mosaic', 'CC Ball Action', 'ADBE Posterize Time', 'ADBE Turbulent Displace'];
+
+/** Read the host profile in its own test comp (never the user's). */
+async function hostProfile(host) {
+  let begin = null;
+  try {
+    begin = await host.call('selftest.begin', { name: 'MOE Self-Test Profile', width: 640, height: 360, duration: 1, frameRate: 25 });
+    return await host.call('selftest.effectProfile', { compId: begin.compId, matchNames: PROFILE_EFFECTS });
+  } catch (e) {
+    return { error: String(e.message || e) };
+  } finally {
+    if (begin) { try { await host.call('selftest.end', { compId: begin.compId, previousId: begin.previousId }); } catch (_) { /* reported elsewhere */ } }
+  }
+}
 
 const KEYED = /^(motion\.smartEase|motion\.easeCurve|motion\.pasteEase|motion\.retime|motion\.copyMotion|quick\.reverseKeys|quick\.mirrorKeys|expressions\.quick|kit\.interp|kit\.trimToKeys)$/;
 const ON_GRID = /^(grid\.colour|grid\.tracer|grid\.controls|grid\.effector|grid\.update|grid\.items|grid\.remove|grid\.trail|rig\.bake)$/;
@@ -26,6 +42,15 @@ const ON_EFFECTOR = /^(grid\.effectorControls|grid\.effectorFreeze|grid\.effecto
 /** What a tool needs in front of it. */
 function subjectOf(tile) {
   const id = tile.tool, a = tile.args || {};
+  // v0.99.4: the subjects the first runs lacked (13 tiles skipped or failed for want of them)
+  if (id === 'grid.build' && (a.mode === 'path' || a.mode === 'points')) return 'path';
+  if (id === 'grid.effector' && a.falloff === 'image') return 'gridField';
+  if (id === 'grid.effector' && a.type === 'audio') return 'gridAudio';
+  if (id === 'grid.effectProperty') return 'gridItemProp';
+  if (id === 'compositing.keySetup') return 'green';
+  if (id === 'grid.placeInCells' && (a.columns || 1) * (a.rows || 1) < 3) return 'two';
+  if (id === 'zoom.follow') return 'follow';
+  if (id === 'grid.trail') return 'card'; // a trail follows a layer you can see, not the grid null
   if (ON_EFFECTOR.test(id)) return 'effector';
   if (ON_GRID.test(id)) return 'grid';
   if (KEYED.test(id)) return 'keys';
@@ -37,6 +62,61 @@ function subjectOf(tile) {
 }
 
 const findName = async (host, compId, re) => { const d = await host.call('layers.describe', { compId }); const L = d.layers.find((l) => re.test(l.name)); return L ? L.id : null; };
+
+const indexOf = async (host, compId, id) => { const d = await host.call('layers.describe', { compId }); const L = d.layers.find((l) => l.id === id); return L ? L.index : 0; };
+const rootOf = (services) => String(services.rootPath || '').replace(/\\/g, '/');
+
+/** v0.99.4: subjects that need more than layers — they return { ids, extra (args), selected } */
+async function richSubject(services, compId, kind) {
+  const { host } = services;
+  const W = SCENE.width, H = SCENE.height;
+  const card = (name, pos, size, stroke) => host.call('shapes.insert', { compId, name, label: 11, groupName: 'Card', primitive: { type: 'rect', size, roundness: CARD.roundness }, fill: stroke ? null : { color: CARD.fill }, stroke: stroke ? { color: CARD.fill, width: 12 } : null, position: pos });
+  const select = (ids) => host.call('layers.setSelection', { items: [{ compId, layerIds: ids, mode: 'set' }] });
+  if (kind === 'path') {
+    const ids = [];
+    for (let i = 0; i < 4; i++) ids.push((await card(`ST Card ${i + 1}`, [W / 2 + (i - 1.5) * 220, H / 2], [140, 140])).layerId);
+    // a real Bezier path (a Pen-tool shape: 4 points), not a rectangle primitive — Path / Points read path vertices
+    const line = (await host.call('shapes.insert', { compId, name: 'ST Path', label: 11, groupName: 'Path', paths: [{ v: [[-450, 150], [-150, -200], [150, 200], [450, -150]], i: [[0, 0], [-120, 0], [-120, 0], [-120, 0]], o: [[120, 0], [120, 0], [120, 0], [0, 0]], c: false }], fill: null, stroke: { color: CARD.fill, width: 8 }, position: [W / 2, H / 2] })).layerId;
+    await select(ids);
+    return { ids, extra: { pathLayer: await indexOf(host, compId, line) }, selected: true };
+  }
+  if (kind === 'two') {
+    const ids = [(await card('ST Card 1', [W / 2 - 300, H / 2], [240, 300])).layerId, (await card('ST Card 2', [W / 2 + 300, H / 2], [240, 300])).layerId];
+    await select(ids);
+    return { ids, extra: {}, selected: true };
+  }
+  if (kind === 'green') {
+    // a green-screen still made by MOE (assets/test/green-screen.png): green edges, a figure in the middle
+    const g = await host.call('footage.importToComp', { compId, path: `${rootOf(services)}/assets/test/green-screen.png`, name: 'ST Green Screen', fit: 'fit' });
+    await select([g.layerId]);
+    return { ids: [g.layerId], extra: {}, selected: true, imports: [{ layerId: g.layerId, itemId: g.itemId }] };
+  }
+  if (kind === 'follow') {
+    const ids = await subject(services, compId, 'card');
+    return { ids: [], extra: { layer: await indexOf(host, compId, ids[0]) }, selected: true };
+  }
+  // the grid-based ones: a ready grid first
+  const grid = await subject(services, compId, 'grid');
+  if (kind === 'gridField') {
+    const f = await host.call('layers.createSolid', { compId, name: 'ST Field', color: [1, 1, 1] });
+    await select(grid);
+    return { ids: grid, extra: { fieldLayer: await indexOf(host, compId, f.layerId) }, selected: true };
+  }
+  if (kind === 'gridAudio') {
+    // a 2 s 120 BPM beat bundled with MOE (assets/test/beat.wav) — the Audio effector follows its loudness
+    const a = await host.call('footage.importToComp', { compId, path: `${rootOf(services)}/assets/test/beat.wav`, name: 'ST Beat', fit: 'none' });
+    await select(grid);
+    return { ids: grid, extra: {}, selected: true, imports: [{ layerId: a.layerId, itemId: a.itemId }] };
+  }
+  if (kind === 'gridItemProp') {
+    const item = await findName(host, compId, /^ST Card 1$/);
+    await select([item]);
+    await host.call('selftest.selectProp', { compId, layerId: item, matchNames: ['ADBE Root Vectors Group', 'ADBE Vector Group', 'ADBE Vectors Group', 'ADBE Vector Shape - Rect', 'ADBE Vector Rect Roundness'] });
+    return { ids: [item], extra: {}, selected: true };
+  }
+  throw new Error(`unknown subject ${kind}`);
+}
+const RICH = new Set(['path', 'two', 'green', 'follow', 'gridField', 'gridAudio', 'gridItemProp']);
 
 async function subject(services, compId, kind) {
   const { host, executor } = services;
@@ -101,6 +181,7 @@ async function runTiles(services, tiles, opts = {}) {
   const { host, registry, executor } = services;
   const report = { moe: services.version, startedAt: new Date(started).toISOString(), tiles: [], stopped: false };
   try { const info = await host.call('host.ping', {}); report.ae = { appVersion: info.appVersion, os: info.os }; } catch (e) { report.ae = {}; }
+  if (opts.profile !== false) report.hostProfile = await hostProfile(host);
   for (let i = 0; i < tiles.length; i++) {
     if (opts.shouldStop && opts.shouldStop()) { report.stopped = true; break; }
     const tile = tiles[i];
@@ -108,16 +189,17 @@ async function runTiles(services, tiles, opts = {}) {
     const row = { tile: `${tile.section}/${tile.id}`, label: tile.label, tool: tile.tool, status: 'fail', ms: 0, detail: '' };
     const tool = registry.get(tile.tool);
     if (!tool) { report.tiles.push(Object.assign(row, { status: 'fail', detail: 'no such tool' })); continue; }
-    let begin = null, run = null;
+    let begin = null, run = null, imports = [];
     const s = Date.now();
     try {
       begin = await host.call('selftest.begin', { name: 'MOE Self-Test Tiles', width: SCENE.width, height: SCENE.height, duration: SCENE.duration, frameRate: SCENE.fps });
       const kind = tile.subject || subjectOf(tile);
-      const ids = await subject(services, begin.compId, kind);
-      await selectSubject(host, begin.compId, kind, ids);
+      let extra = {};
+      if (RICH.has(kind)) { const r = await richSubject(services, begin.compId, kind); extra = r.extra; imports = r.imports || []; }
+      else { const ids = await subject(services, begin.compId, kind); await selectSubject(host, begin.compId, kind, ids); }
       const base = await host.call('selftest.census', { compId: begin.compId });
       await host.call('selftest.resetUndoLabels', {});
-      const args = Object.assign({}, Object.fromEntries(Object.entries(tool.params || {}).filter(([, p]) => p.default !== undefined).map(([k, p]) => [k, p.default])), tile.args || {});
+      const args = Object.assign({}, Object.fromEntries(Object.entries(tool.params || {}).filter(([, p]) => p.default !== undefined).map(([k, p]) => [k, p.default])), tile.args || {}, extra);
       run = await executor.run(tile.tool, args, { origin: 'user', approved: true, batchId: `tiletest-${started}` });
       row.ms = Date.now() - s;
       row.result = run.status;
@@ -163,6 +245,8 @@ async function runTiles(services, tiles, opts = {}) {
       row.detail = `threw: ${String(e.message || e)}`.slice(0, 600);
     } finally {
       if (run && run.checkpointId && !(row.undo && row.undo.back)) { try { await executor.restore(run.checkpointId); } catch (_) { /* the comp goes anyway */ } }
+      // the test files imported for this tile leave the project too (footage.remove: the layer and its project item)
+      for (const im of imports) { try { await host.call('footage.remove', { compId: begin.compId, layerId: im.layerId, itemId: im.itemId }); } catch (_) { /* gone with Undo */ } }
       if (begin) { try { await host.call('selftest.end', { compId: begin.compId, previousId: begin.previousId }); } catch (e) { row.detail += ` · cleanup: ${e.message}`; } }
     }
     // v0.99.1: a failed tile and a failed render are in the panel's log too (the Tile Test found them only in the job)
@@ -182,4 +266,4 @@ function libraryTiles(sections, sectionId) {
   return out;
 }
 
-module.exports = { runTiles, libraryTiles, subjectOf, SCENE };
+module.exports = { runTiles, libraryTiles, subjectOf, hostProfile, PROFILE_EFFECTS, SCENE };

@@ -123,6 +123,46 @@
         }
     };
 
+    /* v0.99.4 Host profile: what THIS After Effects really has for every native effect MOE writes - each parameter's
+       name, match name, value type and range (Property.hasMin / minValue / hasMax / maxValue), read on a temporary solid
+       of the self-test comp and removed again. After Effects 26 changed four of these silently; this shows it on day
+       one. args: { compId, matchNames: [] } -> { effects: [{ matchName, available, name, params: [...] }] } */
+    ops['selftest.effectProfile'] = {
+        mutates: true,
+        run: function (args) {
+            var c = itemById(args.compId), out = [], i, k, mn, L, parade, fx, p, row, list = args.matchNames || [];
+            if (!c || !(c instanceof CompItem) || String(c.name).substring(0, PREFIX.length) !== PREFIX) { U.fail('NOT_SELFTEST', 'Only the self-test comp.'); }
+            if (list.length > 80) { U.fail('BAD_ARGS', 'At most 80 effects.'); }
+            return U.withUndo('MOE: Host Profile', function () {
+                L = c.layers.addSolid([0.5, 0.5, 0.5], 'ST Profile', 64, 64, 1, 1);
+                parade = L.property('ADBE Effect Parade');
+                try {
+                    for (i = 0; i < list.length; i++) {
+                        mn = String(list[i]);
+                        row = { matchName: mn, available: false, params: [] };
+                        if (parade.canAddProperty(mn)) {
+                            fx = parade.addProperty(mn);
+                            row.available = true; row.name = fx.name;
+                            for (k = 1; k <= fx.numProperties; k++) {
+                                p = fx.property(k);
+                                var q = { i: k, name: String(p.name), matchName: String(p.matchName) };
+                                try { q.type = Number(p.propertyValueType); } catch (eT) { q.type = null; }
+                                try { if (p.hasMin) { q.min = p.minValue; } } catch (eMin) { /* not numeric */ }
+                                try { if (p.hasMax) { q.max = p.maxValue; } } catch (eMax) { /* not numeric */ }
+                                row.params.push(q);
+                            }
+                            fx.remove();
+                        }
+                        out.push(row);
+                    }
+                } finally {
+                    try { L.remove(); } catch (eL) { /* the comp goes anyway */ }
+                }
+                return { effects: out, appVersion: String(app.version) };
+            });
+        }
+    };
+
     /* v0.98.2 tile test: forget the labels before a tile (so Undo only ever goes back over that tile's own groups). */
     ops['selftest.resetUndoLabels'] = {
         mutates: false,

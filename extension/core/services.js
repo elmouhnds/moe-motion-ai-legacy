@@ -20,7 +20,7 @@ const { createBrandStore } = require('../features/brand/brands');
 const { createTextLibrary } = require('../features/text/library');
 const { createSelector } = require('../features/select/service');
 
-const VERSION = '0.99.3';
+const VERSION = '0.99.4';
 
 function createServices({ platform, evalScript, rootPath, hostTimeoutMs }) {
   const store = createStore(platform.fs);
@@ -31,7 +31,7 @@ function createServices({ platform, evalScript, rootPath, hostTimeoutMs }) {
   const cost = createCostMonitor({ store, getSettings: settings.get });
   const ai = createClaudeClient({ http: platform.http, secrets: platform.secrets, cost, logger, getSettings: settings.get });
 
-  const services = { version: VERSION, platform, store, logger, settings, registry, host, cost, ai };
+  const services = { version: VERSION, platform, store, logger, settings, registry, host, cost, ai, rootPath };
   services.brands = createBrandStore(store);
   services.textLibrary = createTextLibrary({ store, fsa: platform.fs });
   services.selector = createSelector({ host, logger });

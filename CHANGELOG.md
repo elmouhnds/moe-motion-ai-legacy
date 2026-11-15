@@ -2,6 +2,19 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [0.99.4] — 2026-11-15 — Tile Test: every tile runs, and a host profile of After Effects
+- **Host profile**: each Tile Test first reads, in its own test comp, the 34 native effects MOE writes — every
+  parameter's name, match name, type and RANGE (`Property.hasMin / minValue / maxValue`) — and puts it in the report;
+  `tools/compare-profile.js` lists every place where the test mock differs from that After Effects (the Gradient Wipe
+  0–1 range would have shown here before any tool failed).
+- **No more blind spots** (13 tiles never truly ran): a real Bézier path for Path / Points, a white field layer for
+  Image fields, a 2 s 120 BPM beat bundled with MOE (`assets/test/beat.wav`) for the Audio effectors, a green-screen
+  still (`assets/test/green-screen.png`) for Key setup, a selected Roundness for Effector on Property, two layers for
+  Split 2, a keyed layer for Follow Zoom, a visible layer for Trails. On the mock: 353 / 353 run, 0 skipped. Imported
+  test files leave the project after each tile.
+- Research saved: `docs/research/MOTION_DOCK_STUDY.md` (+ reference material, not shipped),
+  `PANEL_DESIGN_RESEARCH.md`, `MOE_IMPROVEMENT_PLAN.md`.
+
 ## [0.99.3] — 2026-11-15 — Render failures are logged; a partial tile run keeps the full report
 - From the side session's correction: Diagnostics › Render previews failed 208 / 208 on 0.99.0 with the same read-only `Format` error (fixed in 0.99.1 — the shared render path picks a template) and wrote nothing to `diagnostics.jsonl`. Every failed render is now logged (`previews`, code RENDER_FAILED) with a summary line per run.
 - A tile run of one section no longer replaces the last full run: `tiletest-all` and `tiletest-<section>` keep their own reports.

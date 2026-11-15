@@ -65,6 +65,8 @@ function summary(report) {
   if (report.error) return `Error: ${report.error}`;
   const t = report.totals || {};
   const lines = [`MOE ${report.moe} · After Effects ${(report.ae && report.ae.appVersion) || '?'} · ${t.pass || 0} pass · ${t.fail || 0} fail · ${t.skip || 0} skip${report.stopped ? ' · STOPPED' : ''} · ${Math.round((report.ms || 0) / 1000)} s`];
+  const hp = report.hostProfile;
+  if (hp) lines.push(hp.error ? `Host profile: failed — ${hp.error}` : `Host profile: ${hp.effects.length} effects read, ${hp.effects.filter((e) => !e.available).length} not available (${hp.effects.filter((e) => !e.available).map((e) => e.matchName).join(', ') || 'none'}) — compare with tools/compare-profile.js`);
   const order = { fail: 0, skip: 1, pass: 2 };
   for (const r of (report.tiles || []).slice().sort((a, b) => order[a.status] - order[b.status])) {
     lines.push(`${r.status.toUpperCase().padEnd(4)} ${r.tile} (${r.tool}) — ${r.detail}${r.undo ? ` [undo ${r.undo.presses}${r.undo.back ? ' ✓' : ' ✗'}]` : ''}${r.frames && r.frames.count ? ` [${r.frames.count} frames]` : ''}`);

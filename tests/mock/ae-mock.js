@@ -322,6 +322,11 @@ class MockProperty {
   }
   /** v0.98.1: a Dropdown Menu Control starts with 3 items (After Effects' default) and refuses a value outside its list —
    *  the owner's After Effects reported "Value 6 out of range 1 to 3" when a menu was set before its items were. */
+  // Property.hasMin / minValue / hasMax / maxValue (Scripting Guide) — from the modelled range
+  get hasMin() { return !!this._range; }
+  get hasMax() { return !!this._range; }
+  get minValue() { if (!this._range) throw new Error('After Effects error: no minimum'); return this._range[0]; }
+  get maxValue() { if (!this._range) throw new Error('After Effects error: no maximum'); return this._range[1]; }
   // PropertyBase.selected (read/write, Scripting Guide) — the tile test selects a property as a click does
   get selected() { return !!this._selected; }
   set selected(v) { this._selected = !!v; }
@@ -1033,11 +1038,12 @@ function installAE(target, fixture, { readFile, evalCode }) {
       }
     } };
   if (project) project.renderQueue = renderQueue;
-  class ImportOptions { constructor(file) { this.file = file; this.importAs = 1; } canImportAs() { return /\.(png|jpg|jpeg|mov|mp4|exr|tif|tiff|webm)$/i.test(this.file.fsName); } }
+  class ImportOptions { constructor(file) { this.file = file; this.importAs = 1; } canImportAs() { return /\.(png|jpg|jpeg|mov|mp4|exr|tif|tiff|webm|wav|mp3|aif)$/i.test(this.file.fsName); } }
   if (project) {
     project.importFile = (io) => {
       const green = /green/i.test(io.file.fsName);
-      const item = { id: nextId++, name: io.file.name, width: 1920, height: 1080, duration: /\.(mov|mp4|webm)$/i.test(io.file.fsName) ? 5 : 0, file: io.file,
+      const audio = /\.(wav|mp3|aif)$/i.test(io.file.fsName);
+      const item = { id: nextId++, name: io.file.name, width: audio ? 0 : 1920, height: audio ? 0 : 1080, duration: /\.(mov|mp4|webm|wav|mp3|aif)$/i.test(io.file.fsName) ? (audio ? 2 : 5) : 0, file: io.file, hasAudio: audio || /\.(mov|mp4)$/i.test(io.file.fsName), hasVideo: !audio,
         remove() { const k = project._items.indexOf(item); if (k >= 0) project._items.splice(k, 1); },
         _pixels: green ? (u, v) => (Math.abs(u - 0.5) < 0.2 && Math.abs(v - 0.5) < 0.25 ? [0.8, 0.6, 0.5, 1] : [0.0, 0.69, 0.25, 1]) : undefined };
       project._items.push(item);

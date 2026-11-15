@@ -2,6 +2,11 @@
 
 Last run: 2026-11-06 (v0.59.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
+## Tile Test coverage (v0.99.4, mock)
+353 / 353 tiles run on the mock with no skip (was 340 + 13 skipped / failed for want of a subject). The host profile is
+read in every run. **Mock, not After Effects** — the next After Effects run on 0.99.4 gives the real numbers and the
+first real host profile.
+
 ## Render previews in After Effects (still on v0.99.0)
 The owner clicked Diagnostics › Render previews on 0.99.0: 0 rendered · 208 failed, every one "Invalid Value for key: <Format>. Property is read-only" — the shared render path, fixed in 0.99.1 (output-module template). Not yet re-run on 0.99.1+. The failures left no line in the logs; logged since 0.99.3.
 

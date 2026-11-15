@@ -33,9 +33,21 @@ test('subjects: a grid tool gets a ready grid, an effector tool an effector, an 
 
 test('a tool that fails is reported with its own error, and the test comp is still removed', async () => {
   const { services, env } = await createTestServices([]);
-  const r = await TT.runTiles(services, [{ section: 'x', id: 'bad', label: 'Bad', tool: 'grid.build', args: { mode: 'path' } }, { section: 'x', id: 'none', label: 'None', tool: 'no.such.tool' }]);
+  const r = await TT.runTiles(services, [{ section: 'x', id: 'bad', label: 'Bad', tool: 'grid.build', args: { mode: 'path' }, subject: 'card' }, { section: 'x', id: 'none', label: 'None', tool: 'no.such.tool' }]);
   assert.equal(r.tiles[0].status, 'skip');
   assert.equal(r.tiles[1].status, 'fail');
   const left = env.project._items.filter((i) => /^MOE Self-Test/.test(i.name));
   assert.equal(left.length, 0, 'the test comps are removed');
+});
+
+test('v0.99.4: the subjects the first runs lacked — path, field, sound, green screen, property, two layers, follow — run, and leave nothing in the project', async () => {
+  const { services, env } = await createTestServices([]);
+  const ids = ['path', 'clonePoints', 'efImage', 'efBeat', 'efProperty', 'split2', 'c-compositing.keySetup', 'follow', 'trailEcho'];
+  const tiles = TT.libraryTiles(SECTIONS).filter((t) => ids.includes(t.id));
+  assert.equal(tiles.length, ids.length);
+  const r = await TT.runTiles(services, tiles);
+  for (const t of r.tiles) assert.equal(t.status, 'pass', `${t.tile}: ${t.detail}`);
+  assert.equal(env.project._items.filter((i) => /beat\.wav|green-screen\.png|^MOE Self-Test/.test(i.name)).length, 0, 'test files and comps removed');
+  assert.ok(r.hostProfile && r.hostProfile.effects.length === TT.PROFILE_EFFECTS.length, 'host profile read');
+  assert.ok(r.hostProfile.effects.find((e) => e.matchName === 'ADBE Gradient Wipe').params[0].max === 1, 'ranges read');
 });

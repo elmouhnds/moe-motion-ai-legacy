@@ -68,3 +68,18 @@ the user's. Proposal **MOE Dock**: the same groups as modules on a grid the user
 2. Host profile + Tile Test blind spots + Undo proof.
 3. Design tokens consolidation (spacing / radius / borders / accent) — invisible risk, visible polish.
 4. MOE Dock preview (web) → owner's pictures approval → panel.
+
+## 6. From the peer research (`PANEL_DESIGN_RESEARCH.md`) — what fits MOE
+| Idea (source) | For MOE |
+|---|---|
+| One thumbnail, three jobs: Shift / Alt / Ctrl = in / out / both (Flow) | One **modifier grammar** for every module: Shift = in / first / add, Alt = out / last / remove, Ctrl = options. MOE has modifiers per tool today; make them one rule and print it in every tooltip (KBar 3.1). |
+| Edit mode with a clear Done (Motion 4 "Pin Tools"); preview a destructive layout change (Blender's join overlay) | MOE Dock's Edit layout; highlight what a removal takes away before it happens. |
+| Whole setup exported as one file (Motion Tools Pro Share Center) | MOE already exports presets; add layouts + Quick Bar + kits → one `.moe` file. Auto-save always (Blender's lost favourites). |
+| Profiles switch with the app in front (Stream Deck) | **Selection-aware layout**: layout 1/2/3 can follow the selection type (keys / text / shapes / none) — opt-in. |
+| Macro knobs + stored variations + randomize (Ableton racks) | MOE's controller nulls already hold the few look-and-feel values; add **Variations** (store / recall / randomize) to Matte FX, Click VFX and the Cloner in the panel. |
+| Action bar that shows actions WITH shortcuts (Raycast) | The sticky Apply bar shows the shortcut and the Alt variant next to Apply. |
+| Icon-only cost Figma speed; labels opt-in | **Density switch**: Labels / Compact (Duik's Rookie → Expert). |
+| Results as native expressions that survive without the tool (Ray, Ease and Wizz) | MOE does this; add a "refresh MOE rigs" maintenance action (Rubberhose System) for old versions' rigs. |
+| Errors inline, toasts only for confirmations with Undo (Carbon) | Failure text inside the module that failed; success toast with Undo. |
+| Theme from base + accent + contrast in LCH (Linear) | Replaces the theme × accent matrix; elevation by lighter surfaces, not 132 shadows. |
+| Hover / press 50–100 ms, panel changes 150–250 ms, progress after 1 s (NN/g, Material) | Motion tokens in `tokens.css`; the activity bar already appears after 500 ms. |
