@@ -61,7 +61,17 @@
             return U.withUndo(args.label || 'MOE: Set Values', function () {
                 var out = [], i, r, p, before, atTime;
                 for (i = 0; i < args.items.length; i++) {
-                    r = U.resolveProperty(comp, args.items[i].address);
+                    /* v0.99.7 (controls on demand): an item marked `optional` may address a control this rig does
+                       not carry - a part that is switched off leaves no slider behind - so it is skipped by name
+                       instead of failing the whole batch. Without the flag a missing address is still an error,
+                       so a real mistake in an address is never swallowed. */
+                    if (args.items[i].optional) {
+                        r = null;
+                        try { r = U.resolveProperty(comp, args.items[i].address); } catch (eOpt) { r = null; }
+                        if (!r) { out.push({ address: args.items[i].address, skipped: 'NOT_PRESENT' }); continue; }
+                    } else {
+                        r = U.resolveProperty(comp, args.items[i].address);
+                    }
                     p = r.prop;
                     if (r.layer.locked) { out.push({ address: args.items[i].address, skipped: 'LOCKED' }); continue; }
                     atTime = p.numKeys > 0;

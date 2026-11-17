@@ -40,14 +40,39 @@ test('Glass: adjustment matted to the source + linked tint/rim/shadow; controls 
   assert.equal(named(comp, 'Card').enabled, true);
 });
 
-test('Glass Look: switches controls on an existing glass', async () => {
+/**
+ * v0.99.7 (controls on demand, CLAUDE.md v0.87): a glass built without its rim, tint and shadow carries only the
+ * three sliders that drive the glass layer itself. Before this every run put all eleven on it, so a plain Clear
+ * glass showed eight sliders that moved nothing. Glass Look then addresses the optional ones as optional, so it
+ * applies to whatever the rig really has instead of failing on the first control that is not there.
+ */
+test('Glass Look: switches controls on an existing glass, and a lean glass carries only the controls it uses', async () => {
   const { services, comp } = await createTestServices(card());
   await services.executor.run('glass.apply', { look: 'clear', rim: false, shadow: false, tintLayer: false });
+  const g = named(comp, 'MOE Glass 1');
+
+  const controls = g._parade._children.map((e) => e.name).filter((n) => /^Glass /.test(n));
+  assert.deepEqual(controls, ['Glass Frost', 'Glass Refraction', 'Glass Brightness'],
+    'the parts are off, so their sliders are not written');
+
   comp._layers.forEach((l) => { l.selected = l.name === 'MOE Glass 1'; });
   const r = await services.executor.run('glass.look', { look: 'frosted', tint: '#FF0000' });
   assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
-  const g = named(comp, 'MOE Glass 1');
-  assert.equal(fx(g, 'Glass Frost')._children[0].value, 22);
-  assert.deepEqual(Array.from(fx(g, 'Glass Tint')._children[0].value), [1, 0, 0, 1]);
+  assert.equal(fx(g, 'Glass Frost')._children[0].value, 22, 'the controls that are there still change');
+  assert.equal(fx(g, 'Glass Tint'), undefined, 'and the ones that are not there are left alone, not an error');
+  assert.match(r.verification.checks[0].detail, /not on this glass/);
   assert.equal(comp._layers.length, 3, 'simple glass: adjustment only');
+});
+
+test('Glass: with the parts on, every control is written and the look reaches the tint', async () => {
+  const { services, comp } = await createTestServices(card());
+  await services.executor.run('glass.apply', { look: 'clear', rim: true, shadow: true, tintLayer: true });
+  const g = named(comp, 'MOE Glass 1');
+  const controls = g._parade._children.map((e) => e.name).filter((n) => /^Glass /.test(n));
+  assert.equal(controls.length, 11, `all eleven are written when every part is built: ${controls.join(', ')}`);
+
+  comp._layers.forEach((l) => { l.selected = l.name === 'MOE Glass 1'; });
+  const r = await services.executor.run('glass.look', { look: 'frosted', tint: '#FF0000' });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
+  assert.deepEqual(Array.from(fx(g, 'Glass Tint')._children[0].value), [1, 0, 0, 1]);
 });

@@ -11,8 +11,14 @@
  * Linked copies are parented to the source with an identity transform, so moving,
  * scaling or rotating the source moves the whole glass (no control null needed).
  * Every amount lives as a control on "MOE Glass N" (Effect Controls) and is animatable.
+ *
+ * v0.99.7 — the holder here is "MOE Glass N" itself, and parenting the copies TO THE SOURCE is correct for this
+ * tool, not the pattern to replace: each copy is a duplicate of the source and has to stay exactly on it. What was
+ * wrong is that Effect Controls carried all eleven sliders on every run, including the ones for parts that were
+ * switched off. See core/holder.js for when a run wants a holder of its own instead.
  */
 const { hexToRgb } = require('../brand/brands');
+const HOLDER = require('../../core/holder'); // v0.99.7 controls on demand
 const { plan: PLAN1 } = require('../../core/host/plan'); // v0.94 one Ctrl+Z per run
 
 const LOOKS = {
@@ -25,12 +31,17 @@ const LOOKS = {
   ice: { label: 'Ice', frost: 30, refraction: 20, brightness: 18, tint: '#CFEFFF', tintAmount: 20, rim: 65, rimWidth: 3, angle: -50, shadow: 25, softness: 40, distance: 14 }
 };
 
-/* [control name, kind, look key] */
+/* [control name, kind, look key, when(args)]
+   v0.99.7 (controls on demand, CLAUDE.md v0.87): a slider is written only when the part it drives is actually
+   built. Before this every run put all eleven on the glass layer, so a plain Clear glass with no rim, tint or
+   shadow still carried eight sliders that moved nothing. Light Angle is kept while EITHER the rim bevel or the
+   shadow offset needs it. */
 const CONTROLS = [
   ['Glass Frost', 'slider', 'frost'], ['Glass Refraction', 'slider', 'refraction'], ['Glass Brightness', 'slider', 'brightness'],
-  ['Glass Tint', 'color', 'tint'], ['Glass Tint Amount', 'slider', 'tintAmount'],
-  ['Glass Rim', 'slider', 'rim'], ['Glass Rim Width', 'slider', 'rimWidth'], ['Glass Light Angle', 'angle', 'angle'],
-  ['Glass Shadow', 'slider', 'shadow'], ['Glass Shadow Softness', 'slider', 'softness'], ['Glass Shadow Distance', 'slider', 'distance']
+  ['Glass Tint', 'color', 'tint', (a) => !!a.tintLayer], ['Glass Tint Amount', 'slider', 'tintAmount', (a) => !!a.tintLayer],
+  ['Glass Rim', 'slider', 'rim', (a) => !!a.rim], ['Glass Rim Width', 'slider', 'rimWidth', (a) => !!a.rim],
+  ['Glass Light Angle', 'angle', 'angle', (a) => !!a.rim || !!a.shadow],
+  ['Glass Shadow', 'slider', 'shadow', (a) => !!a.shadow], ['Glass Shadow Softness', 'slider', 'softness', (a) => !!a.shadow], ['Glass Shadow Distance', 'slider', 'distance', (a) => !!a.shadow]
 ];
 const KIND = {
   slider: { matchName: 'ADBE Slider Control', param: 'Slider', type: 'OneD' },
@@ -47,10 +58,11 @@ function lookValues(look, tintHex) {
   return L;
 }
 
-function controlItems(values) {
-  return CONTROLS.map(([name, kind, key]) => {
+function controlItems(values, args) {
+  const want = HOLDER.needed(CONTROLS.map(([name, kind, key, when]) => ({ key: name, kind, lookKey: key, when })), args || {});
+  return want.map(({ key: name, kind, lookKey }) => {
     const K = KIND[kind];
-    const value = kind === 'color' ? hexToRgb(values[key]).concat([1]) : values[key];
+    const value = kind === 'color' ? hexToRgb(values[lookKey]).concat([1]) : values[lookKey];
     return { key: name, matchName: K.matchName, before: [], params: [{ id: name, value, names: [K.param], suffix: 1, nth: { type: K.type, n: 1 } }] };
   });
 }
@@ -145,7 +157,7 @@ const apply = {
       if (order.length) T.add('layers.move', { compId: comp.id, items: order });
 
       const fxLayers = [{ layer: { layerId: glass.layerId }, items: [
-        ...controlItems(values),
+        ...controlItems(values, args),
         { key: 'MOE Glass Frost', matchName: 'ADBE Gaussian Blur 2', before: [], params: [{ id: 'Repeat Edge Pixels', value: 1, names: ['Repeat Edge Pixels'] }] },
         { key: 'MOE Glass Lens', matchName: 'ADBE Optics Compensation', before: [], params: [{ id: 'Reverse Lens Distortion', value: 1, names: ['Reverse Lens Distortion'] }] },
         { key: 'MOE Glass Light', matchName: 'ADBE Brightness & Contrast 2', before: [], params: [] }
@@ -245,10 +257,18 @@ const look = {
   },
   async execute({ args, ctx, prepared, host }) {
     const v = lookValues(args.look, args.tint);
-    const items = prepared.glasses.flatMap((g) => CONTROLS.map(([name, kind, key]) => ({ address: fxAddr(g.id, name, KIND[kind].param), value: kind === 'color' ? hexToRgb(v[key]).concat([1]) : v[key] })));
+    // v0.99.7: a glass built without its rim, tint or shadow carries no slider for that part, so those controls are
+    // addressed as optional - the look still applies to everything the rig does have.
+    const items = prepared.glasses.flatMap((g) => CONTROLS.map(([name, kind, key, when]) => ({ address: fxAddr(g.id, name, KIND[kind].param), value: kind === 'color' ? hexToRgb(v[key]).concat([1]) : v[key], optional: !!when })));
     return host.call('props.setValues', { compId: ctx.comp.id, label: 'MOE: Glass Look', items });
   },
-  verify({ result }) { const bad = result.items.filter((i) => i.skipped); return { ok: !bad.length, checks: [{ ok: !bad.length, label: 'Controls', detail: `${result.items.length - bad.length} updated` }] }; },
+  verify({ result }) {
+    const absent = result.items.filter((i) => i.skipped === 'NOT_PRESENT');
+    const bad = result.items.filter((i) => i.skipped && i.skipped !== 'NOT_PRESENT');
+    const updated = result.items.length - absent.length - bad.length;
+    const ok = !bad.length && updated > 0;
+    return { ok, checks: [{ ok, label: 'Controls', detail: `${updated} updated${absent.length ? ` · ${absent.length} not on this glass (that part is off)` : ''}${bad.length ? ` · ${bad.length} refused: ${bad.map((i) => i.skipped).join(', ')}` : ''}` }] };
+  },
   checkpoint({ result, ctx }) { return { compId: ctx.comp.id, items: result.items.filter((i) => !i.skipped).map((i) => ({ address: i.address, value: i.before })) }; },
   async restore({ data, host }) { return host.call('props.setValues', { compId: data.compId, label: 'MOE: Restore Glass', items: data.items }); },
   summarize(result) { return `Glass look updated (${result.items.length} controls)`; }
