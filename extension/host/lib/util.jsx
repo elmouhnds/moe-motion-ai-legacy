@@ -212,18 +212,20 @@
        folder filled up with them, and the tile test saw "project items 82 -> 83" on every auto-distance move.
        A temporary probe has to take its source with it. AVItem.usedIn lists the comps still using an item
        (After Effects Scripting Guide), so the source is only removed when nothing is left using it. */
+    /* Returns the name of the item it removed, or '' - NEVER the item, which is invalid once it is gone
+       (v0.99.5: reading src.name after src.remove() threw "Object is invalid" and killed every grid restore). */
     U.dropSource = function (src) {
-        if (!src) { return false; }
+        if (!src) { return ''; }
         var name = '';
-        try { name = String(src.name || ''); } catch (eName) { return false; }
+        try { name = String(src.name || ''); } catch (eName) { return ''; }
         /* Only items MOE itself made: its own "MOE ..." solids and the "Null N" solid After Effects makes for a
            null. Never anything else of the user's, and never one another layer still uses. */
-        if (name.substring(0, 4) !== 'MOE ' && !/^Null \d+$/.test(name)) { return false; }
+        if (name.substring(0, 4) !== 'MOE ' && !/^Null \d+$/.test(name)) { return ''; }
         try {
-            if (src instanceof CompItem) { return false; }
-            if (src.usedIn && src.usedIn.length === 0) { src.remove(); return true; }
+            if (src instanceof CompItem) { return ''; }
+            if (src.usedIn && src.usedIn.length === 0) { src.remove(); return name; }
         } catch (eItem) { /* leave it rather than risk the user's project */ }
-        return false;
+        return '';
     };
 
     /* The sources a comp's layers use, read BEFORE the comp is removed (afterwards its layers are gone). */

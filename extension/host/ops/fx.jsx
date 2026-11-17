@@ -448,9 +448,16 @@
                 if (!fx) { U.fail('EFFECT_NOT_FOUND', 'Effect not found: ' + args.effectKey); }
                 p = fx.property(1);
                 if (typeof p.setPropertyParameters !== 'function') { U.fail('UNSUPPORTED', 'Dropdown menus need After Effects 17.0.1 or later.'); }
+                /* v0.99.5: setting the list invalidates the references into the effect, and on After Effects 26.5.3
+                   the way back through parentProperty is gone too - so remember WHERE the effect is first. Its index
+                   does not move. Without this the effect kept After Effects' own "Dropdown Menu Control" name and
+                   everything that reads it by name (expressions, read-backs) stopped finding it. */
+                var fxAt = fx.propertyIndex;
                 p = p.setPropertyParameters(args.items);
                 /* v0.99.1: the effect keeps its MOE name (expressions read it by name) even if After Effects resets it */
-                if (p.parentProperty && p.parentProperty.name !== args.effectKey) { p.parentProperty.name = args.effectKey; }
+                fx = (p.parentProperty && p.parentProperty.propertyIndex === fxAt) ? p.parentProperty : L.property('ADBE Effect Parade').property(fxAt);
+                if (!fx) { U.fail('EFFECT_LOST', 'The menu control "' + args.effectKey + '" could not be found again after its list was set.'); }
+                if (fx.name !== args.effectKey) { fx.name = args.effectKey; }
                 if (args.value) { p.setValue(args.value); }
                 return { layerId: L.id, effect: args.effectKey, items: args.items.length, value: plain(p.value) };
             });

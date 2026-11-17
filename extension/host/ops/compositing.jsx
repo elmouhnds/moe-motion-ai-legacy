@@ -224,13 +224,20 @@
                                        Property.setPropertyParameters); otherwise a value outside the current list waits
                                        for the effects.setMenu that sets list and value together (deferred). */
                                     if (item.menu && item.menu.length && typeof res.r.prop.setPropertyParameters === 'function') {
+                                        /* v0.99.5: remember WHERE the effect is before the call - setting a menu list
+                                           invalidates the references into it, and on After Effects 26.5.3 the way back
+                                           through parentProperty is gone too, so the effect kept After Effects' own
+                                           name and could not be found again by its MOE name. The index does not move. */
+                                        var fxAt = fx.propertyIndex;
                                         /* v0.99.1 (Tile Test on After Effects 26.5: "null is not an object (step 2: effects.ensure)"):
                                            setPropertyParameters invalidates the old references - use the property it
                                            RETURNS, reach the effect through its parentProperty, and give the effect its
                                            name back if After Effects reset it (expressions read it by name). */
                                         res.r.prop = res.r.prop.setPropertyParameters(item.menu);
                                         fx = res.r.prop.parentProperty;
+                                        if (!fx) { fx = layer.property('ADBE Effect Parade').property(fxAt); }
                                         if (fx && fx.name !== item.key) { fx.name = item.key; }
+                                        item.foundAt = fxAt;
                                     }
                                     try { res.r.prop.setValue(want); } catch (eMenu) { res.r.prop.setValue(1); deferred = true; }
                                 } else {
@@ -252,6 +259,9 @@
                                 if (target && fx.propertyIndex > target) { fx.moveTo(target); }
                             }
                             fx = findEffect(layer.property('ADBE Effect Parade'), item.key, item.matchName);
+                            /* v0.99.5: a menu control After Effects renamed is still at the index it was at. */
+                            if (!fx && item.foundAt) { fx = layer.property('ADBE Effect Parade').property(item.foundAt); }
+                            if (!fx) { U.fail('EFFECT_LOST', 'The effect "' + item.key + '" (' + item.matchName + ') could not be found again after it was written.'); }
                             entry.index = fx.propertyIndex;
                             layerOut.items.push(entry);
                         }

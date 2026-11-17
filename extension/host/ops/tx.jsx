@@ -53,7 +53,15 @@
                 for (i = 0; i < steps.length; i++) {
                     s = steps[i];
                     try { r = ops[s.op].run(resolve(s.args || {}, results)); }
-                    catch (e) { failed = { step: i, op: s.op, code: e.moeCode || 'HOST_EXCEPTION', message: String(e.message || e) }; break; }
+                    catch (e) {
+                        /* v0.99.5: an ExtendScript error knows where it happened - say so, or a failure like
+                           "null is not an object" cannot be found again (CLAUDE.md: never hide the real error). */
+                        failed = { step: i, op: s.op, code: e.moeCode || 'HOST_EXCEPTION', message: String(e.message || e) };
+                        try { if (e.line) { failed.line = Number(e.line); } } catch (eLine) { /* not an engine error */ }
+                        try { if (e.fileName) { failed.file = String(e.fileName).split('/').pop(); } } catch (eFile) { /* no file */ }
+                        if (failed.line) { failed.message += ' [' + (failed.file || 'host') + ' line ' + failed.line + ']'; }
+                        break;
+                    }
                     results[s.id !== undefined && s.id !== null ? String(s.id) : String(i)] = r;
                     out.push(r);
                 }

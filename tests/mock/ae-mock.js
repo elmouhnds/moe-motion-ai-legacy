@@ -320,6 +320,7 @@ class MockProperty {
     k.easeOut = out.map((e) => ({ speed: e.speed, influence: e.influence }));
   }
   get value() {
+    this._checkStale();
     // A layer parameter points at a LAYER, not at a number: After Effects shows the layer's current index and follows it
     // when layers are added, removed or reordered (0 = None once its layer is gone). v0.90: the mock kept the raw index,
     // so a second effector added on top silently re-pointed the first slot.
@@ -353,6 +354,7 @@ class MockProperty {
     if (L && !L.threeDLayer) throw new Error('After Effects error: Can not "set value" with this property, because the property or a parent property is hidden.');
   }
   setValue(v) {
+    this._checkStale();
     this._checkHidden();
     this._checkMenu(v);
     this._checkRange(v, 0);
@@ -433,12 +435,27 @@ class MockProperty {
     }
     g._children.forEach((c, i) => { c.propertyIndex = i + 1; });
   }
+  /* v0.99.5: a reference taken before setPropertyParameters is dead until it is fetched again from the effect. */
+  _checkStale() { if (this._stale) throw new Error('After Effects error: null is not an object'); }
+  get parentProperty() { return this._parentGone ? null : this._parentProperty; }
+  set parentProperty(v) { this._parentProperty = v; }
   setPropertyParameters(items) {
     if (!/Dropdown Control/.test(this.matchName)) throw new Error('After Effects error: setPropertyParameters needs a Dropdown Menu Control');
     this._menuItems = items.slice();
     // v0.99.1: modelled on After Effects 26.5 (Tile Test: the effect could not be found by its name afterwards) —
     // the old references go stale and the effect is back to its default name; callers must use the returned property
     if (this.parentProperty && this.parentProperty.matchName === 'ADBE Dropdown Control') this.parentProperty.name = 'Dropdown Menu Control';
+    // v0.99.5 (Self-Test on After Effects 26.5.3: grid.build died with "null is not an object (step 2 of 6:
+    // effects.ensure)"): setPropertyParameters invalidates EVERY reference into that effect, not only this one.
+    // A reference taken before the call throws until it is fetched again through the effect.
+    const fxg = this.parentProperty;
+    if (fxg && fxg._children) fxg._children.forEach((c) => { c._stale = true; });
+    this._stale = false;
+    // v0.99.5: and the way back to the effect is gone with them. Inferred from After Effects 26.5.3, where
+    // grid.build died at compositing.jsx "entry.index = fx.propertyIndex" — the effect could no longer be found
+    // by its MOE name, which can only mean the rename through `parentProperty` never happened. Find the effect
+    // again by its INDEX, which does not change when a menu list is set.
+    this._parentGone = true;
     return this;
   }
   get expression() { return this._expression; }
@@ -477,8 +494,9 @@ class MockGroup {
   }
   get numProperties() { return this._children.length; }
   property(key) {
-    if (typeof key === 'number') return this._children[key - 1] || null;
+    if (typeof key === 'number') { const c = this._children[key - 1] || null; if (c) c._stale = false; return c; }
     const found = this._children.find((c) => c.matchName === key || c.name === key) || null;
+    if (found) found._stale = false;
     // v0.99.1 (Tile Test, After Effects 26.5: "the property or a parent property is hidden"): a 2D layer still HAS its
     // 3D Transform properties, hidden — reading works, writing throws. Modelled for X / Y Rotation and Orientation.
     if (!found && this.matchName === 'ADBE Transform Group' && HIDDEN_2D[key]) {

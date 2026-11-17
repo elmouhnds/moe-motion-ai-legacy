@@ -167,7 +167,7 @@
         run: function (args) {
             var comp = U.compById(args.compId);
             return U.withUndo('MOE: Remove Layer', function () {
-                var removed = [], dropped = [], i, L, src;
+                var removed = [], dropped = [], i, L, src, gone;
                 for (i = 0; i < args.layerIds.length; i++) {
                     L = U.findLayer(comp, { layerId: args.layerIds[i] });
                     if (args.onlyNamed && L.name.substring(0, args.onlyNamed.length) !== args.onlyNamed) { continue; }
@@ -178,7 +178,8 @@
                     src = null;
                     try { src = L.source; } catch (eSrc) { src = null; }
                     L.remove();
-                    if (U.dropSource(src)) { dropped.push(String(src.name)); }
+                    gone = U.dropSource(src);
+                    if (gone) { dropped.push(gone); }
                 }
                 return { removed: removed, droppedSources: dropped };
             });
