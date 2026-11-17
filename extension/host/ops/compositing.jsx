@@ -197,6 +197,12 @@
                                 created = true;
                                 undoLog.push({ kind: 'created', layer: layer, key: item.key, matchName: item.matchName });
                             }
+                            /* v0.99.5: remember where this effect is before anything is written to it. Setting a
+                               Dropdown Menu Control's list (Property.setPropertyParameters) makes After Effects
+                               26.5.3 forget the MOE name of dropdowns on this layer, so a later lookup by name can
+                               come back empty even for an effect this call never touched again. The index does not
+                               move unless we move it ourselves, and we update it when we do. */
+                            item.foundAt = fx.propertyIndex;
                             resolved = [];
                             var missing = [];
                             /* Fallbacks (match-name convention / order) are only trusted when the
@@ -237,7 +243,7 @@
                                         fx = res.r.prop.parentProperty;
                                         if (!fx) { fx = layer.property('ADBE Effect Parade').property(fxAt); }
                                         if (fx && fx.name !== item.key) { fx.name = item.key; }
-                                        item.foundAt = fxAt;
+                                        if (fx) { item.foundAt = fx.propertyIndex; }
                                     }
                                     try { res.r.prop.setValue(want); } catch (eMenu) { res.r.prop.setValue(1); deferred = true; }
                                 } else {
@@ -249,6 +255,7 @@
                             if (item.before && item.before.length) {
                                 parade = layer.property('ADBE Effect Parade');
                                 fx = findEffect(parade, item.key, item.matchName);
+                                if (!fx && item.foundAt) { fx = parade.property(item.foundAt); }
                                 var target = 0, bi, other;
                                 for (bi = 0; bi < item.before.length; bi++) {
                                     for (var q = 1; q <= parade.numProperties; q++) {
@@ -256,7 +263,8 @@
                                         if (other.name === item.before[bi] && (target === 0 || q < target)) { target = q; }
                                     }
                                 }
-                                if (target && fx.propertyIndex > target) { fx.moveTo(target); }
+                                if (fx && target && fx.propertyIndex > target) { fx.moveTo(target); }
+                                if (fx) { item.foundAt = fx.propertyIndex; }
                             }
                             fx = findEffect(layer.property('ADBE Effect Parade'), item.key, item.matchName);
                             /* v0.99.5: a menu control After Effects renamed is still at the index it was at. */
