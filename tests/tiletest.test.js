@@ -51,3 +51,37 @@ test('v0.99.4: the subjects the first runs lacked — path, field, sound, green 
   assert.ok(r.hostProfile && r.hostProfile.effects.length === TT.PROFILE_EFFECTS.length, 'host profile read');
   assert.ok(r.hostProfile.effects.find((e) => e.matchName === 'ADBE Gradient Wipe').params[0].max === 1, 'ranges read');
 });
+
+/**
+ * v0.99.6 (Group 8 manual test, measured in After Effects 26.5.3): After Effects sometimes IGNORES Edit > Undo run
+ * from a script — the command is found by its own menu text, executed, and nothing at all changes (measured: four
+ * presses inside one host call, no change). The same tile then passed a moment later, so the tool was never at
+ * fault. The runner must say the undo rule was not measured, never report the tool as failing to undo.
+ */
+test('v0.99.6: a real Edit > Undo is counted; an Undo After Effects refuses is reported as not measured, not as a failed undo', async () => {
+  const tiles = pick(['mtIris']);
+  assert.equal(tiles.length, 1);
+
+  // 1. Edit > Undo works: one press takes the whole run back and the tile passes with ONE press counted
+  const ok = await createTestServices([]);
+  ok.env.undo.menu = true;
+  const r1 = await TT.runTiles(ok.services, tiles);
+  assert.equal(r1.tiles[0].status, 'pass', r1.tiles[0].detail);
+  assert.equal(r1.tiles[0].undo.presses, 1, 'one Ctrl+Z was counted');
+  assert.equal(r1.tiles[0].undo.back, true);
+  assert.equal(r1.totals.undoUnchecked, 0);
+
+  // 2. After Effects refuses the Undo (the command runs, nothing changes): the tile still passes, and the report
+  //    says the undo was not measured instead of blaming the tool
+  const no = await createTestServices([]);
+  no.env.undo.menu = true;
+  no.env.undo.refuse = true;
+  const r2 = await TT.runTiles(no.services, tiles);
+  const row = r2.tiles[0];
+  assert.equal(row.status, 'pass', row.detail);
+  assert.equal(row.undo.stuck, true, 'the refused press is recorded as stuck');
+  assert.equal(row.undo.presses, 0, 'a press that changed nothing is not counted as a Ctrl+Z');
+  assert.match(row.detail, /Undo not checked \(After Effects did not perform Edit > Undo\)/);
+  assert.equal(r2.totals.undoUnchecked, 1, 'the report counts what could not be measured');
+  assert.ok(!/did not bring it back/.test(row.detail), 'the tool is not blamed for After Effects refusing the Undo');
+});

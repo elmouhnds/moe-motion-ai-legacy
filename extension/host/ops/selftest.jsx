@@ -93,15 +93,33 @@
             if (!(MOE.undoLabels instanceof Array) || !MOE.undoLabels.length) { return { found: false, label: '' }; }
             label = MOE.undoLabels.pop();
             /* v0.99.1 (Tile Test on After Effects 26.5: "Undo MOE: ..." is not found by name): Edit > Undo is found
-               by its text - first "Undo <label>", then plain "Undo" (app.findMenuCommandId) - never by a numeric id */
+               by its text - first "Undo <label>", then plain "Undo" (app.findMenuCommandId) - never by a numeric id.
+               v0.99.6 (Group 8 manual test): on After Effects 26.5.3 the labelled text is never found and the plain
+               "Undo" is what answers - and After Effects performs it only sometimes. The caller is told whether the
+               press changed anything (below) so a refusal is never read as the tool failing to undo. */
             var tried = ['Undo ' + label, 'Undo'], t, how = '';
             for (t = 0; t < tried.length && !id; t++) {
                 try { id = app.findMenuCommandId(tried[t]); } catch (eF) { id = 0; }
                 if (id) { how = tried[t]; }
             }
             if (!id) { return { found: false, label: label, tried: tried }; }
-            app.executeCommand(id);
-            return { found: true, label: label, menu: how };
+            /* v0.99.6 (Group 8 manual test): After Effects sometimes IGNORES Edit > Undo run from a script - the
+               command is found and executed and nothing changes, four times in a row in one call. A press that
+               changes nothing did not consume an undo step, so say so instead of blaming the tool: the caller
+               reports the undo rule as not measured. The signature is the same one the tile test compares
+               (layers, project items, layer names), so a rename counts as a change too. */
+            var sig = function () {
+                var n = [], k;
+                for (k = 1; k <= comp.numLayers; k++) { n.push(String(comp.layer(k).name)); }
+                return comp.numLayers + '|' + app.project.numItems + '|' + n.join(String.fromCharCode(10));
+            };
+            var was = sig(), tries = 0, changed = false;
+            while (tries < 3 && !changed) {
+                tries += 1;
+                app.executeCommand(id);
+                changed = sig() !== was;
+            }
+            return { found: true, label: label, menu: how, changed: changed, attempts: tries };
         }
     };
 
@@ -164,6 +182,16 @@
     };
 
     /* v0.98.2 tile test: forget the labels before a tile (so Undo only ever goes back over that tile's own groups). */
+    /* v0.99.6: put a label back after After Effects refused its Edit > Undo, so the next call can press it again. */
+    ops['selftest.pushUndoLabel'] = {
+        mutates: false,
+        run: function (args) {
+            if (!(MOE.undoLabels instanceof Array)) { MOE.undoLabels = []; }
+            MOE.undoLabels.push(String(args.label));
+            return { labels: MOE.undoLabels.length };
+        }
+    };
+
     ops['selftest.resetUndoLabels'] = {
         mutates: false,
         run: function () { MOE.undoLabels = []; return { ok: true }; }

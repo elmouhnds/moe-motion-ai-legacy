@@ -18,7 +18,7 @@ function remember(app, toolId, args, label, r, sel) {
   if (!tool || !okOf(r)) return;
   const writes = (tool.permissions || []).some((p) => p !== 'read');
   if (!writes) return; // a read (Copy Motion, Select…) changes nothing: the strip stays
-  const can = !!tool.restore && !!r.checkpointId && (P.tunables(tool).length > 0 || P.variations(tool, args).length > 0);
+  const can = !!tool.restore && !!r.checkpointId && (P.tunables(tool, args).length > 0 || P.variations(tool, args).length > 0);
   const prev = app.state.get().tune;
   app.state.set({ tune: can ? { toolId, args: JSON.parse(JSON.stringify(args || {})), label: label || tool.name, checkpointId: r.checkpointId, sel: sel || [], vars: !!(prev && prev.vars && prev.toolId === toolId) } : null });
 }
@@ -69,7 +69,7 @@ function strip(app, s) {
   if (!t) return null;
   const tool = app.services.registry.get(t.toolId);
   if (!tool) return null;
-  const nums = P.tunables(tool);
+  const nums = P.tunables(tool, t.args);
   const vars = P.variations(tool, t.args);
   const isStag = t.toolId === 'motion.stagger';
   const field = (p) => {

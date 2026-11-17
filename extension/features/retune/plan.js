@@ -46,10 +46,22 @@ function positionDelta(sourceFirst, targetNow) {
   return targetNow.map((x, i) => x - sourceFirst[i]);
 }
 
-/** Up to three numbers of a tool that are worth a second try (never one the tile fixes). */
-function tunables(tool) {
+/**
+ * Up to three numbers of a tool that are worth a second try (never one the tile fixes).
+ * v0.99.6 (Group 8 manual test): `args` are the run's own arguments, so a parameter the Inspector hides for this run
+ * (`showIf`) is left out here too. Without it an Iris Reveal offered Bars, Columns and Corner radius - the first
+ * three numbers of reveal.matte, none of which an iris uses - while Duration and Soft edge, which it does use, were
+ * pushed out. A number that does nothing to what just ran is not worth a second try. Settings the user must open
+ * "Advanced" to see come last, for the same reason.
+ */
+function tunables(tool, args) {
   const ps = (tool && tool.params) || {};
-  return Object.keys(ps).filter((k) => (ps[k].type === 'number' || ps[k].type === 'integer') && !ps[k].tileFixed && !ps[k].hidden).slice(0, 3).map((k) => Object.assign({ key: k }, ps[k]));
+  const shown = (p) => { if (!p.showIf || !args) return true; try { return !!p.showIf(args); } catch (e) { return true; } };
+  return Object.keys(ps)
+    .filter((k) => (ps[k].type === 'number' || ps[k].type === 'integer') && !ps[k].tileFixed && !ps[k].hidden && shown(ps[k]))
+    .sort((a, b) => (ps[a].advanced ? 1 : 0) - (ps[b].advanced ? 1 : 0))
+    .slice(0, 3)
+    .map((k) => Object.assign({ key: k }, ps[k]));
 }
 const clampTo = (p, v) => Math.min(p.max !== undefined ? p.max : v, Math.max(p.min !== undefined ? p.min : v, v));
 const OPPOSITE = { moveRL: 'moveLR', moveLR: 'moveRL', moveTB: 'moveBT', moveBT: 'moveTB', left: 'right', right: 'left', up: 'down', down: 'up' };

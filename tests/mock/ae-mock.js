@@ -1028,7 +1028,25 @@ function markSelected(comp, fixture) {
  */
 function installAE(target, fixture, { readFile, evalCode }) {
   // v0.94: entries = what Edit › Undo would list — one per top-level group (After Effects closes a group when its script ends; see harness)
-  const undo = { depth: 0, groups: [], entries: [], autoClosed: 0 };
+  // menu: a test opts in to Edit > Undo by name (env.undo.menu = true). It is OFF by default because this undo is
+  // PARTIAL: it restores the layer and project-item lists the group started with - what the Tile Test's census
+  // compares - and NOT property values or keys, so a test that measures keys must not use it.
+  // refuse: v0.99.6 (Group 8 manual test, After Effects 26.5.3) reproduces After Effects ignoring Edit > Undo - the
+  // command is found by its own menu text, executed, and nothing at all changes.
+  const undo = { depth: 0, groups: [], entries: [], autoClosed: 0, stack: [], menu: false, refuse: false, undone: [] };
+  const UNDO_ID = 16;
+  const snapshot = () => {
+    if (!project) return null;
+    const comps = [];
+    for (const it of project._items) if (it instanceof CompItem) comps.push({ comp: it, layers: it._layers.slice() });
+    return { items: project._items.slice(), comps };
+  };
+  const restoreSnap = (snap) => {
+    if (!snap || !project) return;
+    project._items.length = 0;
+    for (const it of snap.items) project._items.push(it);
+    for (const c of snap.comps) { c.comp._layers.length = 0; for (const L of c.layers) c.comp._layers.push(L); }
+  };
   const project = fixture ? { file: null, dirty: true, activeItem: null, bitsPerChannel: fixture.bitsPerChannel || 16, expressionEngine: 'javascript-1.0', _items: [], selection: [] } : null;
   if (project) {
     Object.defineProperty(project, 'numItems', { get() { return project._items.length; } });
@@ -1124,11 +1142,24 @@ function installAE(target, fixture, { readFile, evalCode }) {
       preferences: { getPrefAsString() { throw new Error('After Effects error: preference not found'); } },
       // v0.98.2: After Effects 26.5 warns "Undo group mismatch, will attempt to fix" for a group opened inside an open one or
       // an end with none open (the owner's report); the mock counts both and the tests require zero
-      beginUndoGroup(label) { if (undo.depth === 0) undo.entries.push(label); else undo.mismatch = (undo.mismatch || 0) + 1; undo.depth++; undo.groups.push(label); },
+      beginUndoGroup(label) { if (undo.depth === 0) { undo.entries.push(label); undo.stack.push({ label, snap: snapshot() }); } else undo.mismatch = (undo.mismatch || 0) + 1; undo.depth++; undo.groups.push(label); },
       purge(target) { (app0.purged = app0.purged || []).push(target); },
-      findMenuCommandId(name) { return { 'Reveal Layer Source in Project': 2517, 'Convert Audio to Keyframes': 3065 }[name] || 0; },
+      findMenuCommandId(name) {
+        const fixed = { 'Reveal Layer Source in Project': 2517, 'Convert Audio to Keyframes': 3065 }[name];
+        if (fixed) return fixed;
+        // After Effects finds Edit > Undo only by its CURRENT text, which carries the newest group's label
+        const top = undo.menu && undo.stack.length ? undo.stack[undo.stack.length - 1].label : null;
+        if (top && name === `Undo ${top}`) return UNDO_ID;
+        return 0;
+      },
       executeCommand(id) {
         (app0.commands = app0.commands || []).push(id);
+        if (id === UNDO_ID) {
+          if (undo.refuse) return;
+          const e = undo.stack.pop();
+          if (e) { restoreSnap(e.snap); undo.undone.push(e.label); const k = undo.entries.lastIndexOf(e.label); if (k >= 0) undo.entries.splice(k, 1); }
+          return;
+        }
         // mock of Convert Audio to Keyframes: an "Audio Amplitude" null at the top with Left / Right / Both Channels
         // sliders keyed every frame from the selected sound layer's fixture `audio(t)` (0 when it has none)
         if (id === 3065 && project && project.activeItem) {

@@ -126,3 +126,29 @@ test('Tune: a change restores the run and runs it again; only for the selection 
   R.remember(app, 'quick.selectSame', {}, '', { status: 'success' }, []); assert.ok(st.tune, 'a read keeps it');
   R.remember(app, 'quick.reverseKeys', {}, '', { status: 'success', checkpointId: 'y' }, []); assert.equal(st.tune, null);
 });
+
+/**
+ * v0.99.6 (Group 8 manual test, seen in After Effects): the Retune strip of an **Iris Reveal** offered "Bars 6",
+ * "Columns 8" and "Corner radius 24" — the first three numbers of reveal.matte, which belong to Blinds, Pixels and
+ * Card — while Duration and Soft edge, the ones an iris really uses, were pushed out of the three slots.
+ */
+test('v0.99.6: the strip only offers numbers that apply to the run that was made', () => {
+  const { TOOLS } = require('../extension/features');
+  const matte = TOOLS.find((t) => t.id === 'reveal.matte');
+  assert.ok(matte, 'reveal.matte exists');
+
+  const iris = P.tunables(matte, { style: 'iris', dir: 'in', duration: 0.9 }).map((p) => p.key);
+  for (const k of ['count', 'cols', 'radius']) assert.ok(!iris.includes(k), `an iris must not offer ${k}: got ${iris.join(', ')}`);
+  assert.ok(iris.includes('duration'), `an iris must offer duration: got ${iris.join(', ')}`);
+
+  // the same tool in a style that DOES use bars still offers them
+  const blinds = P.tunables(matte, { style: 'blinds', dir: 'in', duration: 1 }).map((p) => p.key);
+  assert.ok(blinds.includes('count'), `blinds must offer count: got ${blinds.join(', ')}`);
+
+  // a parameter the user must open "Advanced" to see never takes a slot from a plain one
+  const adv = P.tunables(matte, { style: 'iris', dir: 'in' });
+  assert.ok(!adv.length || !adv[0].advanced, 'the first slot is not an advanced setting');
+
+  // called without args (an older caller) nothing is filtered out
+  assert.ok(P.tunables(matte).length > 0);
+});
