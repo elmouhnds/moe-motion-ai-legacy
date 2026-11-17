@@ -103,7 +103,7 @@ test('Install detection: installer record, developer link, manual copy', () => {
   assert.equal(U.installKind(null), 'unknown');
 });
 
-test('Node platform helpers: sha256File and extensionInfo on a real folder and a symlink', async () => {
+test('Node platform helpers: sha256File and extensionInfo on a real folder and a symlink', async (t) => {
   const { createNodePlatform } = require('../extension/core/platform/node');
   process.env.MOE_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'moe-data-'));
   const sys = createNodePlatform().system;
@@ -113,9 +113,13 @@ test('Node platform helpers: sha256File and extensionInfo on a real folder and a
   assert.equal(await sys.sha256File(file), crypto.createHash('sha256').update('hello').digest('hex'));
   fs.writeFileSync(path.join(dir, 'install.json'), '{"installer":"nsis","version":"0.6.1"}');
   assert.equal(U.installKind(sys.extensionInfo(dir)), 'installer');
+  // Windows refuses symlinkSync with EPERM unless Developer Mode or an elevated shell is on;
+  // that is the OS, not the updater, so check the link case only where the OS allows one.
   const link = `${dir}-link`;
-  fs.symlinkSync(dir, link);
-  assert.equal(U.installKind(sys.extensionInfo(link)), 'dev-link');
+  let linked = false;
+  try { fs.symlinkSync(dir, link, 'junction'); linked = true; } catch (e) { if (e.code !== 'EPERM' && e.code !== 'EACCES') throw e; }
+  if (linked) assert.equal(U.installKind(sys.extensionInfo(link)), 'dev-link');
+  else t.diagnostic('symlink not permitted by the OS; dev-link case not checked here');
   await assert.rejects(sys.download('http://example.com/x.exe', path.join(dir, 'x.exe')), /HTTPS/);
 });
 

@@ -10,7 +10,9 @@ const { installAE } = require('../mock/ae-mock');
 const { createMemPlatform } = require('../../dev/platform-mem');
 const { createServices } = require('../../extension/core/services');
 
-const ROOT = path.resolve(__dirname, '../../extension');
+// CEP's getSystemPath(EXTENSION) returns forward slashes on Windows too, and the mock's File
+// normalises fsName the same way — keep ROOT in that form so in-memory file keys match.
+const ROOT = path.resolve(__dirname, '../../extension').replace(/\\/g, '/');
 
 function createHostEnv(fixture, memFiles) {
   const sandbox = {};

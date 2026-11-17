@@ -1,0 +1,29 @@
+# MOE Motion AI — line endings
+#
+# Host code is ExtendScript (ASCII-only, ES3) and several tests match the
+# source text of extension/** with regexes written against "\n" (for example
+# tests/control.test.js KEY_REFS, tests/motion.control.test.js,
+# tests/toolcards.test.js). A Windows clone with core.autocrlf=true used to
+# check files out with CRLF, so those regexes found nothing and `npm run check`
+# failed on a fresh clone. Keep every text file LF in the working tree.
+* text=auto eol=lf
+
+# Binary assets: never touch.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.mp4 binary
+*.mov binary
+*.webm binary
+*.mp3 binary
+*.wav binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.zxp binary
+*.exe binary
+*.dat binary

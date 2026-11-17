@@ -58,12 +58,13 @@ test('comp switch between read and write is refused', async () => {
 });
 
 test('a host file that fails to load is named in the connection error (file + line)', async () => {
-  const path = require('path');
   const { createHostEnv, ROOT } = require('./helpers/harness');
   const { createServices } = require('../extension/core/services');
   const { createMemPlatform } = require('../dev/platform-mem');
   const platform = createMemPlatform();
-  const bad = path.join(ROOT, 'host/ops/expressions.jsx');
+  // The host asks for `MOE_ROOT + "/host/ops/..."` and the mock's File normalises to forward
+  // slashes, so path.join (backslashes on Windows) would never match the in-memory file.
+  const bad = `${ROOT}/host/ops/expressions.jsx`;
   platform.files.set(bad, 'throw new Error("Syntax error");');
   const h = createHostEnv(fx.easeComp(), platform.files);
   const services = createServices({ platform, evalScript: h.evalScript, rootPath: ROOT, hostTimeoutMs: 5000 });
