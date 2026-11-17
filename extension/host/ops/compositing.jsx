@@ -41,7 +41,8 @@
             var rows = Math.max(1, Math.min(12, Math.round(num(args.rows) || 4)));
             var times = args.times && args.times.length ? args.times : [comp.time];
             if (times.length > 8) { U.fail('BAD_ARGS', 'At most 8 sample times.'); }
-            return U.withUndo('MOE: Analyze (temporary)', function () {
+            /* v0.99.5: same as layers.bounds - the temporary probe must not change the user's selection. */
+            return U.withUndo('MOE: Analyze (temporary)', function () { return U.keepSelection(comp, function () {
                 var target = U.findLayer(comp, args.layer);
                 if (!target.width || !target.height) { U.fail('NOT_SAMPLEABLE', 'This layer has no pixels to sample.'); }
                 var before = comp.numLayers, probe = null, out = null, fd = comp.frameDuration, disabled = [], bi, bq, bfx;
@@ -87,7 +88,7 @@
                 out.layerCountAfter = comp.numLayers;
                 try { out.bitsPerChannel = app.project.bitsPerChannel; } catch (eBpc) { out.bitsPerChannel = null; }
                 return out;
-            });
+            }); });
         }
     };
 

@@ -188,6 +188,25 @@
        a label colour 0..16; anything else is ignored, never written. */
     U.isLabel = function (v) { return typeof v === 'number' && v >= 0 && v <= 16 && Math.floor(v) === v; };
 
+    /* v0.99.5 (read in After Effects 26.5.3 by hand: Layer > New > Null Object with three layers selected left
+       ONLY the new null selected): adding a layer SELECTS it and deselects every other layer, and removing that
+       layer leaves nothing selected. A tool that adds a TEMPORARY probe layer therefore destroys the user's
+       selection - Align & Distribute left 0 layers selected, so its own "next step" (Distribute) was dead.
+       Wrap such a measurement in U.keepSelection: it remembers which layers were selected and puts them back.
+       Layer.selected is read/write (After Effects Scripting Guide, Layer object). */
+    U.keepSelection = function (comp, fn) {
+        var before = [], i;
+        try {
+            for (i = 1; i <= comp.numLayers; i++) { if (comp.layer(i).selected) { before.push(comp.layer(i)); } }
+        } catch (eRead) { before = []; }
+        try { return fn(); } finally {
+            try {
+                for (i = 1; i <= comp.numLayers; i++) { comp.layer(i).selected = false; }
+                for (i = 0; i < before.length; i++) { before[i].selected = true; }
+            } catch (eSet) { /* a layer the run removed cannot be reselected; the rest are */ }
+        }
+    };
+
     U.withUndo = function (label, fn) {
         var outer = !(MOE.undoDepth > 0);
         if (outer) {

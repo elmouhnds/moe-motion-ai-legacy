@@ -94,6 +94,9 @@ test('tool: the user\'s own track matte and 3D layers are skipped (named), a MOE
   const own = r0.comp.layers.addSolid([1, 1, 1], 'My Matte', 100, 100, 1, 10);
   B.setTrackMatte(own, TM.LUMA);
   C.threeDLayer = true;
+  // v0.99.5: After Effects selects a layer it adds (and deselects the rest) — the mock does too now,
+  // so the three cards have to be selected again after this setup layer.
+  select(r0.comp, (l) => l === A || l === B || l === C);
   const r = await run(r0, { style: 'iris' });
   assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
   assert.equal(B._matte, own, 'your matte is untouched');

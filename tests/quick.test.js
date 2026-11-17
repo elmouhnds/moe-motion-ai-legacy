@@ -112,6 +112,9 @@ test('Parent to Null, Select Same Property, Pre-compose, Separate X/Y, Duplicate
   assert.ok(named(comp, 'Box').parent === ctrl && named(comp, 'Line').parent === ctrl);
   assert.ok((await services.executor.restore(pn.checkpointId)).ok);
   assert.equal(named(comp, 'Ctrl'), undefined);
+  // v0.99.5: After Effects selects a layer it ADDS and deselects the rest (the mock does too now),
+  // so this step starts from the selection it is about.
+  select(comp, ['Box', 'Line']);
   // Select same: Position is selected on Box → select it on Line too.
   const ss = await services.executor.run('quick.selectSame', { scope: 'selected' });
   assert.equal(ss.status, 'success', JSON.stringify(ss.verification || ss.errors));

@@ -257,6 +257,9 @@ test('Proximity remove (selected / all) and Center Anchor keeps the layer in pla
   const a = comp._layers.find((l) => l.name === 'A');
   assert.equal(a.property('ADBE Transform Group').property('ADBE Scale').expression, '');
   assert.equal(a._parade._children.length, 0);
+  // v0.99.5: After Effects selects a layer it ADDS and deselects the rest (the mock does too now),
+  // so this step starts from the selection it is about.
+  comp._layers.forEach((l) => { l.selected = l.name === 'A' || l.name === 'B'; });
   const ca = await services.executor.run('proximity.centerAnchor', {});
   assert.equal(ca.status, 'success');
   const tr = a.property('ADBE Transform Group');

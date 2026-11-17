@@ -59,9 +59,13 @@ function open(app, clientX, clientY, { hold = null } = {}) {
   const opened = Date.now();
   let moved = false;
 
-  const centreLabel = h('span', { class: 'pie-c-l' }, last ? `Repeat ${last.label}` : 'Close');
+  // v0.99.5 (manual test): the centre used to read "Repeat <name>", which does not fit its 64 px / two lines —
+  // After Effects showed "Repeat / Anchor Top…", a CUT NAME (docs/features/NO_CUT_NAMES.md) that also hid WHICH
+  // anchor would be repeated. The repeat arrow above it already says "repeat", so the centre shows the name only
+  // (the same text a hovered slot puts there, pie.js below), and the full sentence stays in the tooltip + aria.
+  const centreLabel = h('span', { class: 'pie-c-l' }, last ? last.label : 'Close');
   const centreCtx = h('span', { class: 'pie-c-k' }, ctxName);
-  const centre = h('button', { class: 'pie-centre', 'aria-label': last ? `Repeat ${last.label}` : 'Close the pie', onclick: () => choose(-1) }, icon(last ? 'repeat' : 'x', 'sm'), centreLabel, centreCtx);
+  const centre = h('button', { class: 'pie-centre', title: last ? `Repeat ${last.label}` : 'Close the pie', 'aria-label': last ? `Repeat ${last.label}` : 'Close the pie', onclick: () => choose(-1) }, icon(last ? 'repeat' : 'x', 'sm'), centreLabel, centreCtx);
 
   // Background ring + highlight sector (updated by setAttribute, no re-render).
   const svg = document.createElementNS(SVGNS, 'svg');
@@ -107,7 +111,7 @@ function open(app, clientX, clientY, { hold = null } = {}) {
     centre.classList.toggle('hot', i === -1);
     if (i >= 0) { hl.setAttribute('d', sectorPath(i, DEAD + 14, R + 34)); hl.style.display = ''; } else hl.style.display = 'none';
     const a = i >= 0 ? slots[i] : null;
-    centreLabel.textContent = a ? a.label : (last ? `Repeat ${last.label}` : 'Close');
+    centreLabel.textContent = a ? a.label : (last ? last.label : 'Close');
     centreCtx.textContent = a ? (ready[i].ok ? a.where || ctxName : ready[i].hint) : ctxName;
   }
   highlight(-1);

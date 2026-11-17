@@ -66,7 +66,10 @@
             var times = args.times && args.times.length ? args.times : [comp.time];
             if (times.length > 12) { U.fail('BAD_ARGS', 'At most 12 sample times.'); }
             if (args.layerIds.length > 300) { U.fail('BAD_ARGS', 'At most 300 layers per measurement.'); }
-            return U.withUndo('MOE: Measure (temporary)', function () {
+            /* v0.99.5: the probe layer must not cost the user their selection - After Effects selects a layer
+               it adds and deselects the rest, so Align & Distribute (which measures first) used to leave
+               nothing selected and its own next step (Distribute) dead. */
+            return U.withUndo('MOE: Measure (temporary)', function () { return U.keepSelection(comp, function () {
                 var before = comp.numLayers, probe = null, out = [], fd = comp.frameDuration, i, ti, L, lo, hi, a, b, boxes, err;
                 try {
                     probe = comp.layers.addNull(comp.duration);
@@ -93,7 +96,7 @@
                     if (probe) { try { probe.remove(); } catch (eRemove) { /* reported via layer count */ } }
                 }
                 return { compId: comp.id, times: times, layers: out, layerCountBefore: before, layerCountAfter: comp.numLayers };
-            });
+            }); });
         }
     };
 

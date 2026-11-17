@@ -874,6 +874,10 @@ class CompItem {
     this._layers = (spec.layers || []).map((l) => (l.camera ? new MockCameraLayer(l, this) : l.text !== undefined ? new MockTextLayer(l, this) : l.shapes ? new MockShapeLayer(l, this) : new MockLayer(l, this)));
     const comp = this;
     this.guides = [];
+    // v0.99.5 (read in After Effects 26.5.3): adding a layer SELECTS it and deselects every other
+    // layer — so a tool that adds a temporary probe layer destroys the user's selection unless it
+    // puts it back. The mock used to keep the selection, which hid that from the tests.
+    const selectOnly = (L) => { comp._layers.forEach((x) => { x.selected = x === L; }); return L; };
     this.layers = {
       addNull(duration) {
         const n = new MockLayer({ name: 'Null 1', nullLayer: true, outPoint: duration }, comp);
@@ -881,7 +885,7 @@ class CompItem {
         // Marker In / Out read 0 · 0 · 0 on one) — an expression that scales `value` reads 0 there
         n.property('ADBE Transform Group').property('ADBE Opacity').setValue(0);
         comp._layers.unshift(n);
-        return n;
+        return selectOnly(n);
       },
       addSolid(color, name, w, h, pa, duration) {
         const L = new MockLayer({ name, width: w, height: h, outPoint: duration, rect: { left: 0, top: 0, width: w, height: h }, source: { kind: 'solid', color } }, comp);
@@ -889,7 +893,7 @@ class CompItem {
         tg.property('ADBE Anchor Point').setValue([w / 2, h / 2]);
         tg.property('ADBE Position').setValue([comp.width / 2, comp.height / 2]);
         comp._layers.unshift(L);
-        return L;
+        return selectOnly(L);
       },
       precompose(indices, name, moveAll) {
         const sorted = indices.slice().sort((a, b) => a - b);
@@ -911,18 +915,18 @@ class CompItem {
         tg.property('ADBE Anchor Point').setValue([item.width / 2, item.height / 2]);
         tg.property('ADBE Position').setValue([comp.width / 2, comp.height / 2]);
         comp._layers.unshift(L);
-        return L;
+        return selectOnly(L);
       },
       // v0.40: LayerCollection.addText (the self-test's title)
       addText(text) {
         const L = new MockTextLayer({ name: String(text), text: String(text), measure: true, transform: DEFAULT_TRANSFORM.map((q) => Object.assign({}, q)) }, comp);
         comp._layers.unshift(L);
-        return L;
+        return selectOnly(L);
       },
       addShape() {
         const L = new MockShapeLayer({ name: 'Shape Layer 1', shapes: [], rect: { left: -50, top: -50, width: 100, height: 100 } }, comp);
         comp._layers.unshift(L);
-        return L;
+        return selectOnly(L);
       }
     };
     this._selectionOrder = spec.selectionOrder || null;

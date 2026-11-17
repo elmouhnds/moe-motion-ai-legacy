@@ -101,6 +101,9 @@ test('Text Cloner · Arabic (right to left, right-justified, scaled 50 %): words
   assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
   const words = comp._layers.filter((l) => /^MOE Word \d+ · Title$/.test(l.name));
   assert.equal(words.length, 2);
+  // v0.99.5: After Effects selects a layer it ADDS and deselects the rest (the mock does too now),
+  // so this step starts from the selection it is about.
+  comp._layers.forEach((l) => { l.selected = l.name === 'Title'; });
   // 50 px per Arabic letter: "مرحبا" 250 px at the right edge, then a 30 px space, then "بالعالم" 350 px — all × 0.5
   const want = [[1500 - 125, 300 - 37.5, 125, 50], [1500 - 315, 300 - 37.5, 175, 50]];
   words.forEach((w, i) => compBox(w, comp.time).forEach((v, j) => assert.ok(near(v, want[i][j], 0.01), `${w.name} box[${j}] ${v} vs ${want[i][j]}`)));

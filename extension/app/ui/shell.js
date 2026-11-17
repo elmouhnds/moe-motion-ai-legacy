@@ -713,9 +713,20 @@ function createApp(root, services, env = {}) {
   // Selection polling is light and adaptive: only while the pointer has been over the panel in
   // the last 20 s, never while a button is pressed or right after an interaction, and slower
   // when After Effects answers slowly (each read runs on AE's main thread).
-  let lastPointer = 0, lastInput = 0;
+  let lastPointer = 0, lastInput = 0, lastHoverRead = 0;
   const mouse = { x: 200, y: 200 };
-  document.addEventListener('pointermove', (e) => { lastPointer = Date.now(); mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true, capture: true });
+  document.addEventListener('pointermove', (e) => {
+    const now = Date.now();
+    lastPointer = now; mouse.x = e.clientX; mouse.y = e.clientY;
+    /* v0.99.5 (manual test, After Effects 26.5.3): the timer poll alone left the panel stale for tens of
+       seconds while the user worked in After Effects — with three shape layers selected the strip still said
+       "Nothing selected · 0 layers" after 24 s with the pointer resting on the panel, and ANCHOR / ALIGN were
+       not even rendered, so Align was unreachable until something was clicked in the panel. The pointer
+       arriving on the panel IS the "re-read on hover" signal this file promises; do it on the event rather
+       than hoping the next tick runs. Throttled (one read per 1.2 s), never while a button is down or right
+       after an interaction — each read runs on After Effects' main thread. */
+    if (!pressing && now - lastHoverRead > 1200 && now - lastInput > 400) { lastHoverRead = now; app.refreshContext(); }
+  }, { passive: true, capture: true });
   // Right button held on the panel (not on a control with its own right-click menu, not in a field) → pie.
   document.addEventListener('pointerdown', (e) => {
     if (e.button !== 2 || require('./pie').isOpen()) return;

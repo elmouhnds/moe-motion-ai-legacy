@@ -84,6 +84,9 @@ test('Tracer on a grid: one shape layer; every point sits on its item; the lines
 test('running it again replaces the grid\'s own tracer; a duplicate item name and a single item are refused before anything is made', async () => {
   const a = await gridWith(9);
   assert.equal((await a.services.executor.run('grid.tracer', { mode: 'order' })).status, 'success');
+  // v0.99.5: After Effects selects a layer it ADDS and deselects the rest, so the tracer layer the first
+  // run made is what is selected now — pick the grid again, the way a user has to, before running it again.
+  sel(a.comp, (l) => l === a.G);
   const r2 = await a.services.executor.run('grid.tracer', { mode: 'grid', closed: true });
   assert.equal(r2.status, 'success', JSON.stringify(r2.verification || r2.errors));
   assert.equal(a.comp._layers.filter((l) => /^MOE Tracer/.test(l.name)).length, 1, 'one tracer per grid');

@@ -80,6 +80,9 @@ test('tool: a layer with a track matte or 3D is skipped and named; nothing usabl
   B.threeDLayer = true;
   const own = r0.comp.layers.addSolid([1, 1, 1], 'My Matte', 100, 100, 1, 10);
   A.setTrackMatte(own, 5015);
+  // v0.99.5: After Effects selects a layer it ADDS and deselects the rest (the mock does too now),
+  // so this step starts from the selection it is about.
+  r0.comp._layers.forEach((l) => { l.selected = l === A || l === B; });
   const e0 = r0.env.undo.entries.length;
   const r = await r0.services.executor.run('reveal.fx', { preset: 'inkBleed' }, { approved: true });
   assert.notEqual(r.status, 'success');
