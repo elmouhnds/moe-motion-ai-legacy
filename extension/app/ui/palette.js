@@ -58,7 +58,7 @@ function actionItems(app) {
 /** v0.78: every recipe (built-in and yours) is findable by its name. */
 function recipeItems(app) {
   const A = require('./actions');
-  return require('./kitRun').allRefs(app).map((r) => [r, A.resolve(r.ref)]).filter(([, a]) => a).map(([r, a]) => ({ kind: 'action', id: `rec-${r.ref}`, name: a.label, desc: `${r.kit} recipe · ${a.hint} · one click, one undo`, icon: a.icon, ws: 'Style Kits',
+  return require('./kitRun').allRefs(app).map((r) => [r, A.resolve(r.ref)]).filter(([, a]) => a).map(([r, a]) => ({ kind: 'action', id: `rec-${r.ref}`, name: a.label, desc: `${r.kit} recipe · ${a.hint} · one click, one undo per step`, icon: a.icon, ws: 'Style Kits',
     run: () => { const rd = a.ready(app); if (!rd.ok) app.toast(`${a.label} needs ${rd.hint} — nothing was changed`, 5000, 'warn'); else a.run(app); } }));
 }
 

@@ -109,7 +109,7 @@ function render(app) {
         h('button', { class: `btn sm sk-pin ${pinned ? 'on' : ''}`, 'data-key': 'sk-pin', 'aria-pressed': String(pinned), title: pinned ? 'Stop showing this kit on Home' : 'Show this kit\'s next step on Home, in every style', onclick: () => R.setFocus(app, pinned ? null : kit.id) }, icon(pinned ? 'check' : 'target', 'xs'), pinned ? 'Working in this kit' : 'Work in this kit'))),
     h('nav', { class: 'sk-switch', 'aria-label': 'Kits' }, K.KITS.map((k) => h('button', { class: `sk-chip ${k.id === kit.id ? 'on' : ''}`, 'data-key': `kit-s-${k.id}`, 'aria-pressed': String(k.id === kit.id), onclick: () => app.state.set({ kitId: k.id }) }, k.label))),
     h('section', { class: 'sk-recs', 'data-key': `kit-rs-${kit.id}`, 'aria-label': 'Recipes' },
-      h('div', { class: 'sk-step-h' }, 'Recipes · one click, one undo', h('span', { class: 'spacer' }),
+      h('div', { class: 'sk-step-h' }, 'Recipes · one click, one undo per step', h('span', { class: 'spacer' }),
         build ? null : h('button', { class: 'btn ghost sm sk-new', 'data-key': 'sk-new', title: 'Make your own: click up to four of this kit\'s tools in the order they should run, then Save', onclick: () => R.startBuild(app, kit.id) }, icon('plus', 'xs'), 'New recipe')),
       build ? buildTray(app, kit, build) : null,
       h('div', { class: 'sk-rec-row' }, (kit.recipes || []).concat(R.mineOf(app, kit.id)).map((rc) => recipeCard(app, kit, rc)))),
