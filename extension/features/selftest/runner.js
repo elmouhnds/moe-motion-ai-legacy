@@ -590,6 +590,10 @@ async function checkSpeed(T) {
   const e1 = await T.run('grid.effector', { type: 'plain', falloff: 'sphere', scale: 50, sweep: true });
   const plain = await time();
   await T.undo(e1, before + 49);
+  // v0.99.5: the first effector run ADDED its null, and After Effects selects a layer it adds (and
+  // deselects the rest), so the grid has to be picked again before the second run — every other check
+  // here selects before each step; this one did not, and only the lenient mock let it pass.
+  await T.select([g.result.nullId]);
   const e2 = await T.run('grid.effector', { type: 'plain', falloff: 'sphere', scale: 50, sweep: true, spring: 100, frequency: 3, decay: 5 });
   const spring = await time();
   await T.undo(e2, before + 49);

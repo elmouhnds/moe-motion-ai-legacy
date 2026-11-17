@@ -294,6 +294,8 @@ test('v0.76 Smart Kits: kinds, recipes made of the kit\'s own tools, progress, a
     const o1 = await R.runRecipe(a1, k, rc);
     if (rc.id === 'wordCascade') assert.deepEqual(o1, { done: [], stopped: 'Text Cloner' });
     else if (rc.id === 'pulseOnBeat') assert.ok(o1.stopped && !o1.done.length, 'no soundtrack in the comp: it stops before writing');
+    // v0.99.5: every other recipe must still run to its end — a step that adds a null used to move the
+    // selection the NEXT step was prechecked against (kitRun keeps the recipe's subject now).
     else assert.equal(o1.stopped, null, `${k.id}/${rc.id} stopped at ${o1.stopped}`);
   }
   // a recipe runs in order inside ONE transaction and ticks its steps

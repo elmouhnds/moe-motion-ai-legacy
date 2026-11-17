@@ -176,15 +176,36 @@ async function runRecipe(app, kit, rec) {
   const pc = precheck(app, rec);
   if (!pc.ok) { app.toast(`${rec.label} needs ${pc.block.label}: ${pc.block.hint} (step ${pc.block.at + 1}) — nothing was changed`, 6000, 'warn'); return { done, stopped: pc.block.label }; }
   const before = () => (done.length ? ` — done before it: ${done.join(', ')} (one Ctrl+Z undoes them)` : '');
+  /* v0.99.5 (manual test, After Effects 26.5.3 — docs/handoff/reports/MANUAL_01_motion_control.md):
+     After Effects SELECTS a layer a tool adds and deselects the rest. precheck() above checked every step
+     against the selection as it is NOW, so a step that adds a null (an effector, a cloner's grid) used to
+     move the selection out from under the steps that were already approved, and the recipe stopped half way
+     ("rippleWall stopped at Colour Gradient", "springBloom stopped at Tint"). The test mock kept the
+     selection, so no test saw it. Keep the recipe's own subject for the steps that act on it; once a PRODUCER
+     has run, the later steps act on what it made (same rule precheck uses), so the selection is left alone. */
+  const host = app.services && app.services.host;
+  const c0 = app.state.get().ctx || {};
+  const subject = { compId: c0.comp && c0.comp.id, ids: (c0.layers || []).map((l) => l.id) };
+  const keepSubject = async () => {
+    if (!ran.length || !host || !subject.compId || !subject.ids.length) return;
+    try {
+      await host.call('layers.setSelection', { items: [{ compId: subject.compId, layerIds: subject.ids, mode: 'set' }] });
+      app.state.set({ ctx: await app.services.executor.readContext() });
+    } catch (e) { /* a layer may be gone; the readiness check below says so in the user's words */ }
+  };
   const go = async () => {
     for (const ref of rec.refs) {
       const a = A.resolve(ref);
       if (!a) return { done, stopped: ref };
+      await keepSubject();
       const rd = a.ready(app);
       if (!rd.ok) { app.toast(`${rec.label} stopped at ${a.label}: ${rd.hint}${before()}`, 6000, 'warn'); return { done, stopped: a.label }; }
       const r = await a.run(app);
       if (!okOf(r)) { app.toast(`${rec.label} stopped at ${a.label}${before()}`, 6000, 'err'); return { done, stopped: a.label }; }
       done.push(a.label); ran.push(ref);
+      // once a PRODUCER has run, the later steps act on what it MADE (precheck's own rule), so the grid it
+      // built becomes the subject the following steps are put back on.
+      if (PRODUCERS.indexOf(a.tool) >= 0 && r && r.result && r.result.nullId) subject.ids = [r.result.nullId];
     }
     return { done, stopped: null };
   };

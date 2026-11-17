@@ -20,7 +20,7 @@ Before anything was changed: `npm run check` **failed on a fresh Windows clone**
 | 1 | Anchor 3×3 — top-left | 400×300 solid | **WORKS** | Anchor 200,150 → 0,0 and Position 960,540 → 760,390; the pixels did not move. One Ctrl+Z put both back, no "Undo group mismatch". | — | yes |
 | 2 | Anchor 3×3 — centre | shape, scale 150 %, rotation 20° | **WORKS** | Anchor → −677.9,320.7, Position → −160.0,644.3, nothing moved on screen. The shift equals R(20°)·S(1.5)·Δanchor exactly (−1120.05, +104.29). | — | yes |
 | 3 | Anchor 3×3 — top-right | shape, rotation 10° | **WORKS** | Anchor → −65,149.6, Position → 927.6,686.2, nothing moved. Toast "Anchor moved on 1 layer". | — | yes |
-| 4 | Anchor 3×3 — right-click | any layer | **UGLY** | Right-click opens the smart pie (by design). Its centre read **"Repeat / Anchor Top…"** — a cut name, and it hides *which* anchor would be repeated. `docs/features/NO_CUT_NAMES.md` forbids a cut name. | yes | yes |
+| 4 | Anchor 3×3 — right-click | any layer | **UGLY** | Right-click opens the smart pie (by design). Its centre read **"Repeat / Anchor Top…"** and a slot read **"Anchor Botto…"** — cut names, and the centre hid *which* anchor would be repeated. `docs/features/NO_CUT_NAMES.md` forbids a cut name. | yes | yes — the centre now reads "Distribute Horizontally", the slot "Anchor / Bottom" |
 | 5 | Align — left / top (Sel) | 3 shape layers, two of them rotated | **WORKS (maths)** | Left: 960→−616.2 / 927.6→−25.4, leftmost layer stayed. Top: tops line up within ~1 px on the rotated layers, so real comp-space bounds are used. One Ctrl+Z restored all three positions. | — | yes |
 | 6 | Align / Distribute — selection | 3 shape layers | **WRONG RESULT** | After the run After Effects had **0 layers selected** (confirmed twice, and by `moe_status`). So the panel's own next step — the "Next after Align left edges → Distribute H" strip — was greyed out, and any After Effects follow-up needed re-selecting. | yes | yes |
 | 7 | Ease curve library | 2 Position keys | **WORKS** | "Out Back" then "Settle" applied real temporal ease (keys became ease icons), the Retune strip showed the curve's own numbers (Out X 0.34 · Out Y 1.56 · In X 0.64), toast "Curve on 2 keyframes". Edit menu read **"Undo MOE: Ease Curve"** — one undo per run. | — | yes |
@@ -61,12 +61,31 @@ pointer resting on the panel and three layers selected, the strip still read "No
 repeat arrow above it already says "repeat", so the centre now shows the name only — the same text a hovered slot
 puts there — and the full sentence stays in the tooltip and `aria-label`.
 
-## Still open — needs the owner
-Making the mock honest also showed that **multi-step flows lean on a selection After Effects clears**: a Smart Kit
-recipe (`kitRun.runRecipe`) and the Self-Test's `checkSpeed` run a second tool on what the first one made, but the
-first one added layers, so After Effects had already moved the selection. Two tests still fail on that
-(`tests/control.test.js` Smart Kits, `tests/selftest.test.js`). What a recipe should select between steps is a
-design decision, so it is not changed here.
+### D. Multi-step flows lost the subject the same way
+Making the mock honest showed the same cause further up: a Smart Kit **recipe** runs 2–4 tools in order, and
+`precheck()` checks **every** step against the selection *as it is now* — so the design already assumes that
+selection survives the whole recipe. It did not: a step that adds a null (an effector) moved it, and
+`effectors/rippleWall` stopped at "Colour Gradient", `effectors/springBloom` at "Tint". The Self-Test's
+`checkSpeed` ran `grid.effector` twice without picking the grid again, where every other check selects first.
+
+**Fix** — `kitRun.runRecipe` keeps the recipe's own subject selected between steps, and once a `PRODUCER`
+(`grid.build`) has run, the grid it made becomes the subject for the steps that follow (the rule `precheck`
+already uses). `selftest/runner.js checkSpeed` selects the grid again before its second run.
+
+## Found while testing, belongs to Group 7 — the whole Cloner / Grid family is broken in After Effects
+The Claude Test Bridge Self-Test was run against real After Effects 26.5.3 (not the mock):
+**14 pass · 17 fail · 333 s**. Sixteen of the seventeen failures are one error:
+
+```
+grid.build: failed — null is not an object (step 2 of 6: effects.ensure)
+```
+
+grid · cloner · effector · spring · wave · falloffCurve · target · noise · image · colours · points · text ·
+textArabic · bake · speed · relink all stop there; the seventeenth is
+`exploder — text.animate: failed — ST Explode: animator read-back mismatch`. So **`grid.build` does not run at
+all in After Effects 26.5**, which takes Layout & Grid, the Cloner and every Effector with it. That is Group 7's
+subject and will be tested and fixed there; it is recorded here because it is the largest single failure found so
+far and it is what the Diagnostics tile test's "126 failed" is mostly made of.
 
 ## Not tested in this group
 - Paste ease onto a *different* layer's keys (only the copy side was exercised; the second layer had no keys yet).
