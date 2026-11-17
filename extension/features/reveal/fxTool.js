@@ -36,7 +36,16 @@ const frac = (keys) => keys.map((k) => Object.assign({}, k, { v: k.v / WIPE_UNIT
  */
 function controlsFor(p) {
   const c = [
-    { key: 'Softness', value: p.soft, targets: [{ zone: 'A', layer: 'wipe', fx: `${PREFIX} Wipe`, param: 'Transition Softness', expr: `$ / ${WIPE_UNIT}` }] },
+    // v0.99.7: the conversion happens HERE, where the value is written - CLAUDE.md: "Convert only where it is
+    // written". It used to be done inside the expression (`$ / 100`), and measured in After Effects 26.5.3 that
+    // arithmetic on a cross-comp control reference does not give what it reads: the control held 100, the
+    // expression was exactly
+    //   comp("...").layer("MOE FX 1 Controls").effect("Softness")("Slider").value / 100
+    // and Transition Softness came out 0.01 instead of 1.0 - a hundredth of what the look asked for, at every
+    // setting (100 -> 1 %, 50 -> 0.5 %, 20 -> 0.2 %). Every Matte FX and Reveal Composer edge was hard because of
+    // it. Warp, from the SAME control null, was always right because it is assigned straight across with no
+    // arithmetic. So the control now carries Gradient Wipe's own 0-1 unit and the link is a straight assignment.
+    { key: 'Softness', value: p.soft, targets: [{ zone: 'A', layer: 'wipe', fx: `${PREFIX} Wipe`, param: 'Transition Softness' }] },
     { key: 'Noise', value: p.noise.mix, targets: [{ zone: 'M', layer: 'noise', param: 'ADBE Opacity' }] }
   ];
   if (!p.noise.stretch) c.push({ key: 'Noise Size', value: p.noise.scale, targets: [{ zone: 'M', layer: 'noise', fx: `${PREFIX} Noise`, param: 'Scale' }] });
@@ -181,7 +190,7 @@ const fx = {
       T.add('layers.move', { compId: comp.id, items: [{ layerId: aL.at('layerId'), before: L.layerId }] });
       T.add('layers.setAttrs', { compId: comp.id, label: 'MOE: Matte FX', items: [{ layerId: aL.at('layerId'), enabled: false }] });
       const set = T.add('layers.setMatte', { compId: comp.id, items: [{ layerId: L.layerId, matteId: aL.at('layerId'), type: 'alpha' }] });
-      const job = { L, p, N, name, t0, M, A, aL, set, wipeFx, wipeKeys };
+      const job = { L, p, N, name, t0, M, A, aL, set, wipeFx, wipeKeys, wipe };
       if (p.edge) {
         const E = T.add('comps.create', { compId: comp.id, name: `${name} Edge`, width: p.size[0], height: p.size[1] });
         T.add('comps.place', { compId: E.at('compId'), sourceId: A.at('compId'), name: `${name} Matte`, startTime: 0 });
@@ -211,8 +220,13 @@ const fx = {
         shared = { ctlL, ctlName };
       }
       const { ctlL, ctlName } = shared;
-      const ref = (key, color) => `comp(${JSON.stringify(comp.name)}).layer(${JSON.stringify(ctlName)}).effect(${JSON.stringify(key)})(${color ? '"Color"' : '"Slider"'})`;
-      const local = (key, color) => `thisComp.layer(${JSON.stringify(ctlName)}).effect(${JSON.stringify(key)})(${color ? '"Color"' : '"Slider"'})`;
+      // v0.99.7: `.value` is not optional. A control read without it is a PROPERTY, and After Effects coerces a
+      // property to its number only when it is assigned straight across. Put it in arithmetic - `$ / 100` for the
+      // softness, `value * $ / 100` for the boil - and the result is not a number, so the property fell back to 0.
+      // That is why Warp (assigned straight across) read 28.0 while Softness, from the SAME control null, read 0 %
+      // and every Matte FX and Reveal Composer edge came out hard. Glass has always written `.value` here.
+      const ref = (key, color) => `comp(${JSON.stringify(comp.name)}).layer(${JSON.stringify(ctlName)}).effect(${JSON.stringify(key)})(${color ? '"Color"' : '"Slider"'}).value`;
+      const local = (key, color) => `thisComp.layer(${JSON.stringify(ctlName)}).effect(${JSON.stringify(key)})(${color ? '"Color"' : '"Slider"'}).value`;
       const where = { M: { comp: M, layers: { noise } }, A: { comp: A, layers: { wipe } }, main: { comp: null, layers: { dup: job.dup } } };
       for (const zone of ['M', 'A', 'main']) {
         const targets = [];
@@ -243,6 +257,28 @@ const fx = {
     }
     // read back (changes nothing): the track mattes as After Effects holds them, Completion at the first / last key
     const now = (await host.call('layers.rects', { compId: comp.id, layerIds: jobs.map((j) => j.L.layerId) })).layers;
+    // v0.99.7: and the Edge softness AS AFTER EFFECTS HOLDS IT. It was written, and the controller slider carried
+    // the right number, but the effect read 0 % and every edge came out hard — nothing checked the one value the
+    // look depends on. Read per Matte comp, because each one is its own composition.
+    const softNow = [], softExpr = [], softCtl = [];
+    for (const j of jobs) {
+      let v = null;
+      try {
+        const r = await host.call('props.values', {
+          compId: j.A.value().compId, any: true, time: 0, withExpression: true,
+          items: [{ address: FXA(j.wipe.value().layerId, `${PREFIX} Wipe`, 'Transition Softness') }]
+        });
+        v = r.items && r.items[0] && !r.items[0].error ? Number(r.items[0].value) : null;
+        if (r.items && r.items[0]) softExpr.push(String(r.items[0].expression || '').replace(/\s+/g, ' ').slice(0, 200));
+        // and the control the user will actually drag, in the main comp
+        const rc = await host.call('props.values', {
+          compId: comp.id, time: 0,
+          items: [{ address: FXA(j.ctlL.value().layerId, 'Softness', 'Slider') }]
+        });
+        softCtl.push(rc.items && rc.items[0] && !rc.items[0].error ? Number(rc.items[0].value) : null);
+      } catch (eS) { v = null; }
+      softNow.push(v);
+    }
     const layers = jobs.map((j, i) => {
       const w = j.wipeKeys.value().items[0].written;
       const unmapped = [].concat(...[j.wipeFx, j.glowFx].filter(Boolean).map((r) => r.value().layers)).flatMap((x) => x.items.flatMap((it) => it.params.filter((q) => q.resolvedBy !== 'name').map((q) => `${it.key}.${q.id}`)));
@@ -252,6 +288,7 @@ const fx = {
         edgeMatte: j.eSet ? j.eSet.value().layers[0] : null,
         comps: [j.E && j.E.value().compId, j.A.value().compId, j.M.value().compId].filter(Boolean),
         completion: { first: w[0], last: w[w.length - 1] }, plan: { first: j.p.completion[0].v / WIPE_UNIT, last: j.p.completion[j.p.completion.length - 1].v / WIPE_UNIT },
+        softness: { asked: j.p.soft, now: softNow[i], expr: softExpr[i] || '', slider: softCtl[i] },
         unmapped
       };
     });
@@ -260,6 +297,13 @@ const fx = {
   verify({ result }) {
     const c = [];
     for (const L of result.layers) {
+      // v0.99.7: the Edge softness, as After Effects holds it. Gradient Wipe takes 0–1, so the plan's per cent is
+      // divided; a read-back that is not that number means the look is not the look.
+      if (L.softness && L.softness.now !== null && L.softness.now !== undefined) {
+        const want = L.softness.asked / WIPE_UNIT;
+        const ok = Math.abs(L.softness.now - want) < 0.005;
+        c.push({ ok, label: `${L.fxName} › Edge softness`, detail: ok ? `${Math.round(L.softness.now * 100)} % as asked` : `reads ${Math.round(L.softness.now * 1000) / 10} %, the plan asked for ${L.softness.asked} %` });
+      }
       const wired = L.matteNow && L.matteNow.layerId === L.matteId;
       c.push({ ok: wired, label: `${L.name} › Track Matte`, detail: wired ? `${L.fxName} Matte (alpha) — read back from After Effects` : 'the track matte is not the MOE matte' });
       const keysOk = Math.abs(L.completion.first.value - L.plan.first) < 0.01 && Math.abs(L.completion.last.value - L.plan.last) < 0.01;
@@ -283,7 +327,16 @@ const fx = {
     await T.commit();
     return { ok: true };
   },
-  summarize(result) { return `${result.label || (F.PRESETS[result.preset] || {}).label} on ${result.layers.length} layer(s)`; }
+  summarize(result) {
+    const base = `${result.label || (F.PRESETS[result.preset] || {}).label} on ${result.layers.length} layer(s)`;
+    // v0.99.7: say it only when it is a surprise — the edge softness After Effects really holds is not the one the
+    // look asked for. Quiet when it matches; a look whose edge control is dead should never pass silently again.
+    const odd = result.layers.filter((L) => L.softness && L.softness.now !== null && L.softness.now !== undefined
+      && Math.abs(L.softness.now - L.softness.asked / WIPE_UNIT) >= 0.005);
+    if (!odd.length) return base;
+    const L = odd[0];
+    return `${base} · edge softness reads ${Math.round(L.softness.now * 1000) / 10} %, the look asked for ${L.softness.asked} % · the control reads ${L.softness.slider}`;
+  }
 };
 
 module.exports = { fx, PREFIX };

@@ -77,7 +77,10 @@ function read(holderName, control, opts) {
   const layer = opts && opts.fromComp
     ? `comp(${JSON.stringify(String(opts.fromComp))}).layer(${JSON.stringify(String(holderName))})`
     : `thisComp.layer(${JSON.stringify(String(holderName))})`;
-  return `${layer}.effect(${JSON.stringify(String(control.key))})(${JSON.stringify(s.param)})`;
+  // `.value` is not optional: a control read without it is a PROPERTY. After Effects coerces a property to its
+  // number when it is assigned straight across, but not inside arithmetic — `$ / 100` on a bare property is not a
+  // number, and the target silently falls back to 0. That was the dead Edge softness in Matte FX.
+  return `${layer}.effect(${JSON.stringify(String(control.key))})(${JSON.stringify(s.param)}).value`;
 }
 
 /**

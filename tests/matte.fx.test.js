@@ -155,3 +155,49 @@ test('grammar (v0.97): 3,888 combinations, each hidden → shown; Pixel uses Blo
   assert.equal(steps.property('Frame Rate').value, 12);
   assert.match(r.verification.checks.map((c) => c.detail).join(' '), /every parameter found by its English name/);
 });
+
+/**
+ * v0.99.7 — the dead Edge softness, found by the owner's final report and measured in After Effects 26.5.3.
+ *
+ * A property whose UI unit is a PERCENTAGE stores 0–1, but an EXPRESSION's result is read in the UI unit and
+ * divided by 100 on the way in. setValue and an expression therefore disagree: setValue(1) stores 1 (writing 16
+ * throws "Value 16 out of range 0 to 1"), while an expression returning 1 stores 0.01.
+ *
+ * Matte FX linked Gradient Wipe's Transition Softness through a control AND divided by 100 inside the expression,
+ * so the effect held a hundredth of what the look asked for: 100 asked → 1 % held, 50 → 0.5 %, 20 → 0.2 %. Every
+ * Matte FX and Reveal Composer edge was hard. Warp, from the SAME control null, was always right because it is
+ * assigned straight across with no arithmetic.
+ *
+ * Measured on After Effects' own render, the feather across the revealing front of a 358 px card:
+ *   before   softness 0 → 4 px,  50 → 4 px,   100 → 4 px
+ *   after    softness 0 → 4 px,  50 → 94 px,  100 → 118 px
+ */
+test('v0.99.7: the edge softness reaches Gradient Wipe — the control is linked straight across, never divided', async () => {
+  const r0 = await setup(1);
+  const r = await r0.services.executor.run('reveal.fx', { preset: 'burnIn', dir: 'in' }, { approved: true });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
+
+  const asked = F.PRESETS.burnIn.soft;                       // 4 (per cent)
+  const A = r0.env.project._items.find((x) => x.name === 'MOE FX 1 Matte');
+  const wipe = A._layers.find((x) => x.name === 'MOE FX Wipe');
+  const gw = wipe._parade._children.find((x) => x.name === 'MOE FX Wipe');
+  const soft = gw.property('Transition Softness');
+
+  // the link carries the control's per cent straight across — no arithmetic, because an expression's number is
+  // read in the UI unit and the division would be applied twice
+  assert.match(soft.expression, /effect\("Softness"\)\("Slider"\)\.value\s*$/m, `no divisor: ${soft.expression}`);
+  assert.doesNotMatch(soft.expression, /\/\s*100/, 'the expression must not divide');
+
+  // and what After Effects ends up holding is the percentage the look asked for
+  assert.equal(soft.valueAtTime(0, false), asked / 100, `holds ${asked} %`);
+  assert.equal(soft.value, asked / 100, 'the value written straight is in the stored 0–1 unit');
+
+  // the control the user drags still reads the friendly per cent
+  const ctl = r0.comp._layers.find((l) => l.name === 'MOE FX 1 Controls');
+  const slider = ctl._parade._children.find((e) => e.name === 'Softness');
+  assert.equal(slider.property('Slider').value, asked, 'the control is a per cent, not a fraction');
+
+  // the tool now reads it back and says so when it does not match
+  const check = r.verification.checks.find((c) => /Edge softness/.test(c.label));
+  assert.ok(check && check.ok, `the tool verifies it: ${check && check.detail}`);
+});

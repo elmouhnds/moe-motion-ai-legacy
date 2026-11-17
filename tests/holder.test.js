@@ -65,20 +65,20 @@ test('each control kind gets its real match name and parameter', () => {
   assert.deepEqual(got[0], { key: 'Amount', matchName: 'ADBE Slider Control', before: [], params: [{ id: 'Slider', value: 10, names: ['Slider'] }] });
 });
 
-test('an expression reads the holder by name — thisComp in the same comp, comp("…") from inside a pre-comp', () => {
+test('an expression reads the holder by name, and always by .value — a bare property is not a number in arithmetic', () => {
   const c = { key: 'Softness', value: 16 };
-  assert.equal(H.read('MOE FX 1 Controls', c), 'thisComp.layer("MOE FX 1 Controls").effect("Softness")("Slider")');
+  assert.equal(H.read("MOE FX 1 Controls", c), "thisComp.layer(\"MOE FX 1 Controls\").effect(\"Softness\")(\"Slider\").value");
   assert.equal(
     H.read('MOE FX 1 Controls', c, { fromComp: 'My Comp' }),
-    'comp("My Comp").layer("MOE FX 1 Controls").effect("Softness")("Slider")'
+    'comp("My Comp").layer("MOE FX 1 Controls").effect("Softness")("Slider").value'
   );
   // a colour control reads its own parameter
   assert.equal(
     H.read('MOE Click 1 Controls', { key: 'Edge Colour', kind: 'color' }),
-    'thisComp.layer("MOE Click 1 Controls").effect("Edge Colour")("Color")'
+    'thisComp.layer("MOE Click 1 Controls").effect("Edge Colour")("Color").value'
   );
   // a name with a quote in it stays valid JavaScript
-  assert.equal(H.read('A"B', c), 'thisComp.layer("A\\"B").effect("Softness")("Slider")');
+  assert.equal(H.read('A"B', c), 'thisComp.layer("A\\"B").effect("Softness")("Slider").value');
 });
 
 test('make() queues the null and its controls on the plan, and can parent the parts', () => {

@@ -468,7 +468,15 @@
             var comp = args.any ? compAny(args.compId) : U.compById(args.compId), out = [], i, r, t = args.time === undefined ? comp.time : num(args.time);
             for (i = 0; i < args.items.length; i++) {
                 /* v0.61: an item may carry its own time, so many reads cost one round trip */
-                try { r = U.resolveProperty(comp, args.items[i].address); out.push({ value: plain(r.prop.valueAtTime(args.items[i].time === undefined ? t : num(args.items[i].time), false)), error: String(r.prop.expressionError || ''), numKeys: r.prop.numKeys || 0 }); }
+                try {
+                    r = U.resolveProperty(comp, args.items[i].address);
+                    /* v0.99.7: the expression TEXT too, when it is asked for. A value alone cannot say why it is
+                       wrong - the dead Edge softness read 1 % where the look asked 100 %, and only the expression
+                       text says which. Off by default so nothing else pays for it. */
+                    var ex = '';
+                    if (args.withExpression) { try { ex = String(r.prop.expression || ''); } catch (eX) { ex = ''; } }
+                    out.push({ value: plain(r.prop.valueAtTime(args.items[i].time === undefined ? t : num(args.items[i].time), false)), error: String(r.prop.expressionError || ''), numKeys: r.prop.numKeys || 0, expression: ex });
+                }
                 catch (e) { out.push({ value: null, error: String(e.message) }); }
             }
             return { time: t, items: out };

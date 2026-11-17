@@ -171,7 +171,7 @@ const EFFECTS = {
   'ADBE Checkbox Control': [{ name: 'Checkbox', valueType: 'OneD', value: 0 }],
   // v0.96 Matte FX: Gradient Wipe, Fractal Noise, Turbulent Displace — names as in Effect Controls (topic headers are
   // NO_VALUE). UNVERIFIED in After Effects: effects.ensure fails with the real list if a name differs (Self-Test fxMatte).
-  'ADBE Gradient Wipe': [{ name: 'Transition Completion', valueType: 'OneD', value: 0, range: [0, 1] }, { name: 'Transition Softness', valueType: 'OneD', value: 0, range: [0, 1] }, { name: 'Gradient Layer', valueType: 'LAYER_INDEX', value: 0 }, { name: 'Gradient Placement', valueType: 'OneD', value: 3 }, { name: 'Invert Gradient', valueType: 'OneD', value: 0 }],
+  'ADBE Gradient Wipe': [{ name: 'Transition Completion', valueType: 'OneD', value: 0, range: [0, 1], percentUnit: true }, { name: 'Transition Softness', valueType: 'OneD', value: 0, range: [0, 1], percentUnit: true }, { name: 'Gradient Layer', valueType: 'LAYER_INDEX', value: 0 }, { name: 'Gradient Placement', valueType: 'OneD', value: 3 }, { name: 'Invert Gradient', valueType: 'OneD', value: 0 }],
   'ADBE Fractal Noise': [{ name: 'Fractal Type', valueType: 'OneD', value: 1 }, { name: 'Noise Type', valueType: 'OneD', value: 3 }, { name: 'Invert', valueType: 'OneD', value: 0 }, { name: 'Contrast', valueType: 'OneD', value: 100 }, { name: 'Brightness', valueType: 'OneD', value: 0 }, { name: 'Overflow', valueType: 'OneD', value: 3 },
     { name: 'Transform', valueType: 'NO_VALUE', value: 0 }, { name: 'Rotation', valueType: 'OneD', value: 0 }, { name: 'Uniform Scaling', valueType: 'OneD', value: 1 }, { name: 'Scale', valueType: 'OneD', value: 100 }, { name: 'Scale Width', valueType: 'OneD', value: 100 }, { name: 'Scale Height', valueType: 'OneD', value: 100 }, { name: 'Offset Turbulence', valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Perspective Offset', valueType: 'OneD', value: 0 },
     { name: 'Complexity', valueType: 'OneD', value: 6 }, { name: 'Sub Settings', valueType: 'NO_VALUE', value: 0 }, { name: 'Sub Influence (%)', valueType: 'OneD', value: 70 }, { name: 'Sub Scaling', valueType: 'OneD', value: 56 }, { name: 'Sub Rotation', valueType: 'OneD', value: 0 }, { name: 'Sub Offset', valueType: 'TwoD', value: [0, 0] }, { name: 'Center Subscale', valueType: 'OneD', value: 0 },
@@ -196,7 +196,7 @@ class MockEffect {
     this._children = specs.map((p, i) => new MockProperty({
       name: opts.locale ? `${opts.locale}:${p.name}` : p.name,
       matchName: `${matchName}-${String(p.mn || i + 1).padStart(4, '0')}`,
-      valueType: p.valueType, value: p.value, canSetExpression: true, range: p.range
+      valueType: p.valueType, value: p.value, canSetExpression: true, range: p.range, percentUnit: p.percentUnit
     }, this, i + 1));
   }
   get propertyIndex() { return this.parentProperty._children.indexOf(this) + 1; }
@@ -269,6 +269,9 @@ class MockProperty {
     this.propertyIndex = index;
     this.propertyDepth = parent.propertyDepth + 1;
     this._value = spec.value !== undefined ? clone(spec.value) : 0;
+    /* v0.99.7: a property whose UI unit is a PERCENTAGE (Gradient Wipe's Transition Completion and Softness).
+       It stores 0-1, but an expression's result is read in the UI unit — see valueAtTime. */
+    this._percentUnit = !!spec.percentUnit;
     this._expression = spec.expression || '';
     this.expressionEnabled = !!spec.expression;
     this.expressionError = '';
@@ -391,7 +394,14 @@ class MockProperty {
       return Array.isArray(a.value) ? a.value.map((v, j) => v + (b.value[j] - v) * u) : a.value + (b.value - a.value) * u;
     }
     if (preExpression || !this._expression || !this.expressionEnabled) return this.value;
-    return evalExpression(this, t);
+    /* v0.99.7 (measured in After Effects 26.5.3): a percentage property stores 0-1, but an EXPRESSION's result is
+       read in the UI unit and divided by 100 on the way in. setValue and an expression therefore disagree:
+       setValue(1) stores 1 ("Value 16 out of range 0 to 1"), while an expression returning 1 stores 0.01. Matte FX
+       linked Gradient Wipe's Transition Softness through a control AND divided by 100 in the expression, so the
+       effect held a hundredth of what the look asked for and every edge came out hard — 100 asked, 1 % held.
+       Without this rule the mock stores the raw number and the bug passes. */
+    const out = evalExpression(this, t);
+    return this._percentUnit && typeof out === 'number' ? out / 100 : out;
   }
   /** Property.setValuesAtTimes(times, newValues) — one key per time (AE Scripting Guide). */
   setValuesAtTimes(times, values) {
