@@ -34,8 +34,17 @@ UI.COMPONENTS.forEach((c) => TEMPLATES.push(Object.assign({ kit: 'ui' }, c)));
 const byId = (id) => TEMPLATES.find((t) => t.id === id) || null;
 const isUi = (id) => !!(byId(id) && byId(id).kit === 'ui');
 
-/** Scale of the design: everything is drawn for 1080 px tall and scaled to the comp. */
-const unit = (comp) => (comp && comp.height > 0 ? comp.height / 1080 : 1);
+/**
+ * Scale of the design: every plan is drawn on 1920 x 1080 and fitted to the comp.
+ *
+ * v0.99.7 (the owner's rule) — this was `comp.height / 1080`, the HEIGHT alone. In 16:9 that is right by accident,
+ * because the width follows the height; in 1080 x 1920 it gave 1.78, so every size and gap grew 78 % while the
+ * frame stayed 1080 wide and the Product UI cards came out 1103–1400 px inside a 1080 px frame. `fit.scale`
+ * CONTAINS the design instead, so it meets the narrow side exactly: still 1 in any 16:9 comp, 0.5625 in 1080 x 1920
+ * — and 1920 x 0.5625 is exactly 1080, so the design fills the width rather than bursting through it.
+ */
+const SPACE = require('./fit');
+const unit = (comp) => SPACE.scale(comp);
 
 /** The text layers a template needs, before anything is measured. */
 function textSpecs(id, opts, comp) {

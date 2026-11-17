@@ -292,3 +292,48 @@ test('v0.52 Auto-fit: a long line gets a smaller font until After Effects measur
   const th = fs.readFileSync(path.join(__dirname, '../extension/app/ui/studio/thumbs.js'), 'utf8');
   assert.match(th, /Math\.max\(Math\.round\(s\.fontSize \* 0\.4\), Math\.floor\(fs \* \(s\.maxWidth \/ w\) \* 0\.98\)\)/);
 });
+
+/**
+ * v0.99.7 (the owner's rule): ready-made content has to land sensibly in whatever comp it is built in.
+ *
+ * Before `fit.scale`, templates scaled by the comp's HEIGHT alone, so in 1080 x 1920 every size and gap grew 78 %
+ * while the frame stayed 1080 wide — the Product UI cards came out 1103–1400 px inside a 1080 px frame, and the
+ * callout and chapter chains ran past the edge. Contain keeps the design's proportions and fits it to the narrow
+ * side, so the same plan reads the same way at any aspect ratio.
+ */
+test('v0.99.7: a template built in 9:16 or square stays inside the frame', async () => {
+  const FRAMES = [
+    { name: '9:16', width: 1080, height: 1920 },
+    { name: 'square', width: 1080, height: 1080 },
+    { name: '16:9', width: 1920, height: 1080 }
+  ];
+  const IDS = ['lowerThird', 'titleCard', 'callout', 'chapter', 'quote', 'uiNotify', 'uiSearch', 'uiProgress'];
+
+  for (const f of FRAMES) {
+    for (const id of IDS) {
+      const { services, comp } = await createTestServices(studioComp([], { comp: { time: 1, width: f.width, height: f.height } }));
+      const r = await services.executor.run('design.template', { container: 'layers', template: id });
+      assert.equal(r.status, 'success', `${f.name} ${id}: ${JSON.stringify(r.verification || r.errors)}`);
+
+      const parts = comp._layers.filter((l) => /^MOE Template 1 · /.test(l.name));
+      assert.ok(parts.length, `${f.name} ${id}: it built something`);
+      for (const L of parts) {
+        const [x, y] = world(comp, L);
+        assert.ok(x > -f.width && x < f.width * 2, `${f.name} ${id}: ${L.name} sits at x ${Math.round(x)} — far outside a ${f.width} px frame`);
+        assert.ok(y > -f.height && y < f.height * 2, `${f.name} ${id}: ${L.name} sits at y ${Math.round(y)}`);
+      }
+    }
+  }
+});
+
+test('v0.99.7: the Product UI card widths that burst a portrait frame now fit it', () => {
+  const UI = require('../extension/features/design/uiKit');
+  const SPACE = require('../extension/features/design/fit');
+  const portrait = { width: 1080, height: 1920 };
+  const s = SPACE.scale(portrait);
+  for (const [id, design] of [['uiNotify', 620], ['uiSearch', 640], ['uiProgress', 720]]) {
+    assert.ok(UI.byId(id), `${id} is a real piece`);
+    assert.ok(design * (portrait.height / 1080) > portrait.width, `${id}: the old height-only scale really did overflow`);
+    assert.ok(design * s <= portrait.width, `${id}: ${Math.round(design * s)} px now fits inside ${portrait.width}`);
+  }
+});
