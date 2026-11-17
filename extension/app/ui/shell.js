@@ -747,12 +747,22 @@ function createApp(root, services, env = {}) {
   window.addEventListener('blur', () => altView(false));
   let lastFocusRead = 0;
   window.addEventListener('focus', () => { if (Date.now() - lastFocusRead > 1500) { lastFocusRead = Date.now(); app.refreshContext(); } });
+  /* v0.99.5 (manual test, After Effects 26.5.3): this used to poll ONLY while the pointer had been over the
+     panel in the last 20 s. Measured on the owner's machine: a CEP panel gets NO pointer events at all while
+     After Effects has the keyboard focus — hovering a button does not even light it up — so `lastPointer`
+     never moved and the poll never ran. The panel then showed the WRONG PAGE: with three shape layers
+     selected it read "Nothing selected · 0 layers" and did not render ANCHOR / ALIGN at all, and after
+     switching comps it still named the old one. Only a click in the panel (window focus) put it right.
+     So the poll now runs whenever the panel is visible; the pointer only decides how OFTEN. Each read still
+     runs on After Effects' main thread, so it stays adaptive to the host's answer time, never fires while a
+     button is down, and backs off to at least 4 s when the pointer is elsewhere. */
   const pollTick = () => {
     const now = Date.now();
-    const active = now - lastPointer < 20000 && !document.hidden;
-    if (active && !pressing && now - lastInput > 800) app.refreshContext();
+    const hovered = now - lastPointer < 20000;
+    if (!document.hidden && !pressing && now - lastInput > 800) app.refreshContext();
     const ms = app.stats.ctxMs || 0;
-    poll = setTimeout(pollTick, Math.min(10000, Math.max(2500, ms * 12)));
+    const base = Math.min(10000, Math.max(2500, ms * 12));
+    poll = setTimeout(pollTick, hovered ? base : Math.max(base, 4000));
   };
   poll = setTimeout(pollTick, 2500);
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => app.applyDensity()).observe(root);

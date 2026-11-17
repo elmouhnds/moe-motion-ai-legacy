@@ -53,8 +53,20 @@ hover path only sets `lastPointer` for a timer poll (2.5–10 s, gated on `!docu
 pointer resting on the panel and three layers selected, the strip still read "Nothing selected · 0 layers" after
 **24 s**, and the page that was rendered had no ANCHOR / ALIGN on it.
 
-**Fix** — the pointer arriving on the panel now re-reads the context on the event itself (throttled to one read per
-1.2 s, never while a button is down or within 400 ms of an interaction), instead of waiting for the next tick.
+**Why the hover path could never work** — measured on this machine: a CEP panel gets **no pointer events at all**
+while After Effects has the keyboard focus (hovering a button does not even light it up). So `lastPointer` never
+moved, `now - lastPointer < 20000` was never true, and the poll never ran. The only thing that ever refreshed the
+panel was a click in it (`window.focus`). The timer itself does keep running while the panel is unfocused — it
+fired fine whenever a click in the panel had recently set `lastPointer`.
+
+**Fix** — the poll now runs whenever the panel is visible; the pointer only decides how *often* (it backs off to at
+least 4 s when the pointer is elsewhere, and stays adaptive to the host's answer time, never while a button is
+down). A pointer arriving on the panel also re-reads straight away, throttled to one read per 1.2 s, for the case
+where the panel does have focus.
+
+**Re-tested on screen** — with the pointer parked in After Effects and never over the panel: selecting a shape
+layer showed "Shape layer · 1 layers" after 8 s, adding the solid showed "Several layers · 2 layers" after 9 s, and
+switching comps renamed the strip. Before the fix none of that happened at all without a click.
 
 ### C. A cut name in the pie centre (#4)
 `pie.js` wrote `Repeat <name>` into a 64 px, two-line box, so After Effects showed "Repeat / Anchor Top…". The
