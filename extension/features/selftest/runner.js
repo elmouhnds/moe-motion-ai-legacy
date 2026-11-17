@@ -377,12 +377,22 @@ async function checkBake(T) {
   const exprLeft = r.result.written.filter((w) => w.expression).length;
   const ub = await T.undo(r, before + 11);
   const back = await read();
-  const errBack = maxOf(back.flatMap((row, ti) => row.map((x, k) => diff(x.value, live[ti][k].value))));
+  // v0.99.6 (Group 10 manual test): say WHICH value came back wrong, not just how far off it is - a bare number
+  // ("restore differs by 770") cannot be acted on. addrs is [pos, scale, rot] per item, in order.
+  let errBack = 0, errWhere = '';
+  back.forEach((row, ti) => row.forEach((x, k) => {
+    const d = diff(x.value, live[ti][k].value);
+    if (d > errBack) {
+      errBack = d;
+      const prop = ['Position', 'Scale', 'Rotation'][k % 3];
+      errWhere = `item ${Math.floor(k / 3) + 1} ${prop} at ${times[ti]}s: ${JSON.stringify(x.value)} vs ${JSON.stringify(live[ti][k].value)}`;
+    }
+  }));
   const u = await T.undo(e, before + 10);
   await dropGrid9(T, g, before);
   const worst = maxOf(errs);
   const ok = worst <= 0.01 && exprLeft === 0 && errBack <= 0.001 && ub.back && u.back;
-  return { status: ok ? 'pass' : 'fail', detail: `${r.result.written.length} properties baked in ${ms} ms (${r.result.keysTotal} keys, ${r.result.constants} plain values) · ${errs.length} values at ${times.length} frames, worst ${r2(worst)} from the live rig · restore ${errBack <= 0.001 ? 'brought the expressions back' : `differs by ${r2(errBack)}`} · undo ${ub.back && u.back ? 'ok' : 'left layers'}`, numbers: { worst: r2(worst), bakeMs: ms, keys: r.result.keysTotal, keysPerItem: keys.slice(0, 3), restoreErr: r2(errBack) } };
+  return { status: ok ? 'pass' : 'fail', detail: `${r.result.written.length} properties baked in ${ms} ms (${r.result.keysTotal} keys, ${r.result.constants} plain values) · ${errs.length} values at ${times.length} frames, worst ${r2(worst)} from the live rig · restore ${errBack <= 0.001 ? 'brought the expressions back' : `differs by ${r2(errBack)} (${errWhere})`} · undo ${ub.back && u.back ? 'ok' : 'left layers'}`, numbers: { worst: r2(worst), bakeMs: ms, keys: r.result.keysTotal, keysPerItem: keys.slice(0, 3), restoreErr: r2(errBack) } };
 }
 
 /**

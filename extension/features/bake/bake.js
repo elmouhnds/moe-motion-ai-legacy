@@ -161,8 +161,23 @@ const bake = {
     return { compId: ctx.comp.id, items: result.written.filter((x) => !x.skipped).map((x) => ({ address: x.address, before: x.before })) };
   },
 
+  // v0.99.6 (Group 10 manual test): the host already reports, per property, whether the saved expression really came
+  // back (`ok`) — and this threw that away and always answered `{ ok: true }`. CLAUDE.md: never report success
+  // without reading the resulting host state. BAKE.md requires Restore to be exact, so a property that did not come
+  // back is named here instead of passing silently.
   async restore({ data, host }) {
-    for (const part of P.chunks(data.items, 400)) await host.call('bake.restore', { compId: data.compId, items: part });
+    const bad = [];
+    let i = 0;
+    for (const part of P.chunks(data.items, 400)) {
+      const r = await host.call('bake.restore', { compId: data.compId, items: part });
+      (r.items || []).forEach((x, k) => {
+        if (!x || x.ok) return;
+        const a = part[k] && part[k].address;
+        bad.push(`${(a && a.matchNames && a.matchNames[a.matchNames.length - 1]) || 'a property'}${x.error ? ` (${x.error})` : ''}`);
+      });
+      i += part.length;
+    }
+    if (bad.length) return { ok: false, error: `${bad.length} of ${i} propert(ies) did not come back: ${bad.slice(0, 6).join(', ')}${bad.length > 6 ? ` +${bad.length - 6}` : ''}` };
     return { ok: true };
   },
 
