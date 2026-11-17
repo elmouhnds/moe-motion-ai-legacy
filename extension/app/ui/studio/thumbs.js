@@ -777,7 +777,25 @@ let bgDraw = null; // loaded on first use (bgDraw → design tools; keeps thumbs
  * a 1920 × 1080 frame scaled into the tile. Only the text widths come from the browser (After Effects measures the real
  * ones; the bar / pill then fits them the same way).
  */
-const TPL_COMP = { width: 1920, height: 1080 };
+/**
+ * The frame the preview is drawn on.
+ *
+ * v0.99.7 (the owner's rule: "it does not look like the preview"): this was a hard-coded 1920 × 1080, so a tile
+ * showed a 16:9 version of a template the user was about to build in a 9:16 or square comp. Half of "it does not
+ * look like the preview" was the build (fixed by features/design/fit.js); this is the other half — the preview now
+ * draws on the comp the user actually has open, through the same plan and the same scale.
+ *
+ * The default stays 16:9 on purpose: `tools/preview-frames.js` renders the bundled sprite sheets with no panel and
+ * no composition, and those have to stay the shape they are shipped at.
+ */
+const REF_FRAME = { width: 1920, height: 1080 };
+let FRAME = REF_FRAME;
+/** Called by the shell whenever the After Effects context is re-read. A comp it cannot read falls back to 16:9. */
+function setFrame(comp) {
+  FRAME = comp && comp.width > 0 && comp.height > 0
+    ? { width: Number(comp.width), height: Number(comp.height) }
+    : REF_FRAME;
+}
 function templatePlan(c, th) {
   const opts = Object.assign({}, th.args || {});
   // a small tile shows the exit after a short hold (1 s) so it is never empty for long; the big preview keeps Hold
@@ -786,12 +804,12 @@ function templatePlan(c, th) {
   const T = TPL.byId(id);
   if (!opts.title) opts.title = T.title;
   if (opts.subtitle === undefined || opts.subtitle === '') opts.subtitle = id === 'tag' ? '' : T.subtitle;
-  const specs = TPL.textSpecs(id, opts, TPL_COMP);
+  const specs = TPL.textSpecs(id, opts, FRAME);
   const measured = {};
     const meas = (s, fs) => { c.font = `${s.bold ? '700 ' : ''}${fs}px sans-serif`; const mt = c.measureText && c.measureText(s.text); return mt && mt.width > 0 ? mt.width : s.text.length * fs * 0.55; };
   // v0.52: the same Auto-fit as the host (templates.fitSize on the measured width), so a long line shrinks here too
   specs.forEach((s) => { let fs = s.fontSize, w = meas(s, fs); for (let k = 0; k < 4 && s.maxWidth && w > s.maxWidth; k++) { const nf = Math.max(Math.round(s.fontSize * 0.4), Math.floor(fs * (s.maxWidth / w) * 0.98)); if (nf >= fs) break; fs = nf; w = meas(s, fs); } measured[s.key] = [w, fs * 0.75, fs]; });
-  return { id, plan: TPL.layout(id, opts, TPL_COMP, measured) };
+  return { id, plan: TPL.layout(id, opts, FRAME, measured) };
 }
 const css = (rgb, a) => `rgba(${Math.round(rgb[0] * 255)},${Math.round(rgb[1] * 255)},${Math.round(rgb[2] * 255)},${a === undefined ? 1 : a})`;
 DRAW.template = function (c, W, H, th, t) {
@@ -803,10 +821,10 @@ DRAW.template = function (c, W, H, th, t) {
   const lt = th.still ? (plan.exitAt || end) : (t % (0.35 + end + rest)) - 0.35;
   // the big preview shows the whole frame (where it sits); a small tile frames the template itself
   const b = plan.box, pad = 0.35;
-  const view = th.strip ? [0, 0, 1920, 1080] : [b[0] - b[2] * pad, b[1] - Math.max(b[3], 60) * pad * 2, b[2] * (1 + 2 * pad), Math.max(b[3], 60) * (1 + 4 * pad)];
+  const view = th.strip ? [0, 0, FRAME.width, FRAME.height] : [b[0] - b[2] * pad, b[1] - Math.max(b[3], 60) * pad * 2, b[2] * (1 + 2 * pad), Math.max(b[3], 60) * (1 + 4 * pad)];
   const k = Math.min(W / view[2], H / view[3]), ox = (W - view[2] * k) / 2 - view[0] * k, oy = (H - view[3] * k) / 2 - view[1] * k;
   c.save(); c.translate(ox, oy); c.scale(k, k);
-  if (th.strip) { c.fillStyle = 'rgba(0,0,0,0.25)'; c.fillRect(0, 0, 1920, 1080); }
+  if (th.strip) { c.fillStyle = 'rgba(0,0,0,0.25)'; c.fillRect(0, 0, FRAME.width, FRAME.height); }
   const val = (key, prop, dflt) => { const kk = plan.keys.find((x) => x.key === key && x.prop === prop); return kk ? PLAN.valueAt(kk.keys, lt) : dflt; };
   for (const el of plan.elements) {
     const pos = val(el.key, 'position', el.kind === 'path' ? el.points[0] : el.position);
@@ -871,4 +889,4 @@ function draw(c, W, H, thumb, t) {
   if (thumb.strip) keyStrip(c, W, H, thumb, t);
 }
 
-module.exports = { draw, DRAW, EXPR_FN, planKeys };
+module.exports = { draw, DRAW, EXPR_FN, planKeys, setFrame, templatePlan };

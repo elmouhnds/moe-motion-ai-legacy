@@ -308,6 +308,9 @@ function createApp(root, services, env = {}) {
         lastCtxAt = Date.now();
         const prevCtx = app.state.get().ctx, prev = JSON.stringify(prevCtx);
         if (JSON.stringify(ctx) !== prev || app.state.get().hostError) app.state.set({ ctx, hostError: null });
+        // v0.99.7: tile previews draw on the comp the user actually has open, not a hard-coded 16:9 frame, so a
+        // template tile shows what it will really build in a 9:16 or square comp (features/design/fit.js).
+        try { require('./studio/thumbs').setFrame(ctx && ctx.comp); } catch (eF) { /* previews keep the last frame */ }
         // v0.62 (LINKS.md): a renamed layer that MOE expressions read is relinked at once (one undo step, a toast)
         require('./linkwatch').watch(app, prevCtx, ctx).catch((e) => services.logger.warn('ui', 'relink failed', { message: e.message }));
         // v0.28: each AE project remembers its client — switching projects switches the client too

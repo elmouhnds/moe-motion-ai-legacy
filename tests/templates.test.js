@@ -136,8 +136,16 @@ test('numbering, restore, refusals and the user\'s own layers', async () => {
 
 test('the tile previews draw the same plan; the library is on the Design tab and stage', () => {
   const th = fs.readFileSync(path.join(__dirname, '../extension/app/ui/studio/thumbs.js'), 'utf8');
-  assert.match(th, /TPL\.layout\(id, opts, TPL_COMP, measured\)/);
+  assert.match(th, /TPL\.layout\(id, opts, FRAME, measured\)/);
   assert.match(th, /PLAN\.valueAt\(kk\.keys, lt\)/);
+  // v0.99.7: the frame is the comp the user has open, not a constant — half of "it does not look like the
+  // preview" was the preview itself, drawn on a hard-coded 1920 x 1080 whatever comp was open.
+  assert.match(th, /function setFrame\(comp\)/);
+  assert.doesNotMatch(th, /TPL_COMP/, 'the hard-coded preview frame is gone');
+  const TH = require('../extension/app/ui/studio/thumbs');
+  assert.equal(typeof TH.setFrame, 'function', 'the shell can set it');
+  const shell = fs.readFileSync(path.join(__dirname, '../extension/app/ui/shell.js'), 'utf8');
+  assert.match(shell, /thumbs'\)\.setFrame\(ctx && ctx\.comp\)/, 'and does, on every context read');
   const S = require('../extension/app/ui/studio/sections');
   const AE = require('../extension/app/ui/layoutAE');
   const W = require('../extension/app/ui/workflow');
@@ -336,4 +344,38 @@ test('v0.99.7: the Product UI card widths that burst a portrait frame now fit it
     assert.ok(design * (portrait.height / 1080) > portrait.width, `${id}: the old height-only scale really did overflow`);
     assert.ok(design * s <= portrait.width, `${id}: ${Math.round(design * s)} px now fits inside ${portrait.width}`);
   }
+});
+
+/**
+ * v0.99.7 — the other half of "it does not look like the preview".
+ *
+ * The build was fixed by features/design/fit.js; the preview itself was still drawn on a hard-coded 1920 x 1080,
+ * so a template tile showed a 16:9 version of something the user was about to build in a 9:16 comp. Both now go
+ * through the same plan with the same frame.
+ */
+test('v0.99.7: the tile preview is drawn on the comp the user has open, and agrees with the build', () => {
+  const TH = require('../extension/app/ui/studio/thumbs');
+  // a canvas stub: the preview measures text with it, the host measures with After Effects
+  const c = { font: '', measureText: (t) => ({ width: t.length * 30 }) };
+  const th = { id: 'lowerThird', args: { template: 'lowerThird' }, strip: true };
+
+  TH.setFrame({ width: 1920, height: 1080 });
+  const wide = TH.templatePlan(c, th);
+  TH.setFrame({ width: 1080, height: 1920 });
+  const tall = TH.templatePlan(c, th);
+
+  const pos = (p) => p.plan.elements.map((e) => (e.position || (e.points && e.points[0]) || [0, 0]).map(Math.round));
+  assert.notDeepEqual(pos(wide), pos(tall), 'the preview really follows the frame now');
+
+  // and it is the same plan the tool builds: every element sits inside the portrait frame
+  for (const [x, y] of pos(tall)) {
+    assert.ok(x >= -1080 && x <= 2160, `preview x ${x} is sane in a 1080 px frame`);
+    assert.ok(y >= -1920 && y <= 3840, `preview y ${y} is sane in a 1920 px frame`);
+  }
+
+  // an unreadable comp falls back to 16:9 rather than drawing on a zero-sized frame
+  TH.setFrame(null);
+  assert.deepEqual(pos(TH.templatePlan(c, th)), pos(wide));
+  TH.setFrame({ width: 0, height: 0 });
+  assert.deepEqual(pos(TH.templatePlan(c, th)), pos(wide));
 });
