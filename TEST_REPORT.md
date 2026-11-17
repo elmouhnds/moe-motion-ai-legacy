@@ -1,5 +1,56 @@
 # Test Report
 
+## Full Tile Test in After Effects 26.5.3 after the manual-test session (v0.99.5 + the fixes on `manual-test/0…11`)
+
+**352 pass · 1 fail · 0 skip · 220 undo not measured · 1765 s**, all 353 tiles, run through the Claude Test Bridge
+on the owner's PC (After Effects 26.5.3x9, Windows 11). The previous full run was **222 pass · 126 fail · 5 skip**.
+
+**Read the 352 for what it is: every tile RUNS without an error. It is not proof that the one-Ctrl+Z rule holds.**
+220 of the 353 tiles could not have their undo measured at all, because After Effects intermittently ignores
+Edit › Undo run from a script (measured: the command is found by its own menu text, executed, and nothing changes —
+four times inside one host call and four times in four separate calls). Before that was understood, the runner
+counted those as presses and reported the TOOL as leaving things behind; that is where most of the old 126 came
+from. The one-undo rule was checked **by hand** instead, tile by tile, in the group reports —
+`docs/handoff/reports/MANUAL_01…11`.
+
+What really was broken, and is fixed with a test that fails on the old code:
+
+| Found | Where |
+|---|---|
+| `setPropertyParameters` loses an effect's MOE name on 26.5.3 — the whole Cloner / Grid / Effector family could not run | `MANUAL_07` |
+| CC Glass `Roughness` is 0–0.5, not 0–100 — every Thick Glass look died at step 9 of 12 | `MANUAL_09` |
+| Align & Distribute cleared the selection, so its own next step was dead | `MANUAL_01` |
+| Slide In / Out left a solid in the project on every run | `MANUAL_02` |
+| The Tile Test's undo check blamed tools for an Undo After Effects never performed | `MANUAL_08` |
+| The Retune strip offered numbers that do not apply to the run that was made | `MANUAL_08` |
+| `rig.bake`'s Restore reported success without reading the host's answer | `MANUAL_10` |
+| Style Kits promised "one click, one undo"; a 3-step recipe takes 3 | `MANUAL_11` |
+
+### The one failure
+```
+FAIL layout/cloneSun (grid.build) — After Effects is still working on "tx.run" after 300 s
+     (it may be busy or showing a dialog). It is not stopped — After Effects cannot interrupt a script.
+```
+`layout/cloneSun` is a phyllotaxis cloner: **60 clones with an animated build-in, sent as ONE `tx.run`**. That is
+the one place `docs/features/PROGRESS.md` is not honoured — *"a long tool is many SHORT host calls (Stop works
+between them), never one call that loops for minutes"* — and the error text says itself that it cannot be stopped.
+Not fixed: splitting it is engine work on the plan builder, and it wants its own measurement.
+
+### Still open, measured, not guessed at
+- **Matte FX / Reveal Composer: Edge softness does nothing.** Rendered at softness 0, 50 and 100 the front is the
+  same 4 partly-transparent pixels on a 358 px card. The number reaches the controller (Softness slider 16) but
+  Gradient Wipe reads Transition Softness 0 %. The unit is NOT the cause — writing 16 throws `Value 16 out of range
+  0 to 1`. (`MANUAL_08`)
+- **Bake's Restore is not exact**, as `BAKE.md` requires: `item 1 Position at 0.4s: [-920,-540,0] vs
+  [-150,-120,0]` — the restored expressions no longer resolve to their grid. The bake itself is exact (worst 0).
+  (`MANUAL_10`)
+- **Text / Object Cloner** places split words 340 px (EN) / 216 px (AR) from their words, 3 allowed; **Exploder**
+  read-back mismatch. (`MANUAL_07`)
+- **A measurement leaves its own undo step** (`MOE: Measure (temporary)`, in `main` since v0.4.0), so a tool that
+  measures takes two Ctrl+Z. (`MANUAL_08`)
+
+---
+
 Last run: 2026-11-06 (v0.59.0), Linux cloud sandbox (Node 22.22.0). **After Effects was not available in this environment.**
 
 ## First Self-Test in After Effects (still on v0.99.0)
