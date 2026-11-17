@@ -449,15 +449,27 @@ const counter = {
   uses: { hostOps: ['effects.ensure', 'keys.write', 'expressions.set'], network: false }, compatibility: { minAE: '25.0' }, ui: { primaryLabel: 'Count' },
   prepare(args, ctx) { const l = (ctx.layers || []).filter((x) => x.type === 'text'); return l.length ? { ok: true, layers: l, preview: { summary: `${args.prefix}${args.from} → ${args.to}${args.suffix} in ${args.duration}s`, items: l.map((x) => x.name) } } : { ok: false, error: 'Select text layers' }; },
   async execute({ args, ctx, prepared, host }) {
-    const fx = await host.call('effects.ensure', { compId: ctx.comp.id, label: 'MOE: Counter', layers: prepared.layers.map((l) => ({ layer: { layerId: l.id }, items: [{ key: 'MOE Counter', matchName: 'ADBE Slider Control', before: [], params: [] }] })) });
+    // v0.99.5 (manual test, After Effects 26.5.3 - docs/features/ONE_UNDO.md): these three writes used to be three
+    // host calls, so After Effects closed three undo groups and the Counter took THREE Ctrl+Z. One undo put the
+    // text back but left a stray "MOE Counter" slider on the layer. One plan = one host call = one Ctrl+Z.
     const e = easePair(args.ease);
-    const keys = await host.call('keys.write', { compId: ctx.comp.id, label: 'MOE: Counter', items: prepared.layers.map((l) => ({ address: { layerId: l.id, matchNames: ['ADBE Effect Parade', 'name:MOE Counter', 'name:Slider'] }, keys: [Object.assign({ t: ctx.comp.time, v: args.from }, e.out), Object.assign({ t: ctx.comp.time + args.duration, v: args.to }, e.in)] })) });
-    const set = await host.call('expressions.set', { compId: ctx.comp.id, label: 'MOE: Counter', revertOnError: true, targets: prepared.layers.map((l) => ({ address: { layerId: l.id, matchNames: ['ADBE Text Properties', 'ADBE Text Document'] }, expression: counterExpression(args), enabled: true })) });
-    return { fx, keys, set };
+    const P = PLAN1(host, 'MOE: Counter');
+    const fxRef = P.add('effects.ensure', { compId: ctx.comp.id, label: 'MOE: Counter', layers: prepared.layers.map((l) => ({ layer: { layerId: l.id }, items: [{ key: 'MOE Counter', matchName: 'ADBE Slider Control', before: [], params: [] }] })) });
+    const keysRef = P.add('keys.write', { compId: ctx.comp.id, label: 'MOE: Counter', items: prepared.layers.map((l) => ({ address: { layerId: l.id, matchNames: ['ADBE Effect Parade', 'name:MOE Counter', 'name:Slider'] }, keys: [Object.assign({ t: ctx.comp.time, v: args.from }, e.out), Object.assign({ t: ctx.comp.time + args.duration, v: args.to }, e.in)] })) });
+    const setRef = P.add('expressions.set', { compId: ctx.comp.id, label: 'MOE: Counter', revertOnError: true, targets: prepared.layers.map((l) => ({ address: { layerId: l.id, matchNames: ['ADBE Text Properties', 'ADBE Text Document'] }, expression: counterExpression(args), enabled: true })) });
+    await P.commit();
+    return { fx: fxRef.value(), keys: keysRef.value(), set: setRef.value() };
   },
   verify({ result }) { const c = result.set.targets.map((t) => ({ ok: !t.reverted && !t.after.expressionError, label: `${t.layerName} › Source Text`, detail: t.after.expressionError || 'counter expression active' })); return { ok: c.every((x) => x.ok), checks: c }; },
   checkpoint({ result, ctx }) { const S = require('../compositing/shared'); return { compId: ctx.comp.id, fx: S.effectsCheckpoint(result.fx, ctx), expressions: result.set.targets.map((t) => ({ address: t.address, expression: t.before.expression, enabled: t.before.expressionEnabled })) }; },
-  async restore({ data, host }) { await host.call('expressions.set', { compId: data.compId, label: 'MOE: Restore', revertOnError: false, targets: data.expressions }); return require('../compositing/shared').restoreEffects({ data: data.fx, host }); },
+  async restore({ data, host }) {
+    // Restore is one plan too, so undoing the restore is also one Ctrl+Z.
+    const P = PLAN1(host, 'MOE: Restore Counter');
+    P.add('expressions.set', { compId: data.compId, label: 'MOE: Restore', revertOnError: false, targets: data.expressions });
+    P.add('effects.restore', { compId: data.fx.compId, label: 'MOE: Restore Effects', layers: data.fx.layers });
+    await P.commit();
+    return { ok: true };
+  },
   summarize(result) { return `Counter on ${result.set.targets.length} layer(s)`; }
 };
 

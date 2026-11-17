@@ -17,6 +17,27 @@ async function env0() { return createTestServices(studioComp([], { comp: { time:
 /** A part's comp position at time t (its own position + its parent's — the template null is not rotated or scaled). */
 const world = (L, t) => { const p = tr(L, 'ADBE Position').valueAtTime(t, false); const P = L.parent ? tr(L.parent, 'ADBE Position').valueAtTime(t, false) : [0, 0]; return [p[0] + P[0], p[1] + P[1]]; };
 
+test('v0.99.5: the Number Counter is ONE Ctrl+Z — the slider, its keys and the Source Text expression in one step', async () => {
+  // Found by hand in After Effects 26.5.3: Edit offered "Undo MOE: Counter" AND "Redo MOE: Counter" after one
+  // Ctrl+Z, and the layer still carried a stray "MOE Counter" slider while the text had already gone back.
+  // execute() made three host calls (effects.ensure, keys.write, expressions.set) and After Effects closes an
+  // undo group when each call returns, so a counter cost three Ctrl+Z.
+  const { services, comp, env } = await createTestServices(studioComp([{ name: 'Title', selected: true, text: 'MOE Motion', measure: true }], { comp: { time: 1 } }));
+  const e0 = env.undo.entries.length;
+  const r = await services.executor.run('quick.counter', { from: 0, to: 100, duration: 2 });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
+  assert.deepEqual(env.undo.entries.slice(e0), ['MOE: Counter'], 'one undo step for the whole counter');
+  const L = comp._layers.find((l) => l.name === 'Title');
+  assert.match(L.property('ADBE Text Properties').property('ADBE Text Document').expression, /MOE Counter/);
+  assert.equal(L._parade._children.filter((f) => f.name === 'MOE Counter').length, 1, 'one slider');
+  // and the restore is one step too
+  const e1 = env.undo.entries.length;
+  assert.ok((await services.executor.restore(r.checkpointId)).ok);
+  assert.deepEqual(env.undo.entries.slice(e1), ['MOE: Restore Counter'], 'the restore is one step');
+  assert.equal(L.property('ADBE Text Properties').property('ADBE Text Document').expression, '', 'the expression is gone');
+  assert.equal(L._parade._children.filter((f) => f.name === 'MOE Counter').length, 0, 'and so is the slider');
+});
+
 test('a template is ONE layer in your comp — its own comp, at the playhead — and ONE Ctrl+Z (plus one step that changes nothing, the first time)', async () => {
   for (const id of ['lowerThird', 'titleCard', 'uiNotify', 'uiButton']) {
     const { services, comp, env } = await env0();
