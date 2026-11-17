@@ -128,7 +128,7 @@ function thickExpressions(glassName, sourceNames, mapName) {
     reflectionBlur: `${TAG}\nMath.max(0, ${c('Glass Reflection Blur')});`,
     reflectionOpacity: `${TAG}\n${clamp(c('Glass Reflection'), 0, 100)};`,
     highlightsOpacity: `${TAG}\n${clamp(c('Glass Highlights'), 0, 100)};`,
-    roughness: `${TAG}\n${clamp(c('Glass Highlight Size'), 0, 100)};`,
+    roughness: `${TAG}\n${clamp(c('Glass Highlight Size'), 0, 100)} * ${ROUGHNESS_PER_CENT};`,
     edgeLight: `${TAG}\n${clamp(c('Glass Edge Light'), 0, 100)};`,
     lightDirection: `${TAG}\n${c('Glass Light Angle')};`,
     lightHeight: `${TAG}\n${clamp(c('Glass Light Height'), 0, 100)};`,
@@ -143,6 +143,19 @@ function thickExpressions(glassName, sourceNames, mapName) {
 }
 
 /** Plain-JS reference of the prism scale (tests compare the evaluated expression with it). */
+/**
+ * v0.99.6 (Group 9 manual test, After Effects 26.5.3): CC Glass's **Roughness is 0.00099…0.5**, read from After
+ * Effects' own effect profile (every other number this tool writes is on the scale it looks like: Ambient 0-200,
+ * Diffuse 0-100, Specular 0-100, Light Intensity 0-1000, Light Height -100…100). "Glass Highlight Size" is a 0-100
+ * control, so it is a percentage OF THAT RANGE. Writing it straight through made every Thick Glass tile fail with
+ *   Value 12 out of range 0 to 0.5
+ * and, had it got past that, the expression would have clamped every look to 0.5 - the dullest highlight there is.
+ */
+const ROUGHNESS_MAX = 0.5;
+const ROUGHNESS_PER_CENT = ROUGHNESS_MAX / 100;
+/** A 0-100 "Glass Highlight Size" as CC Glass's own Roughness. */
+const roughnessAE = (v) => Math.round(Math.min(100, Math.max(0, Number(v) || 0)) * ROUGHNESS_PER_CENT * 1e6) / 1e6;
+
 const prismScaleRef = (dispersion, sign) => 100 + sign * Math.min(Math.max(dispersion, 0), 100) * PRISM_SPREAD;
 
-module.exports = { TAG, BASE, THICK_LOOKS, THICK_CONTROLS, KIND, PRISM_SPREAD, thickValues, controlItems, mapTransform, boundsCode, thickExpressions, prismScaleRef };
+module.exports = { TAG, BASE, THICK_LOOKS, THICK_CONTROLS, KIND, PRISM_SPREAD, ROUGHNESS_MAX, roughnessAE, thickValues, controlItems, mapTransform, boundsCode, thickExpressions, prismScaleRef };

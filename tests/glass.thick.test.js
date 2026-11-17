@@ -177,3 +177,34 @@ test('Thick Glass refuses 3D layers', async () => {
   assert.notEqual(r.status, 'success');
   assert.match(JSON.stringify(r), /2D layers/);
 });
+
+/**
+ * v0.99.6 (Group 9 manual test, After Effects 26.5.3): every Thick Glass tile failed —
+ *   looks/thick-glaze (glass.thick) — Unable to call "setValue" because of parameter 1.
+ *                                     Value 12 out of range 0 to 0.5.
+ * CC Glass's Roughness is 0.00099…0.5 (read from After Effects' own effect profile), while "Glass Highlight Size"
+ * is a 0–100 control. Writing it straight through crashed the tool; clamping it would have pinned every look to
+ * 0.5, the dullest highlight there is. It is a percentage of that range.
+ */
+test('v0.99.6: CC Glass Roughness is 0–0.5, and "Glass Highlight Size" is a percentage of it', async () => {
+  assert.equal(T.ROUGHNESS_MAX, 0.5);
+  assert.equal(T.roughnessAE(0), 0);
+  assert.equal(T.roughnessAE(100), 0.5);
+  assert.equal(T.roughnessAE(12), 0.06);
+  assert.equal(T.roughnessAE(200), 0.5, 'clamped to the control, then scaled');
+
+  const { services, comp } = await createTestServices(scene());
+  const r = await services.executor.run('glass.thick', { look: 'glaze' });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
+
+  const hl = comp._layers.find((l) => /Highlights$/.test(l.name));
+  assert.ok(hl, 'the highlights layer exists');
+  const cc = hl._parade._children.find((x) => x.name === 'MOE Glass Studio Light');
+  const rough = cc.property('Roughness');
+  assert.ok(rough.value > 0 && rough.value <= 0.5, `Roughness ${rough.value} must be inside CC Glass's own range`);
+  assert.equal(rough.value, T.roughnessAE(T.BASE.roughness));
+
+  // the expression that drives it afterwards is on the same scale, not 0–100
+  assert.match(rough.expression || '', /Glass Highlight Size/);
+  assert.match(rough.expression || '', /0\.005/, 'the 0–100 control is scaled onto 0–0.5');
+});

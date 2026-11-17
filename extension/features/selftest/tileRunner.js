@@ -224,15 +224,17 @@ async function runTiles(services, tiles, opts = {}) {
           const u = await host.call('selftest.undoLast', {});
           if (!u.label) break;
           if (!u.found) { undo.menu = false; undo.labels.push(`${u.label} (not in the Edit menu)`); break; }
-          // v0.99.6 (Group 8 manual test): After Effects sometimes ignores Edit > Undo from a script - the command
-          // runs and nothing changes. That press did not happen, so the undo rule cannot be measured for this tile;
-          // counting it as a failed undo blamed the tool for After Effects' refusal (the same tile passed when it
-          // ran a moment later). Say it was not measured instead.
+          // v0.99.6 (Group 8 manual test): a press that changes NOTHING cannot be read as the tool failing to undo.
+          // Measured on After Effects 26.5.3: the command is found by its own menu text, executed, and nothing at all
+          // changes - four times inside one host call and four times in four separate calls - while the same tile
+          // passed a moment earlier, and by hand ONE Ctrl+Z took each of these tools back. (A press can also change
+          // nothing because the step it undid wrote nothing.) Either way the rule was not measured here, so the
+          // report says that instead of blaming the tool.
           if (u.changed === false) {
             // a refused press is retried in FRESH host calls (inside one call it never lands: measured 4 in a row)
             undo.refused = (undo.refused || 0) + 1;
             if (undo.refused <= 3) { await host.call('selftest.pushUndoLabel', { label: u.label }); continue; }
-            undo.stuck = true; undo.menuText = u.menu; undo.labels.push(`${u.label} (After Effects did not perform the Undo; Edit menu matched "${u.menu}")`); break;
+            undo.stuck = true; undo.menuText = u.menu; undo.labels.push(`${u.label} (the press changed nothing; Edit menu matched "${u.menu}")`); break;
           }
           undo.presses++; undo.labels.push(u.label); undo.menuText = u.menu;
           now = await host.call('selftest.census', { compId: begin.compId });
@@ -244,7 +246,7 @@ async function runTiles(services, tiles, opts = {}) {
           row.detail = undo.presses <= 1 ? `${run.summary || 'done'} · ${undo.presses ? 'one Ctrl+Z took it all back' : 'changed no layer'}` : `needs ${undo.presses} Ctrl+Z (${undo.labels.join(' › ')})`;
         } else if (!undo.menu || undo.stuck) {
           row.status = 'pass';
-          row.detail = `${run.summary || 'done'} · Undo not checked (${undo.stuck ? 'After Effects did not perform Edit > Undo' : 'this host has no Edit > Undo by name'})`;
+          row.detail = `${run.summary || 'done'} · Undo not checked (${undo.stuck ? 'the Edit > Undo press changed nothing' : 'this host has no Edit > Undo by name'})`;
         } else {
           row.status = 'fail';
           row.detail = `Ctrl+Z did not bring it back after ${undo.presses}: ${leftover(base, now)}`;

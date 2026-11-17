@@ -126,7 +126,7 @@ const thick = {
           { key: 'MOE Glass Blur', matchName: 'ADBE Gaussian Blur 2', before: [], params: [v('Repeat Edge Pixels', 1)] }
         ] });
         if (parts.highlights) fxLayers.push({ layer: { layerId: parts.highlights.layerId }, items: [
-          ccGlass('MOE Glass Studio Light', mapLayerId, [v('Light Intensity', 100), v('Light Color', [1, 1, 1, 1]), v('Light Height', 45), v('Light Direction', -45), v('Ambient', 0), v('Diffuse', 25), v('Specular', 100), v('Roughness', 12)])
+          ccGlass('MOE Glass Studio Light', mapLayerId, [v('Light Intensity', 100), v('Light Color', [1, 1, 1, 1]), v('Light Height', 45), v('Light Direction', -45), v('Ambient', 0), v('Diffuse', 25), v('Specular', 100), v('Roughness', T.roughnessAE(T.BASE.roughness))])
         ] });
         for (const s of shadows) fxLayers.push({ layer: { layerId: s.id }, items: [
           { key: 'MOE Glass Fill', matchName: 'ADBE Fill', before: [], params: [v('Color', [0, 0, 0, 1])] },

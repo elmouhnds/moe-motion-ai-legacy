@@ -81,7 +81,7 @@ test('v0.99.6: a real Edit > Undo is counted; an Undo After Effects refuses is r
   assert.equal(row.status, 'pass', row.detail);
   assert.equal(row.undo.stuck, true, 'the refused press is recorded as stuck');
   assert.equal(row.undo.presses, 0, 'a press that changed nothing is not counted as a Ctrl+Z');
-  assert.match(row.detail, /Undo not checked \(After Effects did not perform Edit > Undo\)/);
+  assert.match(row.detail, /Undo not checked \(the Edit > Undo press changed nothing\)/);
   assert.equal(r2.totals.undoUnchecked, 1, 'the report counts what could not be measured');
   assert.ok(!/did not bring it back/.test(row.detail), 'the tool is not blamed for After Effects refusing the Undo');
 });

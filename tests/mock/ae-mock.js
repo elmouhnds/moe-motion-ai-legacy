@@ -167,7 +167,7 @@ const EFFECTS = {
     { name: 'Softness', valueType: 'OneD', value: 10 }, { name: 'Height', valueType: 'OneD', value: 50 }, { name: 'Displacement', valueType: 'OneD', value: 100 },
     { name: 'Light', valueType: 'NO_VALUE', value: 0 }, { name: 'Using', valueType: 'OneD', value: 1 }, { name: 'Light Intensity', valueType: 'OneD', value: 100 }, { name: 'Light Color', valueType: 'COLOR', value: [1, 1, 1, 1] },
     { name: 'Light Type', valueType: 'OneD', value: 1 }, { name: 'Light Height', valueType: 'OneD', value: 50 }, { name: 'Light Position', valueType: 'TwoD_SPATIAL', value: [960, 540] }, { name: 'Light Direction', valueType: 'OneD', value: -45 },
-    { name: 'Shading', valueType: 'NO_VALUE', value: 0 }, { name: 'Ambient', valueType: 'OneD', value: 75 }, { name: 'Diffuse', valueType: 'OneD', value: 0 }, { name: 'Specular', valueType: 'OneD', value: 25 }, { name: 'Roughness', valueType: 'OneD', value: 15 }, { name: 'Metal', valueType: 'OneD', value: 100 }],
+    { name: 'Shading', valueType: 'NO_VALUE', value: 0 }, { name: 'Ambient', valueType: 'OneD', value: 75 }, { name: 'Diffuse', valueType: 'OneD', value: 0 }, { name: 'Specular', valueType: 'OneD', value: 25 }, { name: 'Roughness', valueType: 'OneD', value: 0.1, range: [0.00099182128906, 0.5] }, { name: 'Metal', valueType: 'OneD', value: 100 }],
   'ADBE Checkbox Control': [{ name: 'Checkbox', valueType: 'OneD', value: 0 }],
   // v0.96 Matte FX: Gradient Wipe, Fractal Noise, Turbulent Displace — names as in Effect Controls (topic headers are
   // NO_VALUE). UNVERIFIED in After Effects: effects.ensure fails with the real list if a name differs (Self-Test fxMatte).
