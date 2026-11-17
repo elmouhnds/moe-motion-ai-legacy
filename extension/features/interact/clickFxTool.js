@@ -9,6 +9,7 @@
 const CP = require('./clickFxPlan');
 const FG = require('../../core/framegrid');
 const { plan: PLAN1 } = require('../../core/host/plan');
+const HOLDER = require('../../core/holder'); // v0.99.7 one holder per run
 
 const PREFIX = 'MOE Click';
 const TR = (id, mn) => ({ layerId: id, matchNames: ['ADBE Transform Group', mn] });
@@ -75,12 +76,18 @@ const clickFx = {
       return { L, lay, fx, keys };
     });
     // the controller: only the look-and-feel values, linked by expressions (same comp → thisComp, link ids by the host)
-    const ctlName = `${name} Controls`;
-    const ctl = T.add('layers.createNull', { compId: comp.id, name: ctlName, position: C, label: 9 });
-    T.add('effects.ensure', { compId: comp.id, label: `MOE: ${p.label} Controls`, layers: [{ layer: { layerId: ctl.at('layerId') }, items: p.controls.map((c) => (c.color
-      ? { key: c.key, matchName: 'ADBE Color Control', before: [], params: [{ id: 'Color', value: c.value, names: ['Color'] }] }
-      : { key: c.key, matchName: 'ADBE Slider Control', before: [], params: [{ id: 'Slider', value: c.value, names: ['Slider'] }] })) }] });
-    const src = (c) => `thisComp.layer(${JSON.stringify(ctlName)}).effect(${JSON.stringify(c.key)})(${c.color ? '"Color"' : '"Slider"'})`;
+    // v0.99.7 (core/holder.js): the controller is now the real HOLDER of this click — it carries the look-and-feel
+    // values AND is the parent of every ring, so one layer moves, scales and rotates the whole effect. The rings
+    // are a set of their own (they are not copies of the user's layer), so parenting them is correct here.
+    // holder.make puts the null at identity (anchor = position): layers.setParent uses setParentWithJump and does
+    // not compensate, so a null left at After Effects' own [0,0] anchor would have thrown every ring across the
+    // comp by the click point.
+    const ctl = HOLDER.make(T, {
+      compId: comp.id, name: `${name} Controls`, at: C, label: 9,
+      label2: `MOE: ${p.label} Controls`, controls: p.controls, args
+    });
+    ctl.parent(made.map((m) => m.lay.at('layerId')), `MOE: ${p.label}`);
+    const src = (c) => ctl.read(c);
     const targets = [];
     for (const m of made) {
       const id = m.lay.at('layerId');
@@ -96,7 +103,7 @@ const clickFx = {
     try {
       await T.commit();
     } catch (e) {
-      const ids = made.map((m) => m.lay.value()).concat([ctl.value()]).filter((x) => x && x.layerId).map((x) => x.layerId);
+      const ids = made.map((m) => m.lay.value()).concat([ctl.ref.value()]).filter((x) => x && x.layerId).map((x) => x.layerId);
       if (ids.length) await host.call('layers.remove', { compId: comp.id, layerIds: ids, onlyNamed: PREFIX }).catch(() => {});
       throw e;
     }
@@ -104,7 +111,7 @@ const clickFx = {
     const ids = made.map((m) => m.lay.value().layerId);
     const pos = (await host.call('props.values', { compId: comp.id, items: ids.map((id) => ({ address: TR(id, 'ADBE Position'), time: t0 })) })).items.map((r) => r.value);
     return {
-      style: p.style, label: p.label, name, at: C, t0, controlsId: ctl.value().layerId, controls: p.controls.map((c) => c.key),
+      style: p.style, label: p.label, name, at: C, t0, controlsId: ctl.ref.value().layerId, controls: p.controls.map((c) => c.key),
       layers: made.map((m, i) => ({ id: ids[i], name: m.lay.value().name, pos: pos[i], keys: m.keys.value(), unmapped: m.fx.value().layers.flatMap((x) => x.items.flatMap((it) => it.params.filter((q) => q.resolvedBy !== 'name').map((q) => `${it.key}.${q.id}`))) })),
       links: set.value().targets.map((t) => ({ name: t.name, ok: !t.skipped && !t.reverted && !(t.after && t.after.expressionError), why: t.skipped || (t.after && t.after.expressionError) || '' }))
     };

@@ -32,6 +32,21 @@ test('Click VFX: every style is a stack on the click point — one Ctrl+Z, a con
     assert.ok(p.controls.length <= 4, 'no crowd of sliders');
     const ring = r0.comp._layers.find((l) => l.name === `MOE Click 1 ${p.layers[0].role}`);
     assert.match(ring.property('ADBE Transform Group').property('ADBE Scale').expression, /MOE Click[\s\S]*Size %/);
+
+    // v0.99.7 (core/holder.js): the controller is the real holder — every ring is parented to it, so one layer
+    // moves, scales and rotates the whole click. It must sit at identity (anchor = position), because
+    // layers.setParent uses setParentWithJump and does not compensate: a null left at After Effects' own [0, 0]
+    // anchor would have thrown every ring across the comp by the click point.
+    const tg = ctl.property('ADBE Transform Group');
+    assert.deepEqual(
+      Array.from(tg.property('ADBE Anchor Point').value).slice(0, 2),
+      Array.from(tg.property('ADBE Position').value).slice(0, 2),
+      `${style}: the holder is at identity, so parenting moves nothing`
+    );
+    for (const L of p.layers) {
+      const part = r0.comp._layers.find((l) => l.name === `MOE Click 1 ${L.role}`);
+      assert.equal(part._parent, ctl, `${style}: ${L.role} hangs off the controller`);
+    }
     await r0.services.executor.restore(r.checkpointId);
     assert.ok(!r0.comp._layers.some((l) => /^MOE Click/.test(l.name)), `${style}: Restore removes every layer it made`);
   }
