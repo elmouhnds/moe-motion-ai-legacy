@@ -142,7 +142,7 @@ function helper(services, comp, opts) {
       if (r.status !== 'success') { const e = new Error(`${toolId}: ${r.status} — ${(r.errors || (r.verification ? r.verification.checks.filter((c) => !c.ok).map((c) => `${c.label}: ${c.detail}`) : [])).join('; ')}`); e.result = r; throw e; }
       return r;
     },
-    async values(time, addrs, inComp) { const r = await host.call('props.values', { compId: inComp || comp.compId, any: !!inComp, time, items: addrs.map((a) => ({ address: a })) }); return r.items; },
+    async values(time, addrs, inComp, withExpression, withPre) { const r = await host.call('props.values', { compId: inComp || comp.compId, any: !!inComp, time, withExpression: !!withExpression, withPreExpression: !!withPre, items: addrs.map((a) => ({ address: a })) }); return r.items; },
     async positions(ids, time) { return (await T.values(time, ids.map((id) => ({ layerId: id, matchNames: POS })))).map((v) => v.value); },
     async layerIds() { const d = await host.call('layers.describe', { compId: comp.compId }); return d.layers; },
     /** Undo a tool through its checkpoint and check the comp has the layers it had before. */
@@ -366,6 +366,32 @@ async function checkBake(T) {
   const addrs = g.ids.flatMap((id) => [{ layerId: id, matchNames: POS }, { layerId: id, matchNames: SCALE }, { layerId: id, matchNames: ROT }]);
   const read = async () => { const out = []; for (const t of times) out.push(await T.values(t, addrs)); return out; };
   const live = await read();
+  // v0.99.7: what item 1's Position expression SAYS, before anything is baked. The restore puts the same text back
+  // (the host checks that per property), so when the value still comes out wrong the text is not the difference -
+  // something the expression depends on is. Saying both is the only way to tell them apart.
+  const exprOf = async () => {
+    const r = await T.values(0.4, [{ layerId: g.ids[0], matchNames: POS }], null, true);
+    return String((r[0] && r[0].expression) || '').replace(/\s+/g, ' ').trim();
+  };
+  const exprBefore = await exprOf();
+  // the number UNDERNEATH the expression: a grid item expression builds on `value`, so if the restore puts back a
+  // different one the same text gives a different place.
+  const preOf = async () => { try { const r = await T.values(0.4, [{ layerId: g.ids[0], matchNames: POS }], null, false, true); return r[0] && r[0].pre ? r[0].pre.map(r2) : null; } catch (eP) { return null; } };
+  const preBefore = await preOf();
+  const nullBefore = await (async () => { try { const r = await T.values(0.4, [{ layerId: g.gridId, matchNames: POS }]); return r[0] && !r[0].error ? r[0].value.map(r2) : null; } catch (eN) { return null; } })();
+  // v0.99.7: the grid null's own controls. The item expressions read the layout from them, so a control that does
+  // not come back the way it went turns the whole grid into a different layout without a single expression
+  // changing. bake.restore checks that the EXPRESSION came back; a plain value has none, so nothing checked it.
+  const CTLS = [['Layout', 'Menu'], ['Morph To', 'Menu'], ['Morph', 'Slider'], ['Columns', 'Slider'], ['Spacing X', 'Slider'], ['Spacing Y', 'Slider']];
+  const ctlValues = async () => {
+    const out = {};
+    try {
+      const r = await T.values(0.4, CTLS.map(([n, p2]) => ctlAddr(g.gridId, n, p2)));
+      CTLS.forEach(([n], i) => { out[n] = r[i] && !r[i].error ? r2(Number(r[i].value)) : 'missing'; });
+    } catch (eV) { /* read only */ }
+    return out;
+  };
+  const ctlBefore = await ctlValues();
   await T.select([g.gridId]);
   const s0 = Date.now();
   const r = await T.run('rig.bake', { range: 'work', every: 5, keys: 'smart', which: 'moe' });
@@ -377,6 +403,16 @@ async function checkBake(T) {
   const exprLeft = r.result.written.filter((w) => w.expression).length;
   const ub = await T.undo(r, before + 11);
   const back = await read();
+  const exprAfter = await exprOf();
+  const sameExpr = exprBefore === exprAfter;
+  // and the grid null's own controls: the item expressions read it only through c(name), which falls back to the
+  // defaults baked in their head when a control is not there (CLAUDE.md v0.93). A restore that loses the null's
+  // controls therefore moves every item without touching a single item expression.
+  const nullPos = async () => { try { const r = await T.values(0.4, [{ layerId: g.gridId, matchNames: POS }]); return r[0] && !r[0].error ? r[0].value.map(r2) : null; } catch (eN) { return null; } };
+  const nullAfter = await nullPos();
+  const ctlAfter = await ctlValues();
+  const preAfter = await preOf();
+  const ctlDrift = Object.keys(ctlBefore).filter((k) => String(ctlBefore[k]) !== String(ctlAfter[k])).map((k) => `${k} ${ctlBefore[k]}→${ctlAfter[k]}`);
   // v0.99.6 (Group 10 manual test): say WHICH value came back wrong, not just how far off it is - a bare number
   // ("restore differs by 770") cannot be acted on. addrs is [pos, scale, rot] per item, in order.
   let errBack = 0, errWhere = '';
@@ -392,7 +428,7 @@ async function checkBake(T) {
   await dropGrid9(T, g, before);
   const worst = maxOf(errs);
   const ok = worst <= 0.01 && exprLeft === 0 && errBack <= 0.001 && ub.back && u.back;
-  return { status: ok ? 'pass' : 'fail', detail: `${r.result.written.length} properties baked in ${ms} ms (${r.result.keysTotal} keys, ${r.result.constants} plain values) · ${errs.length} values at ${times.length} frames, worst ${r2(worst)} from the live rig · restore ${errBack <= 0.001 ? 'brought the expressions back' : `differs by ${r2(errBack)} (${errWhere})`} · undo ${ub.back && u.back ? 'ok' : 'left layers'}`, numbers: { worst: r2(worst), bakeMs: ms, keys: r.result.keysTotal, keysPerItem: keys.slice(0, 3), restoreErr: r2(errBack) } };
+  return { status: ok ? 'pass' : 'fail', detail: `${r.result.written.length} properties baked in ${ms} ms (${r.result.keysTotal} keys, ${r.result.constants} plain values) · ${errs.length} values at ${times.length} frames, worst ${r2(worst)} from the live rig · restore ${errBack <= 0.001 ? 'brought the expressions back' : `differs by ${r2(errBack)} (${errWhere}; expression text ${sameExpr ? 'identical' : 'CHANGED'}; the grid null sat at [${nullBefore}] and now sits at [${nullAfter}]; grid controls ${ctlDrift.length ? `CHANGED: ${ctlDrift.join(', ')}` : 'unchanged'}; the value under the expression was [${preBefore}] and is now [${preAfter}])`} · undo ${ub.back && u.back ? 'ok' : 'left layers'}`, numbers: { worst: r2(worst), bakeMs: ms, keys: r.result.keysTotal, keysPerItem: keys.slice(0, 3), restoreErr: r2(errBack) } };
 }
 
 /**

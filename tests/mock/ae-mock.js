@@ -255,6 +255,15 @@ function dimsFor(valueType) {
   return 1;
 }
 
+/**
+ * v0.99.7: a test opts in to After Effects' real `Property.value` with `env.mode.strictValue = true`.
+ * In After Effects, `.value` on a property that HAS an expression returns the EVALUATED value; the number
+ * underneath is `valueAtTime(t, true)`. It is OFF by default because this mock's expression evaluator is not
+ * faithful enough for the grid and effector rigs to be read that way everywhere — switching it on globally moves
+ * several of their read-backs — so only the tests that need the distinction turn it on.
+ */
+const MODE = { strictValue: false };
+
 class MockProperty {
   constructor(spec, parent, index) {
     this.name = spec.name;
@@ -331,8 +340,21 @@ class MockProperty {
       const layers = this._layer()._comp._layers, i = this._ref ? layers.indexOf(this._ref) : -1;
       return i < 0 ? 0 : i + 1;
     }
+    /* v0.99.7 (measured in After Effects 26.5.3): Property.value on a property that HAS an expression returns the
+       EVALUATED value, not the number underneath. valueAtTime(t, true) is the one underneath. Saving `.value` as
+       the "before" state of a bake therefore saved the computed result, and Restore wrote it back underneath the
+       restored expression — an expression that builds on `value` then applied its own offset a second time (a
+       swept grid item came back at [-920, -540] instead of [-150, -120]). The mock used to return the static
+       number here, so the bug could not be reproduced. */
+    if (MODE.strictValue && this._expression && this.expressionEnabled && !this._evaluating) {
+      this._evaluating = true;                       // `value` inside an expression means the number UNDERNEATH it
+      try { return this.valueAtTime(this._comp() ? this._comp().time : 0, false); } catch (eEv) { /* fall through */ }
+      finally { this._evaluating = false; }
+    }
     return clone(this._value);
   }
+  /** The composition this property lives in, when it has one. */
+  _comp() { try { return this._layer()._comp; } catch (eC) { return null; } }
   /** v0.98.1: a Dropdown Menu Control starts with 3 items (After Effects' default) and refuses a value outside its list —
    *  the owner's After Effects reported "Value 6 out of range 1 to 3" when a menu was set before its items were. */
   // Property.hasMin / minValue / hasMax / maxValue (Scripting Guide) — from the modelled range
@@ -393,6 +415,8 @@ class MockProperty {
       const u = (lt - a.t) / (b.t - a.t);
       return Array.isArray(a.value) ? a.value.map((v, j) => v + (b.value[j] - v) * u) : a.value + (b.value - a.value) * u;
     }
+    // the number UNDERNEATH: never through the `value` getter, which evaluates the expression under strictValue
+    if (preExpression && this._expression && this.expressionEnabled) return clone(this._value);
     if (preExpression || !this._expression || !this.expressionEnabled) return this.value;
     /* v0.99.7 (measured in After Effects 26.5.3): a percentage property stores 0-1, but an EXPRESSION's result is
        read in the UI unit and divided by 100 on the way in. setValue and an expression therefore disagree:
@@ -1192,7 +1216,7 @@ function installAE(target, fixture, { readFile, evalCode }) {
     }
   });
   target.app._log = app0;
-  return { undo, project };
+  return { undo, project, mode: MODE };
 }
 
 module.exports = { Shape, installAE, PropertyValueType, KeyframeInterpolationType, KeyframeEase, TextDocument, ParagraphDirection };

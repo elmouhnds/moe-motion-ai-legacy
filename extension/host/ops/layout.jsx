@@ -475,7 +475,12 @@
                        text says which. Off by default so nothing else pays for it. */
                     var ex = '';
                     if (args.withExpression) { try { ex = String(r.prop.expression || ''); } catch (eX) { ex = ''; } }
-                    out.push({ value: plain(r.prop.valueAtTime(args.items[i].time === undefined ? t : num(args.items[i].time), false)), error: String(r.prop.expressionError || ''), numKeys: r.prop.numKeys || 0, expression: ex });
+                    /* v0.99.7: the PRE-expression value too, when it is asked for. An expression that builds on
+                       `value` gives a different answer when the number underneath it changed, with the same text
+                       and the same inputs - which is exactly what a restore can leave behind. */
+                    var pre = null;
+                    if (args.withPreExpression) { try { pre = plain(r.prop.valueAtTime(args.items[i].time === undefined ? t : num(args.items[i].time), true)); } catch (eP) { pre = null; } }
+                    out.push({ value: plain(r.prop.valueAtTime(args.items[i].time === undefined ? t : num(args.items[i].time), false)), pre: pre, error: String(r.prop.expressionError || ''), numKeys: r.prop.numKeys || 0, expression: ex });
                 }
                 catch (e) { out.push({ value: null, error: String(e.message) }); }
             }

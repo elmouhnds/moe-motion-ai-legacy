@@ -214,3 +214,46 @@ test('UI: Bake is one click in the Motion Kit (Clean up, Alt = one key per frame
   assert.deepEqual(W.keywordsOf('حول الاكسبريشن لكي فريمز'), ['bake']);
   assert.deepEqual(W.keywordsOf('الولد بيكلم الكاميرا'), [], 'whole words only');
 });
+
+/**
+ * v0.99.7 — Restore has to put back the number UNDER the expression, not the one the expression produced.
+ *
+ * Measured in After Effects 26.5.3 on a swept grid: the value under item 1's Position was [620, 300] and the
+ * expression gave [-150, -120]. The bake saved `Property.value`, which in After Effects is the EVALUATED value, so
+ * Restore wrote [-150, -120] underneath and the restored expression applied its own offset a second time — the
+ * item came back at [-920, -540]. The Self-Test's `bake` check reported it only as "restore differs by 770".
+ *
+ * This test switches the mock to After Effects' real `.value` (env.mode.strictValue) so the same thing happens
+ * here. With the old `saveState` it goes red.
+ */
+test('v0.99.7: Restore puts back the value underneath the expression, not the expression’s own result', async () => {
+  const r0 = await createTestServices(studioComp([
+    { name: 'Card 1', transform: TA({ pos: [620, 300] }), rect: { left: -75, top: -50, width: 150, height: 100 } }
+  ], { comp: { time: 0 } }));
+  r0.env.mode.strictValue = true;                 // After Effects' own Property.value
+  try {
+    const L = r0.comp._layers.find((l) => l.name === 'Card 1');
+    const pos = tp(L, 'ADBE Position');
+
+    // a MOE rig whose expression builds on the number underneath it, the way a grid item's does
+    pos.setValue([620, 300]);
+    pos.expression = '// MOE Grid\n[value[0] - 770, value[1] - 420]';
+    const under = pos.valueAtTime(0, true);
+    assert.deepEqual(Array.from(under).slice(0, 2), [620, 300], 'the number underneath');
+    assert.deepEqual(Array.from(pos.value).slice(0, 2), [-150, -120], 'and what the expression makes of it');
+
+    L.selected = true;
+    const r = await r0.services.executor.run('rig.bake', { range: 'work', every: 5, keys: 'smart', which: 'moe' }, { approved: true });
+    assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
+
+    await r0.services.executor.restore(r.checkpointId);
+
+    assert.deepEqual(Array.from(pos.valueAtTime(0, true)).slice(0, 2), [620, 300],
+      'the value underneath came back — not the baked result');
+    assert.deepEqual(Array.from(pos.value).slice(0, 2), [-150, -120],
+      'so the rig lands where it did before the bake');
+    assert.match(pos.expression, /MOE Grid/, 'and the expression came back too');
+  } finally {
+    r0.env.mode.strictValue = false;
+  }
+});
