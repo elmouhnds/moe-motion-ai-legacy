@@ -207,6 +207,46 @@
         }
     };
 
+    /* v0.99.5 (manual test, After Effects 26.5.3): comp.layers.addNull() also puts a SOLID of its own in the
+       project ("Null 1", "Null 2", ...), and removing the layer leaves that solid behind - the owner's Solids
+       folder filled up with them, and the tile test saw "project items 82 -> 83" on every auto-distance move.
+       A temporary probe has to take its source with it. AVItem.usedIn lists the comps still using an item
+       (After Effects Scripting Guide), so the source is only removed when nothing is left using it. */
+    U.dropSource = function (src) {
+        if (!src) { return false; }
+        var name = '';
+        try { name = String(src.name || ''); } catch (eName) { return false; }
+        /* Only items MOE itself made: its own "MOE ..." solids and the "Null N" solid After Effects makes for a
+           null. Never anything else of the user's, and never one another layer still uses. */
+        if (name.substring(0, 4) !== 'MOE ' && !/^Null \d+$/.test(name)) { return false; }
+        try {
+            if (src instanceof CompItem) { return false; }
+            if (src.usedIn && src.usedIn.length === 0) { src.remove(); return true; }
+        } catch (eItem) { /* leave it rather than risk the user's project */ }
+        return false;
+    };
+
+    /* The sources a comp's layers use, read BEFORE the comp is removed (afterwards its layers are gone). */
+    U.sourcesOf = function (c) {
+        var out = [], i, src;
+        try {
+            for (i = 1; i <= c.numLayers; i++) {
+                src = null;
+                try { src = c.layer(i).source; } catch (eS) { src = null; }
+                if (src) { out.push(src); }
+            }
+        } catch (eC) { /* best effort */ }
+        return out;
+    };
+
+    U.dropProbe = function (probe) {
+        var src = null;
+        if (!probe) { return; }
+        try { src = probe.source; } catch (eSrc) { src = null; }
+        try { probe.remove(); } catch (eRemove) { /* the caller checks the layer count */ }
+        U.dropSource(src);
+    };
+
     U.withUndo = function (label, fn) {
         var outer = !(MOE.undoDepth > 0);
         if (outer) {

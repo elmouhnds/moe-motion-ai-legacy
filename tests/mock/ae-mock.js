@@ -852,6 +852,24 @@ class MockCameraLayer extends MockLayer {}
 class MockTextLayer extends MockLayer {}
 class MockShapeLayer extends MockLayer {}
 
+/* v0.99.5 (read in After Effects 26.5.3): a null or solid layer has a SOLID of its own in the project
+   ("Null 1", "Null 2", ...), and removing the layer leaves that item behind — the owner's Solids folder filled
+   up with probe nulls. The mock used to make no item at all, so no test could see the leak. */
+class SolidItem {
+  constructor(name, w, h, color, project) {
+    this.id = nextId++;
+    this.name = name;
+    this.width = w; this.height = h;
+    this.kind = 'solid'; this.color = color || [0, 0, 0];
+    // After Effects: a solid item's mainSource is a SolidSource — selftest.end and other cleanups test for it.
+    this.mainSource = new SolidSource(this.color);
+    this._project = project || null;
+    if (this._project) this._project._items.push(this);
+  }
+  get usedIn() { return this._project ? this._project._items.filter((c) => c instanceof CompItem && c._layers.some((L) => L.source === this)) : []; }
+  remove() { if (this._project) { const k = this._project._items.indexOf(this); if (k >= 0) this._project._items.splice(k, 1); } }
+}
+
 function fixDepth(node) {
   (node._children || []).forEach((c) => { c.propertyDepth = node.propertyDepth + 1; fixDepth(c); });
 }
@@ -884,11 +902,13 @@ class CompItem {
         // v0.99.5: After Effects 26.5 makes a null with Opacity 0 % (the owner's screenshot of "Null 14"; the Self-Test's
         // Marker In / Out read 0 · 0 · 0 on one) — an expression that scales `value` reads 0 there
         n.property('ADBE Transform Group').property('ADBE Opacity').setValue(0);
+        n.source = new SolidItem(`Null ${++comp._nullN}`, 100, 100, [0, 0, 0], comp._project);
         comp._layers.unshift(n);
         return selectOnly(n);
       },
       addSolid(color, name, w, h, pa, duration) {
-        const L = new MockLayer({ name, width: w, height: h, outPoint: duration, rect: { left: 0, top: 0, width: w, height: h }, source: { kind: 'solid', color } }, comp);
+        const L = new MockLayer({ name, width: w, height: h, outPoint: duration, rect: { left: 0, top: 0, width: w, height: h } }, comp);
+        L.source = new SolidItem(name, w, h, color, comp._project);
         const tg = L.property('ADBE Transform Group');
         tg.property('ADBE Anchor Point').setValue([w / 2, h / 2]);
         tg.property('ADBE Position').setValue([comp.width / 2, comp.height / 2]);
@@ -930,6 +950,7 @@ class CompItem {
       }
     };
     this._selectionOrder = spec.selectionOrder || null;
+    this._nullN = 0;
   }
   get numLayers() { return this._layers.length; }
   layer(i) { return this._layers[i - 1]; }

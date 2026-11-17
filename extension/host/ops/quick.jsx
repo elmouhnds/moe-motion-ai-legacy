@@ -149,7 +149,8 @@
                     L.parent = args.layers[i].before ? U.findLayer(comp, { layerId: args.layers[i].before }) : null;
                 }
                 L = U.findLayer(comp, { layerId: args.nullId });
-                L.remove();
+                /* v0.99.5: the null keeps a "Null N" solid of its own in the project - take it with the layer. */
+                U.dropProbe(L);
                 return { restored: args.layers.length };
             });
         }

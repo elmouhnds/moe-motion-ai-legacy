@@ -111,7 +111,7 @@
             var prefix = String(args.onlyNamed || '');
             if (!moeName(prefix)) { U.fail('BAD_ARGS', 'onlyNamed must start with MOE '); }
             return U.withUndo('MOE: Remove Comp', function () {
-                var removed = [], kept = [], i, it;
+                var removed = [], kept = [], i, j, it, srcs;
                 for (i = 0; i < (args.ids || []).length; i++) {
                     it = null;
                     try { it = app.project.itemByID(args.ids[i]); } catch (eI) { it = null; }
@@ -119,7 +119,12 @@
                     if (!(it instanceof CompItem) || it.name.substring(0, prefix.length) !== prefix) { kept.push({ name: it.name, why: 'not MOE' }); continue; }
                     if (it.usedIn.length) { kept.push({ name: it.name, why: 'used in ' + it.usedIn.length + ' comp(s)' }); continue; }
                     removed.push(it.name);
+                    /* v0.99.5: the solids ITS layers used stay in the project when the comp goes - the owner's
+                       Solids folder filled with "MOE FX Noise / Ramp / Wipe". Take MOE's own ones with it when
+                       nothing else uses them (U.dropSource checks the name and usedIn). */
+                    srcs = U.sourcesOf(it);
                     it.remove();
+                    for (j = 0; j < srcs.length; j++) { U.dropSource(srcs[j]); }
                 }
                 return { removed: removed, kept: kept };
             });

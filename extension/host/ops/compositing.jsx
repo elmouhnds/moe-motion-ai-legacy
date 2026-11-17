@@ -74,7 +74,7 @@
                     }
                     out = { layerId: target.id, name: target.name, width: target.width, height: target.height, cols: cols, rows: rows, samples: samples };
                 } finally {
-                    if (probe) { try { probe.remove(); } catch (eRemove) { /* reported via layer count */ } }
+                    U.dropProbe(probe);
                     if (disabled.length) {
                         tParade = target.property('ADBE Effect Parade');
                         for (bq = 1; bq <= tParade.numProperties; bq++) {

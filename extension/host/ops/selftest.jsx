@@ -211,6 +211,17 @@
                     for (i = 0; i < solids.length; i++) {
                         try { if (solids[i].usedIn && solids[i].usedIn.length === 0) { solids[i].remove(); gone++; } } catch (eR) { }
                     }
+                    /* v0.99.5: a check that undid its own layer before the end left that layer's solid orphaned -
+                       the scan above only sees layers still in the comp, so "ST Ramp", "ST Ball", "ST Wipe", ...
+                       piled up in the project. "ST " is the Self-Test's own namespace (layers.remove is already
+                       called with onlyNamed: 'ST '), so sweep the unused ones it left. */
+                    for (i = app.project.numItems; i >= 1; i--) {
+                        try {
+                            s = app.project.item(i);
+                            if (s && !(s instanceof CompItem) && s.mainSource && s.mainSource instanceof SolidSource
+                                && String(s.name).substring(0, 3) === 'ST ' && s.usedIn && s.usedIn.length === 0) { s.remove(); gone++; }
+                        } catch (eS2) { /* leave it rather than risk the user's project */ }
+                    }
                 }
                 if (args.previousId) {
                     prev = itemById(args.previousId);

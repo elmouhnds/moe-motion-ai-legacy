@@ -151,7 +151,7 @@
         run: function (args) {
             var comp = U.compById(args.compId);
             return U.withUndo('MOE: Remove Glass Map', function () {
-                var removed = [], comps = 0, i, L, item;
+                var removed = [], comps = 0, i, j, L, item, srcs;
                 for (i = 0; i < args.mapLayerIds.length; i++) {
                     L = null;
                     try { L = U.findLayer(comp, { layerId: args.mapLayerIds[i] }); } catch (eFind) { L = null; }
@@ -159,7 +159,12 @@
                     item = L.source;
                     removed.push(L.name);
                     L.remove();
-                    if (item && item instanceof CompItem && MAP_NAME.test(item.name) && item.usedIn.length === 0) { item.remove(); comps++; }
+                    if (item && item instanceof CompItem && MAP_NAME.test(item.name) && item.usedIn.length === 0) {
+                        /* v0.99.5: take MOE's own solids inside the map comp with it (U.dropSource guards). */
+                        srcs = U.sourcesOf(item);
+                        item.remove(); comps++;
+                        for (j = 0; j < srcs.length; j++) { U.dropSource(srcs[j]); }
+                    }
                 }
                 return { removed: removed, compsRemoved: comps };
             });

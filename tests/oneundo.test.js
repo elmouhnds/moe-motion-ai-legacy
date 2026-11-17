@@ -26,7 +26,9 @@ test('a template is ONE layer in your comp — its own comp, at the playhead —
     assert.equal(comp._layers.length, 1, `${id}: one layer in your comp`);
     const L = comp._layers[0], src = L.source;
     assert.equal(L.name, 'MOE Template 1'); assert.equal(src.name, 'MOE Template 1'); assert.equal(L.startTime, 1, 'at the playhead');
-    assert.equal(comp._project._items.length, items0 + 1, 'one new comp in the project (the measuring comp is gone)');
+    // v0.99.5: the template's own null also has a SOLID of its own in the project, the way After Effects makes
+    // one — so count the template comp itself rather than the raw item total (the measuring comp must be gone).
+    assert.equal(comp._project._items.filter((i) => /^MOE Template/.test(i.name)).length, 1, 'one new comp in the project (the measuring comp is gone)');
     assert.deepEqual([src.width, src.height, src.frameRate], [comp.width, comp.height, comp.frameRate]);
     // inside: every part, parented to the null
     const nul = src._layers.find((l) => l.name === 'MOE Template 1');
@@ -44,7 +46,8 @@ test('a template is ONE layer in your comp — its own comp, at the playhead —
     // Restore removes the layer AND its comp, in one step
     const e2 = env.undo.entries.length;
     assert.ok((await services.executor.restore(r2.checkpointId)).ok);
-    assert.equal(comp._layers.length, 1); assert.equal(comp._project._items.length, items0 + 1);
+    assert.equal(comp._layers.length, 1);
+    assert.equal(comp._project._items.filter((i) => /^MOE Template/.test(i.name)).length, 1, 'the first template comp is still the only one');
     assert.deepEqual(env.undo.entries.slice(e2), ['MOE: Restore Template']);
   }
 });

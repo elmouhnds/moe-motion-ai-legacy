@@ -93,7 +93,7 @@
                         out.push({ layerId: L.id, name: L.name, boxes: boxes });
                     }
                 } finally {
-                    if (probe) { try { probe.remove(); } catch (eRemove) { /* reported via layer count */ } }
+                    U.dropProbe(probe);
                 }
                 return { compId: comp.id, times: times, layers: out, layerCountBefore: before, layerCountAfter: comp.numLayers };
             }); });
@@ -384,12 +384,17 @@
         mutates: true,
         run: function (args) {
             return U.withUndo('MOE: Remove Adapted Comps', function () {
-                var removed = [], i, c;
+                var removed = [], i, j, c, srcs;
                 for (i = args.ids.length - 1; i >= 0; i--) {
                     try { c = compAny(args.ids[i]); } catch (e) { continue; }
                     if (args.nameContains && String(c.name).search(args.nameContains) < 0 && c.name !== args.nameContains) { continue; }
                     removed.push(c.name);
+                    /* v0.99.5: removing a MOE pre-comp left the solids ITS layers used orphaned in the project
+                       ("MOE FX Noise / Ramp / Wipe" piled up in the owner's Solids folder). Take MOE's own ones
+                       with it when nothing else uses them (U.dropSource guards the name and usedIn). */
+                    srcs = U.sourcesOf(c);
                     c.remove();
+                    for (j = 0; j < srcs.length; j++) { U.dropSource(srcs[j]); }
                 }
                 return { removed: removed };
             });

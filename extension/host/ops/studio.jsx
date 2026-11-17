@@ -167,14 +167,20 @@
         run: function (args) {
             var comp = U.compById(args.compId);
             return U.withUndo('MOE: Remove Layer', function () {
-                var removed = [], i, L;
+                var removed = [], dropped = [], i, L, src;
                 for (i = 0; i < args.layerIds.length; i++) {
                     L = U.findLayer(comp, { layerId: args.layerIds[i] });
                     if (args.onlyNamed && L.name.substring(0, args.onlyNamed.length) !== args.onlyNamed) { continue; }
                     removed.push(L.name);
+                    /* v0.99.5: a solid layer keeps a SOLID of its own in the project; removing the layer left it
+                       behind, so the owner's Solids folder filled with "MOE FX Noise / Ramp / Wipe" and "Null N".
+                       Take MOE's own source with the layer when nothing else uses it (U.dropSource guards both). */
+                    src = null;
+                    try { src = L.source; } catch (eSrc) { src = null; }
                     L.remove();
+                    if (U.dropSource(src)) { dropped.push(String(src.name)); }
                 }
-                return { removed: removed };
+                return { removed: removed, droppedSources: dropped };
             });
         }
     };

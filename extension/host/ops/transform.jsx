@@ -206,7 +206,7 @@
             if (fx.expressionError) { U.fail('PROBE_FAILED', String(fx.expressionError)); }
             v = plain(fx.valueAtTime(t, false));
         } finally {
-            if (probe) { try { probe.remove(); } catch (eRemove) { /* checked below */ } }
+            U.dropProbe(probe);
             for (i = 0; i < sel.length; i++) { try { sel[i].selected = true; } catch (eSel) { /* layer gone */ } }
         }
         if (comp.numLayers !== before) { U.fail('PROBE_LEFT', 'The temporary probe layer could not be removed.'); }

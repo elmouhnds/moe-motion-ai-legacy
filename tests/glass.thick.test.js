@@ -134,7 +134,9 @@ test('Thick Glass: restore removes every layer and the map comp, shows the sourc
   const before = project._items.length;
   const r = await services.executor.run('glass.thick', { look: 'chrome' });
   assert.equal(r.status, 'success');
-  assert.equal(project._items.length, before + 1);
+  // v0.99.5: After Effects also keeps a SOLID in the project for every solid layer the map comp holds, so the
+  // run adds its map comp AND those. What matters is that the map comp is there and that restore clears it all.
+  assert.equal(project._items.filter((i) => /Map$/.test(i.name)).length, 1, 'the map comp is in the project');
   assert.ok((await services.executor.restore(r.checkpointId)).ok);
   assert.deepEqual(comp._layers.map((l) => l.name), ['Logo', 'Photo']);
   assert.equal(named(comp, 'Logo').enabled, true);
