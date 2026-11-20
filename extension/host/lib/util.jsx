@@ -186,6 +186,18 @@
      */
     /* v0.99.1 (Tile Test, After Effects 26.5: 'Unable to set "label". MOE: Carousel is not an integer'): Layer.label is
        a label colour 0..16; anything else is ignored, never written. */
+    /* v1.0 (review): a solid made inside a "MOE Self-Test" comp is remembered by its project item id, so the test's
+       cleanup removes exactly the solids it made - never by name across the user's project. */
+    U.noteTestSolid = function (comp, layer) {
+        try {
+            if (!comp || String(comp.name).substring(0, 13) !== 'MOE Self-Test' || !layer || !layer.source) { return; }
+            if (!MOE.stSolids) { MOE.stSolids = {}; }
+            var k = String(comp.id);
+            if (!(MOE.stSolids[k] instanceof Array)) { MOE.stSolids[k] = []; }
+            MOE.stSolids[k].push(layer.source.id);
+        } catch (eN) { /* bookkeeping only */ }
+    };
+
     U.isLabel = function (v) { return typeof v === 'number' && v >= 0 && v <= 16 && Math.floor(v) === v; };
 
     /* v0.99.5 (read in After Effects 26.5.3 by hand: Layer > New > Null Object with three layers selected left

@@ -142,7 +142,7 @@ async function saveBuild(app, kit) {
   if (!made.ok) { app.toast(made.error, 3200, 'warn'); return null; }
   setMine(app, kit.id, mine.concat(made.recipe));
   app.state.set({ kitBuild: null });
-  app.toast(`Saved “${made.recipe.label}” — it runs in one click, one Ctrl+Z`, 3000, 'ok');
+  app.toast(`Saved “${made.recipe.label}” — it runs in one click, one Ctrl+Z per step`, 3000, 'ok');
   return made.recipe;
 }
 async function removeMine(app, kit, rec) {
@@ -175,7 +175,7 @@ async function runRecipe(app, kit, rec) {
   // v0.78: everything that can be known is checked first — a recipe that cannot finish does not start
   const pc = precheck(app, rec);
   if (!pc.ok) { app.toast(`${rec.label} needs ${pc.block.label}: ${pc.block.hint} (step ${pc.block.at + 1}) — nothing was changed`, 6000, 'warn'); return { done, stopped: pc.block.label }; }
-  const before = () => (done.length ? ` — done before it: ${done.join(', ')} (one Ctrl+Z undoes them)` : '');
+  const before = () => (done.length ? ` — done before it: ${done.join(', ')} (one Ctrl+Z per step undoes them)` : '');
   /* v0.99.5 (manual test, After Effects 26.5.3 — docs/handoff/reports/MANUAL_01_motion_control.md):
      After Effects SELECTS a layer a tool adds and deselects the rest. precheck() above checked every step
      against the selection as it is NOW, so a step that adds a null (an effector, a cloner's grid) used to
@@ -212,7 +212,7 @@ async function runRecipe(app, kit, rec) {
   const ex = app.services.executor;
   const out = ex && ex.batch && rec.refs.length > 1 ? await ex.batch(`MOE: ${rec.label}`, go) : await go();
   if (ran.length) mark(app, kit.id, ran);
-  if (out && !out.stopped) app.toast(`${rec.label}: ${done.join(' → ')} — one Ctrl+Z undoes it all`, 3600, 'ok');
+  if (out && !out.stopped) app.toast(`${rec.label}: ${done.join(' → ')} — one Ctrl+Z per step undoes it`, 3600, 'ok');
   return out;
 }
 

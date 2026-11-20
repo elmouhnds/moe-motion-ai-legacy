@@ -230,20 +230,26 @@ async function runTiles(services, tiles, opts = {}) {
           // passed a moment earlier, and by hand ONE Ctrl+Z took each of these tools back. (A press can also change
           // nothing because the step it undid wrote nothing.) Either way the rule was not measured here, so the
           // report says that instead of blaming the tool.
-          if (u.changed === false) {
-            // a refused press is retried in FRESH host calls (inside one call it never lands: measured 4 in a row)
-            undo.refused = (undo.refused || 0) + 1;
-            if (undo.refused <= 3) { await host.call('selftest.pushUndoLabel', { label: u.label }); continue; }
-            undo.stuck = true; undo.menuText = u.menu; undo.labels.push(`${u.label} (the press changed nothing; Edit menu matched "${u.menu}")`); break;
-          }
+          // v1.0 (review): EVERY press counts — a press that changed no layer may still have undone a values-only group
+          // of the same tool (the census cannot see values), so it is never retried for free. Presses that changed
+          // nothing are counted apart: if no press changed anything, After Effects ignored Edit > Undo and the rule was
+          // not measured; if the tool came back only after such a press, the count is reported as uncertain.
           undo.presses++; undo.labels.push(u.label); undo.menuText = u.menu;
+          if (u.changed === false) {
+            undo.unchanged = (undo.unchanged || 0) + 1;
+          }
           now = await host.call('selftest.census', { compId: begin.compId });
         }
         undo.back = same(base, now);
+        // no press changed anything: After Effects ignored Edit > Undo — the rule was not measured (never blamed on the tool)
+        if (!undo.back && undo.presses && undo.unchanged === undo.presses) { undo.stuck = true; undo.labels.push(`(${undo.presses} press${undo.presses === 1 ? '' : 'es'} changed nothing; Edit menu matched "${undo.menuText}")`); }
         row.undo = undo;
         if (undo.back) {
-          row.status = undo.presses <= 1 ? 'pass' : 'fail';
-          row.detail = undo.presses <= 1 ? `${run.summary || 'done'} · ${undo.presses ? 'one Ctrl+Z took it all back' : 'changed no layer'}` : `needs ${undo.presses} Ctrl+Z (${undo.labels.join(' › ')})`;
+          if (undo.presses > 1 && undo.unchanged) { undo.uncertain = true; row.status = 'pass'; row.detail = `${run.summary || 'done'} · Undo not measured: back after ${undo.presses} presses, ${undo.unchanged} of which changed nothing (After Effects may have ignored them, or they undid values)`; }
+          else {
+            row.status = undo.presses <= 1 ? 'pass' : 'fail';
+            row.detail = undo.presses <= 1 ? `${run.summary || 'done'} · ${undo.presses ? 'one Ctrl+Z took it all back' : 'changed no layer'}` : `needs ${undo.presses} Ctrl+Z (${undo.labels.join(' › ')})`;
+          }
         } else if (!undo.menu || undo.stuck) {
           row.status = 'pass';
           row.detail = `${run.summary || 'done'} · Undo not checked (${undo.stuck ? 'the Edit > Undo press changed nothing' : 'this host has no Edit > Undo by name'})`;
@@ -269,7 +275,7 @@ async function runTiles(services, tiles, opts = {}) {
   report.ms = Date.now() - started;
   report.totals = ['pass', 'fail', 'skip'].reduce((o, k) => Object.assign(o, { [k]: report.tiles.filter((t) => t.status === k).length }), {});
   // how many tiles ran but could not have their undo measured (After Effects refused Edit > Undo) - never hidden
-  report.totals.undoUnchecked = report.tiles.filter((t) => t.undo && (t.undo.stuck || t.undo.menu === false)).length;
+  report.totals.undoUnchecked = report.tiles.filter((t) => t.undo && (t.undo.stuck || t.undo.uncertain || t.undo.menu === false)).length;
   return report;
 }
 

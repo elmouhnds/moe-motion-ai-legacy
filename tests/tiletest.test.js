@@ -80,8 +80,26 @@ test('v0.99.6: a real Edit > Undo is counted; an Undo After Effects refuses is r
   const row = r2.tiles[0];
   assert.equal(row.status, 'pass', row.detail);
   assert.equal(row.undo.stuck, true, 'the refused press is recorded as stuck');
-  assert.equal(row.undo.presses, 0, 'a press that changed nothing is not counted as a Ctrl+Z');
+  assert.ok(row.undo.presses >= 1 && row.undo.unchanged === row.undo.presses, 'every press is counted, and every one changed nothing');
   assert.match(row.detail, /Undo not checked \(the Edit > Undo press changed nothing\)/);
   assert.equal(r2.totals.undoUnchecked, 1, 'the report counts what could not be measured');
   assert.ok(!/did not bring it back/.test(row.detail), 'the tool is not blamed for After Effects refusing the Undo');
+});
+
+test('v1.0 (review): a press that changed no layer is still a Ctrl+Z — a two-group tool is never counted as one', async () => {
+  const TTm = require('../extension/features/selftest/tileRunner');
+  assert.ok(/undo\.presses\+\+; undo\.labels\.push\(u\.label\)/.test(require('fs').readFileSync(require.resolve('../extension/features/selftest/tileRunner'), 'utf8')), 'every press is counted');
+  assert.ok(!/pushUndoLabel', \{ label: u\.label \}\); continue;/.test(require('fs').readFileSync(require.resolve('../extension/features/selftest/tileRunner'), 'utf8')), 'no free retry of a press');
+  assert.ok(TTm);
+});
+
+test('v1.0 (review): the test cleanup never removes a user solid that only shares the "ST " prefix', async () => {
+  const h = await createTestServices([]);
+  const comp = h.sandbox.app.project.items.addComp('User comp', 1920, 1080, 1, 10, 25);
+  const L = comp.layers.addSolid([1, 0, 0], 'ST Logo', 100, 100, 1, 5);
+  const src = L.source; L.remove(); // the user's own unused "ST Logo" solid, sitting in the project
+  assert.ok(h.sandbox.app.project._items.includes(src));
+  const r = await TT.runTiles(h.services, pick(['mtIris']));
+  assert.equal(r.tiles.length, 1);
+  assert.ok(h.sandbox.app.project._items.includes(src), 'the user’s "ST Logo" solid is still in the project');
 });

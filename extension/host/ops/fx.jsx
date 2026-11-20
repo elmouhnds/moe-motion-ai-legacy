@@ -40,7 +40,7 @@
         run: function (args) {
             var comp = compOf(args);
             return U.withUndo('MOE: Adjustment Layer', function () {
-                var L = comp.layers.addSolid([1, 1, 1], args.name, comp.width, comp.height, comp.pixelAspect, comp.duration);
+                var L = comp.layers.addSolid([1, 1, 1], args.name, comp.width, comp.height, comp.pixelAspect, comp.duration); U.noteTestSolid(comp, L);
                 L.adjustmentLayer = true;
                 L.name = args.name;
                 place(comp, L, args);
@@ -56,7 +56,7 @@
             var comp = compOf(args);
             return U.withUndo('MOE: Solid', function () {
                 var c = args.color || [0, 0, 0];
-                var L = comp.layers.addSolid([num(c[0]), num(c[1]), num(c[2])], args.name, comp.width, comp.height, comp.pixelAspect, comp.duration);
+                var L = comp.layers.addSolid([num(c[0]), num(c[1]), num(c[2])], args.name, comp.width, comp.height, comp.pixelAspect, comp.duration); U.noteTestSolid(comp, L);
                 L.name = args.name;
                 place(comp, L, args);
                 return { layerId: L.id, index: L.index, name: L.name };

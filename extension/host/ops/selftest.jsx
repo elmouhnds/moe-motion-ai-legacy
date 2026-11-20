@@ -113,13 +113,12 @@
                 for (k = 1; k <= comp.numLayers; k++) { n.push(String(comp.layer(k).name)); }
                 return comp.numLayers + '|' + app.project.numItems + '|' + n.join(String.fromCharCode(10));
             };
-            var was = sig(), tries = 0, changed = false;
-            while (tries < 3 && !changed) {
-                tries += 1;
-                app.executeCommand(id);
-                changed = sig() !== was;
-            }
-            return { found: true, label: label, menu: how, changed: changed, attempts: tries };
+            /* v1.0 (review of the manual-test fixes): ONE press per call. Pressing again inside the call until the
+               signature changed counted a two-group tool as one Ctrl+Z (the first press undid a values-only group,
+               which the signature cannot see, the second the layers) - a false pass on the owner's rule. */
+            var was = sig();
+            app.executeCommand(id);
+            return { found: true, label: label, menu: how, changed: sig() !== was, attempts: 1 };
         }
     };
 
@@ -152,7 +151,7 @@
             if (!c || !(c instanceof CompItem) || String(c.name).substring(0, PREFIX.length) !== PREFIX) { U.fail('NOT_SELFTEST', 'Only the self-test comp.'); }
             if (list.length > 80) { U.fail('BAD_ARGS', 'At most 80 effects.'); }
             return U.withUndo('MOE: Host Profile', function () {
-                L = c.layers.addSolid([0.5, 0.5, 0.5], 'ST Profile', 64, 64, 1, 1);
+                L = c.layers.addSolid([0.5, 0.5, 0.5], 'ST Profile', 64, 64, 1, 1); U.noteTestSolid(c, L);
                 parade = L.property('ADBE Effect Parade');
                 try {
                     for (i = 0; i < list.length; i++) {
@@ -243,13 +242,16 @@
                        the scan above only sees layers still in the comp, so "ST Ramp", "ST Ball", "ST Wipe", ...
                        piled up in the project. "ST " is the Self-Test's own namespace (layers.remove is already
                        called with onlyNamed: 'ST '), so sweep the unused ones it left. */
-                    for (i = app.project.numItems; i >= 1; i--) {
+                    /* v1.0 (review): only the solids the Self-Test itself made in THIS test comp (their ids were
+                       recorded when made: MOE.stSolids) - never a scan of the user's project by name. */
+                    var mine = (MOE.stSolids && MOE.stSolids[String(args.compId)]) || [];
+                    for (i = 0; i < mine.length; i++) {
                         try {
-                            s = app.project.item(i);
-                            if (s && !(s instanceof CompItem) && s.mainSource && s.mainSource instanceof SolidSource
-                                && String(s.name).substring(0, 3) === 'ST ' && s.usedIn && s.usedIn.length === 0) { s.remove(); gone++; }
+                            s = itemById(mine[i]);
+                            if (s && !(s instanceof CompItem) && s.mainSource && s.mainSource instanceof SolidSource && s.usedIn && s.usedIn.length === 0) { s.remove(); gone++; }
                         } catch (eS2) { /* leave it rather than risk the user's project */ }
                     }
+                    if (MOE.stSolids) { MOE.stSolids[String(args.compId)] = null; }
                 }
                 if (args.previousId) {
                     prev = itemById(args.previousId);

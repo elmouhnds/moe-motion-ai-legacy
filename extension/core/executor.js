@@ -185,6 +185,12 @@ function createExecutor({ registry, host, store, logger, getSettings, services }
     try {
       const res = await tool.restore({ data: cp.data, host });
       if (tx) await closeTx();
+      // v1.0 (review): a restore that read the host and found it could not put things back says so — never "Restored"
+      if (res && res.ok === false) {
+        logger.warn('exec', 'restore incomplete', { code: 'RESTORE_INCOMPLETE', tool: cp.toolId, error: res.error });
+        record({ t: new Date().toISOString(), toolId: cp.toolId, toolName: `Restore: ${tool.name}`, origin: 'user', status: 'failed', summary: `Restore of “${cp.label}” incomplete: ${res.error || 'see Diagnostics'}` });
+        return { ok: false, errors: [res.error || 'Restore could not put everything back'], result: res };
+      }
       cp.restored = true;
       store.set('checkpoints', checkpoints);
       record({ t: new Date().toISOString(), toolId: cp.toolId, toolName: `Restore: ${tool.name}`, origin: 'user', status: 'success', summary: `Restored “${cp.label}”`, restoredCheckpoint: cp.id });
