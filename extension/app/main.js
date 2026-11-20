@@ -7,6 +7,8 @@ const { createServices } = require('../core/services');
 const { createApp } = require('./ui/shell');
 const theme = require('./ui/theme');
 
+const QUICK_EVENT = require('./quickLauncher').SHOW;
+
 async function start({ cs, root, platform, mount, ui, mode }) {
   const plat = platform || require('../core/platform/node').createNodePlatform();
   const services = createServices({ platform: plat, evalScript: (script, cb) => cs.evalScript(script, cb), rootPath: root });
@@ -23,6 +25,14 @@ async function start({ cs, root, platform, mount, ui, mode }) {
   app.boot();
   services.logger.info('app', `MOE Motion AI ${services.version} starting${mode === 'kit' ? ' (Motion Kit panel)' : ''}`, plat.info);
   await app.reconnect();
+  // v1.0 MOE Quick: the window IS the pie; a second "open" while it is up shows the pie again (CSXS event from the panels)
+  if (mode === 'quick') {
+    await app.showQuick();
+    if (cs.addEventListener) cs.addEventListener(QUICK_EVENT, () => { if (!require('./ui/pie').isOpen()) app.showQuick(); });
+    return app;
+  }
+  // v1.0: the main panel opens MOE Quick for the global shortcut and for the "MOE Quick" script (quickLauncher.js)
+  if (mode !== 'kit') require('./quickLauncher').attach(app, cs);
   // v0.99 Claude Test Bridge: back on after a reload the bridge itself was asked for (moe_deploy), never otherwise
   if (mode !== 'kit') {
     try {
@@ -33,4 +43,4 @@ async function start({ cs, root, platform, mount, ui, mode }) {
   return app;
 }
 
-module.exports = { start };
+module.exports = { start, QUICK_EVENT };

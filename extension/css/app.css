@@ -710,6 +710,39 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .pie-centre.hot { color: var(--accent); }
 .pie-c-l { max-width: 64px; font-size: 10px; font-weight: 600; color: var(--text); line-height: 1.15; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .pie-c-k { max-width: 64px; font-size: 9px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* v1.0 the centre is a search box (docs/features/QUICK_APPLY.md); ✕ cancels; typing turns the pie into a result list */
+.pie-centre { cursor: default; width: 92px; height: 92px; left: -46px; top: -46px; gap: 2px; }
+.pie-q-i { color: var(--text-3); line-height: 0; }
+.pie-q { width: 80px; height: var(--h-s); padding: 0 6px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg-raised); color: var(--text); font-size: 11px; text-align: center; }
+.pie-q:focus, .pie-q:focus-visible { outline: none; box-shadow: none; border-color: var(--accent); }
+.pie.searching .pie-q:focus, .pie.searching .pie-q:focus-visible { border: 0; box-shadow: none; }
+.pie-rep { display: inline-flex; align-items: center; gap: 3px; max-width: 84px; height: 20px; padding: 0 6px; border: 0; border-radius: 999px; background: none; color: var(--text-2); font-size: 9.5px; cursor: pointer; }
+.pie-rep span { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+.pie-rep:hover { color: var(--accent); }
+.pie-x { position: absolute; left: 96px; top: -126px; display: grid; place-items: center; width: var(--h-m); height: var(--h-m); border: 1px solid var(--line); border-radius: 50%; background: var(--bg-raised); color: var(--text-2); cursor: pointer; }
+.pie-x:hover { color: var(--text); border-color: var(--line-strong); }
+.pie-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pie-res { display: none; position: absolute; left: -150px; top: -96px; width: 300px; max-height: 236px; flex-direction: column; border: 1px solid var(--line-strong); border-radius: var(--r-lg); background: var(--bg-raised); overflow: hidden; }
+.pie.searching .pie-ring, .pie.searching .pie-slot, .pie.searching .pie-c-k, .pie.searching .pie-rep { display: none; }
+.pie.searching .pie-res { display: flex; }
+.pie.searching .pie-centre { left: -150px; top: -132px; width: 300px; height: 32px; flex-direction: row; padding: 0 8px; border: 1px solid var(--accent); border-radius: var(--r-lg); background: var(--bg-raised); }
+.pie.searching .pie-q { flex: 1; width: auto; border: 0; text-align: left; background: none; }
+.pie.searching .pie-x { left: 156px; top: -132px; }
+.pie-res-list { flex: 1; overflow-y: auto; padding: 4px; }
+.pie-res-item { display: grid; grid-template-columns: 16px 1fr auto; grid-template-rows: auto auto; column-gap: 8px; align-items: center; padding: 4px 6px; border-radius: var(--r); cursor: pointer; }
+.pie-res-item .svg-i { grid-row: 1 / 3; color: var(--text-3); }
+.pie-res-item .pn { font-size: 11.5px; color: var(--text); }
+.pie-res-item .pd { grid-column: 2; font-size: 10px; color: var(--text-3); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+.pie-res-item .ws { grid-row: 1 / 3; grid-column: 3; font-size: 10px; color: var(--text-3); }
+.pie-res-item[aria-selected="true"] { background: var(--accent-soft); }
+.pie-res-item[aria-selected="true"] .svg-i { color: var(--accent); }
+.pie-res-empty { padding: 10px; font-size: 11px; color: var(--text-3); }
+.pie-res-foot { display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 5px 8px; border-top: 1px solid var(--line); font-size: 10px; color: var(--text-3); }
+.pie-res-foot b { color: var(--text-2); font-weight: 600; }
+/* the MOE Quick window: the pie alone, on the window's own background */
+.app-quick, body.quick { background: var(--bg); }
+.pie.standalone ~ * { display: none; }
+.overlay.pie-ov.quick { background: none; }
 @media (prefers-reduced-motion: no-preference) { .pie { animation: pie-in 90ms ease-out; } }
 @keyframes pie-in { from { opacity: 0; } to { opacity: 1; } }
 /* Home: suggestions for the current selection */

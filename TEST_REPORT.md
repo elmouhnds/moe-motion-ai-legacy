@@ -1,5 +1,14 @@
 # Test Report
 
+## 1.0.0 (2026-11-20) — what changed since the full Tile Test below, and where it ran
+- The fixes below are in 1.0.0, plus three from the review of those branches (undo counting, honest Restore,
+  Self-Test cleanup) — **mock only** (`npm run check`: 677 / 677).
+- **Quick Apply (the pie's search) and MOE Quick (the window over After Effects) are NOT verified in After Effects.**
+  Mock tests only (`tests/quickapply.test.js`, the pie tests in `tests/workflow.test.js`) and the UI audits in the
+  web preview. To verify by hand: `docs/handoff/AE_RETEST_1.0.md`.
+- After the review fix, the Tile Test now counts every Undo press; the 352 below was counted with the old rule (a
+  refused press retried for free), so its "one Ctrl+Z" numbers must be read again on 1.0.
+
 ## Full Tile Test in After Effects 26.5.3 after the manual-test session (v0.99.5 + the fixes on `manual-test/0…11`)
 
 **352 pass · 1 fail · 0 skip · 220 undo not measured · 1765 s**, all 353 tiles, run through the Claude Test Bridge

@@ -79,6 +79,7 @@ function createApp(root, services, env = {}) {
     const fk = active && active.getAttribute && active.getAttribute('data-fk');
     const kept = fk ? { fk, value: active.value, a: active.selectionStart, b: active.selectionEnd } : null;
     if (env.mode === 'kit') return renderKitPanel(s);
+    if (env.mode === 'quick') return renderQuickPanel(s);
     // v0.29: three styles only (Bento, Glass, MOE) — the Sidebar layout and the other retired ones are gone
     return renderLayout(s, require('./layouts').layoutOf(app), kept);
   };
@@ -291,6 +292,28 @@ function createApp(root, services, env = {}) {
     if (c2) c2.scrollTop = top;
     if (!app._densityPending) { app._densityPending = true; setTimeout(() => { app._densityPending = false; app.applyDensity(); }, 0); }
   }
+
+  /* v1.0 MOE Quick (docs/features/QUICK_APPLY.md): a floating window over After Effects that is only the pie and its
+     search. It opens with the pie in the middle; running something or cancelling closes the window. */
+  function renderQuickPanel(s) {
+    const appEl = h('div', { class: 'app app-quick' },
+      s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, h('span', {}, s.toast)) : null);
+    if (root.firstChild && root.firstChild.classList && root.firstChild.classList.contains('app')) morph(root.firstChild, appEl);
+    else { clear(root); root.appendChild(appEl); }
+  }
+  app.showQuick = async () => {
+    try { await app.refreshContext(true); } catch (_) { /* the pie explains what is missing */ }
+    // the window closes when what was picked has FINISHED (closing it would stop its run) — at once after a cancel
+    const close = () => {
+      const started = Date.now();
+      const tick = () => {
+        if ((services.executor.running || Date.now() - started < 400) && Date.now() - started < 600000) { setTimeout(tick, 250); return; }
+        setTimeout(() => { try { if (env.cs && env.cs.closeExtension) env.cs.closeExtension(); } catch (_) { /* preview */ } }, 900);
+      };
+      tick();
+    };
+    require('./pie').open(app, 0, 0, { standalone: true, onClose: close });
+  };
 
   /* ---------- host / context ---------- */
   let ctxInFlight = null;

@@ -47,7 +47,7 @@ function walk(dir) {
 }
 
 let failed = 0;
-for (const file of walk(HOST)) {
+for (const file of [...walk(HOST), ...walk(path.resolve(__dirname, '../extension/scripts'))]) {
   const src = fs.readFileSync(file, 'utf8');
   const rel = path.relative(process.cwd(), file);
   let ast;

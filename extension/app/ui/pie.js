@@ -4,7 +4,8 @@
  *
  *   Hold Q  (or hold the right mouse button) → point toward a slice → release = run it.
  *   Tap Q / the header button                → the pie stays open: click a slice, or press 1–8.
- *   Centre                                   → repeat the last change (F4); Esc or a click outside closes.
+ *   Centre (v1.0)                             → a search box: MOE tools + After Effects effects, presets, commands.
+ *   ✕, Esc or a click outside                → cancel; releasing on no slice keeps it open — nothing is forced.
  *
  * The slices come from actions.slotsFor(): the smart set for what is selected (keyframes, text,
  * shapes, one layer, several layers, nothing) or the user's own pie (Settings › Pie menu).
@@ -16,6 +17,7 @@ const actions = require('./actions');
 
 const R = 86;          // slice centres from the pie centre
 const DEAD = 22;       // centre zone: no slice
+const HOLE = 46;       // v1.0: the centre disc that holds the search box
 const OUTER = R + 58;  // a click further out closes the pie
 const SVGNS = 'http://www.w3.org/2000/svg';
 
@@ -45,9 +47,15 @@ function close() {
 /**
  * Open the pie centred near (clientX, clientY).
  * hold: 'key' (released with Q up) | 'mouse' (released with the right button) | null (click mode).
+ * onClose: called once when the pie goes away (the MOE Quick window closes itself with it).
+ *
+ * v1.0 (the owner): the CENTRE is a search box — type a tool, a preset, an After Effects effect, an animation preset or
+ * a menu command and run it, like FX Console (quickSearch.js). Nothing is forced: releasing in the centre (or on no
+ * slice) keeps the pie open to type in, and ✕ / Esc / a click outside cancel without running anything.
  */
-function open(app, clientX, clientY, { hold = null } = {}) {
+function open(app, clientX, clientY, { hold = null, onClose = null, standalone = false } = {}) {
   close();
+  const QS = require('./quickSearch');
   const s = app.state.get();
   const pieSet = app.services.settings.get().ui.pie || {};
   const refs = actions.slotsFor(s.ctx, pieSet);
@@ -58,14 +66,16 @@ function open(app, clientX, clientY, { hold = null } = {}) {
   let hi = -2; // -2 = nothing yet, -1 = centre
   const opened = Date.now();
   let moved = false;
+  let found = [], sel = 0;
 
-  // v0.99.5 (manual test): the centre used to read "Repeat <name>", which does not fit its 64 px / two lines —
-  // After Effects showed "Repeat / Anchor Top…", a CUT NAME (docs/features/NO_CUT_NAMES.md) that also hid WHICH
-  // anchor would be repeated. The repeat arrow above it already says "repeat", so the centre shows the name only
-  // (the same text a hovered slot puts there, pie.js below), and the full sentence stays in the tooltip + aria.
-  const centreLabel = h('span', { class: 'pie-c-l' }, last ? last.label : 'Close');
+  const input = h('input', { class: 'pie-q', type: 'text', placeholder: 'Search…', spellcheck: 'false', 'aria-label': 'Search MOE tools, After Effects effects, presets and commands', 'data-fresh': '' });
   const centreCtx = h('span', { class: 'pie-c-k' }, ctxName);
-  const centre = h('button', { class: 'pie-centre', title: last ? `Repeat ${last.label}` : 'Close the pie', 'aria-label': last ? `Repeat ${last.label}` : 'Close the pie', onclick: () => choose(-1) }, icon(last ? 'repeat' : 'x', 'sm'), centreLabel, centreCtx);
+  const rep = last ? h('button', { class: 'pie-rep', title: `Repeat ${last.label} (F4)`, 'aria-label': `Repeat ${last.label}`, onclick: () => { close(); app.repeatLast(); } }, icon('repeat', 'xs'), h('span', {}, last.label)) : null;
+  const centre = h('div', { class: 'pie-centre' }, h('span', { class: 'pie-q-i' }, icon('search', 'xs')), input, centreCtx, rep);
+  const cancel = h('button', { class: 'pie-x', title: 'Cancel — nothing runs (Esc)', 'aria-label': 'Cancel', onclick: () => close() }, icon('x', 'sm'));
+  const list = h('div', { class: 'pie-res-list', role: 'listbox' });
+  const res = h('div', { class: 'pie-res' }, list, h('div', { class: 'pie-res-foot' },
+    h('span', {}, h('b', {}, 'Enter'), ' run'), h('span', {}, h('b', {}, 'Ctrl+Enter'), ' effect on a new adjustment layer'), h('span', {}, h('b', {}, 'Esc'), ' cancel')));
 
   // Background ring + highlight sector (updated by setAttribute, no re-render).
   const svg = document.createElementNS(SVGNS, 'svg');
@@ -75,7 +85,7 @@ function open(app, clientX, clientY, { hold = null } = {}) {
   const ring = document.createElementNS(SVGNS, 'circle');
   ring.setAttribute('r', String(R + 34)); ring.setAttribute('class', 'pie-disc');
   const hole = document.createElementNS(SVGNS, 'circle');
-  hole.setAttribute('r', String(DEAD + 14)); hole.setAttribute('class', 'pie-hole');
+  hole.setAttribute('r', String(HOLE)); hole.setAttribute('class', 'pie-hole');
   const hl = document.createElementNS(SVGNS, 'path');
   hl.setAttribute('class', 'pie-hl');
   svg.appendChild(ring); svg.appendChild(hl); svg.appendChild(hole);
@@ -92,66 +102,101 @@ function open(app, clientX, clientY, { hold = null } = {}) {
     return b;
   });
 
-  const pie = h('div', { class: 'pie', role: 'menu', 'aria-label': `Pie menu · ${ctxName}` }, svg, buttons, centre);
+  const pie = h('div', { class: `pie${standalone ? ' standalone' : ''}`, role: 'menu', 'aria-label': `Pie menu · ${ctxName}` }, svg, buttons, centre, cancel, res);
   const overlay = h('div', { class: 'overlay pie-ov', 'data-fresh': '' }, pie);
   document.body.appendChild(overlay);
   // Coordinates relative to the overlay (it is the panel window in AE; a frame in the web preview).
   const box = overlay.getBoundingClientRect();
   const m = OUTER - 20;
-  const cx = Math.min(Math.max(clientX - box.left, m), Math.max(m, box.width - m));
-  const cy = Math.min(Math.max(clientY - box.top, m), Math.max(m, box.height - m));
+  const cx = standalone ? box.width / 2 : Math.min(Math.max(clientX - box.left, m), Math.max(m, box.width - m));
+  const cy = standalone ? box.height / 2 : Math.min(Math.max(clientY - box.top, m), Math.max(m, box.height - m));
   pie.style.left = `${cx}px`;
   pie.style.top = `${cy}px`;
   const centreAbs = () => { const r = overlay.getBoundingClientRect(); return { x: r.left + cx, y: r.top + cy }; };
+  const searching = () => input.value.trim().length > 0;
 
   function highlight(i) {
     if (i === hi) return;
     hi = i;
     buttons.forEach((b, k) => b.classList.toggle('hot', k === i));
-    centre.classList.toggle('hot', i === -1);
-    if (i >= 0) { hl.setAttribute('d', sectorPath(i, DEAD + 14, R + 34)); hl.style.display = ''; } else hl.style.display = 'none';
+    if (i >= 0) { hl.setAttribute('d', sectorPath(i, HOLE, R + 34)); hl.style.display = ''; } else hl.style.display = 'none';
     const a = i >= 0 ? slots[i] : null;
-    centreLabel.textContent = a ? a.label : (last ? last.label : 'Close');
-    centreCtx.textContent = a ? (ready[i].ok ? a.where || ctxName : ready[i].hint) : ctxName;
+    centreCtx.textContent = a ? (ready[i].ok ? a.label : `${a.label} — ${ready[i].hint}`) : ctxName;
   }
   highlight(-1);
 
-  function choose(i) {
+  function drawResults() {
+    while (list.firstChild) list.removeChild(list.firstChild);
+    const q = input.value.trim();
+    pie.classList.toggle('searching', !!q);
+    if (!q) return;
+    const loading = !QS.catalogOf(app).ready();
+    if (!found.length) list.appendChild(h('div', { class: 'pie-res-empty' }, loading ? 'Reading After Effects’ effects and presets…' : 'Nothing matches — try other words'));
+    found.forEach((it, i) => list.appendChild(h('div', {
+      class: 'pie-res-item', role: 'option', 'aria-selected': String(i === sel),
+      onmouseenter: () => mark(i), onclick: (e) => runFound(i, e)
+    }, icon(it.icon || 'tools', 'sm'), h('span', { class: 'pn' }, it.name), h('span', { class: 'pd' }, it.desc || ''), h('span', { class: 'ws' }, it.ws || ''))));
+    if (loading && found.length) list.appendChild(h('div', { class: 'pie-res-empty' }, 'Still reading After Effects’ effects and presets…'));
+    const cur = list.children[sel];
+    if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
+  }
+  function mark(i) { sel = i; [...list.children].forEach((el, k) => el.setAttribute('aria-selected', String(k === sel))); }
+  function search() { found = QS.results(app, input.value); sel = 0; drawResults(); }
+  function runFound(i, e) {
+    const it = found[i];
+    if (!it) return;
     close();
-    if (i === -1) { if (last) app.repeatLast(); return; }
+    it.run({ adjustment: !!(e && (e.ctrlKey || e.metaKey)) });
+  }
+  input.addEventListener('input', search);
+  // the catalogue of After Effects is read once per session; when it arrives, refresh what is on screen
+  QS.catalogOf(app).get().then(() => { if (current && current.pie === pie && searching()) search(); }).catch(() => {});
+
+  function choose(i) {
     const a = slots[i];
+    close();
     if (!a) { app.toast('Empty slot — fill it in Settings › Pie menu', 3000, 'info'); return; }
     if (!ready[i].ok && !a.nav) { app.toast(`${a.label}: ${ready[i].hint}`, 4500, 'warn'); return; }
     a.run(app);
   }
 
   const onMove = (e) => {
+    if (searching()) return;
     const c = centreAbs();
     const dx = e.clientX - c.x, dy = e.clientY - c.y;
     if (Math.hypot(dx, dy) > 6) moved = true;
     highlight(sliceAt(dx, dy));
   };
   const onDown = (e) => {
+    if (pie.contains(e.target)) return;
     const c = centreAbs();
-    if (Math.hypot(e.clientX - c.x, e.clientY - c.y) > OUTER && !pie.contains(e.target)) { e.preventDefault(); close(); }
+    if (standalone || Math.hypot(e.clientX - c.x, e.clientY - c.y) > OUTER) { e.preventDefault(); close(); }
   };
   const release = () => {
-    // Marking-menu release: run what is under the pointer; a quick tap without moving keeps it open.
-    if (!moved && Date.now() - opened < 350) { hold = null; return; }
-    if (hi >= 0 || (hi === -1 && moved && last)) choose(hi); else close();
+    // Marking-menu release: a slice under the pointer runs; anywhere else the pie STAYS open to type in (never forced)
+    if (!moved && Date.now() - opened < 350) { hold = null; input.focus({ preventScroll: true }); return; }
+    if (hi >= 0) choose(hi); else { hold = null; highlight(-1); input.focus({ preventScroll: true }); }
   };
   const onUp = (e) => { if (hold === 'mouse' && e.button === 2) { e.preventDefault(); hold = null; release(); } };
   const onCtx = (e) => e.preventDefault();
   const onKeyDown = (e) => {
     if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+    if (hold === 'key' && e.key.toLowerCase() === 'q') { e.preventDefault(); return; } // the held Q repeats: never typed
+    if (searching()) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); mark(Math.min(found.length - 1, sel + 1)); const c = list.children[sel]; if (c && c.scrollIntoView) c.scrollIntoView({ block: 'nearest' }); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); mark(Math.max(0, sel - 1)); const c = list.children[sel]; if (c && c.scrollIntoView) c.scrollIntoView({ block: 'nearest' }); }
+      else if (e.key === 'Enter') { e.preventDefault(); runFound(sel, e); }
+      return;
+    }
     if (/^[1-8]$/.test(e.key)) { e.preventDefault(); choose(Number(e.key) - 1); return; }
-    if (e.key === 'Enter') { e.preventDefault(); choose(hi === -2 ? -1 : hi); return; }
+    if (e.key === 'Enter') { e.preventDefault(); if (hi >= 0) choose(hi); return; }
     const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
-    if (step) { e.preventDefault(); highlight(((hi < 0 ? (step > 0 ? -1 : 0) : hi) + step + 8) % 8); }
-    if (e.key.toLowerCase() === 'q') e.preventDefault();
+    if (step) { e.preventDefault(); highlight(((hi < 0 ? (step > 0 ? -1 : 0) : hi) + step + 8) % 8); return; }
+    // any other printable key starts a search (the box takes the focus before the character lands)
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && document.activeElement !== input) input.focus({ preventScroll: true });
   };
   const onKeyUp = (e) => { if (hold === 'key' && e.key.toLowerCase() === 'q') { e.preventDefault(); hold = null; release(); } };
-  const onBlur = () => close();
+  const onBlur = () => { if (!standalone) close(); };
 
   document.addEventListener('pointermove', onMove, true);
   document.addEventListener('pointerdown', onDown, true);
@@ -161,7 +206,7 @@ function open(app, clientX, clientY, { hold = null } = {}) {
   document.addEventListener('keyup', onKeyUp, true);
   window.addEventListener('blur', onBlur);
   current = {
-    overlay,
+    overlay, pie, input,
     cleanup() {
       document.removeEventListener('pointermove', onMove, true);
       document.removeEventListener('pointerdown', onDown, true);
@@ -172,12 +217,13 @@ function open(app, clientX, clientY, { hold = null } = {}) {
       document.removeEventListener('keyup', onKeyUp, true);
       window.removeEventListener('blur', onBlur);
       overlay.remove();
+      if (onClose) { try { onClose(); } catch (_) { /* the window may already be going */ } }
     }
   };
-  (hi === -1 ? centre : centre).focus({ preventScroll: true });
+  input.focus({ preventScroll: true });
   return current;
 }
 
 const isOpen = () => !!current;
 
-module.exports = { open, close, isOpen, sliceAt, sectorPath, R, DEAD };
+module.exports = { open, close, isOpen, sliceAt, sectorPath, R, DEAD, HOLE };

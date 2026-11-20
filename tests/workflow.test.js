@@ -155,7 +155,7 @@ test('pie geometry: centre dead zone, north = slice 0, clockwise, each slice 45�
   assert.match(pie.sectorPath(0, 30, 120), /^M .* A 120 120 0 0 1 .* Z$/);
 });
 
-test('pie: keys 1–8 run that slice through the readiness check; centre repeats; Esc closes', async () => {
+test('pie: keys 1–8 run that slice through the readiness check; the repeat chip repeats; Esc closes', async () => {
   const { app, runs, toasts } = await makeApp();
   app.services.settings.update({ ui: { pie: { mode: 'mine', mine: ['tile:animate/fadeIn', 'tile:animate/trimDraw'] } } });
   let repeated = 0;
@@ -173,10 +173,57 @@ test('pie: keys 1–8 run that slice through the readiness check; centre repeats
   assert.equal(toasts.at(-1).kind, 'warn');
   app.state.set({ last: { toolId: 'quick.animate', args: {}, label: 'Fade In' } });
   pie.open(app, 100, 100);
-  document.querySelector('.pie-centre').click();
+  document.querySelector('.pie-rep').click();
   assert.equal(repeated, 1);
   pie.open(app, 100, 100);
   key('Escape');
   assert.equal(pie.isOpen(), false);
   assert.equal(document.querySelectorAll('.pie-ov').length, 0, 'overlay removed');
+});
+
+
+test('pie (v1.0): ✕ cancels and runs nothing; releasing on no slice keeps it open to type in', async () => {
+  const { app, runs } = await makeApp();
+  pie.open(app, 100, 100);
+  document.querySelector('.pie-x').click();
+  assert.equal(pie.isOpen(), false);
+  assert.equal(runs.length, 0, 'cancel runs nothing');
+  // hold Q, move a little but stay in the centre, release: still open, the search box has the focus
+  pie.open(app, 100, 100, { hold: 'key' });
+  await new Promise((r) => setTimeout(r, 380));
+  { const ev = new window.MouseEvent('pointermove', { clientX: 132, clientY: 124, bubbles: true }) /* 8 px from the centre (jsdom has no layout: the pie sits at its 124 px margin) */; document.dispatchEvent(ev); }
+  document.dispatchEvent(new window.KeyboardEvent('keyup', { key: 'q', bubbles: true }));
+  assert.equal(pie.isOpen(), true, 'no forced choice');
+  assert.equal(document.activeElement, document.querySelector('.pie-q'));
+  assert.equal(runs.length, 0);
+  pie.close();
+});
+
+test('pie (v1.0): the centre searches After Effects effects; Enter applies to the selection, Ctrl+Enter on an adjustment layer', async () => {
+  const { app, runs } = await makeApp();
+  const QS = require('../extension/app/ui/quickSearch');
+  await QS.catalogOf(app).get();
+  assert.ok(QS.catalogOf(app).data.effects.length > 5, 'app.effects read');
+  const type = (txt) => { const q = document.querySelector('.pie-q'); q.value = txt; q.dispatchEvent(new window.Event('input', { bubbles: true })); };
+  const key = (k, o = {}) => document.dispatchEvent(new window.KeyboardEvent('keydown', Object.assign({ key: k, bubbles: true }, o)));
+  pie.open(app, 100, 100);
+  type('gaussian');
+  const first = document.querySelector('.pie-res-item .pn');
+  assert.ok(first, 'a result is shown');
+  assert.match(first.textContent, /Gaussian/i);
+  key('Enter');
+  await new Promise((r) => setTimeout(r, 60));
+  assert.equal(pie.isOpen(), false);
+  assert.equal(runs.at(-1).id, 'quick.applyEffect');
+  assert.equal(runs.at(-1).args.target, 'layers');
+  pie.open(app, 100, 100);
+  type('gaussian');
+  key('Enter', { ctrlKey: true });
+  await new Promise((r) => setTimeout(r, 60));
+  assert.equal(runs.at(-1).args.target, 'adjustment');
+  // MOE's own tools are in the same list
+  pie.open(app, 100, 100);
+  type('anchor');
+  assert.ok([...document.querySelectorAll('.pie-res-item .pn')].some((n) => /anchor/i.test(n.textContent)));
+  pie.close();
 });

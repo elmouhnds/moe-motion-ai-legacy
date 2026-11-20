@@ -2,6 +2,32 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [1.0.0] — 2026-11-20 — Tested by hand in After Effects, and the pie that searches After Effects
+- **Tested by hand, group by group, in After Effects 26.5.3** (a Claude session driving the owner's screen, reports in
+  `docs/handoff/reports/MANUAL_01…11`), then the full Tile Test through the Claude Test Bridge: **352 of 353 tiles run
+  without an error** (was 222 / 126 failing). The one failure is `layout/cloneSun` (60 clones in one host call — longer
+  than 300 s). 220 tiles could not have their Ctrl+Z measured by a script (After Effects sometimes ignores Edit › Undo
+  run from a script); the one-Ctrl+Z rule was checked by hand for them.
+- Fixed from that test: the Cloner / Grid / Effectors run again; Thick Glass runs (CC Glass Roughness is 0–0.5);
+  the Number Counter is one Ctrl+Z; Brand, Style Kits and the Assistant work; MOE no longer leaves solids in your
+  project; a measurement no longer takes your selection; recipes and the pie keep their subject and names; Matte FX
+  edges are soft again (the Edge softness reaches Gradient Wipe); Bake's Restore puts back the value under the
+  expression; the selection is re-read while the panel is visible.
+- **One holder per run** (the owner's rule): a tool that builds several layers leaves one comp or null that carries the
+  controls and moves the set — Glass and Click VFX first. Ready-made content (templates, Product UI) follows the comp it
+  is built in — width and height, so square and vertical comps get a smaller layout that fits instead of one that runs
+  off the frame.
+- **The pie's centre is a search box** (docs/features/QUICK_APPLY.md): type a MOE tool or preset, an After Effects
+  effect, an animation preset (.ffx from After Effects' Presets and your User Presets) or a menu command, and run it —
+  Enter on the selection, Ctrl+Enter puts an effect on a new adjustment layer. Nothing is forced: ✕, Esc or a click
+  outside cancels; releasing on no slice keeps the pie open to type in. The repeat of your last change is a small chip.
+- **MOE Quick, from anywhere in After Effects**: a small floating window that is the pie and its search. Open it with a
+  shortcut while you work in the timeline or the viewer (Windows, Settings › Pie menu, default Ctrl+Alt+Space — MOE
+  Motion AI must be open somewhere), from Window › Extensions › MOE Quick, or with the `MOE Quick.jsx` script.
+  NOT yet verified in After Effects.
+- From the review of the manual-test fixes: the Tile Test counts every Undo press (a two-step tool can no longer pass as
+  one Ctrl+Z); a Restore that could not put everything back says so; the Self-Test removes only the solids it made.
+
 ## [0.99.5] — 2026-11-15 — One slow call is one timeout, not a cascade; the full error list in the report
 - From the side session's third report (still on 0.99.0): a call "timed out at 30 s" yet After Effects worked on it for
   120 s — After Effects cannot interrupt a script — and the next four tiles "timed out" at `selftest.begin` behind it.

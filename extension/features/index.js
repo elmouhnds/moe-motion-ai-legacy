@@ -51,6 +51,7 @@ const markers = require('./markers/tools');
 const { delay } = require('./kit/delay');
 const scene = require('./scene/tools'); // v0.80 Scene Check: read the comp, measure scenes
 const retune = require('./retune/tools'); // v0.79 Tune After: retime, copy / paste motion
+const quickApply = require('./quickapply/tools'); // v1.0 Quick Apply: the pie's centre searches After Effects
 
 const TOOLS = [
   smartEase, stagger, proximity.apply, proximity.centerAnchor, proximity.remove,
@@ -70,7 +71,8 @@ const TOOLS = [
   curves.easeCurve, curves.pasteEase, transform.anchor, transform.align, transform.clone,
   kit.interp, kit.trimToKeys, kit.parent, kit.stare, kit.vignette, kit.trash, reader.removeRig, markers.beatMarkers, delay,
   retune.retime, retune.copyMotion, retune.pasteMotion,
-  scene.read, scene.measure
+  scene.read, scene.measure,
+  quickApply.applyEffect, quickApply.applyPreset, quickApply.runCommand
 ];
 
 function registerAll(registry) {

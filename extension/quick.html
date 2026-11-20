@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>MOE Quick</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="quick">
+  <div id="app" style="height:100%"></div>
+  <script src="lib/CSInterface.js"></script>
+  <script>
+    (function () {
+      var cs = new CSInterface();
+      var root = cs.getSystemPath(SystemPath.EXTENSION);
+      try {
+        require(root + '/app/main.js').start({ cs: cs, root: root, mode: 'quick' }).catch(function (e) { console.error(e); });
+      } catch (e) {
+        document.getElementById('app').innerHTML =
+          '<div class="notice err">MOE Motion AI could not start: ' + String(e && e.message).replace(/</g, '&lt;') +
+          '<br>Check that Node.js is enabled in the manifest (CEFCommandLine).</div>';
+      }
+    }());
+  </script>
+</body>
+</html>

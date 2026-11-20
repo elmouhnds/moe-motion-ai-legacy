@@ -1106,24 +1106,36 @@ function installAE(target, fixture, { readFile, evalCode }) {
     (fixture.otherComps || []).forEach((oc) => { const c = new CompItem(oc); c._project = project; project._items.push(c); if (oc.projectSelected) project.selection.push(c); });
     if (fixture.comp.projectSelected) project.selection.push(comp);
   }
+  // v1.0 Quick Apply: animation preset files the fixture says this machine has (After Effects' Presets + User Presets)
+  const presetFiles = new Set(((fixture && fixture.presetFiles) || []).map((x) => String(x)));
   class File {
-    constructor(p) { this.fsName = p; this.name = String(p).split('/').pop(); }
-    get exists() { try { readFile(this.fsName); return true; } catch (e) { return false; } }
+    constructor(p) { this.fsName = String(p).replace(/\\/g, '/'); this.name = String(p).split('/').pop(); }
+    get exists() { if (presetFiles.has(this.fsName)) return true; try { readFile(this.fsName); return true; } catch (e) { return false; } }
   }
   const app0 = {};
   // v0.96: a tiny in-memory file list for rendered previews (Folder.getFiles with a "name_*.jpg" mask, File.remove)
   const mockFiles = new Set();
   class Folder {
-    constructor(p) { this.fsName = String(p).replace(/\\/g, '/'); }
+    constructor(p) { this.fsName = String(p).replace(/\\/g, '/'); this.name = this.fsName.split('/').pop(); }
     get exists() { return true; }
     create() { return true; }
     execute() { (app0.opened = app0.opened || []).push(this.fsName); return true; }
     getFiles(mask) {
       const re = new RegExp('^' + String(mask || '*').replace(/[.]/g, '\\.').replace(/\*/g, '.*') + '$');
-      return [...mockFiles].filter((f) => f.slice(0, f.lastIndexOf('/')) === this.fsName && re.test(f.slice(f.lastIndexOf('/') + 1))).map((f) => { const x = new File(f); x.remove = () => mockFiles.delete(f); return x; });
+      const files = [...mockFiles].filter((f) => f.slice(0, f.lastIndexOf('/')) === this.fsName && re.test(f.slice(f.lastIndexOf('/') + 1))).map((f) => { const x = new File(f); x.remove = () => mockFiles.delete(f); return x; });
+      // the preset tree: direct child folders and files under this folder
+      const dirs = new Set(), here = [];
+      for (const f of presetFiles) {
+        if (f.slice(0, this.fsName.length + 1) !== `${this.fsName}/`) continue;
+        const rest = f.slice(this.fsName.length + 1), k = rest.indexOf('/');
+        if (k >= 0) dirs.add(rest.slice(0, k)); else if (re.test(rest)) here.push(new File(f));
+      }
+      return files.concat([...dirs].filter((d) => re.test(d)).map((d) => new Folder(`${this.fsName}/${d}`)), here);
     }
   }
   Folder.userData = new Folder('/mock/userData');
+  Folder.appPackage = new Folder('/mock/app/Support Files');
+  Folder.myDocuments = new Folder('/mock/docs');
   // v0.96: the Render Queue as rendered previews use it (items.add, timeSpan*, outputModule(1).setSettings / file, render)
   const RQItemStatus = { QUEUED: 2615, UNQUEUED: 2614, DONE: 2619 };
   const renderQueue = { _items: [], renders: [],
@@ -1181,6 +1193,9 @@ function installAE(target, fixture, { readFile, evalCode }) {
       findMenuCommandId(name) {
         const fixed = { 'Reveal Layer Source in Project': 2517, 'Convert Audio to Keyframes': 3065 }[name];
         if (fixed) return fixed;
+        // v1.0 Quick Apply: menu commands this fixture's After Effects has (ids 5000+, in the fixture's order)
+        const extra = ((fixture && fixture.menuCommands) || []).indexOf(name);
+        if (extra >= 0) return 5000 + extra;
         // After Effects finds Edit > Undo only by its CURRENT text, which carries the newest group's label
         const top = undo.menu && undo.stack.length ? undo.stack[undo.stack.length - 1].label : null;
         if (top && name === `Undo ${top}`) return UNDO_ID;
@@ -1188,6 +1203,7 @@ function installAE(target, fixture, { readFile, evalCode }) {
       },
       executeCommand(id) {
         (app0.commands = app0.commands || []).push(id);
+        if (id >= 5000 && fixture && fixture.menuCommands && fixture.menuCommands[id - 5000]) { (app0.ranCommands = app0.ranCommands || []).push(fixture.menuCommands[id - 5000]); return; }
         if (id === UNDO_ID) {
           if (undo.refuse) return;
           const e = undo.stack.pop();

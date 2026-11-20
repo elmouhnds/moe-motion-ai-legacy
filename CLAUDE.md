@@ -215,6 +215,16 @@ Permanent rules for anyone (human or AI) working in this repository.
 - After Effects hides some text-selector settings by context: write them through `setShown` (skip + name), never let one hidden setting fail a tool.
 - A tile "pass" means the tool ran without an error; correctness is the Self-Test's job (it compares After Effects' output with MOE's maths). Report them separately.
 - Never trust a mock that is more lenient than After Effects: every After Effects error found goes into `tests/mock/ae-mock.js` with its exact message, and a test fails on the old code.
+- (1.0, manual test) An expression on Gradient Wipe's Completion / Softness answers in PERCENT, while a script's setValue takes 0–1. CC Glass Roughness is 0–0.5. A newly made layer takes the selection — tools that measure with a temporary layer put the user's selection back.
+
+## Quick Apply + MOE Quick (v1.0, docs/features/QUICK_APPLY.md — the owner's rule)
+- The pie never forces a choice: ✕ / Esc / a click outside cancel, and a release on no slice keeps it open. Its centre
+  is the search box (MOE + After Effects) — never put an action back in the centre.
+- After Effects items run only through `quick.applyEffect` / `applyPreset` / `runCommand`: effects by a match name
+  `app.effects` lists, presets only from After Effects' own Presets / User Presets folders, menu commands found again by
+  NAME (never a numeric id from the panel; Undo / Redo refused). The catalogue offers only what this After Effects answers.
+- The global shortcut is a fixed script in `core/platform/hotkeyWin.js`, opt-out in Settings, acting only when After
+  Effects is in front. Never build its script from data.
 
 ## Testing rules
 - `npm run check` must pass before every commit (ES3 lint, contrast check, tests).

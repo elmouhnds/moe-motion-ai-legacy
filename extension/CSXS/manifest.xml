@@ -3,11 +3,12 @@
   MOE Motion AI — CEP 12 manifest for After Effects 2025 (AEFT 25.x).
   Version range [25.0,99.9] = AE 2025 and later builds that still ship CEP.
 -->
-<ExtensionManifest Version="12.0" ExtensionBundleId="tv.madtomato.moe.motionai" ExtensionBundleVersion="0.99.5" ExtensionBundleName="MOE Motion AI"
+<ExtensionManifest Version="12.0" ExtensionBundleId="tv.madtomato.moe.motionai" ExtensionBundleVersion="1.0.0" ExtensionBundleName="MOE Motion AI"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ExtensionList>
-    <Extension Id="tv.madtomato.moe.motionai.panel" Version="0.99.5" />
-    <Extension Id="tv.madtomato.moe.motionai.kit" Version="0.99.5" />
+    <Extension Id="tv.madtomato.moe.motionai.panel" Version="1.0.0" />
+    <Extension Id="tv.madtomato.moe.motionai.kit" Version="1.0.0" />
+    <Extension Id="tv.madtomato.moe.motionai.quick" Version="1.0.0" />
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>
@@ -76,6 +77,31 @@
             <Size><Height>640</Height><Width>280</Width></Size>
             <MinSize><Height>240</Height><Width>220</Width></MinSize>
             <MaxSize><Height>2000</Height><Width>900</Width></MaxSize>
+          </Geometry>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+    <!-- v1.0 MOE Quick: the pie and its search (MOE tools + After Effects effects, presets, commands) in a small
+         floating window over After Effects, opened by the global shortcut, the "MOE Quick" script or this menu. -->
+    <Extension Id="tv.madtomato.moe.motionai.quick">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./quick.html</MainPath>
+          <CEFCommandLine>
+            <Parameter>--enable-nodejs</Parameter>
+            <Parameter>--mixed-context</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>true</AutoVisible>
+        </Lifecycle>
+        <UI>
+          <Type>Modeless</Type>
+          <Menu>MOE Quick</Menu>
+          <Geometry>
+            <Size><Height>420</Height><Width>420</Width></Size>
+            <MinSize><Height>360</Height><Width>360</Width></MinSize>
+            <MaxSize><Height>800</Height><Width>800</Width></MaxSize>
           </Geometry>
         </UI>
       </DispatchInfo>
