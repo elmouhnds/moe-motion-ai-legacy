@@ -1,5 +1,9 @@
 # Test Report
 
+## 1.0.1 (2026-11-20)
+- The one tile that failed in the full Tile Test, `layout/cloneSun`, is removed at the owner's request (saved refs
+  migrate to `layout/cloneGrid`). Mock only.
+
 ## 1.0.0 (2026-11-20) — what changed since the full Tile Test below, and where it ran
 - The fixes below are in 1.0.0, plus three from the review of those branches (undo counting, honest Restore,
   Self-Test cleanup) — **mock only** (`npm run check`: 677 / 677).

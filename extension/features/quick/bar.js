@@ -129,6 +129,8 @@ const MIGRATE = {
   .forEach((p) => { MIGRATE[`x_${p}`] = `tile:expressions/x-${p}`; });
 // …and the other way: four "Motion presets" tiles were copies of Kit actions (keyframe tools, not presets)
 Object.assign(MIGRATE, { 'tile:animate/easeGentle': 'k_easy', 'tile:animate/stagger': 'k_stagger', 'tile:animate/reverse': 'reverse', 'tile:animate/mirror': 'mirror' });
+// 1.0.1 (the owner): Clone Sunflower removed - 60 clones in one call ran longer than After Effects allows; saved refs go to Clone Grid
+MIGRATE['tile:layout/cloneSun'] = 'tile:layout/cloneGrid';
 const migrate = (id) => MIGRATE[id] || id;
 
 // v0.28 (docs/features/WORKFLOW_HOME.md): ordered by how often a motion designer needs it, not by menu.

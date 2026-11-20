@@ -143,7 +143,6 @@ const LAYOUT = [
   T('cloneRow', 'Clone Row', 'grid.build', { mode: 'rect', clones: 8, columns: 8 }, { k: 'grid', mode: 'rect', clone: true, row: true }, ['Clone']),
   T('cloneRing', 'Clone Ring', 'grid.build', { mode: 'radial', clones: 12, arc: 360, orient: '2' }, { k: 'grid', mode: 'radial', clone: true }, ['Clone']),
   T('cloneSpiral', 'Clone Spiral', 'grid.build', { mode: 'spiral', clones: 24, orient: '2' }, { k: 'grid', mode: 'spiral', clone: true }, ['Clone']),
-  T('cloneSun', 'Clone Sunflower', 'grid.build', { mode: 'phyllo', clones: 60, animateIn: true, buildStyle: '1', buildOrder: '3' }, { k: 'grid', mode: 'phyllo', clone: true, build: true }, ['Clone']),
   T('cloneGlobe', 'Clone Globe', 'grid.build', { mode: 'sphere', clones: 50 }, { k: 'grid', mode: 'sphere', clone: true }, ['Clone']),
   // v0.34 Clone Colours: a palette over the items (live on the grid null; effectors with Colour Mix tint them)
   T('colCycle', 'Colour Cycle', 'grid.colour', { mode: 'cycle', palette: 'tomato' }, { k: 'cloneCol', mode: 1 }, ['Clone']),

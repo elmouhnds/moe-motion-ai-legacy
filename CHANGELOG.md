@@ -2,6 +2,12 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [1.0.1] — 2026-11-20 — Clone Sunflower removed
+- The owner: Clone Sunflower (Layout & Grid) is gone. It was the one tile that failed in After Effects: 60 clones with
+  an animated build-in in ONE host call ran past 300 s, and After Effects cannot stop a script. A Quick Bar button, pin
+  or pie slot that pointed to it now opens Clone Grid. The Sunflower layout itself stays in the Cloner's own menu
+  (the menu index is stored in After Effects), with the number of clones you choose.
+
 ## [1.0.0] — 2026-11-20 — Tested by hand in After Effects, and the pie that searches After Effects
 - **Tested by hand, group by group, in After Effects 26.5.3** (a Claude session driving the owner's screen, reports in
   `docs/handoff/reports/MANUAL_01…11`), then the full Tile Test through the Claude Test Bridge: **352 of 353 tiles run
