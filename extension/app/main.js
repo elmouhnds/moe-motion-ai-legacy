@@ -40,6 +40,20 @@ async function start({ cs, root, platform, mount, ui, mode }) {
      * page cannot make itself see-through, cannot resize and cannot place itself at the pointer. What is ours is
      * the manifest's size (330 x 344, hugging the wheel) and what is drawn inside.
      */
+    /* v1.0.2: nothing around the tools (the owner). The frame and the title bar come off in hotkeyWin.js; the
+       window's own rectangle goes here - the pie measures what it drew and the helper clips the window to it
+       (core/platform/shapeWin.js). Only while the wheel is bare: with its frame on, the window keeps its shape. */
+    const bare = ((services.settings.get().ui.pie || {}).bare) !== false;
+    let shaper = null;
+    try {
+      shaper = require('../core/platform/shapeWin').start({
+        spawn: require('child_process').spawn,
+        onState: (st) => services.logger.info('quick', `window shape ${st.on ? 'on' : 'off'}${st.line ? `: ${st.line}` : ''}${st.reason ? `: ${st.reason}` : ''}`)
+      });
+      if (bare) app.quickShape = (parts) => shaper.set(parts);
+      else shaper.clear();  // it may still be wearing the shape of an earlier, bare, run
+      if (typeof window !== 'undefined') window.addEventListener('beforeunload', () => shaper.stop());
+    } catch (e) { services.logger.warn('quick', 'the window keeps its rectangle', { message: e.message }); }
     const QL = require('./quickLauncher');
     const handed = () => { try { const h = services.store.get(QL.QUICK_CTX, null); return h && Date.now() - h.at < 60000 ? h.ctx : null; } catch (_) { return null; } };
     const show = () => { const c = handed(); if (c) app.state.set({ ctx: c }); app.showQuick(); };

@@ -58,7 +58,7 @@ function close() {
  * a menu command and run it, like FX Console (quickSearch.js). Nothing is forced: releasing in the centre (or on no
  * slice) keeps the pie open to type in, and ✕ / Esc / a click outside cancel without running anything.
  */
-function open(app, clientX, clientY, { hold = null, onClose = null, standalone = false } = {}) {
+function open(app, clientX, clientY, { hold = null, onClose = null, standalone = false, onShape = null } = {}) {
   close();
   const onGone = [];
   const QS = require('./quickSearch');
@@ -123,10 +123,32 @@ function open(app, clientX, clientY, { hold = null, onClose = null, standalone =
      measurement can be of a window that has no size yet — the wheel then drew in the top-left corner instead of
      the middle. Standing in the middle of whatever the window turns out to be is the whole job here. */
   const recentre = () => { const r = overlay.getBoundingClientRect(); if (!r.width || !r.height) return; cx = r.width / 2; cy = r.height / 2; put(); };
+  /* v1.0.2 MOE Quick: the window is given the SHAPE of what is drawn (core/platform/shapeWin.js), so the boxes have
+     to come from the page itself - measured, never assumed, because the search state is a different drawing and the
+     results list grows as you type. Everything the shape misses is not the window any more: After Effects shows
+     through it and takes the clicks. Pixels, not CSS pixels, hence the device ratio. */
+  const SHAPED = '.pie-slot, .pie-centre, .pie-x, .pie-res';
+  const shapeNow = () => {
+    if (!onShape) return;
+    const d = window.devicePixelRatio || 1;
+    const parts = [];
+    pie.querySelectorAll(SHAPED).forEach((el) => {
+      const cs = window.getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return;
+      const b = el.getBoundingClientRect();
+      if (b.width < 2 || b.height < 2) return;
+      const rad = parseFloat(cs.borderTopLeftRadius) || 0;
+      // one pixel of air so an anti-aliased edge is not cut off
+      parts.push({ x: (b.left - 1) * d, y: (b.top - 1) * d, w: (b.width + 2) * d, h: (b.height + 2) * d, r: Math.min(rad, b.width / 2, b.height / 2) * d });
+    });
+    if (parts.length) onShape(parts);
+  };
+  const shapeSoon = () => { if (onShape) requestAnimationFrame(() => requestAnimationFrame(shapeNow)); };
   if (standalone) {
-    requestAnimationFrame(recentre);
-    window.addEventListener('resize', recentre);
-    onGone.push(() => window.removeEventListener('resize', recentre));
+    requestAnimationFrame(() => { recentre(); shapeNow(); });
+    const onResize = () => { recentre(); shapeSoon(); };
+    window.addEventListener('resize', onResize);
+    onGone.push(() => window.removeEventListener('resize', onResize));
   }
   const centreAbs = () => { const r = overlay.getBoundingClientRect(); return { x: r.left + cx, y: r.top + cy }; };
   const searching = () => input.value.trim().length > 0;
@@ -155,6 +177,7 @@ function open(app, clientX, clientY, { hold = null, onClose = null, standalone =
     if (loading && found.length) list.appendChild(h('div', { class: 'pie-res-empty' }, 'Still reading After Effects’ effects and presets…'));
     const cur = list.children[sel];
     if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest' });
+    shapeSoon();
   }
   function mark(i) { sel = i; [...list.children].forEach((el, k) => el.setAttribute('aria-selected', String(k === sel))); }
   function search() { found = QS.results(app, input.value); sel = 0; drawResults(); }
@@ -212,7 +235,10 @@ function open(app, clientX, clientY, { hold = null, onClose = null, standalone =
     if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && document.activeElement !== input) input.focus({ preventScroll: true });
   };
   const onKeyUp = (e) => { if (hold === 'key' && e.key.toLowerCase() === 'q') { e.preventDefault(); hold = null; release(); } };
-  const onBlur = () => { if (!standalone) close(); };
+  /* v1.0.2: "a click outside cancels" used to be this page's own pointerdown. Once the window is SHAPED, a click
+     beside the chips is not on this window at all - it goes to After Effects - so losing the window is the cancel.
+     Not in the first moment, though: the window is not focused the instant it is opened. */
+  const onBlur = () => { if (!standalone) { close(); return; } if (onShape && Date.now() - opened > 500) close(); };
 
   document.addEventListener('pointermove', onMove, true);
   document.addEventListener('pointerdown', onDown, true);

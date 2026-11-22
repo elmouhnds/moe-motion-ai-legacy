@@ -309,6 +309,11 @@ function createApp(root, services, env = {}) {
     const pie = require('./pie');
     const close = () => {
       const started = Date.now();
+      /* v1.0.2: the window is SHAPED like the pie (core/platform/shapeWin.js), and the shape outlives the drawing -
+         after a pick the chips stayed behind as empty silhouettes until the window closed. Take the shape down to
+         nothing as soon as the pie is really gone. A redraw (the selection arrived) opens the next pie in the same
+         breath, so the delay here is what tells the two apart, and the new pie puts its own shape back. */
+      if (app.quickShape) setTimeout(() => { if (!pie.isOpen()) app.quickShape([{ x: 0, y: 0, w: 1, h: 1, r: 0 }]); }, 150);
       const tick = () => {
         // v1.0.2: a pie is open again — this close came from REPLACING the pie (the selection arrived and it was
         // redrawn), not from the user leaving. Without this the window shut itself about a second after it opened.
@@ -318,7 +323,7 @@ function createApp(root, services, env = {}) {
       };
       tick();
     };
-    pie.open(app, 0, 0, { standalone: true, onClose: close });
+    pie.open(app, 0, 0, { standalone: true, onClose: close, onShape: app.quickShape || null });
   };
 
   /* ---------- host / context ---------- */

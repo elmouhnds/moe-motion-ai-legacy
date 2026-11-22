@@ -27,8 +27,36 @@ A CEP panel hears keys only while it has the focus. Three ways:
    (`tv.madtomato.moe.quick.request`) the main panel answers by opening the window.
 The window closes itself after what was picked has finished (closing it earlier would stop its run), at once on cancel.
 
+## Nothing around the tools (v1.0.2, the owner)
+Over After Effects the MOE Quick window is not a window any more. Three steps, in this order:
+1. **The frame comes off** — `core/platform/hotkeyWin.js`, on each press: WS_CAPTION / WS_THICKFRAME / WS_BORDER /
+   WS_DLGFRAME and the edge ex-styles go, the window is moved under the pointer (SetWindowPos, never activated or
+   resized), and WS_EX_LAYERED + LWA_ALPHA (220 of 255) make the whole thing a little see-through.
+2. **The disc goes** — `css/app.css`, `body.quick`: the pie draws no backdrop here, each slice is one of the panel's
+   own chips and the search is the chip in the middle, on a wider ring (`pie.js R_BARE`) so the chips never touch.
+   Inside the panel the pie is unchanged.
+3. **The window takes their shape** — `core/platform/shapeWin.js`: the pie measures the boxes it really drew and a
+   fixed PowerShell turns them into one region (SetWindowRgn). What the shape misses is not the window: After Effects
+   shows through it and takes the clicks, so a click beside the chips lands in the timeline, and losing the window is
+   what cancels the pie. The shape follows the drawing (the search state is a different one, and the results list
+   grows as you type) and is taken down to a pixel when the pie goes, or the chips would linger as empty silhouettes.
+
+Measured in After Effects 26.5.3x9, not assumed: **LWA_COLORKEY does nothing here.** The page paints exactly the key
+colour (#010203, read back off the screen) and the COLORREF is right, but After Effects' CEP window draws through a
+child surface a layered window's per-pixel key never reaches — with the alpha taken away the window came out
+completely opaque. The region is what replaced it. Only numbers cross to either helper; both scripts are fixed text.
+
+**Changing anything in the MOE Quick window needs After Effects restarted.** CEP hides that window instead of
+unloading it, and the extension host keeps the page alive, so a new build of its CSS or JS does not reach it until
+After Effects starts again (killing the host process leaves CEP unable to load the extension at all until then).
+
 ## Status — be honest
-Mock tests only (`tests/quickapply.test.js`, `tests/workflow.test.js`). **Not verified in After Effects**: the hot key,
-the Modeless window's position and focus, `requestOpenExtension` while the window is already open, whether After Effects
-lets a keyboard shortcut be set on Window › Extensions › MOE Quick, the real menu command names, and `applyPreset` on
-multi-layer selections. The side session checks these by hand before anyone says it works.
+Tests: `tests/quickapply.test.js`, `tests/workflow.test.js`, `tests/quickhotkey.test.js`, `tests/quickbare.test.js`
+(the chips never touch and fit the window), `tests/quickshape.test.js` (what may cross to the shape helper).
+
+**Seen in After Effects 26.5.3x9 (2026-11-22, the owner's machine):** the global shortcut over the timeline, the
+window under the pointer with no frame, the chips with no disc, the search state, the shape (the timeline is visible
+between the chips and takes the clicks), the selection handed over (one layer → the layer's own slices), and the
+window leaving nothing behind on cancel. **Still not verified in After Effects**: whether After Effects lets a
+keyboard shortcut be set on Window › Extensions › MOE Quick, the real menu command names, and `applyPreset` on
+multi-layer selections.

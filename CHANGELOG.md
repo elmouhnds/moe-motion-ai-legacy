@@ -13,12 +13,15 @@ All notable changes. Versioning: semver, independent of other MOE products.
   panel's own chips instead (same surface, line and radius tokens as every tile in MOE), with the search as the chip
   in the middle. Chips need room the 86 px ring does not have, so the bare wheel is laid out on a wider one
   (`pie.js R_BARE`), checked against the window's own size in `tests/quickbare.test.js`.
-- The window is a little translucent as a whole (LWA_ALPHA, 220 of 255), so it sits over After Effects instead of on
-  top of it. **The colour key does nothing in After Effects** (26.5.3x9, measured): the page paints exactly #010203 and
+- **No window around it, at all.** The window is given the SHAPE of what the page drew (`core/platform/shapeWin.js`):
+  the pie measures its own chips, its search and its cancel, and a small fixed PowerShell turns them into one region
+  (SetWindowRgn). Everything the shape misses is not the window any more — After Effects shows through it and takes
+  the clicks — so a click beside the chips lands in the timeline, and leaving the window is what cancels the pie.
+  The shape follows the drawing: the search state is a different one, and the results list grows as you type.
+- It is still a little translucent as a whole (LWA_ALPHA, 220 of 255), which is what makes the chips sit IN the
+  interface. **The colour key does nothing in After Effects** (26.5.3x9, measured): the page paints exactly #010203 and
   the COLORREF is right, but After Effects' CEP window draws through a child surface the layered window's per-pixel key
-  never reaches — with the alpha taken away the window came out completely opaque. So what is left around the chips is
-  the window's own faint rectangle; removing that needs the window to be given a SHAPE (SetWindowRgn) that follows what
-  the page draws.
+  never reaches — with the alpha taken away the window came out completely opaque. The shape is what replaced it.
 - Known, and the reason a change can look like it did nothing: **the MOE Quick window keeps its page alive after it
   closes** — CEP hides it rather than unloading it, so a new build of the panel's CSS or JS only reaches that window
   after After Effects is restarted (or its CEPHtmlEngine process ends).
