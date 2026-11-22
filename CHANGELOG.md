@@ -2,6 +2,23 @@
 
 All notable changes. Versioning: semver, independent of other MOE products.
 
+## [Unreleased] — MOE Quick: the wheel, and nothing else
+
+- **No window around it** (the owner): the MOE Quick window loses its frame, its title bar and its background — the
+  helper that hears the shortcut strips the window's styles and makes the page's key colour see-through (Win32
+  colour key), so only the wheel and its search float over After Effects, where the pointer already is.
+- **No black ring.** The pie's disc is a soft backdrop inside the panel, but floating over After Effects it cannot be
+  soft at all: see-through here is by COLOUR, so every fade over the key colour lands as a solid band — which is what
+  the owner saw, a 240 px black circle around the wheel. The disc is gone in MOE Quick and each slice is one of the
+  panel's own chips instead (same surface, line and radius tokens as every tile in MOE), with the search as the chip
+  in the middle. Chips need room the 86 px ring does not have, so the bare wheel is laid out on a wider one
+  (`pie.js R_BARE`), checked against the window's own size in `tests/quickbare.test.js`.
+- The window is a little translucent as a whole (the only translucency available here), so it sits over After Effects
+  instead of on top of it.
+- Known, and the reason a change can look like it did nothing: **the MOE Quick window keeps its page alive after it
+  closes** — CEP hides it rather than unloading it, so a new build of the panel's CSS or JS only reaches that window
+  after After Effects is restarted (or its CEPHtmlEngine process ends).
+
 ## [1.0.1] — 2026-11-20 — Clone Sunflower removed
 - The owner: Clone Sunflower (Layout & Grid) is gone. It was the one tile that failed in After Effects: 60 clones with
   an animated build-in in ONE host call ran past 300 s, and After Effects cannot stop a script. A Quick Bar button, pin

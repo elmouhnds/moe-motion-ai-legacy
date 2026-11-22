@@ -42,7 +42,9 @@ function script(mods, vk, bare) {
     '  [DllImport("user32.dll")] static extern bool SetLayeredWindowAttributes(IntPtr h, uint key, byte alpha, uint flags);',
     /* Take the frame off and make the page's key colour see-through. GWL_STYLE -16 loses WS_CAPTION, WS_THICKFRAME,
        WS_BORDER and WS_DLGFRAME; GWL_EXSTYLE -20 gains WS_EX_LAYERED, and LWA_COLORKEY makes #010203 (COLORREF is
-       0x00BBGGRR) vanish, and the edge styles (DLGMODALFRAME, WINDOWEDGE, CLIENTEDGE, STATICEDGE) go with it or a
+       0x00BBGGRR) vanish; LWA_ALPHA alongside it gives everything that IS drawn a little translucency (220 of 255)
+       so the wheel sits over the interface instead of on top of it, which is the only way to be see-through here -
+       alpha inside the page would just blend with the key colour and come out solid. The edge styles (DLGMODALFRAME, WINDOWEDGE, CLIENTEDGE, STATICEDGE) go with it or a
        hairline rectangle is left drawn around nothing. SWP_FRAMECHANGED makes the new style take. Only ever the
        window titled "MOE Quick". */
     '  static void Undress(IntPtr w) {',
@@ -53,7 +55,7 @@ function script(mods, vk, bare) {
     '    long wantEx = ex.ToInt64() | 0x00080000L;',
     '    wantEx = wantEx & ~0x00000001L & ~0x00000100L & ~0x00000200L & ~0x00020000L;',
     '    SetWindowLongPtr(w, -20, new IntPtr(wantEx));',
-    '    SetLayeredWindowAttributes(w, 0x00030201, 0, 0x1);',
+    '    SetLayeredWindowAttributes(w, 0x00030201, 220, 0x1 | 0x2);',
     '  }',
     '  static void PlaceAtCursor(POINT p) {',
     '    for (int i = 0; i < 25; i++) {',

@@ -16,6 +16,11 @@ const { h, icon } = require('./dom');
 const actions = require('./actions');
 
 const R = 86;          // slice centres from the pie centre
+/* v1.0.2 MOE Quick: with no disc behind it (the wheel floats over After Effects, see css/app.css), each slice is
+   one of the panel's own chips - and eight 64 px chips do not fit on a ring of 86: the diagonal neighbours are
+   only 66 px apart, so they would overlap. The bare wheel uses a wider ring, which the 330 x 344 window still
+   holds (116 + 32 = 148 < 165). Inside the panel nothing changes. */
+const R_BARE = 116;
 const DEAD = 22;       // centre zone: no slice
 const HOLE = 46;       // v1.0: the centre disc that holds the search box
 const OUTER = R + 58;  // a click further out closes the pie
@@ -91,13 +96,14 @@ function open(app, clientX, clientY, { hold = null, onClose = null, standalone =
   hl.setAttribute('class', 'pie-hl');
   svg.appendChild(ring); svg.appendChild(hl); svg.appendChild(hole);
 
+  const RS = standalone ? R_BARE : R;
   const buttons = slots.map((a, i) => {
     const ang = (i * 45 - 90) * Math.PI / 180;
     const b = h('button', {
       class: `pie-slot ${a ? '' : 'empty'} ${ready[i].ok ? '' : 'blocked'}`, role: 'menuitem',
       title: a ? `${i + 1} · ${a.label}${ready[i].ok ? '' : ` — ${ready[i].hint}`}` : 'Empty slot (Settings › Pie menu)',
       'aria-label': a ? `${a.label}${ready[i].ok ? '' : `, ${ready[i].hint}`}` : 'Empty slot',
-      style: { left: `${(R * Math.cos(ang)).toFixed(1)}px`, top: `${(R * Math.sin(ang)).toFixed(1)}px` },
+      style: { left: `${(RS * Math.cos(ang)).toFixed(1)}px`, top: `${(RS * Math.sin(ang)).toFixed(1)}px` },
       onclick: () => choose(i)
     }, a ? icon(a.icon || 'bolt') : icon('plus'), h('span', { class: 'pie-l' }, a ? a.label : '—'), h('span', { class: 'pie-n' }, String(i + 1)));
     return b;
@@ -242,4 +248,4 @@ const isOpen = () => !!current;
 /** Open, and nobody has pointed at a slice or typed in it yet — safe to redraw. */
 const untouched = () => !!current && !current.touched();
 
-module.exports = { open, close, isOpen, untouched, sliceAt, sectorPath, R, DEAD, HOLE };
+module.exports = { open, close, isOpen, untouched, sliceAt, sectorPath, R, R_BARE, DEAD, HOLE };

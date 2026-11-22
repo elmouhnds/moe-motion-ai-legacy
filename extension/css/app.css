@@ -753,8 +753,27 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 body.quick #app { display: none; }
 .pie.standalone ~ * { display: none; }
 .overlay.pie-ov.quick, body.quick .overlay.pie-ov { background: none; }
-/* the ring carries its own shadow now that there is no window behind it */
-body.quick .pie-disc { filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.45)); }
+/* v1.0.2 no soft shadow here, ever. The window is see-through by COLOUR, not by alpha: anything half-transparent
+   drawn over the key colour lands as a solid dark band, so an 18 px drop-shadow came out as a thick black ring
+   around the wheel. The wheel gets its separation from its own edge instead, and the whole window is given a
+   little alpha by the helper (LWA_ALPHA) so it sits over After Effects rather than on top of it. */
+/* No disc behind the wheel when it floats over After Effects: that disc IS the black ring the owner reported. It
+   is 240 px across with a 92 px hole, it cannot soften at its edge the way it does inside the panel (see-through
+   here is by colour, so every fade lands as a solid band), and over his timeline it read as a slab dropped on the
+   interface. The whole svg goes, and each action becomes one of the panel's own rounded chips — the same surface,
+   line and radius tokens as every tile in MOE — with the search as the chip in the middle. The chips need room
+   the 86 px ring does not have, so the bare wheel is laid out on a wider one (pie.js R_BARE). */
+body.quick .pie-ring { display: none; }
+body.quick .pie-slot { width: 64px; margin-left: -32px; background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: none; }
+body.quick .pie-l { max-width: 58px; }
+body.quick .pie-slot.hot { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+body.quick .pie-slot.blocked { opacity: 0.55; }
+body.quick .pie-centre { background: var(--bg-raised); border: 1px solid var(--line); border-radius: var(--r-lg); }
+body.quick .pie-q { border-color: transparent; background: none; }
+body.quick .pie-q:focus, body.quick .pie-q:focus-visible { border-color: var(--accent); }
+/* the ring is wider here (pie.js R_BARE), so the cancel goes with it */
+body.quick .pie-x { left: 128px; top: -152px; }
+body.quick .pie.searching .pie-x { left: 156px; top: -132px; }
 @media (prefers-reduced-motion: no-preference) { .pie { animation: pie-in 90ms ease-out; } }
 @keyframes pie-in { from { opacity: 0; } to { opacity: 1; } }
 /* Home: suggestions for the current selection */

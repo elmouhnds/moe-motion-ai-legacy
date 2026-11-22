@@ -98,8 +98,9 @@
         <UI>
           <Type>Modeless</Type>
           <Menu>MOE Quick</Menu>
-          <!-- v1.0.2: hug the pie. The ring is 288 px across and the search state 300 x 272, so anything
-               larger is grey around a wheel. The window also resizes itself on open (app/main.js). -->
+          <!-- v1.0.2: hug the pie. The bare wheel needs 312 x 304 (eight chips on the R_BARE ring, plus the
+               cancel) and the search state 300 x 272, so anything larger is empty space around a wheel.
+               tests/quickbare.test.js checks this size against the layout. -->
           <Geometry>
             <Size><Height>344</Height><Width>330</Width></Size>
             <MinSize><Height>300</Height><Width>300</Width></MinSize>

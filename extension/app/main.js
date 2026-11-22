@@ -29,6 +29,10 @@ async function start({ cs, root, platform, mount, ui, mode }) {
    * wrote it), the host connects behind the pie, and a pick awaits the host anyway — so it cannot be too early.
    */
   if (mode === 'quick') {
+    /* The bare styling hangs off body.quick, because the pie's overlay is appended to document.body (ui/pie.js),
+       not inside the shell's .app-quick div. quick.html already carries the class; the browser preview
+       (dev/preview.html?mode=quick) does not, so quick mode sets it itself and both look the same. */
+    try { document.documentElement.classList.add('quick'); document.body.classList.add('quick'); } catch (_) { /* no DOM */ }
     app.applyDensity();
     /*
      * After Effects owns this window completely. Measured in 26.5.3x9, all three were tried and none of them do
