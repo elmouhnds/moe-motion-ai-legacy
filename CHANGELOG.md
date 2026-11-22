@@ -18,6 +18,13 @@ All notable changes. Versioning: semver, independent of other MOE products.
   (SetWindowRgn). Everything the shape misses is not the window any more — After Effects shows through it and takes
   the clicks — so a click beside the chips lands in the timeline, and leaving the window is what cancels the pie.
   The shape follows the drawing: the search state is a different one, and the results list grows as you type.
+- **The shape never outlives the drawing.** It is measured in one place (`app/main.js`) from everything the page
+  draws at that moment — the chips, the search and its results, the toast a run leaves behind — and the window is
+  one pixel when nothing is drawn. The pie says when the drawing changed; it does not measure. Before this, picking
+  something left a row of empty black silhouettes sitting over After Effects until the window closed.
+- **The shortcut MOE ships with is Ctrl+Shift+Space.** Ctrl+Alt+Space was the default and `RegisterHotKey` refused it
+  on the owner's machine (FAIL 1409 — another program already holds it), which is a quiet way to ship a shortcut that
+  does nothing. Both are still in the list in Settings › Pie menu.
 - It is still a little translucent as a whole (LWA_ALPHA, 220 of 255), which is what makes the chips sit IN the
   interface. **The colour key does nothing in After Effects** (26.5.3x9, measured): the page paints exactly #010203 and
   the COLORREF is right, but After Effects' CEP window draws through a child surface the layered window's per-pixel key

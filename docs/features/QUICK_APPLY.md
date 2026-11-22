@@ -19,7 +19,7 @@
 
 ## Opening it from the After Effects window
 A CEP panel hears keys only while it has the focus. Three ways:
-1. **Global shortcut** (Windows, Settings › Pie menu, default **Ctrl+Alt+Space**; Off possible): the main panel starts
+1. **Global shortcut** (Windows, Settings › Pie menu, default **Ctrl+Shift+Space**; Off possible): the main panel starts
    `core/platform/hotkeyWin.js` — a fixed PowerShell script that asks Windows for one hot key (`RegisterHotKey`) and
    prints the process in front; the panel opens MOE Quick only when that is After Effects (or its panels).
 2. **Window › Extensions › MOE Quick** — a Modeless CEP window (`quick.html`, mode `quick`) that is only the pie.
@@ -39,7 +39,9 @@ Over After Effects the MOE Quick window is not a window any more. Three steps, i
    fixed PowerShell turns them into one region (SetWindowRgn). What the shape misses is not the window: After Effects
    shows through it and takes the clicks, so a click beside the chips lands in the timeline, and losing the window is
    what cancels the pie. The shape follows the drawing (the search state is a different one, and the results list
-   grows as you type) and is taken down to a pixel when the pie goes, or the chips would linger as empty silhouettes.
+   grows as you type), it covers the toast a run leaves behind, and it is a single pixel the moment nothing is drawn
+   — a shape that outlives its drawing is a row of empty black silhouettes sitting over After Effects. The measuring
+   is in `app/main.js`, one place, because the window must follow the whole page and not only the pie.
 
 Measured in After Effects 26.5.3x9, not assumed: **LWA_COLORKEY does nothing here.** The page paints exactly the key
 colour (#010203, read back off the screen) and the COLORREF is right, but After Effects' CEP window draws through a

@@ -123,28 +123,15 @@ function open(app, clientX, clientY, { hold = null, onClose = null, standalone =
      measurement can be of a window that has no size yet — the wheel then drew in the top-left corner instead of
      the middle. Standing in the middle of whatever the window turns out to be is the whole job here. */
   const recentre = () => { const r = overlay.getBoundingClientRect(); if (!r.width || !r.height) return; cx = r.width / 2; cy = r.height / 2; put(); };
-  /* v1.0.2 MOE Quick: the window is given the SHAPE of what is drawn (core/platform/shapeWin.js), so the boxes have
-     to come from the page itself - measured, never assumed, because the search state is a different drawing and the
-     results list grows as you type. Everything the shape misses is not the window any more: After Effects shows
-     through it and takes the clicks. Pixels, not CSS pixels, hence the device ratio. */
-  const SHAPED = '.pie-slot, .pie-centre, .pie-x, .pie-res';
-  const shapeNow = () => {
-    if (!onShape) return;
-    const d = window.devicePixelRatio || 1;
-    const parts = [];
-    pie.querySelectorAll(SHAPED).forEach((el) => {
-      const cs = window.getComputedStyle(el);
-      if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return;
-      const b = el.getBoundingClientRect();
-      if (b.width < 2 || b.height < 2) return;
-      const rad = parseFloat(cs.borderTopLeftRadius) || 0;
-      // one pixel of air so an anti-aliased edge is not cut off
-      parts.push({ x: (b.left - 1) * d, y: (b.top - 1) * d, w: (b.width + 2) * d, h: (b.height + 2) * d, r: Math.min(rad, b.width / 2, b.height / 2) * d });
-    });
-    if (parts.length) onShape(parts);
-  };
+  /* v1.0.2 MOE Quick: the window is given the SHAPE of what is drawn (core/platform/shapeWin.js). This only says
+     WHEN the drawing changed — the measuring is one place, app/main.js, because the window must follow everything
+     the page draws, the toast after a run included, not only this pie. */
+  const shapeNow = () => { if (onShape) onShape(); };
   const shapeSoon = () => { if (onShape) requestAnimationFrame(() => requestAnimationFrame(shapeNow)); };
   if (standalone) {
+    // a redraw must put the shape back in the same breath, not a frame later — but only once the window has a size,
+    // or the very first open would shape itself around a pie that is still standing in the corner
+    if (box.width && box.height) shapeNow();
     requestAnimationFrame(() => { recentre(); shapeNow(); });
     const onResize = () => { recentre(); shapeSoon(); };
     window.addEventListener('resize', onResize);

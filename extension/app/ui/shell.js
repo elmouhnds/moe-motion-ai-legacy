@@ -300,6 +300,9 @@ function createApp(root, services, env = {}) {
       s.toast ? h('div', { class: `toast ${s.toastKind || ''}`, role: 'status' }, h('span', {}, s.toast)) : null);
     if (root.firstChild && root.firstChild.classList && root.firstChild.classList.contains('app')) morph(root.firstChild, appEl);
     else { clear(root); root.appendChild(appEl); }
+    /* v1.0.2: the window is the shape of what is drawn, and a toast after a run is drawn — so the window becomes
+       the toast, and goes back to nothing when it does. */
+    if (app.quickShape) requestAnimationFrame(app.quickShape);
   }
   // v1.0.2: this paints at once and waits for nothing. The selection is handed over by the panel that opened the
   // window (quickLauncher's QUICK_CTX), and main.js redraws the pie if the host later disagrees — reading the comp
@@ -309,11 +312,12 @@ function createApp(root, services, env = {}) {
     const pie = require('./pie');
     const close = () => {
       const started = Date.now();
-      /* v1.0.2: the window is SHAPED like the pie (core/platform/shapeWin.js), and the shape outlives the drawing -
-         after a pick the chips stayed behind as empty silhouettes until the window closed. Take the shape down to
-         nothing as soon as the pie is really gone. A redraw (the selection arrived) opens the next pie in the same
-         breath, so the delay here is what tells the two apart, and the new pie puts its own shape back. */
-      if (app.quickShape) setTimeout(() => { if (!pie.isOpen()) app.quickShape([{ x: 0, y: 0, w: 1, h: 1, r: 0 }]); }, 150);
+      /* v1.0.2: the window is SHAPED like what this page draws (core/platform/shapeWin.js), and the pie has just
+         been taken out of the page — so the window must stop being the pie NOW, or the chips stay behind as empty
+         black silhouettes over After Effects until it closes (the owner saw that twice). The measuring is in
+         main.js; a timeout of 0 is only so a redraw, which opens the next pie in this same breath, is measured
+         with that pie in the page instead of between the two. */
+      if (app.quickShape) setTimeout(app.quickShape, 0);
       const tick = () => {
         // v1.0.2: a pie is open again — this close came from REPLACING the pie (the selection arrived and it was
         // redrawn), not from the user leaving. Without this the window shut itself about a second after it opened.

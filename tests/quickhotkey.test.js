@@ -76,3 +76,19 @@ test('every change of state asks for a render, so Settings never shows a stale a
   assert.equal(app.quickKey.on, false);
   assert.ok(renders > before, 'and again when it stops');
 });
+
+test('v1.0.2 the shortcut MOE ships with is Ctrl+Shift+Space', async () => {
+  // Ctrl+Alt+Space was the default and RegisterHotKey refused it on the owner's machine (FAIL 1409 — another
+  // program holds it), which is a quiet way to ship a shortcut that does nothing. He picked this one by hand.
+  const { spawn, calls } = fakeSpawn(['READY']);
+  const app = {
+    scheduleRender: () => {},
+    services: { settings: { get: () => ({ ui: {} }) }, logger: { info() {} } }   // nothing saved: the default
+  };
+  QL.attach(app, { requestOpenExtension: () => {}, addEventListener: () => {}, dispatchEvent: () => {} }, { spawn });
+  await tick(); await tick();
+  assert.equal(app.quickKey.label, 'Ctrl+Shift+Space');
+  const sent = Buffer.from(calls[0].args[calls[0].args.length - 1], 'base64').toString('utf16le');
+  const c = HK.COMBOS['ctrl+shift+space'];
+  assert.ok(sent.includes(`Run(${c.mods}, ${c.vk})`), 'and that is the combo the script registers');
+});

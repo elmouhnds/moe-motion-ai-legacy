@@ -55,7 +55,10 @@ function attach(app, cs, deps = {}) {
   let hk = { stop() {} };
   const apply = () => {
     hk.stop();
-    const combo = ((services.settings.get().ui.pie || {}).globalKey) || 'ctrl+alt+space';
+    /* v1.0.2: the default is Ctrl+Shift+Space (the owner, after his own test). Ctrl+Alt+Space was the default and
+       RegisterHotKey refused it on his machine with FAIL 1409 - another program already holds it - which is a quiet
+       way to ship a shortcut that does nothing. Both are still in the list in Settings. */
+    const combo = ((services.settings.get().ui.pie || {}).globalKey) || 'ctrl+shift+space';
     hk = require('../core/platform/hotkeyWin').start({
       combo, spawn: deps.spawn || require('child_process').spawn,
       // v1.0.2: bare = no frame, no title bar, no background — only the wheel and its search float over After

@@ -50,7 +50,27 @@ async function start({ cs, root, platform, mount, ui, mode }) {
         spawn: require('child_process').spawn,
         onState: (st) => services.logger.info('quick', `window shape ${st.on ? 'on' : 'off'}${st.line ? `: ${st.line}` : ''}${st.reason ? `: ${st.reason}` : ''}`)
       });
-      if (bare) app.quickShape = (parts) => shaper.set(parts);
+      /* The window is exactly what this page draws, and nothing else — measured here, never assumed, because the
+         drawing changes: the wheel, the search with its results, the toast a run leaves behind. Whatever is drawn
+         at this moment is the window; when nothing is, the window is one pixel, because a shape that outlives its
+         drawing is a row of empty black silhouettes sitting over After Effects (the owner saw exactly that). */
+      const SHAPED = '.pie-slot, .pie-centre, .pie-x, .pie-res, .toast';
+      const NOTHING = [{ x: 0, y: 0, w: 1, h: 1, r: 0 }];
+      const drawn = () => {
+        const d = window.devicePixelRatio || 1;
+        const parts = [];
+        document.querySelectorAll(SHAPED).forEach((el) => {
+          const cs = window.getComputedStyle(el);
+          if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return;
+          const b = el.getBoundingClientRect();
+          if (b.width < 2 || b.height < 2) return;
+          const rad = parseFloat(cs.borderTopLeftRadius) || 0;
+          // one pixel of air so an anti-aliased edge is not cut off
+          parts.push({ x: (b.left - 1) * d, y: (b.top - 1) * d, w: (b.width + 2) * d, h: (b.height + 2) * d, r: Math.min(rad, b.width / 2, b.height / 2) * d });
+        });
+        return parts;
+      };
+      if (bare) app.quickShape = () => { const p = drawn(); shaper.set(p.length ? p : NOTHING); };
       else shaper.clear();  // it may still be wearing the shape of an earlier, bare, run
       if (typeof window !== 'undefined') window.addEventListener('beforeunload', () => shaper.stop());
     } catch (e) { services.logger.warn('quick', 'the window keeps its rectangle', { message: e.message }); }
