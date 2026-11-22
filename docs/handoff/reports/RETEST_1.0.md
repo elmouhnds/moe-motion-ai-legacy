@@ -221,6 +221,54 @@ Two things make these worth a session of their own rather than a quick patch her
   any MOE run to check by hand`. Checked by hand instead, four times, and the Edit menu named every one of them:
   `Undo MOE: Gaussian Blur`, `Undo MOE: Fade In`, `Undo MOE: Trim Comp to Work Area`, `Undo MOE: Quick Animate`.
 
+## 6A. Diagnosis of the three failures (2026-11-22, after the owner asked)
+
+### Text Cloner — reproduced on screen, and it is the split, not the layout
+
+A text layer **"Make it move"** in `MOE Retest 1.0.1`, selected, Text Cloner run from the pie. The three words do
+not stay where they were: **they pile on top of each other at the start of the line** (screenshot in the session;
+the viewer reads as one blob of overlapping glyphs instead of MAKE IT MOVE). That is the Self-Test's
+`overlap 234.7 px` and `worst edge 340.01 px` seen by eye.
+
+Narrowing it down, with what After Effects itself shows:
+
+1. **It is not the layout.** `grid.build` with `mode: 'keep'` has its own read-back (`keepPlace` → `keepCheck` in
+   `features/grid/tools.js`): it measures every item's comp box before and after the layout and fails if one moved
+   more than 0.5 px. It passed, and the Tile Test passes `layout/textWords`. In Place faithfully kept the pieces
+   where it found them — **already stacked**.
+2. **Each word's own measurement is right.** The three pieces' Anchor Points in After Effects are
+   **227.1 / 73.7 / 235.1** — distinct, and in the right order for *Make* · *it* · *move* (the anchor is the word's
+   own measured centre, `c0` from `pw` in `text.split`).
+3. **What collapses is the along-the-line term.** A piece's x is
+   `x = pr.left + pr.width − pw.width` (`pr` = the line measured up to the END of that word, `pw` = the word
+   alone), and every piece lands at the line's start — so that term is contributing nothing. Both the English and
+   the Arabic check fail the same way (edges `[1.09, 0, 340.01, 0]` and `[0.99, 0, 216.41, 0]`: the left edge is
+   right to ~1 px, the right edge is 340 / 216 px short).
+4. **It is not a stale `sourceRectAtTime`** — the obvious suspect, and it is wrong: `text.create`'s auto-fit loop
+   does `setValue` → `sourceRectAtTime` repeatedly at the same time on the same layer, and both Template checks
+   pass with *"text measured by After Effects 501 / 370 px"*, worst 0 px.
+
+**Next step, and why it is not taken here:** the numbers `measure()` actually returns for `pw` and `pr` are not
+visible from outside — the op returns the pieces' final boxes, not its measurements. The honest fix is to have
+`text.split` report what it measured, read it once in After Effects, then put that behaviour in
+`tests/mock/ae-mock.js` with a test that fails on the old code. Running one Self-Test check at a time needs the
+**Claude Test Bridge** (Diagnostics › *Allow Claude to test*), which is the owner's switch to turn on; a full
+Self-Test pass is ~10 minutes per attempt.
+
+### Explode — the check could not say what was wrong, and now it can
+
+`text.animate`'s `verify()` compared three different things — the key times, the number of keys on the selector
+and the number of animator properties — and reported **all three** as the same four words,
+`animator read-back mismatch`. That is what the Self-Test showed, and there is nothing in it to act on: a
+property After Effects hides by context (a behaviour CLAUDE.md already documents) looks exactly like a key on the
+wrong frame.
+
+Fixed here: the message now names which number is off and by how much, e.g.
+`animator read-back mismatch — 2 animator properties, wanted 3 (ADBE Text Position 3D, ADBE Text Opacity, ADBE Text Scale 3D)`.
+`tests/textanimate.verify.test.js` covers all three branches plus the Wiggly case and the good case; **4 of its 5
+tests fail on the old code**. The panel on this machine has been updated, so the next Self-Test run will print the
+real cause instead of the bare phrase — that reading is the next step, not a guess made now.
+
 ## 7. Housekeeping noticed
 
 - The **MOE v2** panel (0.1.0) is open in the same After Effects, floating over the comp. Its Test Bridge is off,
