@@ -106,6 +106,12 @@ function pieSection(app, st) {
       h('div', { class: 'why', style: { margin: '-2px 0 6px 84px' } }, (pie.globalTarget || 'window') === 'window'
         ? 'Own window: a small window with the pie in it, over the timeline or the viewer — wherever you are working. After Effects draws its frame, and a see-through one is not something CEP offers.'
         : 'In the panel: no second window at all — nothing to open, nothing to wait for — but it appears where MOE Motion AI is docked, and After Effects keeps the keyboard: pick with the mouse, or click the panel once for the search and 1–8.'),
+      (pie.globalTarget || 'window') === 'window' ? [
+        h('div', { class: 'field' }, h('label', {}, 'Bare'), h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(pie.bare !== false), 'aria-label': 'Show the pie with no window around it', onclick: () => { setPie({ bare: pie.bare === false }); if (app.applyQuickKey) app.applyQuickKey(); } })),
+        h('div', { class: 'why', style: { margin: '-2px 0 6px 84px' } }, pie.bare !== false
+          ? 'Bare: no frame, no title bar, no background — only the wheel, the search and its results, over whatever you are looking at. Turn it off to get an ordinary window back.'
+          : 'Off: an ordinary window with its title bar, which you can drag and close like any other.')
+      ] : null,
       h('div', { class: 'field' }, h('label', {}, 'Slices'), seg([['smart', 'Smart'], ['mine', 'My pie']], pie.mode, (v) => setPie({ mode: v }))),
       h('div', { class: 'why', style: { margin: '-2px 0 6px 84px' } }, pie.mode === 'smart' ? 'Smart: the eight actions follow what is selected — keyframes, text, shapes, one layer, several layers or nothing.' : 'My pie: the same eight actions every time, in the order below.'),
       h('div', { class: 'field' }, h('label', {}, 'Hold Q'), h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(pie.holdQ !== false), 'aria-label': 'Open the pie with the Q key', onclick: () => setPie({ holdQ: pie.holdQ === false }) })),

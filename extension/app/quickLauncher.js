@@ -58,6 +58,9 @@ function attach(app, cs, deps = {}) {
     const combo = ((services.settings.get().ui.pie || {}).globalKey) || 'ctrl+alt+space';
     hk = require('../core/platform/hotkeyWin').start({
       combo, spawn: deps.spawn || require('child_process').spawn,
+      // v1.0.2: bare = no frame, no title bar, no background — only the wheel and its search float over After
+      // Effects. The helper does it from outside (the page cannot), so it is a switch here, not a stylesheet.
+      bare: ((services.settings.get().ui.pie || {}).bare) !== false,
       onKey: () => openFor(cs, app),
       // v1.0.2: the helper answers a second or two after the page drew Settings, so the line there ("Listening: …" /
       // "Not listening: …") kept the state it had at render time — it read "Not listening: stopped." while the

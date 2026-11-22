@@ -14,11 +14,12 @@ const COMBOS = {
 };
 const AE_PROCESS = /^(AfterFX|CEPHtmlEngine)$/i;
 
-function script(mods, vk) {
+function script(mods, vk, bare) {
   return [
     'Add-Type -TypeDefinition @"',
     'using System; using System.Runtime.InteropServices; using System.Diagnostics;',
     'public static class MoeHotkey {',
+    `  const bool BARE = ${bare ? 'true' : 'false'};`,
     '  [StructLayout(LayoutKind.Sequential)] public struct MSG { public IntPtr hwnd; public uint message; public UIntPtr wParam; public IntPtr lParam; public uint time; public int x; public int y; }',
     '  [DllImport("user32.dll", SetLastError = true)] static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);',
     '  [DllImport("user32.dll")] static extern int GetMessage(out MSG lpMsg, IntPtr hWnd, uint min, uint max);',
@@ -36,6 +37,24 @@ function script(mods, vk) {
     '  [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out RECT r);',
     '  [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);',
     '  [DllImport("user32.dll")] static extern int GetSystemMetrics(int i);',
+    '  [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] static extern IntPtr GetWindowLongPtr(IntPtr h, int n);',
+    '  [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")] static extern IntPtr SetWindowLongPtr(IntPtr h, int n, IntPtr v);',
+    '  [DllImport("user32.dll")] static extern bool SetLayeredWindowAttributes(IntPtr h, uint key, byte alpha, uint flags);',
+    /* Take the frame off and make the page's key colour see-through. GWL_STYLE -16 loses WS_CAPTION, WS_THICKFRAME,
+       WS_BORDER and WS_DLGFRAME; GWL_EXSTYLE -20 gains WS_EX_LAYERED, and LWA_COLORKEY makes #010203 (COLORREF is
+       0x00BBGGRR) vanish, and the edge styles (DLGMODALFRAME, WINDOWEDGE, CLIENTEDGE, STATICEDGE) go with it or a
+       hairline rectangle is left drawn around nothing. SWP_FRAMECHANGED makes the new style take. Only ever the
+       window titled "MOE Quick". */
+    '  static void Undress(IntPtr w) {',
+    '    IntPtr st = GetWindowLongPtr(w, -16);',
+    '    long want = st.ToInt64() & ~0x00C00000L & ~0x00040000L & ~0x00800000L & ~0x00400000L;',
+    '    if (want != st.ToInt64()) { SetWindowLongPtr(w, -16, new IntPtr(want)); }',
+    '    IntPtr ex = GetWindowLongPtr(w, -20);',
+    '    long wantEx = ex.ToInt64() | 0x00080000L;',
+    '    wantEx = wantEx & ~0x00000001L & ~0x00000100L & ~0x00000200L & ~0x00020000L;',
+    '    SetWindowLongPtr(w, -20, new IntPtr(wantEx));',
+    '    SetLayeredWindowAttributes(w, 0x00030201, 0, 0x1);',
+    '  }',
     '  static void PlaceAtCursor(POINT p) {',
     '    for (int i = 0; i < 25; i++) {',
     '      IntPtr w = FindWindow(null, "MOE Quick");',
@@ -48,7 +67,8 @@ function script(mods, vk) {
     '        if (y < vy) { y = vy; }',
     '        if (x + cw > vx + vw) { x = vx + vw - cw; }',
     '        if (y + ch > vy + vh) { y = vy + vh - ch; }',
-    '        SetWindowPos(w, IntPtr.Zero, x, y, 0, 0, 0x0001 | 0x0004 | 0x0010);',
+    '        if (BARE) { Undress(w); }',
+    '        SetWindowPos(w, IntPtr.Zero, x, y, 0, 0, 0x0001 | 0x0004 | 0x0010 | (BARE ? 0x0020u : 0u));',
     '        return;',
     '      }',
     '      System.Threading.Thread.Sleep(60);',
@@ -69,10 +89,10 @@ function script(mods, vk) {
 }
 
 /** Start listening. spawn: child_process.spawn (injected for tests). onKey(): After Effects was in front. */
-function start({ combo, spawn, onKey, onState, platform = process.platform }) {
+function start({ combo, spawn, onKey, onState, bare, platform = process.platform }) {
   const c = COMBOS[combo];
   if (!c || platform !== 'win32') { if (onState) onState({ on: false, reason: platform !== 'win32' ? 'Windows only' : 'off' }); return { stop() {} }; }
-  const encoded = Buffer.from(script(c.mods, c.vk), 'utf16le').toString('base64');
+  const encoded = Buffer.from(script(c.mods, c.vk, bare !== false), 'utf16le').toString('base64');
   let child;
   try { child = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-EncodedCommand', encoded], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e) { if (onState) onState({ on: false, reason: e.message }); return { stop() {} }; }
   let buf = '';

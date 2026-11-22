@@ -744,7 +744,12 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
    to the wheel so there is no grey around it. The page itself is transparent, which is as far as it goes: a true
    see-through CEP window is not available (--enable-transparent-visuals was tried in After Effects 26.5.3x9 and
    the window stayed opaque), so what shows through is After Effects' own panel colour. */
-.app-quick, body.quick, html.quick { background: transparent; }
+/* v1.0.2 the key colour. The helper that places this window makes exactly #010203 see-through (Win32 colour-key
+   layering), so the page's own background disappears and only what is DRAWN on it — the wheel, the search box and
+   its results — floats over After Effects. It is a near-black nobody picks by hand, so the thin edge where the
+   wheel is anti-aliased blends into the dark interface instead of glowing. Any real UI colour (#232323, #2a2a2a,
+   #141418, #1c1c22 …) stays opaque. */
+.app-quick, body.quick, html.quick { background: #010203; }
 body.quick #app { display: none; }
 .pie.standalone ~ * { display: none; }
 .overlay.pie-ov.quick, body.quick .overlay.pie-ov { background: none; }
