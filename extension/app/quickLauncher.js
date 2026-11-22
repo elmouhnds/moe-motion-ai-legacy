@@ -8,6 +8,7 @@
  * Window › Extensions › MOE Quick opens the same window by hand.
  */
 const QUICK_ID = 'tv.madtomato.moe.motionai.quick';
+const PANEL_ID = 'tv.madtomato.moe.motionai.panel';
 const REQUEST = 'tv.madtomato.moe.quick.request';
 const SHOW = 'tv.madtomato.moe.quick.show';
 /**
@@ -25,6 +26,28 @@ function openQuick(cs, app) {
   setTimeout(() => { try { const e = new CSEvent(SHOW, 'APPLICATION'); e.data = ''; cs.dispatchEvent(e); } catch (_) { /* preview */ } }, 350);
 }
 
+/**
+ * v1.0.2: the shortcut's other home — the pie in THIS panel, with no second window at all.
+ * Nothing to open and nothing to boot, so it is as fast as the panel is. Two costs, both measured in After
+ * Effects 26.5.3x9: it appears where the panel is docked, not over the timeline, and requestOpenExtension on an
+ * already-open panel does NOT hand it the keyboard — typing after the shortcut still goes to After Effects. So
+ * this mode is picked with the mouse (which works), and the search box and 1-8 need one click on the panel first.
+ */
+function openInPanel(cs, app) {
+  try { cs.requestOpenExtension(PANEL_ID, ''); } catch (_) { /* not in a panel */ }
+  const P = require('./ui/pie');
+  if (P.isOpen()) P.close();
+  const w = (typeof window !== 'undefined' && window.innerWidth) || 360;
+  const hgt = (typeof window !== 'undefined' && window.innerHeight) || 620;
+  app.openPie(w / 2, hgt / 2);
+}
+
+/** Where the global shortcut puts the pie: its own small window (default), or this panel. */
+function openFor(cs, app) {
+  const where = ((app.services.settings.get().ui.pie || {}).globalTarget) || 'window';
+  if (where === 'panel') openInPanel(cs, app); else openQuick(cs, app);
+}
+
 function attach(app, cs, deps = {}) {
   const services = app.services;
   if (!cs || !cs.requestOpenExtension) return { stop() {} };
@@ -35,7 +58,7 @@ function attach(app, cs, deps = {}) {
     const combo = ((services.settings.get().ui.pie || {}).globalKey) || 'ctrl+alt+space';
     hk = require('../core/platform/hotkeyWin').start({
       combo, spawn: deps.spawn || require('child_process').spawn,
-      onKey: () => openQuick(cs, app),
+      onKey: () => openFor(cs, app),
       // v1.0.2: the helper answers a second or two after the page drew Settings, so the line there ("Listening: …" /
       // "Not listening: …") kept the state it had at render time — it read "Not listening: stopped." while the
       // shortcut was working. The state belongs on screen the moment it changes.
@@ -48,4 +71,4 @@ function attach(app, cs, deps = {}) {
   return { stop: () => hk.stop() };
 }
 
-module.exports = { attach, openQuick, QUICK_ID, REQUEST, SHOW, QUICK_CTX };
+module.exports = { attach, openQuick, openInPanel, openFor, QUICK_ID, PANEL_ID, REQUEST, SHOW, QUICK_CTX };
