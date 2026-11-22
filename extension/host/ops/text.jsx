@@ -177,12 +177,18 @@
                     idx = animators.addProperty('ADBE Text Animator').propertyIndex;
                     anim = layer.property('ADBE Text Properties').property('ADBE Text Animators').property(idx);
                     anim.name = args.name;
-                    var props = anim.property('ADBE Text Animator Properties');
+                    var props = anim.property('ADBE Text Animator Properties'), setCount = 0;
                     for (i = 0; i < spec.props.length; i++) {
                         p = props.addProperty(spec.props[i].matchName);
                         anim = layer.property('ADBE Text Properties').property('ADBE Text Animators').property(idx);
                         props = anim.property('ADBE Text Animator Properties');
-                        setShown(props.property(spec.props[i].matchName), spec.props[i].value, 'Animator ' + spec.props[i].matchName);
+                        /* v1.0.2: count what After Effects ACCEPTED. The read-back used to report
+                           props.numProperties, which in After Effects 26.5.3x9 is every animator property the
+                           group offers (measured: 103) and not the ones this run set - so text.animate's verify
+                           compared 103 with the 3 the plan asked for and failed every time. setShown already
+                           answers whether a property took the value (false = hidden by context, named in
+                           MOE.textHidden), so the count follows it. */
+                        if (setShown(props.property(spec.props[i].matchName), spec.props[i].value, 'Animator ' + spec.props[i].matchName)) { setCount = setCount + 1; }
                     }
                     anim.property('ADBE Text Selectors').addProperty('ADBE Text Selector');
                     anim = layer.property('ADBE Text Properties').property('ADBE Text Animators').property(idx);
@@ -207,7 +213,7 @@
                         keyProp.setInterpolationTypeAtKey(k, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
                         keyProp.setTemporalEaseAtKey(k, [new KeyframeEase(0, ke.inInfl || 33.33)], [new KeyframeEase(0, ke.outInfl || 33.33)]);
                     }
-                    out.push({ layerId: layer.id, name: layer.name, animator: args.name, index: idx, replaced: replaced, keys: keyProp.numKeys, firstKey: keyProp.keyTime(1), lastKey: keyProp.keyTime(keyProp.numKeys), props: props.numProperties, wiggly: wig, hiddenSkipped: MOE.textHidden.slice(0) });
+                    out.push({ layerId: layer.id, name: layer.name, animator: args.name, index: idx, replaced: replaced, keys: keyProp.numKeys, firstKey: keyProp.keyTime(1), lastKey: keyProp.keyTime(keyProp.numKeys), props: setCount, wiggly: wig, hiddenSkipped: MOE.textHidden.slice(0) });
                 }
                 return { layers: out };
             });
@@ -273,12 +279,31 @@
         }
         return out;
     }
-    function measure(M, mp, srcProp, str, just, t) {
-        var d = srcProp.value, r;
-        d.text = str; d.justification = just;
-        mp.setValue(d);
-        r = M.sourceRectAtTime(t, false);
-        return { left: num(r.left), top: num(r.top), width: num(r.width), height: num(r.height) };
+    /*
+     * v1.0.2 (measured in After Effects 26.5.3x9): the Source Text property must be fetched again before EVERY
+     * write, or sourceRectAtTime answers for the text set by the call before. Splitting "Make it move" gave each
+     * word its own correct width (226.6 / 62.8 / 234.7 px) and then the SAME x for all three, because the second
+     * measurement of each pair - the line up to the end of that word - came back as the word alone. The pieces
+     * landed on top of each other at the start of the line. The host already re-fetches a property after every
+     * write it makes to an animator for the same reason (and CLAUDE.md records it for setPropertyParameters);
+     * this one measurement did not.
+     */
+    /*
+     * v1.0.2: a measurement must SAY which way the paragraph runs. The source's own document carries
+     * direction 10213 (right-to-left) even for plain English in After Effects 26.5.3x9, and with that carried
+     * over, "left justify" aligns to the paragraph's start - the RIGHT - so every rect came back with a
+     * negative left and the pieces were placed off the end of the line. Set the direction we are measuring in.
+     */
+    function measure(L, srcProp, str, just, t, rtl) {
+        var d = srcProp.value, r, Q = L.duplicate();
+        try {
+            dropAnimators(Q);
+            d.text = str; d.justification = just;
+            try { d.direction = rtl ? ParagraphDirection.DIRECTION_RIGHT_TO_LEFT : ParagraphDirection.DIRECTION_LEFT_TO_RIGHT; } catch (eDir) { /* AE < 24: direction not scriptable */ }
+            Q.property('ADBE Text Properties').property('ADBE Text Document').setValue(d);
+            r = Q.sourceRectAtTime(t, false);
+            return { left: num(r.left), top: num(r.top), width: num(r.width), height: num(r.height) };
+        } finally { Q.remove(); }
     }
     function keyedOrExpr(p) { return !!(p && (p.numKeys > 0 || (p.canSetExpression && p.expressionEnabled && p.expression))); }
 
@@ -298,8 +323,15 @@
             if (boxed) { U.fail('BOX_TEXT', 'Paragraph (box) text is not supported yet - convert it to point text (right-click > Convert to Point Text).'); }
             arabic = hasArabic(text);
             if (by === 'letters' && arabic) { U.fail('ARABIC_LETTERS', 'Arabic letters disconnect when split - use Words.'); }
+            /*
+             * v1.0.2 (measured in After Effects 26.5.3x9): TextDocument.direction carries NO information here.
+             * It reads 10213 - which is exactly ParagraphDirection.DIRECTION_RIGHT_TO_LEFT, with
+             * DIRECTION_LEFT_TO_RIGHT at 10212 - on a plain English point text layer that was never given a
+             * direction, and the same 10213 on an Arabic one. Believing it made EVERY split right-to-left, so
+             * every word took the line's start as its x and the words piled on top of each other ("Make it move"
+             * put all three at x 2.8 instead of 2.8 / 258.9 / 343.9). The script of the text is the signal.
+             */
             rtl = arabic;
-            try { if (doc.direction === ParagraphDirection.DIRECTION_RIGHT_TO_LEFT) { rtl = true; } } catch (eD) { }
             J = doc.justification;
             start = rtl ? ParagraphJustification.RIGHT_JUSTIFY : ParagraphJustification.LEFT_JUSTIFY;
             lines = text.split(/\r\n|\r|\n/);
@@ -309,14 +341,13 @@
             fs = num(doc.fontSize) || 100; lead = fs * 1.2;
             try { if (!doc.autoLeading && doc.leading > 0) { lead = num(doc.leading); } } catch (eL) { }
             return U.withUndo('MOE: Split Text', function () {
-                var M = L.duplicate(), mp, pieces = [], ln, tk, j, full, shift, pw, pr, x, P, pd, a, pos, sc, rot, c0, c1, dx, dy, cs, sn, Ptg, wasOn;
+                var M = L.duplicate(), pieces = [], ln, tk, j, full, shift, pw, pr, x, P, pd, a, pos, sc, rot, c0, c1, dx, dy, cs, sn, Ptg, wasOn;
                 try {
                     dropAnimators(M);
-                    mp = M.property('ADBE Text Properties').property('ADBE Text Document');
                     for (li = 0; li < lines.length; li++) {
                         ln = lines[li]; tk = tokensOf(ln, by);
                         if (!tk.length) { continue; }
-                        full = measure(M, mp, sp, ln, start, t);
+                        full = measure(L, sp, ln, start, t, rtl);
                         // the measured line starts at the paragraph's start edge; move it to the source's own justification
                         if (J === start) { shift = 0; }
                         else if (J === ParagraphJustification.CENTER_JUSTIFY) { shift = -(full.left + full.width / 2); }
@@ -324,11 +355,14 @@
                         else if (J === ParagraphJustification.LEFT_JUSTIFY) { shift = -full.left; }
                         else { shift = 0; }
                         for (j = 0; j < tk.length; j++) {
-                            pw = measure(M, mp, sp, ln.substring(tk[j].s, tk[j].e), start, t);
-                            pr = measure(M, mp, sp, ln.substring(0, tk[j].e), start, t);
-                            // LTR: the piece ends the prefix (right edge); RTL: it is the prefix's left edge
-                            x = rtl ? pr.left : pr.left + pr.width - pw.width;
-                            pieces.push({ text: ln.substring(tk[j].s, tk[j].e), line: li, box: [x + shift, li * lead + pw.top, pw.width, pw.height], own: [pw.left, pw.top] });
+                            pw = measure(L, sp, ln.substring(tk[j].s, tk[j].e), start, t, rtl);
+                            pr = measure(L, sp, ln.substring(0, tk[j].e), start, t, rtl);
+                            /* LTR: the piece ends the prefix, so its left is the prefix's right edge minus its own width.
+                               RTL (v1.0.2): every prefix shares the LINE's right edge and grows leftwards, so the piece's
+                               left is that right edge minus the whole prefix. Taking pr.left instead put every Arabic word
+                               at the same place (measured: both words of a two-word Arabic title at x 4-8 instead of 303.7 and 4.19). */
+                            x = rtl ? (full.left + full.width - pr.width) : (pr.left + pr.width - pw.width);
+                            pieces.push({ text: ln.substring(tk[j].s, tk[j].e), line: li, box: [x + shift, li * lead + pw.top, pw.width, pw.height], own: [pw.left, pw.top], pr: [pr.left, pr.width], str: ln.substring(0, tk[j].e) });
                         }
                     }
                 } finally { M.remove(); }
@@ -338,6 +372,10 @@
                     P = L.duplicate();
                     dropAnimators(P);
                     pd = sp.value; pd.text = pieces[j].text; pd.justification = start;
+                    /* v1.0.2: the piece is laid out the way it was MEASURED - without this it keeps the source document's
+                       direction (10213, right-to-left, even for English in After Effects 26.5.3x9) and sits one word-width
+                       off the place the maths worked out. */
+                    try { pd.direction = rtl ? ParagraphDirection.DIRECTION_RIGHT_TO_LEFT : ParagraphDirection.DIRECTION_LEFT_TO_RIGHT; } catch (ePd) { }
                     P.property('ADBE Text Properties').property('ADBE Text Document').setValue(pd);
                     P.name = (by === 'letters' ? 'MOE Letter ' : 'MOE Word ') + (j + 1) + ' \u00B7 ' + L.name;
                     // anchor on the piece's own centre; position = where that centre was in the source
@@ -397,6 +435,11 @@
                 if (args.rtl || hasArabic(String(args.text))) {
                     try { d.composerEngine = ComposerEngine.UNIVERSAL_TYPE_ENGINE; } catch (eC) { }
                     try { d.direction = ParagraphDirection.DIRECTION_RIGHT_TO_LEFT; } catch (eD) { /* AE < 24: direction not scriptable */ }
+                } else {
+                    /* v1.0.2: say it out loud. A text layer nobody gave a direction to reports RIGHT_TO_LEFT in
+                       After Effects 26.5.3x9, and justification is relative to the direction, so an English line
+                       left to itself is a right-to-left paragraph and "left" aligns right. */
+                    try { d.direction = ParagraphDirection.DIRECTION_LEFT_TO_RIGHT; } catch (eD2) { /* AE < 24 */ }
                 }
                 sp.setValue(d);
                 L.name = String(args.name || 'MOE Text');

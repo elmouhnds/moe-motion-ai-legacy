@@ -94,7 +94,7 @@ const animate = {
       const off = [];
       if (!okTime) off.push(`keys at ${L.firstKey.toFixed(2)}–${L.lastKey.toFixed(2)} s, wanted ${want.startTime.toFixed(2)}–${want2.toFixed(2)} s`);
       if (L.keys !== 2) off.push(`${L.keys} key(s) on the selector, wanted 2`);
-      if (L.props !== prepared.spec.props.length) off.push(`${L.props} animator propert${L.props === 1 ? 'y' : 'ies'}, wanted ${prepared.spec.props.length} (${prepared.spec.props.join(', ')})`);
+      if (L.props !== prepared.spec.props.length) off.push(`${L.props} animator propert${L.props === 1 ? 'y' : 'ies'} set, wanted ${prepared.spec.props.length} (${prepared.spec.props.map((p) => (p && p.matchName) || p).join(', ')})${L.hiddenSkipped && L.hiddenSkipped.length ? ` — After Effects hid ${L.hiddenSkipped.join(', ')}` : ''}`);
       const ok = !off.length && !wig;
       return { ok, label: L.name, detail: ok ? `${L.animator}: ${L.props} propert${L.props === 1 ? 'y' : 'ies'}${L.wiggly ? ` + Wiggly Selector (${L.wiggly.set.length} settings by name)` : ''}, keys ${L.firstKey.toFixed(2)}–${L.lastKey.toFixed(2)}s${L.replaced ? ' · replaced previous' : ''}` : (wig || `animator read-back mismatch — ${off.join(' · ')}`) };
     });

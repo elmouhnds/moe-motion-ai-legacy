@@ -178,7 +178,10 @@ const applyFont = {
   },
 
   async execute({ ctx, prepared, host }) {
-    return host.call('text.setStyle', { compId: ctx.comp.id, label: 'MOE: Brand Font', items: prepared.items.map((i) => ({ layerId: i.layer.id, font: i.font.ps, direction: i.rtl ? 'rtl' : undefined, universal: i.rtl })) });
+    // v1.0.2: say 'ltr' out loud. A text layer nobody gave a direction to reports RIGHT_TO_LEFT in After Effects
+    // 26.5.3x9, so leaving it alone left English paragraphs running right-to-left — and justification is relative
+    // to the direction, so "left" then aligned right.
+    return host.call('text.setStyle', { compId: ctx.comp.id, label: 'MOE: Brand Font', items: prepared.items.map((i) => ({ layerId: i.layer.id, font: i.font.ps, direction: i.rtl ? 'rtl' : 'ltr', universal: i.rtl })) });
   },
   verify({ result, prepared }) {
     const checks = result.layers.map((L) => {

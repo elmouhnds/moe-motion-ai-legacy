@@ -161,11 +161,17 @@ own and finished. 1218 s for 352 tiles, against 622 s for the same count in 0.99
 |---|---|---|
 | `extension/core/platform/hotkeyWin.js` | A reason the helper gave (`FAIL …`) survives the process exiting; only a silent death still reports `stopped` | `tests/quickhotkey.test.js` (fails on the old code) |
 | `extension/app/quickLauncher.js` | Every change of shortcut state asks for a render, so Settings cannot show a stale "Not listening" | `tests/quickhotkey.test.js` (fails on the old code) |
+| `extension/host/ops/text.jsx` — `text.split` | The script of the text decides right-to-left, not `doc.direction` (which reads RTL for everything); a measurement says which direction it is measuring in; each piece is created in that direction; the right-to-left x is the line's right edge minus the prefix | the stricter mock fails the old code in `object.text.cloner.test.js` and 7 more |
+| `extension/host/ops/text.jsx` — `text.create` | An English text layer is set left-to-right instead of being left on After Effects' right-to-left default | `templates.test.js` (was passing only on the lenient mock) |
+| `extension/host/ops/text.jsx` — `text.animate` | The read-back counts the animator properties After Effects **accepted**, not every one the group offers (103) | `textanimate.verify.test.js`, `studio.test.js` |
+| `extension/features/text/tools.js` | A read-back mismatch names the number that is off, instead of four words for three different comparisons | `tests/textanimate.verify.test.js` (4 of 5 fail on the old code) |
+| `extension/features/brand/tools.js` | Brand font puts English text back to left-to-right | `studio.test.js` (was passing only on the lenient mock) |
+| `extension/features/selftest/runner.js` | When a Text Cloner check fails it prints the title's box, each piece's box, the x the split computed and the prefix it measured — this is how the cause was found | — |
+| `tests/mock/ae-mock.js` | `direction` defaults to right-to-left, and a text animator holds every property from the start — **as strict as After Effects** | the old code now fails 8 tests |
 
-`npm run check` after the fixes: ES3-clean · contrast 108/108 · **680 tests, 0 fail**.
+`npm run check` after the fixes: ES3-clean · contrast 108/108 · **686 tests, 0 fail**.
 
-Nothing else was changed. The ranking observation (§1.A) and the pointer-driven selection (§1.B) are left for the
-owner to decide on.
+The ranking observation (§1.A) and the pointer-driven selection (§1.B) are left for the owner to decide on.
 
 ---
 
@@ -203,16 +209,15 @@ name, and the Render Queue writing its 5 JPEG frames.
 | `textArabic` — Text Cloner: Arabic words (right to left) | `2 words; their outline vs the title: worst edge 216.41 px (3 allowed), overlap 262.46 px · undo brought the title back` — edges `[0.99, 0, 216.41, 0]` |
 | `exploder` — Explode: the Wiggly Selector and its 7 settings | `text.animate: failed — ST Explode: animator read-back mismatch` |
 
-Two things make these worth a session of their own rather than a quick patch here:
+Two things made these worth their own pass rather than a quick patch — and §6A below is that pass:
 
 - **The Tile Test passes all three areas.** Text Cloner (`layout/textWords`, `layout/textLetters`) and the text
   presets are among the 352 that passed — a tile passes when the tool ran, so only these checks see that the words
   did not land where the title was. That is exactly the split CLAUDE.md describes, and it means the cause is in
   the geometry / read-back, not in whether the tool runs.
-- **The mock does not see it.** All 680 Node tests pass. Per CLAUDE.md the fix has to carry the real After Effects
-  behaviour into `tests/mock/ae-mock.js` with a test that fails on the old code, and the messages above do not yet
-  say *which* animator property mismatched or *why* one word's edge is 340 px out. Guessing at that would be the
-  opposite of what the rules ask for.
+- **The mock did not see it.** All 680 Node tests passed. Per CLAUDE.md the fix has to carry the real After
+  Effects behaviour into `tests/mock/ae-mock.js` with a test that fails on the old code — which is what §6A does,
+  and the old code now fails 8 of them.
 
 **The two `info` lines**, for completeness:
 
@@ -221,53 +226,95 @@ Two things make these worth a session of their own rather than a quick patch her
   any MOE run to check by hand`. Checked by hand instead, four times, and the Edit menu named every one of them:
   `Undo MOE: Gaussian Blur`, `Undo MOE: Fade In`, `Undo MOE: Trim Comp to Work Area`, `Undo MOE: Quick Animate`.
 
-## 6A. Diagnosis of the three failures (2026-11-22, after the owner asked)
+## 6A. The three failures: found, fixed, and green in After Effects (2026-11-22)
 
-### Text Cloner — reproduced on screen, and it is the split, not the layout
+All three are fixed on this branch and **re-run in After Effects through the Claude Test Bridge**, which the owner
+turned on:
 
-A text layer **"Make it move"** in `MOE Retest 1.0.1`, selected, Text Cloner run from the pie. The three words do
-not stay where they were: **they pile on top of each other at the start of the line** (screenshot in the session;
-the viewer reads as one blob of overlapping glyphs instead of MAKE IT MOVE). That is the Self-Test's
-`overlap 234.7 px` and `worst edge 340.01 px` seen by eye.
+```
+Self-Test · After Effects 26.5.3x9
+PASS text       — 3 words; worst edge 1.1 px (3 allowed), overlap 0 px     (was 340.01 px / 234.7 px)
+PASS textArabic — 2 words; worst edge 0.99 px (3 allowed), overlap 0 px    (was 216.41 px / 262.46 px)
+PASS exploder   — Wiggly Selector: 7 of 7 settings set by name · undo ok   (was "read-back mismatch")
+```
 
-Narrowing it down, with what After Effects itself shows:
+![Text Cloner before and after](RETEST_1.0-text-cloner-before-after.jpg)
 
-1. **It is not the layout.** `grid.build` with `mode: 'keep'` has its own read-back (`keepPlace` → `keepCheck` in
-   `features/grid/tools.js`): it measures every item's comp box before and after the layout and fails if one moved
-   more than 0.5 px. It passed, and the Tile Test passes `layout/textWords`. In Place faithfully kept the pieces
-   where it found them — **already stacked**.
-2. **Each word's own measurement is right.** The three pieces' Anchor Points in After Effects are
-   **227.1 / 73.7 / 235.1** — distinct, and in the right order for *Make* · *it* · *move* (the anchor is the word's
-   own measured centre, `c0` from `pw` in `text.split`).
-3. **What collapses is the along-the-line term.** A piece's x is
-   `x = pr.left + pr.width − pw.width` (`pr` = the line measured up to the END of that word, `pw` = the word
-   alone), and every piece lands at the line's start — so that term is contributing nothing. Both the English and
-   the Arabic check fail the same way (edges `[1.09, 0, 340.01, 0]` and `[0.99, 0, 216.41, 0]`: the left edge is
-   right to ~1 px, the right edge is 340 / 216 px short).
-4. **It is not a stale `sourceRectAtTime`** — the obvious suspect, and it is wrong: `text.create`'s auto-fit loop
-   does `setValue` → `sourceRectAtTime` repeatedly at the same time on the same layer, and both Template checks
-   pass with *"text measured by After Effects 501 / 370 px"*, worst 0 px.
+*One comp, both versions. The top line is "MOE Motion" split by the fixed code — the two words sit exactly where
+they were, which is the whole point of In Place. The bottom is "Make it move" split minutes earlier by the code
+that shipped: three words piled into one blob.*
 
-**Next step, and why it is not taken here:** the numbers `measure()` actually returns for `pw` and `pr` are not
-visible from outside — the op returns the pieces' final boxes, not its measurements. The honest fix is to have
-`text.split` report what it measured, read it once in After Effects, then put that behaviour in
-`tests/mock/ae-mock.js` with a test that fails on the old code. Running one Self-Test check at a time needs the
-**Claude Test Bridge** (Diagnostics › *Allow Claude to test*), which is the owner's switch to turn on; a full
-Self-Test pass is ~10 minutes per attempt.
+### What was actually wrong — one After Effects fact behind two of them
 
-### Explode — the check could not say what was wrong, and now it can
+**`TextDocument.direction` tells you nothing.** Measured in After Effects 26.5.3x9 on a text layer that was never
+given a direction (plain English, created with `layers.addText`):
 
-`text.animate`'s `verify()` compared three different things — the key times, the number of keys on the selector
-and the number of animator properties — and reported **all three** as the same four words,
-`animator read-back mismatch`. That is what the Self-Test showed, and there is nothing in it to act on: a
-property After Effects hides by context (a behaviour CLAUDE.md already documents) looks exactly like a key on the
-wrong frame.
+```
+doc.direction                                 10213
+ParagraphDirection.DIRECTION_RIGHT_TO_LEFT    10213      ← the same number
+ParagraphDirection.DIRECTION_LEFT_TO_RIGHT    10212
+```
 
-Fixed here: the message now names which number is off and by how much, e.g.
-`animator read-back mismatch — 2 animator properties, wanted 3 (ADBE Text Position 3D, ADBE Text Opacity, ADBE Text Scale 3D)`.
-`tests/textanimate.verify.test.js` covers all three branches plus the Wiggly case and the good case; **4 of its 5
-tests fail on the old code**. The panel on this machine has been updated, so the next Self-Test run will print the
-real cause instead of the bare phrase — that reading is the next step, not a guess made now.
+Every text layer reports **right-to-left**. `text.split` believed it
+(`if (doc.direction === DIRECTION_RIGHT_TO_LEFT) rtl = true`), so **every** split — English included — went down
+the right-to-left path, where a word's x is the prefix's left edge. Every word then took the line's start as its
+place and they landed on top of each other. The script of the text is the only signal, so that is what decides now.
+
+That alone did not finish it, because **justification is relative to the direction**: with the source document's
+right-to-left direction carried onto the measuring copy, "left justify" aligned to the *right* and every rect came
+back with a negative left. Two more things follow from the same fact:
+
+- a measurement now **says which way it is measuring** (`measure(..., rtl)` sets the direction on the copy);
+- each **piece** is created with that same direction, or it keeps the source's and sits a word-width off the place
+  the maths worked out.
+
+With the measuring frame honest, the right-to-left formula was wrong too: it took `pr.left`, but in a right-to-left
+line every prefix shares the line's **right** edge and grows leftwards, so a word's left is
+`full.left + full.width − pr.width`. English was already correct (`pr.left + pr.width − pw.width`).
+
+The measurements themselves were never at fault — they read, correctly, `Make` 226.6 px, `Make it` 318.77 px,
+`Make it move` 575.84 px. Three earlier theories (a stale property reference, a per-time rect cache, reusing one
+duplicate layer for successive measurements) were each tried in After Effects and each produced byte-identical
+numbers — which is what ruled them out.
+
+### Explode: the read-back was counting After Effects' whole catalogue
+
+`props.numProperties` on a text animator's Properties group is **every animator property After Effects offers**,
+not the ones the run set: it read **103** on an animator that had been given 3, so `verify()` compared 103 with 3
+and Animate Text failed every time it ran for real. `setShown` already answers whether After Effects accepted a
+value, so the count follows it. The mock created those properties lazily, so the same line read 3 there and 600+
+tests passed.
+
+The failure also used to say only `animator read-back mismatch` for three different comparisons. It now names the
+number that is off — which is how the cause was found at all, in one run:
+
+```
+animator read-back mismatch — 103 animator properties set, wanted 3 (ADBE Text Position 3D, …)
+```
+
+### What the stricter mock then found on its own
+
+`tests/mock/ae-mock.js` now reports `direction` as right-to-left by default, like After Effects, and holds every
+animator property from the start. Running the **old** code against it fails **8 tests** — including Text Cloner by
+words, Animate Text, the Arabic template and the Self-Test's own mock run — so both fixes are guarded.
+
+It also showed two places that had been quietly relying on the lenient default, and both are fixed here:
+
+- **Brand font on English text** left the paragraph right-to-left (`brand.applyFont` passed no direction at all);
+- **an English template title** did the same (`text.create` only ever set a direction for Arabic).
+
+Both now say `ltr` out loud. The tests that assert it (`studio.test.js`, `templates.test.js`) were already there
+and were passing only because the mock's default was wrong.
+
+**One thing deliberately not modelled:** After Effects lays a line out by direction *and* justification together,
+and the exact rule was never measured — only its effect on two cases. The mock does not guess at it; the comment
+in `measureText` says so. If a later change needs it, measure it first.
+
+### Still to check
+
+`npm run check` is green (686 tests) and the text tiles pass in After Effects, but the **full** Tile Test and the
+**full** Self-Test have not been re-run since these host changes — only the affected checks and tiles. Worth one
+full pass before a release.
 
 ## 7. Housekeeping noticed
 

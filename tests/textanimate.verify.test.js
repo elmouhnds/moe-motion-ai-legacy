@@ -22,7 +22,7 @@ const { animate } = require('../extension/features/text/tools');
 const prepared = (over = {}) => Object.assign({
   fd: 1 / 25,
   duration: 1,
-  spec: { props: ['ADBE Text Position 3D', 'ADBE Text Opacity', 'ADBE Text Scale 3D'] },
+  spec: { props: [{ matchName: 'ADBE Text Position 3D' }, { matchName: 'ADBE Text Opacity' }, { matchName: 'ADBE Text Scale 3D' }] },
   layers: [{ layerId: 7, startTime: 0 }]
 }, over);
 const result = (over = {}) => ({
@@ -37,7 +37,7 @@ test('a missing animator property is named, with the count and the properties wa
   const v = animate.verify({ prepared: prepared(), result: result({ props: 2 }) });
   assert.equal(v.ok, false);
   const d = v.checks[0].detail;
-  assert.match(d, /2 animator properties, wanted 3/, `read: "${d}"`);
+  assert.match(d, /2 animator properties set, wanted 3/, `read: "${d}"`);
   assert.match(d, /ADBE Text Opacity/, 'and which properties the plan asked for');
 });
 
@@ -58,7 +58,7 @@ test('two things wrong at once are both reported', () => {
   assert.equal(v.ok, false);
   const d = v.checks[0].detail;
   assert.match(d, /3 key\(s\) on the selector/);
-  assert.match(d, /1 animator property, wanted 3/);
+  assert.match(d, /1 animator property set, wanted 3/);
 });
 
 test('a Wiggly Selector whose settings are not found still wins the message, and a good run reads as before', () => {
@@ -68,4 +68,28 @@ test('a Wiggly Selector whose settings are not found still wins the message, and
   const good = animate.verify({ prepared: prepared(), result: result() });
   assert.equal(good.ok, true);
   assert.match(good.checks[0].detail, /MOE In: 3 properties \+ Wiggly Selector \(7 settings by name\), keys 0\.00–1\.00s/);
+});
+
+/**
+ * And the fault the message uncovered, on the mock — which is as strict as After Effects now.
+ *
+ * In After Effects 26.5.3x9 a text animator's Properties group holds EVERY animator property from the moment the
+ * animator exists: `numProperties` read **103** on an animator that had been given 3. The host reported that 103
+ * as its read-back, so `verify` compared it with the 3 the plan asked for and Animate Text failed every time it
+ * ran for real — while the mock created those properties lazily, so the same line read 3 and 600+ tests passed.
+ */
+test('the read-back counts the properties this run set, not every one the animator offers', async () => {
+  const { createTestServices } = require('./helpers/harness');
+  const { studioComp, T } = require('./fixtures/studio');
+  const { services, comp } = await createTestServices(studioComp([{ name: 'Title', selected: true, text: 'Make it move', outPoint: 8, transform: T() }]));
+
+  const r = await services.executor.run('text.animate', { presetId: 'moe-in-down' });
+  assert.equal(r.status, 'success', JSON.stringify(r.verification || r.errors));
+
+  const L = r.result.layers[0];
+  const group = comp.layer(1).property('ADBE Text Properties').property('ADBE Text Animators').property(1)
+    .property('ADBE Text Animator Properties');
+  assert.ok(group.numProperties > L.props,
+    `the group offers ${group.numProperties} animator properties and the run set ${L.props} — if these are equal the mock is lazier than After Effects again`);
+  assert.ok(L.props >= 1 && L.props <= 4, `a preset sets a handful of properties, read ${L.props}`);
 });

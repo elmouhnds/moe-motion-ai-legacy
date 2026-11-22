@@ -329,7 +329,13 @@ async function checkText(T, { text, justification, rtl }) {
   const u = await T.undo(r, before + 1);
   await T.host.call('layers.remove', { compId: T.compId, layerIds: [tl.layerId], onlyNamed: 'ST ' });
   const worst = maxOf(edge);
-  return { status: worst <= 3 && overlap <= 1 && u.back ? 'pass' : 'fail', detail: `${pieces.length} words; their outline vs the title: worst edge ${r2(worst)} px (3 allowed), overlap ${r2(overlap)} px · undo ${u.back ? 'brought the title back' : 'left layers'}`, numbers: { words: pieces.length, edgesPx: edge.map(r2), overlapPx: r2(overlap) } };
+  const ok = worst <= 3 && overlap <= 1 && u.back;
+  // v1.0.2: when it fails, say WHERE the words went and where the split meant to put them — the title's box, each
+  // piece's box as After Effects measured it, and the x the split computed for it. Without these three rows a
+  // failure says only that the outline is wrong, and there is no way to tell a bad measurement from a bad write.
+  const split = (r.result.split && r.result.split.pieces) || [];
+  const where = ok ? '' : ` · title x ${r2(b0[0])}→${r2(b0[2])} · pieces x ${boxes.map((b) => `${r2(b[0])}→${r2(b[2])}`).join(' ')} · split meant x ${split.map((p) => r2(p.box && p.box[0])).join(' ')} (own x ${split.map((p) => r2(p.own && p.own[0])).join(" ")}, w ${split.map((p) => r2(p.box && p.box[2])).join(" ")})` + ` · rtl=${r.result.split && r.result.split.rtl} · prefix "${split.map((p) => p.str).join("|")}" measured left+width ${split.map((p) => `${r2(p.pr && p.pr[0])}+${r2(p.pr && p.pr[1])}`).join(" ")}`;
+  return { status: ok ? 'pass' : 'fail', detail: `${pieces.length} words; their outline vs the title: worst edge ${r2(worst)} px (3 allowed), overlap ${r2(overlap)} px · undo ${u.back ? 'brought the title back' : 'left layers'}${where}`, numbers: { words: pieces.length, edgesPx: edge.map(r2), overlapPx: r2(overlap), title: b0.map(r2), boxes: boxes.map((b) => b.map(r2)), split: split.map((p) => ({ box: (p.box || []).map(r2), own: (p.own || []).map(r2) })) } };
 }
 
 async function checkTrail(T) {

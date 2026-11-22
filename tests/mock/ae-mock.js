@@ -30,7 +30,11 @@ class TextDocument {
     this.applyStroke = !!o.applyStroke;
     this._fill = o.fillColor || [1, 1, 1];
     this._stroke = o.strokeColor || [0, 0, 0];
-    this.direction = o.direction || ParagraphDirection.DIRECTION_LEFT_TO_RIGHT;
+    // v1.0.2 (measured in After Effects 26.5.3x9): a text layer nobody gave a direction to reports
+    // direction === ParagraphDirection.DIRECTION_RIGHT_TO_LEFT — 10213, against 10212 for LEFT_TO_RIGHT — even for
+    // plain English. The property is no signal at all, and reading it as one sent every Text Cloner split down the
+    // right-to-left path. This mock said LEFT_TO_RIGHT and hid that from 680 tests.
+    this.direction = o.direction || ParagraphDirection.DIRECTION_RIGHT_TO_LEFT;
     // v0.37: paragraph facts the Text Cloner reads (TextDocument.fontSize / justification / leading / autoLeading / boxText)
     this.fontSize = o.fontSize || 100;
     this.justification = o.justification || ParagraphJustification.LEFT_JUSTIFY;
@@ -603,6 +607,14 @@ function makeAnimator(parent) {
   const props = new MockNode('Properties', 'ADBE Text Animator Properties', a, PropertyType.INDEXED_GROUP);
   props._factory = {};
   Object.entries(TEXT_PROPS).forEach(([mn, [n, vt, v]]) => { props._factory[mn] = (g) => new MockProperty({ name: n, matchName: mn, valueType: vt, value: v }, g, g._children.length + 1); });
+  // v1.0.2 (measured in After Effects 26.5.3x9, Self-Test "exploder"): a text animator's Properties group holds
+  // EVERY animator property After Effects offers from the moment the animator exists — numProperties read 103 on a
+  // fresh animator that had been given 3 — and addProperty SHOWS one that is already there rather than adding a
+  // second. This mock created them lazily and pushed a new child per addProperty, so numProperties equalled the
+  // number set and hid the bug from 600+ tests. It is as strict as After Effects now.
+  const addOne = MockNode.prototype.addProperty.bind(props);
+  Object.keys(TEXT_PROPS).forEach((mn) => addOne(mn));
+  props.addProperty = (mn) => props.property(mn) || addOne(mn);
   a._children.push(sels, props);
   return a;
 }
@@ -664,6 +676,10 @@ function measureText(doc) {
   let l = Infinity, r = -Infinity;
   lines.forEach((ln) => {
     const W = Array.from(ln).reduce((a, ch) => a + adv(ch), 0);
+    // After Effects also lays a line out by the paragraph's DIRECTION, not by justification alone — measured there,
+    // "left justify" in a right-to-left paragraph came back right-aligned. That is NOT modelled here: the exact rule
+    // was never measured, and guessing at it would make this mock lie in a new way. What IS modelled is the default
+    // direction above, which is what sent every split down the wrong path.
     const x0 = doc.justification === ParagraphJustification.CENTER_JUSTIFY ? -W / 2 : doc.justification === ParagraphJustification.RIGHT_JUSTIFY ? -W : 0;
     if (W > 0) { l = Math.min(l, x0); r = Math.max(r, x0 + W); }
   });
