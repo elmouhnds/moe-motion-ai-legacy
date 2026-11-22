@@ -55,6 +55,7 @@ function close() {
  */
 function open(app, clientX, clientY, { hold = null, onClose = null, standalone = false } = {}) {
   close();
+  const onGone = [];
   const QS = require('./quickSearch');
   const s = app.state.get();
   const pieSet = app.services.settings.get().ui.pie || {};
@@ -108,10 +109,19 @@ function open(app, clientX, clientY, { hold = null, onClose = null, standalone =
   // Coordinates relative to the overlay (it is the panel window in AE; a frame in the web preview).
   const box = overlay.getBoundingClientRect();
   const m = OUTER - 20;
-  const cx = standalone ? box.width / 2 : Math.min(Math.max(clientX - box.left, m), Math.max(m, box.width - m));
-  const cy = standalone ? box.height / 2 : Math.min(Math.max(clientY - box.top, m), Math.max(m, box.height - m));
-  pie.style.left = `${cx}px`;
-  pie.style.top = `${cy}px`;
+  let cx = standalone ? box.width / 2 : Math.min(Math.max(clientX - box.left, m), Math.max(m, box.width - m));
+  let cy = standalone ? box.height / 2 : Math.min(Math.max(clientY - box.top, m), Math.max(m, box.height - m));
+  const put = () => { pie.style.left = `${cx}px`; pie.style.top = `${cy}px`; };
+  put();
+  /* v1.0.2: MOE Quick's window is placed under the pointer while this page is still laying out, so the first
+     measurement can be of a window that has no size yet — the wheel then drew in the top-left corner instead of
+     the middle. Standing in the middle of whatever the window turns out to be is the whole job here. */
+  const recentre = () => { const r = overlay.getBoundingClientRect(); if (!r.width || !r.height) return; cx = r.width / 2; cy = r.height / 2; put(); };
+  if (standalone) {
+    requestAnimationFrame(recentre);
+    window.addEventListener('resize', recentre);
+    onGone.push(() => window.removeEventListener('resize', recentre));
+  }
   const centreAbs = () => { const r = overlay.getBoundingClientRect(); return { x: r.left + cx, y: r.top + cy }; };
   const searching = () => input.value.trim().length > 0;
 
@@ -219,6 +229,7 @@ function open(app, clientX, clientY, { hold = null, onClose = null, standalone =
       document.removeEventListener('keydown', onKeyDown, true);
       document.removeEventListener('keyup', onKeyUp, true);
       window.removeEventListener('blur', onBlur);
+      onGone.forEach((f) => { try { f(); } catch (_) { /* going anyway */ } });
       overlay.remove();
       if (onClose) { try { onClose(); } catch (_) { /* the window may already be going */ } }
     }
