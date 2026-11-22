@@ -750,7 +750,9 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
    wheel is anti-aliased blends into the dark interface instead of glowing. Any real UI colour (#232323, #2a2a2a,
    #141418, #1c1c22 …) stays opaque. */
 .app-quick, body.quick, html.quick { background: #010203; }
-body.quick #app { display: none; }
+/* v1.0.2: the shell's quick body is empty but for a toast - it must not be HIDDEN, or a start-up failure
+   (quick.html writes its notice into #app) leaves an empty see-through window with nothing to read. */
+body.quick #app { background: none; }
 .pie.standalone ~ * { display: none; }
 .overlay.pie-ov.quick, body.quick .overlay.pie-ov { background: none; }
 /* v1.0.2 no soft shadow here, ever. The window is see-through by COLOUR, not by alpha: anything half-transparent
