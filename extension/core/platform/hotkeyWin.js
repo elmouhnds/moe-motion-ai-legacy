@@ -40,13 +40,21 @@ function script(mods, vk, bare) {
     '  [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] static extern IntPtr GetWindowLongPtr(IntPtr h, int n);',
     '  [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")] static extern IntPtr SetWindowLongPtr(IntPtr h, int n, IntPtr v);',
     '  [DllImport("user32.dll")] static extern bool SetLayeredWindowAttributes(IntPtr h, uint key, byte alpha, uint flags);',
-    /* Take the frame off and make the page's key colour see-through. GWL_STYLE -16 loses WS_CAPTION, WS_THICKFRAME,
-       WS_BORDER and WS_DLGFRAME; GWL_EXSTYLE -20 gains WS_EX_LAYERED, and LWA_COLORKEY makes #010203 (COLORREF is
-       0x00BBGGRR) vanish; LWA_ALPHA alongside it gives everything that IS drawn a little translucency (220 of 255)
-       so the wheel sits over the interface instead of on top of it, which is the only way to be see-through here -
-       alpha inside the page would just blend with the key colour and come out solid. The edge styles (DLGMODALFRAME, WINDOWEDGE, CLIENTEDGE, STATICEDGE) go with it or a
-       hairline rectangle is left drawn around nothing. SWP_FRAMECHANGED makes the new style take. Only ever the
-       window titled "MOE Quick". */
+    /* Take the frame off and make the window see-through. GWL_STYLE -16 loses WS_CAPTION, WS_THICKFRAME, WS_BORDER
+       and WS_DLGFRAME; GWL_EXSTYLE -20 gains WS_EX_LAYERED. The edge styles (DLGMODALFRAME, WINDOWEDGE, CLIENTEDGE,
+       STATICEDGE) go with it or a hairline rectangle is left drawn around nothing, and SWP_FRAMECHANGED makes the
+       new style take. Only ever the window titled "MOE Quick".
+
+       LWA_ALPHA (220 of 255) is what makes it see-through: the whole window is blended over After Effects, so the
+       wheel sits in the interface instead of on top of it.
+
+       LWA_COLORKEY is asked for too, and it does NOTHING here - measured in After Effects 26.5.3x9 on 2026-11-22.
+       The page really does paint exactly #010203 (read back off the screen: #010203 x8690 in a 330 x 344 window,
+       beside the chips' #2A2A2A), and COLORREF is 0x00BBGGRR, so 0x00030201 is the right key - but After Effects'
+       CEP window draws through a child surface the layered window's per-pixel key never reaches: with LWA_ALPHA
+       taken away the window came out completely opaque. It is left in because it costs nothing and would start
+       working if that ever changes; the only way to get rid of the window's own faint rectangle is to give the
+       window a SHAPE (SetWindowRgn around the chips), which has to follow what the page draws. */
     '  static void Undress(IntPtr w) {',
     '    IntPtr st = GetWindowLongPtr(w, -16);',
     '    long want = st.ToInt64() & ~0x00C00000L & ~0x00040000L & ~0x00800000L & ~0x00400000L;',
