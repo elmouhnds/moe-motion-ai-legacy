@@ -30,6 +30,12 @@ async function start({ cs, root, platform, mount, ui, mode }) {
    */
   if (mode === 'quick') {
     app.applyDensity();
+    /*
+     * The window's size comes from the manifest (it hugs the pie: 330 x 344). Sizing it from here was tried and
+     * does nothing — After Effects owns the frame. A SEE-THROUGH window is not available either:
+     * --enable-transparent-visuals was tried in After Effects 26.5.3x9, with the page itself transparent, and the
+     * window stayed opaque. So the window is small and the pie fills it; the corners are the frame, not us.
+     */
     const QL = require('./quickLauncher');
     const handed = () => { try { const h = services.store.get(QL.QUICK_CTX, null); return h && Date.now() - h.at < 60000 ? h.ctx : null; } catch (_) { return null; } };
     const show = () => { const c = handed(); if (c) app.state.set({ ctx: c }); app.showQuick(); };

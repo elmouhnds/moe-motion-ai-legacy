@@ -90,9 +90,6 @@
           <CEFCommandLine>
             <Parameter>--enable-nodejs</Parameter>
             <Parameter>--mixed-context</Parameter>
-            <!-- v1.0.2: the window is the pie, floating over After Effects, so the page itself is see-through -->
-            <Parameter>--enable-transparent-visuals</Parameter>
-            <Parameter>--disable-gpu-compositing</Parameter>
           </CEFCommandLine>
         </Resources>
         <Lifecycle>
@@ -101,9 +98,11 @@
         <UI>
           <Type>Modeless</Type>
           <Menu>MOE Quick</Menu>
+          <!-- v1.0.2: hug the pie. The ring is 288 px across and the search state 300 x 272, so anything
+               larger is grey around a wheel. The window also resizes itself on open (app/main.js). -->
           <Geometry>
-            <Size><Height>420</Height><Width>420</Width></Size>
-            <MinSize><Height>360</Height><Width>360</Width></MinSize>
+            <Size><Height>344</Height><Width>330</Width></Size>
+            <MinSize><Height>300</Height><Width>300</Width></MinSize>
             <MaxSize><Height>800</Height><Width>800</Width></MaxSize>
           </Geometry>
         </UI>

@@ -740,9 +740,10 @@ kbd { display: inline-block; min-width: 20px; padding: 2px 6px; border: 1px soli
 .pie-res-foot { display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 5px 8px; border-top: 1px solid var(--line); font-size: 10px; color: var(--text-3); }
 .pie-res-foot b { color: var(--text-2); font-weight: 600; }
 /* the MOE Quick window: the pie alone, on the window's own background */
-/* v1.0.2 MOE Quick: the window is the pie and nothing else. The page itself is see-through (the manifest asks CEF
-   for transparent visuals), there is no dim behind the pie, and the panel shell is never drawn in this window —
-   so what floats over After Effects is the ring, not a grey box. */
+/* v1.0.2 MOE Quick: the window is the pie and nothing else — no shell, no dim behind it, and the window is sized
+   to the wheel so there is no grey around it. The page itself is transparent, which is as far as it goes: a true
+   see-through CEP window is not available (--enable-transparent-visuals was tried in After Effects 26.5.3x9 and
+   the window stayed opaque), so what shows through is After Effects' own panel colour. */
 .app-quick, body.quick, html.quick { background: transparent; }
 body.quick #app { display: none; }
 .pie.standalone ~ * { display: none; }
