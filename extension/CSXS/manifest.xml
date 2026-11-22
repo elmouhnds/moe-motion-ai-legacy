@@ -90,6 +90,9 @@
           <CEFCommandLine>
             <Parameter>--enable-nodejs</Parameter>
             <Parameter>--mixed-context</Parameter>
+            <!-- v1.0.2: the window is the pie, floating over After Effects, so the page itself is see-through -->
+            <Parameter>--enable-transparent-visuals</Parameter>
+            <Parameter>--disable-gpu-compositing</Parameter>
           </CEFCommandLine>
         </Resources>
         <Lifecycle>

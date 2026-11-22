@@ -20,17 +20,31 @@ async function start({ cs, root, platform, mount, ui, mode }) {
   if (ui) services.settings.update({ ui }); // preview / tests: appearance overrides
   theme.apply(services.settings.get().ui);
   const app = createApp(mount || document.getElementById('app'), services, { cs, mode: mode || 'main' });
+  /*
+   * v1.0.2 MOE Quick: the window IS the pie, so the pie is the first thing painted — nothing else.
+   *
+   * It used to draw the whole panel shell, run the splash and the what's-new, and only then WAIT for the host to
+   * load its ExtendScript before the pie appeared: a grey window sitting over After Effects for seconds, every
+   * time. Nothing in that was needed. The selection comes from the panel that opened the window (quickLauncher
+   * wrote it), the host connects behind the pie, and a pick awaits the host anyway — so it cannot be too early.
+   */
+  if (mode === 'quick') {
+    app.applyDensity();
+    const QL = require('./quickLauncher');
+    const handed = () => { try { const h = services.store.get(QL.QUICK_CTX, null); return h && Date.now() - h.at < 60000 ? h.ctx : null; } catch (_) { return null; } };
+    const show = () => { const c = handed(); if (c) app.state.set({ ctx: c }); app.showQuick(); };
+    show();
+    services.logger.info('app', `MOE Quick ${services.version}`, plat.info);
+    if (cs.addEventListener) cs.addEventListener(QUICK_EVENT, () => { if (!require('./ui/pie').isOpen()) show(); });
+    // the host, behind the pie — and if it brings a different selection before the user has touched anything, redraw
+    app.reconnect().then(() => { if (require('./ui/pie').untouched()) app.showQuick(); }).catch(() => { /* the pie says what is missing */ });
+    return app;
+  }
   app.render();
   app.applyDensity();
   app.boot();
   services.logger.info('app', `MOE Motion AI ${services.version} starting${mode === 'kit' ? ' (Motion Kit panel)' : ''}`, plat.info);
   await app.reconnect();
-  // v1.0 MOE Quick: the window IS the pie; a second "open" while it is up shows the pie again (CSXS event from the panels)
-  if (mode === 'quick') {
-    await app.showQuick();
-    if (cs.addEventListener) cs.addEventListener(QUICK_EVENT, () => { if (!require('./ui/pie').isOpen()) app.showQuick(); });
-    return app;
-  }
   // v1.0: the main panel opens MOE Quick for the global shortcut and for the "MOE Quick" script (quickLauncher.js)
   if (mode !== 'kit') require('./quickLauncher').attach(app, cs);
   // v0.99 Claude Test Bridge: back on after a reload the bridge itself was asked for (moe_deploy), never otherwise

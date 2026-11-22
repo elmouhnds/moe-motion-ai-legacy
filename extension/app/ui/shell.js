@@ -301,18 +301,24 @@ function createApp(root, services, env = {}) {
     if (root.firstChild && root.firstChild.classList && root.firstChild.classList.contains('app')) morph(root.firstChild, appEl);
     else { clear(root); root.appendChild(appEl); }
   }
-  app.showQuick = async () => {
-    try { await app.refreshContext(true); } catch (_) { /* the pie explains what is missing */ }
+  // v1.0.2: this paints at once and waits for nothing. The selection is handed over by the panel that opened the
+  // window (quickLauncher's QUICK_CTX), and main.js redraws the pie if the host later disagrees — reading the comp
+  // here first is what kept the window grey.
+  app.showQuick = () => {
     // the window closes when what was picked has FINISHED (closing it would stop its run) — at once after a cancel
+    const pie = require('./pie');
     const close = () => {
       const started = Date.now();
       const tick = () => {
+        // v1.0.2: a pie is open again — this close came from REPLACING the pie (the selection arrived and it was
+        // redrawn), not from the user leaving. Without this the window shut itself about a second after it opened.
+        if (pie.isOpen()) return;
         if ((services.executor.running || Date.now() - started < 400) && Date.now() - started < 600000) { setTimeout(tick, 250); return; }
-        setTimeout(() => { try { if (env.cs && env.cs.closeExtension) env.cs.closeExtension(); } catch (_) { /* preview */ } }, 900);
+        setTimeout(() => { if (pie.isOpen()) return; try { if (env.cs && env.cs.closeExtension) env.cs.closeExtension(); } catch (_) { /* preview */ } }, 900);
       };
       tick();
     };
-    require('./pie').open(app, 0, 0, { standalone: true, onClose: close });
+    pie.open(app, 0, 0, { standalone: true, onClose: close });
   };
 
   /* ---------- host / context ---------- */

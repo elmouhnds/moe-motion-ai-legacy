@@ -207,6 +207,9 @@ function open(app, clientX, clientY, { hold = null, onClose = null, standalone =
   window.addEventListener('blur', onBlur);
   current = {
     overlay, pie, input,
+    // v1.0.2: has the user started using this pie? MOE Quick paints the pie before the host has answered, and may
+    // redraw it once the real selection lands — but never under a hand that is already pointing or typing.
+    touched: () => moved || input.value.trim().length > 0,
     cleanup() {
       document.removeEventListener('pointermove', onMove, true);
       document.removeEventListener('pointerdown', onDown, true);
@@ -225,5 +228,7 @@ function open(app, clientX, clientY, { hold = null, onClose = null, standalone =
 }
 
 const isOpen = () => !!current;
+/** Open, and nobody has pointed at a slice or typed in it yet — safe to redraw. */
+const untouched = () => !!current && !current.touched();
 
-module.exports = { open, close, isOpen, sliceAt, sectorPath, R, DEAD, HOLE };
+module.exports = { open, close, isOpen, untouched, sliceAt, sectorPath, R, DEAD, HOLE };

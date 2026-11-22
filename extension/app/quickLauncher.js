@@ -10,8 +10,16 @@
 const QUICK_ID = 'tv.madtomato.moe.motionai.quick';
 const REQUEST = 'tv.madtomato.moe.quick.request';
 const SHOW = 'tv.madtomato.moe.quick.show';
+/**
+ * v1.0.2: the selection, handed from this panel to the MOE Quick window through the shared data folder.
+ * MOE Quick is a second CEP window with its own everything, and reading the comp itself costs a host connection -
+ * seconds of a grey window before the pie could know what is selected. This panel already knows, and it is the one
+ * that opens the window, so it writes what it knows first and the pie is right on its first frame.
+ */
+const QUICK_CTX = 'quick-ctx';
 
-function openQuick(cs) {
+function openQuick(cs, app) {
+  if (app) { try { app.services.store.set(QUICK_CTX, { at: Date.now(), ctx: app.state.get().ctx || null }); } catch (_) { /* the store is optional */ } }
   try { cs.requestOpenExtension(QUICK_ID, ''); } catch (_) { /* not in a panel */ }
   // already open: the window is not opened twice — ask it to show its pie again
   setTimeout(() => { try { const e = new CSEvent(SHOW, 'APPLICATION'); e.data = ''; cs.dispatchEvent(e); } catch (_) { /* preview */ } }, 350);
@@ -20,14 +28,14 @@ function openQuick(cs) {
 function attach(app, cs, deps = {}) {
   const services = app.services;
   if (!cs || !cs.requestOpenExtension) return { stop() {} };
-  if (cs.addEventListener) cs.addEventListener(REQUEST, () => openQuick(cs));
+  if (cs.addEventListener) cs.addEventListener(REQUEST, () => openQuick(cs, app));
   let hk = { stop() {} };
   const apply = () => {
     hk.stop();
     const combo = ((services.settings.get().ui.pie || {}).globalKey) || 'ctrl+alt+space';
     hk = require('../core/platform/hotkeyWin').start({
       combo, spawn: deps.spawn || require('child_process').spawn,
-      onKey: () => openQuick(cs),
+      onKey: () => openQuick(cs, app),
       // v1.0.2: the helper answers a second or two after the page drew Settings, so the line there ("Listening: …" /
       // "Not listening: …") kept the state it had at render time — it read "Not listening: stopped." while the
       // shortcut was working. The state belongs on screen the moment it changes.
@@ -40,4 +48,4 @@ function attach(app, cs, deps = {}) {
   return { stop: () => hk.stop() };
 }
 
-module.exports = { attach, openQuick, QUICK_ID, REQUEST, SHOW };
+module.exports = { attach, openQuick, QUICK_ID, REQUEST, SHOW, QUICK_CTX };
