@@ -28,7 +28,10 @@ function attach(app, cs, deps = {}) {
     hk = require('../core/platform/hotkeyWin').start({
       combo, spawn: deps.spawn || require('child_process').spawn,
       onKey: () => openQuick(cs),
-      onState: (st) => { app.quickKey = st; services.logger.info('quick', `global shortcut ${st.on ? `on (${st.label})` : `off: ${st.reason}`}`); }
+      // v1.0.2: the helper answers a second or two after the page drew Settings, so the line there ("Listening: …" /
+      // "Not listening: …") kept the state it had at render time — it read "Not listening: stopped." while the
+      // shortcut was working. The state belongs on screen the moment it changes.
+      onState: (st) => { app.quickKey = st; services.logger.info('quick', `global shortcut ${st.on ? `on (${st.label})` : `off: ${st.reason}`}`); if (app.scheduleRender) app.scheduleRender(); }
     });
   };
   apply();

@@ -46,17 +46,22 @@ function start({ combo, spawn, onKey, onState, platform = process.platform }) {
   let child;
   try { child = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-EncodedCommand', encoded], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e) { if (onState) onState({ on: false, reason: e.message }); return { stop() {} }; }
   let buf = '';
+  // v1.0.2: RegisterHotKey fails -> the script prints FAIL and RETURNS, so PowerShell exits a moment later. The exit
+  // handler used to replace that reason with the useless "stopped", which is exactly what the owner's machine showed
+  // for the default Ctrl+Alt+Space (FAIL 1409 = the combo is already registered by another program). Once the helper
+  // has said why it is not listening, nothing may overwrite it.
+  let said = false;
   child.stdout.on('data', (d) => {
     buf += String(d);
     let i;
     while ((i = buf.indexOf('\n')) >= 0) {
       const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
       if (line === 'READY') { if (onState) onState({ on: true, label: c.label }); }
-      else if (/^FAIL/.test(line)) { if (onState) onState({ on: false, reason: `${c.label} is taken by another program (${line})` }); }
+      else if (/^FAIL/.test(line)) { said = true; if (onState) onState({ on: false, reason: `${c.label} is taken by another program (${line})` }); }
       else if (/^HOTKEY/.test(line)) { const who = line.slice(7).trim(); if (AE_PROCESS.test(who)) onKey(); }
     }
   });
-  child.on('exit', () => { if (onState) onState({ on: false, reason: 'stopped' }); });
+  child.on('exit', () => { if (said) return; if (onState) onState({ on: false, reason: 'stopped' }); });
   return { stop() { try { child.kill(); } catch (_) { /* gone */ } }, child };
 }
 
